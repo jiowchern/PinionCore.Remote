@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>    
+    <Version>0.1.12.12</Version>
+    <PackageProjectUrl>https://github.com/jiowchern/PinionCore.Remote</PackageProjectUrl>
+    <Authors>jc</Authors>
+    <Description>client.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\PinionCore.Network\PinionCore.Network.csproj" />
+    <ProjectReference Include="..\PinionCore.Remote.Ghost\PinionCore.Remote.Ghost.csproj" />
+    <ProjectReference Include="..\PinionCore.Remote\PinionCore.Remote.csproj" />
+    <ProjectReference Include="..\PinionCore.Serialization\PinionCore.Serialization.csproj" />
+  </ItemGroup>
+
+</Project>

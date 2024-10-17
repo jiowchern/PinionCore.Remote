@@ -2,11 +2,11 @@
 ### Interface Notifier.
 **The interface can broadcast its child interface to the client.**
 
-Define the property```Regulus.Remote.Notifier<T>```.  
+Define the property```PinionCore.Remote.Notifier<T>```.  
 ```csharp
 public interface IFoo
 {
-    Regulus.Remote.Notifier<IBar> BarNotifier {get;}
+    PinionCore.Remote.Notifier<IBar> BarNotifier {get;}
 }
 ```
 The server implements the property.  
@@ -29,10 +29,10 @@ namespace Server
         public Foo()
         {
             _Bars = new NotifiableCollection<IBar>();
-            _BarNotifier = new Regulus.Remote.Notifier<IBar>(_Bars);            
+            _BarNotifier = new PinionCore.Remote.Notifier<IBar>(_Bars);            
         }
 
-        Regulus.Remote.Notifier<IBar> IFoo.BarNotifier => _BarNotifier;        
+        PinionCore.Remote.Notifier<IBar> IFoo.BarNotifier => _BarNotifier;        
 
         public void AddBar(Bar bar)
         {

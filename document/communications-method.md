@@ -4,7 +4,7 @@ Defines a method to give a client a call.
 ```csharp
 public interface IFoo
 {
-    Regulus.Remote.Value<string> Method(string arg1);
+    PinionCore.Remote.Value<string> Method(string arg1);
 }
 ```
 The server implements the method.  
@@ -13,7 +13,7 @@ namesapce Server
 {
     class Foo : IFoo
     {
-        Regulus.Remote.Value<string> IFoo.Method(string arg1)
+        PinionCore.Remote.Value<string> IFoo.Method(string arg1)
         {
             return $"Response:{arg1}";
         }
@@ -47,4 +47,4 @@ namesapce Client
 
 ---
 #### Restrictions
-Return values only support void or Regulus.Remote.Value.
+Return values only support void or PinionCore.Remote.Value.

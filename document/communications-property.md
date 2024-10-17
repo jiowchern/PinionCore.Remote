@@ -4,7 +4,7 @@ If an object needs to be synchronized with the client...
 ```csharp
 public interface IFoo
 {
-    Regulus.Remote.Property<int> Number{get;}
+    PinionCore.Remote.Property<int> Number{get;}
 }
 ```
 The server implements the property.  
@@ -15,10 +15,10 @@ namesapce Server
     {
         public Foo()
         {
-            _Number = new Regulus.Remote.Property<int>();
+            _Number = new PinionCore.Remote.Property<int>();
             _Number.Value = 1;
         }
-        Regulus.Remote.Property<int> IFoo.Number => _Number;        
+        PinionCore.Remote.Property<int> IFoo.Number => _Number;        
     }    
 }
 ```

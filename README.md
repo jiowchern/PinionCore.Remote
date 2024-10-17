@@ -1,22 +1,22 @@
-﻿# Regulus Remote
-[![Maintainability](https://api.codeclimate.com/v1/badges/99cb5e1dc12cafbfe451/maintainability)](https://codeclimate.com/github/jiowchern/Regulus.Remote/maintainability)
-[![Actions Status](https://github.com/jiowchern/Regulus.Remote/workflows/Build/badge.svg)](https://github.com/jiowchern/Regulus.Remote/actions)
-[![Coverage Status](https://coveralls.io/repos/github/jiowchern/Regulus.Remote/badge.svg?branch=master)](https://coveralls.io/github/jiowchern/Regulus.Remote?branch=master)
-![commit last date](https://img.shields.io/github/last-commit/jiowchern/Regulus.Remote)    
+# PinionCore Remote
+[![Maintainability](https://api.codeclimate.com/v1/badges/99cb5e1dc12cafbfe451/maintainability)](https://codeclimate.com/github/jiowchern/PinionCore.Remote/maintainability)
+[![Actions Status](https://github.com/jiowchern/PinionCore.Remote/workflows/Build/badge.svg)](https://github.com/jiowchern/PinionCore.Remote/actions)
+[![Coverage Status](https://coveralls.io/repos/github/jiowchern/PinionCore.Remote/badge.svg?branch=master)](https://coveralls.io/github/jiowchern/PinionCore.Remote?branch=master)
+![commit last date](https://img.shields.io/github/last-commit/jiowchern/PinionCore.Remote)    
 <!-- [![Discord](https://img.shields.io/discord/101557008930451456.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](https://discord.gg/uDF8NTp) -->
 <!-- [![Build status](https://ci.appveyor.com/api/projects/status/fv1owwit4utddawv/branch/release?svg=true)](https://ci.appveyor.com/project/jiowchern/regulus-remote/branch/release) -->
-<!-- [![GitHub release](https://img.shields.io/github/release/jiowchern/regulus.svg?style=flat-square)](https://github.com/jiowchern/Regulus/releases)![pre-release](https://img.shields.io/github/v/release/jiowchern/Regulus?include_prereleases) -->
-<!-- [![Gitter](https://badges.gitter.im/JoinChat.svg)](https://gitter.im/Regulus-Library) -->
+<!-- [![GitHub release](https://img.shields.io/github/release/jiowchern/regulus.svg?style=flat-square)](https://github.com/jiowchern/PinionCore/releases)![pre-release](https://img.shields.io/github/v/release/jiowchern/PinionCore?include_prereleases) -->
+<!-- [![Gitter](https://badges.gitter.im/JoinChat.svg)](https://gitter.im/PinionCore-Library) -->
 
-![NuGet Downloads](https://img.shields.io/nuget/dt/Regulus.Remote)
+![NuGet Downloads](https://img.shields.io/nuget/dt/PinionCore.Remote)
 
 
 ## Introduction
-Regulus Remote is a powerful and flexible server-client communication framework developed in C#. Designed to work seamlessly with the Unity game engine and any other .NET Standard 2.0 compliant environments, it simplifies network communication by enabling servers and clients to interact through interfaces. This object-oriented approach reduces the maintenance cost of protocols and enhances code readability and maintainability.  
+PinionCore Remote is a powerful and flexible server-client communication framework developed in C#. Designed to work seamlessly with the Unity game engine and any other .NET Standard 2.0 compliant environments, it simplifies network communication by enabling servers and clients to interact through interfaces. This object-oriented approach reduces the maintenance cost of protocols and enhances code readability and maintainability.  
 
-Key features of Regulus Remote include support for IL2CPP and AOT, making it compatible with various platforms, including Unity WebGL. It provides default TCP connection and serialization mechanisms but also allows for customization to suit specific project needs. The framework supports methods, events, properties, and notifiers, giving developers comprehensive tools to build robust networked applications.  
+Key features of PinionCore Remote include support for IL2CPP and AOT, making it compatible with various platforms, including Unity WebGL. It provides default TCP connection and serialization mechanisms but also allows for customization to suit specific project needs. The framework supports methods, events, properties, and notifiers, giving developers comprehensive tools to build robust networked applications.  
 
-With its stand-alone mode, developers can simulate server-client interactions without a network connection, facilitating development and debugging. Regulus Remote aims to streamline network communication in game development and other applications, enabling developers to focus more on implementing business logic rather than dealing with the complexities of network protocols.  
+With its stand-alone mode, developers can simulate server-client interactions without a network connection, facilitating development and debugging. PinionCore Remote aims to streamline network communication in game development and other applications, enabling developers to focus more on implementing business logic rather than dealing with the complexities of network protocols.  
 
 
 
@@ -86,7 +86,7 @@ namespace Protocol
 	}
 	public interface IGreeter
 	{
-		Regulus.Remote.Value<HelloReply> SayHello(HelloRequest request);
+		PinionCore.Remote.Value<HelloReply> SayHello(HelloRequest request);
 	}
 }
 ```
@@ -96,7 +96,7 @@ namespace Server
 {	
 	class Greeter : IGreeter
 	{				
-		Regulus.Remote.Value<HelloReply> SayHello(HelloRequest request)
+		PinionCore.Remote.Value<HelloReply> SayHello(HelloRequest request)
 		{
 			return new HelloReply() { Message = $"Hello {request.Name}." };
 		}
@@ -111,9 +111,9 @@ namespace Server
 	public class Entry	
 	{
 		readonly Greeter _Greeter;
-		readonly Regulus.Remote.IBinder _Binder;
-		readonly Regulus.Remote.ISoul _GreeterSoul;
-		public Entry(Regulus.Remote.IBinder binder)
+		readonly PinionCore.Remote.IBinder _Binder;
+		readonly PinionCore.Remote.ISoul _GreeterSoul;
+		public Entry(PinionCore.Remote.IBinder binder)
 		{
 			_Greeter = new Greeter();
 			_Binder = binder;
@@ -134,7 +134,7 @@ namespace Client
 {
 	class Entry
 	{
-		public Entry(Regulus.Remote.IAgent agent)
+		public Entry(PinionCore.Remote.IAgent agent)
 		{
 			agent.QueryNotifier<IGreeter>().Supply += _AddGreeter;
 			agent.QueryNotifier<IGreeter>().Unsupply += _RemoveGreeter;
@@ -165,7 +165,7 @@ In addition to the above example ``IGreeter.SayHello``, there are a total of fou
 * [```Notifier```](document/communications-notifier.md)
 
 **Serialization**  
-For the types that can be serialized, see [```Regulus.Serialization```](Regulus.Serialization/README.md) instructions.
+For the types that can be serialized, see [```PinionCore.Serialization```](PinionCore.Serialization/README.md) instructions.
 <!-- > Serialization supports the following types...  
 > ```short, ushort, int, uint, bool, logn, ulong, float, decimal, double, char, byte, enum, string``` and array of the types. -->
           
@@ -186,9 +186,9 @@ Sample/Protocol>dotnet new classlib
 1. Add References
 ```xml
 <ItemGroup>
-	<PackageReference Include="Regulus.Remote" Version="0.1.12.15" />
-	<PackageReference Include="Regulus.Serialization" Version="0.1.12.12" />
-	<PackageReference Include="Regulus.Remote.Tools.Protocol.Sources" Version="0.0.0.25">
+	<PackageReference Include="PinionCore.Remote" Version="0.1.12.15" />
+	<PackageReference Include="PinionCore.Serialization" Version="0.1.12.12" />
+	<PackageReference Include="PinionCore.Remote.Tools.Protocol.Sources" Version="0.0.0.25">
 		<PrivateAssets>all</PrivateAssets>
 		<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 	</PackageReference>	
@@ -200,7 +200,7 @@ namespace Protocol
 {
 	public interface IGreeter
 	{
-		Regulus.Remote.Value<string> SayHello(string request);
+		PinionCore.Remote.Value<string> SayHello(string request);
 	}
 }
 ```
@@ -210,9 +210,9 @@ namespace Protocol
 {
     public static partial class ProtocolCreater
     {
-        public static Regulus.Remote.IProtocol Create()
+        public static PinionCore.Remote.IProtocol Create()
         {
-            Regulus.Remote.IProtocol protocol = null;
+            PinionCore.Remote.IProtocol protocol = null;
             _Create(ref protocol);
             return protocol;
         }
@@ -220,14 +220,14 @@ namespace Protocol
         /*
 			Create a partial method as follows.
         */
-        [Regulus.Remote.Protocol.Creater]
-        static partial void _Create(ref Regulus.Remote.IProtocol protocol);
+        [PinionCore.Remote.Protocol.Creater]
+        static partial void _Create(ref PinionCore.Remote.IProtocol protocol);
     }
 }
 ```  
 This step is to generate the generator for the ``IProtocol``, which is an important component of the framework and is needed for communication between the server and the client.  
 **_Note_**  
->> As shown in the code above, Add ```Regulus.Remote.Protocol``` attribute to the method you want to get ```IProtocol```, the method specification must be ```static partial void Method(ref Regulus.Remote.IProtocol)```, otherwise it will not pass compilation.
+>> As shown in the code above, Add ```PinionCore.Remote.Protocol``` attribute to the method you want to get ```IProtocol```, the method specification must be ```static partial void Method(ref PinionCore.Remote.IProtocol)```, otherwise it will not pass compilation.
 
 ---
 	
@@ -239,7 +239,7 @@ Sample/Server>dotnet new console
 1. Add References
 ```xml
 <ItemGroup>
-	<PackageReference Include="Regulus.Remote.Server" Version="0.1.12.13" />
+	<PackageReference Include="PinionCore.Remote.Server" Version="0.1.12.13" />
 	<ProjectReference Include="..\Protocol\Protocol.csproj" />	
 </ItemGroup>
 ```
@@ -249,7 +249,7 @@ namespace Server
 {
 	public class Greeter : Protocol.IGreeter
 	{
-		Regulus.Remote.Value<string> SayHello(string request)
+		PinionCore.Remote.Value<string> SayHello(string request)
 		{
 			// Return the received message
 			return $"echo:{request}";
@@ -257,11 +257,11 @@ namespace Server
 	}
 }
 ```
-3. The server needs an entry point to start the environment , creating an entry point that inherits from ``Regulus.Remote.IEntry``. ```Entry.cs```
+3. The server needs an entry point to start the environment , creating an entry point that inherits from ``PinionCore.Remote.IEntry``. ```Entry.cs```
 ```csharp
 namespace Server
 {
-	public class Entry : Regulus.Remote.IEntry
+	public class Entry : PinionCore.Remote.IEntry
 	{		
 		void IBinderProvider.RegisterClientBinder(IBinder binder)
 		{					
@@ -292,7 +292,7 @@ namespace Server
 		// Create Service
 		var entry = new Entry();		
 		
-		var set = Regulus.Remote.Server.Provider.CreateTcpService(entry, protocol);
+		var set = PinionCore.Remote.Server.Provider.CreateTcpService(entry, protocol);
 		int yourPort = 0;
 		set.Listener.Bind(yourPort);
 				
@@ -313,7 +313,7 @@ Sample/Client>dotnet new console
 1. Add References
 ```xml
 <ItemGroup>
-	<PackageReference Include="Regulus.Remote.Client" Version="0.1.12.12" />
+	<PackageReference Include="PinionCore.Remote.Client" Version="0.1.12.12" />
 	<ProjectReference Include="..\Protocol\Protocol.csproj" />
 </ItemGroup>
 ```
@@ -326,7 +326,7 @@ namespace Client
 		// Get IProtocol with ProtocolCreater
 		var protocol = Protocol.ProtocolCreater.Create();
 				
-		var set = Regulus.Remote.Client.Provider.CreateTcpAgent(protocol);
+		var set = PinionCore.Remote.Client.Provider.CreateTcpAgent(protocol);
 		
 		bool stop = false;
 		var task = System.Threading.Tasks.Task.Run(() => 
@@ -373,7 +373,7 @@ Sample/Standalone>dotnet new console
 1. Add References
 ```xml
 <ItemGroup>
-	<PackageReference Include="Regulus.Remote.Standalone" Version="0.1.12.14" />
+	<PackageReference Include="PinionCore.Remote.Standalone" Version="0.1.12.14" />
 	<ProjectReference Include="..\Protocol\Protocol.csproj" />
 	<ProjectReference Include="..\Server\Server.csproj" />
 </ItemGroup>
@@ -389,7 +389,7 @@ namespace Standalone
 		
 		// Create service
 		var entry = new Entry();
-		var service = Regulus.Remote.Standalone.Provider.CreateService(entry , protocol);
+		var service = PinionCore.Remote.Standalone.Provider.CreateService(entry , protocol);
 		var agent = service.Create();
 		
 		bool stop = false;
@@ -431,12 +431,12 @@ Create a connection use ```CreateAgent``` and implement the interface ```IStream
 ```csharp
 var protocol = Protocol.ProtocolCreater.Create();
 IStreamable stream = null ;// todo: Implementation Interface IStreamable
-var service = Regulus.Remote.Client.CreateAgent(protocol , stream) ;
+var service = PinionCore.Remote.Client.CreateAgent(protocol , stream) ;
 ```
 implement ```IStreamable```.
 ```csharp
-using Regulus.Remote;
-namespace Regulus.Network
+using PinionCore.Remote;
+namespace PinionCore.Network
 {
     public interface IStreamable
     {
@@ -467,11 +467,11 @@ Create a service use ```CreateService``` and implement the interface ```IListena
 var protocol = Protocol.ProtocolCreater.Create();
 var entry = new Entry();
 IListenable listener = null; // todo: Implementation Interface IListenable
-var service = Regulus.Remote.Server.CreateService(entry , protocol , listener) ;
+var service = PinionCore.Remote.Server.CreateService(entry , protocol , listener) ;
 ```
 implement ```IListenable```.
 ```csharp
-namespace Regulus.Remote.Soul
+namespace PinionCore.Remote.Soul
 {
     public interface IListenable
     {
@@ -486,12 +486,12 @@ namespace Regulus.Remote.Soul
 ## Custom Serialization
 implement ```ISerializable```.
 ```csharp
-namespace Regulus.Remote
+namespace PinionCore.Remote
 {
     public interface ISerializable
     {
-        Regulus.Memorys.Buffer Serialize(System.Type type, object instance);
-        object Deserialize(System.Type type, Regulus.Memorys.Buffer buffer);
+        PinionCore.Memorys.Buffer Serialize(System.Type type, object instance);
+        object Deserialize(System.Type type, PinionCore.Memorys.Buffer buffer);
     }
 }
 ```
@@ -500,19 +500,19 @@ and bring it to the server ```CreateTcpService```.
 var protocol = Protocol.ProtocolCreater.Create();
 var entry = new Entry();
 ISerializable yourSerializer = null; 
-var service = Regulus.Remote.Server.CreateTcpService(entry , protocol , yourSerializer) ;
+var service = PinionCore.Remote.Server.CreateTcpService(entry , protocol , yourSerializer) ;
 ```
 
 and bring it to the client ```CreateTcpAgent```.
 ```csharp
 var protocol = Protocol.ProtocolCreater.Create();
 ISerializable yourSerializer = null ;
-var service = Regulus.Remote.Client.CreateTcpAgent(protocol , yourSerializer) ;
+var service = PinionCore.Remote.Client.CreateTcpAgent(protocol , yourSerializer) ;
 ```  
 
-If need to know what types need to be serialized can refer ```Regulus.Remote.IProtocol.SerializeTypes```.  
+If need to know what types need to be serialized can refer ```PinionCore.Remote.IProtocol.SerializeTypes```.  
 ```csharp
-namespace Regulus.Remote
+namespace PinionCore.Remote
 {
 	public interface IProtocol
 	{
@@ -532,4 +532,4 @@ namespace Regulus.Remote
 ## Example 
 **Chat Room**  
 
-A full example of the application can be found here, including the Unity and Stride3D version. [Link](https://github.com/jiowchern/Regulus.Samples/tree/readme/Chat1)
+A full example of the application can be found here, including the Unity and Stride3D version. [Link](https://github.com/jiowchern/PinionCore.Samples/tree/readme/Chat1)

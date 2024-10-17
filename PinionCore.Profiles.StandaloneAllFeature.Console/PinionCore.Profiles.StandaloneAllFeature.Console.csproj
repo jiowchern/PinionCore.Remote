@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net6.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+	  <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\PinionCore.Profiles.StandaloneAllFeature.Protocols\PinionCore.Profiles.StandaloneAllFeature.Protocols.csproj" />
+    <ProjectReference Include="..\PinionCore.Remote.Client\PinionCore.Remote.Client.csproj" />
+    <ProjectReference Include="..\PinionCore.Remote.Reactive\PinionCore.Remote.Reactive.csproj" />
+    <ProjectReference Include="..\PinionCore.Remote.Server\PinionCore.Remote.Server.csproj" />
+    <ProjectReference Include="..\PinionCore.Remote.Standalone\PinionCore.Remote.Standalone.csproj" />
+  </ItemGroup>
+
+</Project>
