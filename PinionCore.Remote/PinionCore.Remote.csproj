@@ -12,7 +12,7 @@
   <ItemGroup>
     <ProjectReference Include="..\PinionCore.Network\PinionCore.Network.csproj" />
     <ProjectReference Include="..\PinionCore.Serialization\PinionCore.Serialization.csproj" />
-    <ProjectReference Include="..\PinionCoreUtility\PinionCore.Utility\PinionCore.Utility.csproj" />
+    <ProjectReference Include="..\PinionCore.Utility\PinionCore.Utility\PinionCore.Utility.csproj" />
   </ItemGroup>
 
 </Project>

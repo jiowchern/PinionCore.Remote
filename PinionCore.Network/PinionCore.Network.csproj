@@ -10,7 +10,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\PinionCoreUtility\PinionCore.Utility\PinionCore.Utility.csproj" />
+    <ProjectReference Include="..\PinionCore.Utility\PinionCore.Utility\PinionCore.Utility.csproj" />
   </ItemGroup>
 
 </Project>
