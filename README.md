@@ -528,8 +528,4 @@ namespace PinionCore.Remote
 }
 ```
 
----
-## Example 
-**Chat Room**  
 
-A full example of the application can be found here, including the Unity and Stride3D version. [Link](https://github.com/jiowchern/PinionCore.Samples/tree/readme/Chat1)
