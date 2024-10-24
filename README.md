@@ -1,5 +1,5 @@
 # PinionCore Remote
-[![Maintainability](https://api.codeclimate.com/v1/badges/99cb5e1dc12cafbfe451/maintainability)](https://codeclimate.com/github/jiowchern/PinionCore.Remote/maintainability)
+[![Maintainability](https://api.codeclimate.com/v1/badges/89c3a646f9daff42a38e/maintainability)](https://codeclimate.com/github/jiowchern/PinionCore.Remote/maintainability)
 [![Actions Status](https://github.com/jiowchern/PinionCore.Remote/workflows/Build/badge.svg)](https://github.com/jiowchern/PinionCore.Remote/actions)
 [![Coverage Status](https://coveralls.io/repos/github/jiowchern/PinionCore.Remote/badge.svg?branch=master)](https://coveralls.io/github/jiowchern/PinionCore.Remote?branch=master)
 ![commit last date](https://img.shields.io/github/last-commit/jiowchern/PinionCore.Remote)    
