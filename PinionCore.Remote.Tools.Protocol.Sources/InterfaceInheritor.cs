@@ -1,8 +1,7 @@
+﻿using System.Linq;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using PinionCore.Remote.Tools.Protocol.Sources.Extensions;
-
-using System.Linq;
 
 namespace PinionCore.Remote.Tools.Protocol.Sources
 {
@@ -10,13 +9,13 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
     {
         readonly string _NamePath;
         public readonly InterfaceDeclarationSyntax Base;
-        
-        public readonly BlockSyntax Expression;
-        
 
-        public InterfaceInheritor(InterfaceDeclarationSyntax @base) :this(@base , SyntaxFactory.Block(SyntaxFactory.ExpressionStatement(SyntaxFactory.ThrowExpression(SyntaxFactory.ParseExpression("new PinionCore.Remote.Exceptions.NotSupportedException()")))))
+        public readonly BlockSyntax Expression;
+
+
+        public InterfaceInheritor(InterfaceDeclarationSyntax @base) : this(@base, SyntaxFactory.Block(SyntaxFactory.ExpressionStatement(SyntaxFactory.ThrowExpression(SyntaxFactory.ParseExpression("new PinionCore.Remote.Exceptions.NotSupportedException()")))))
         {
-            
+
         }
         public InterfaceInheritor(InterfaceDeclarationSyntax @base, BlockSyntax expression)
         {
@@ -28,18 +27,18 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
         public ClassDeclarationSyntax Inherite(ClassDeclarationSyntax class_syntax)
         {
 
-            var interfaceDeclaration = Base;
+            InterfaceDeclarationSyntax interfaceDeclaration = Base;
             var namePath = _NamePath;
-            
 
-            var explicitInterfaceSpecifier = SyntaxFactory.ExplicitInterfaceSpecifier(SyntaxFactory.ParseName(namePath));
 
-            var classSyntax = class_syntax;
-            var bases = classSyntax.BaseList ?? SyntaxFactory.BaseList();
+            ExplicitInterfaceSpecifierSyntax explicitInterfaceSpecifier = SyntaxFactory.ExplicitInterfaceSpecifier(SyntaxFactory.ParseName(namePath));
+
+            ClassDeclarationSyntax classSyntax = class_syntax;
+            BaseListSyntax bases = classSyntax.BaseList ?? SyntaxFactory.BaseList();
             bases = bases.AddTypes(SyntaxFactory.SimpleBaseType(SyntaxFactory.ParseTypeName(namePath)));
             classSyntax = classSyntax.WithBaseList(bases);
 
-            var nodes = interfaceDeclaration.DescendantNodes().OfType<MemberDeclarationSyntax>();
+            System.Collections.Generic.IEnumerable<MemberDeclarationSyntax> nodes = interfaceDeclaration.DescendantNodes().OfType<MemberDeclarationSyntax>();
 
             classSyntax = _InheriteMethods(explicitInterfaceSpecifier, classSyntax, nodes);
 
@@ -54,13 +53,13 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
 
         private ClassDeclarationSyntax _InheriteIndexs(ExplicitInterfaceSpecifierSyntax explicitInterfaceSpecifier, ClassDeclarationSyntax classSyntax, System.Collections.Generic.IEnumerable<MemberDeclarationSyntax> nodes)
         {
-            foreach (var member in nodes.OfType<IndexerDeclarationSyntax>())
+            foreach (IndexerDeclarationSyntax member in nodes.OfType<IndexerDeclarationSyntax>())
             {
-                var node = member;
+                IndexerDeclarationSyntax node = member;
                 node = node.WithExplicitInterfaceSpecifier(explicitInterfaceSpecifier);
 
-                var accessors = from a in node.AccessorList.Accessors
-                                select a.WithBody(Expression);
+                System.Collections.Generic.IEnumerable<AccessorDeclarationSyntax> accessors = from a in node.AccessorList.Accessors
+                                                                                              select a.WithBody(Expression);
                 node = node.WithAccessorList(SyntaxFactory.AccessorList(SyntaxFactory.List(accessors)));
 
                 classSyntax = classSyntax.AddMembers(node);
@@ -71,13 +70,13 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
 
         private ClassDeclarationSyntax _InheriteEvents(ExplicitInterfaceSpecifierSyntax explicitInterfaceSpecifier, ClassDeclarationSyntax classSyntax, System.Collections.Generic.IEnumerable<MemberDeclarationSyntax> nodes)
         {
-            foreach (var member in nodes.OfType<EventFieldDeclarationSyntax>())
+            foreach (EventFieldDeclarationSyntax member in nodes.OfType<EventFieldDeclarationSyntax>())
             {
-                var node = member;
-                var eventDeclaration = SyntaxFactory.EventDeclaration(node.Declaration.Type, node.Declaration.Variables[0].Identifier);
+                EventFieldDeclarationSyntax node = member;
+                EventDeclarationSyntax eventDeclaration = SyntaxFactory.EventDeclaration(node.Declaration.Type, node.Declaration.Variables[0].Identifier);
 
                 eventDeclaration = eventDeclaration.WithExplicitInterfaceSpecifier(explicitInterfaceSpecifier);
-                var accessors = SyntaxFactory.AccessorList();
+                AccessorListSyntax accessors = SyntaxFactory.AccessorList();
                 accessors = accessors.AddAccessors(SyntaxFactory.AccessorDeclaration(SyntaxKind.AddAccessorDeclaration).WithBody(Expression));
                 accessors = accessors.AddAccessors(SyntaxFactory.AccessorDeclaration(SyntaxKind.RemoveAccessorDeclaration).WithBody(Expression));
                 eventDeclaration = eventDeclaration.WithAccessorList(accessors);
@@ -89,13 +88,13 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
 
         private ClassDeclarationSyntax _InheriteProperties(ExplicitInterfaceSpecifierSyntax explicitInterfaceSpecifier, ClassDeclarationSyntax classSyntax, System.Collections.Generic.IEnumerable<MemberDeclarationSyntax> nodes)
         {
-            foreach (var member in nodes.OfType<PropertyDeclarationSyntax>())
+            foreach (PropertyDeclarationSyntax member in nodes.OfType<PropertyDeclarationSyntax>())
             {
-                var node = member;
+                PropertyDeclarationSyntax node = member;
                 node = node.WithExplicitInterfaceSpecifier(explicitInterfaceSpecifier);
 
-                var accessors = from a in node.AccessorList.Accessors
-                                select a.WithBody(Expression);
+                System.Collections.Generic.IEnumerable<AccessorDeclarationSyntax> accessors = from a in node.AccessorList.Accessors
+                                                                                              select a.WithBody(Expression);
 
                 node = node.WithAccessorList(SyntaxFactory.AccessorList(SyntaxFactory.List(accessors)));
 
@@ -108,9 +107,9 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
 
         private ClassDeclarationSyntax _InheriteMethods(ExplicitInterfaceSpecifierSyntax explicitInterfaceSpecifier, ClassDeclarationSyntax classSyntax, System.Collections.Generic.IEnumerable<MemberDeclarationSyntax> nodes)
         {
-            foreach (var member in nodes.OfType<MethodDeclarationSyntax>())
+            foreach (MethodDeclarationSyntax member in nodes.OfType<MethodDeclarationSyntax>())
             {
-                var node = member;
+                MethodDeclarationSyntax node = member;
 
                 node = node.WithExplicitInterfaceSpecifier(explicitInterfaceSpecifier);
                 node = node.WithBody(Expression);

@@ -1,5 +1,5 @@
+﻿using System;
 using PinionCore.Serialization.Dynamic;
-using System;
 
 namespace PinionCore.Serialization
 {
@@ -29,7 +29,7 @@ namespace PinionCore.Serialization
         int IKeyDescriber.ToObject(PinionCore.Memorys.Buffer buffer, int begin, out Type type)
         {
             object nameObject;
-            int count = _TypeDescriber.ToObject(buffer, begin, out nameObject);
+            var count = _TypeDescriber.ToObject(buffer, begin, out nameObject);
             type = _TypeFinder.Find(nameObject as string);
             return count;
         }

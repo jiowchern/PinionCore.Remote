@@ -1,6 +1,4 @@
-using System.Reflection;
-
-namespace PinionCore.Serialization.Dynamic
+﻿namespace PinionCore.Serialization.Dynamic
 {
     public class Serializer : PinionCore.Serialization.Serializer
     {
@@ -12,7 +10,7 @@ namespace PinionCore.Serialization.Dynamic
         {
         }
 
-        public Serializer(PinionCore.Memorys.IPool pool) : base(new DescriberBuilder(new StandardFinder()).Describers , pool)
+        public Serializer(PinionCore.Memorys.IPool pool) : base(new DescriberBuilder(new StandardFinder()).Describers, pool)
         {
 
         }

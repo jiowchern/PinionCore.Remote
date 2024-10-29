@@ -1,11 +1,11 @@
-namespace PinionCore.Remote.Extensions
+﻿namespace PinionCore.Remote.Extensions
 {
     static class WeakReferenceExtensions
     {
         public static IGhost GetTargetOrException(this System.WeakReference<IGhost> weak)
         {
             IGhost ghost;
-            if(weak.TryGetTarget(out ghost))
+            if (weak.TryGetTarget(out ghost))
                 return ghost;
             throw new System.Exception($"ghost of is no longer there.");
         }

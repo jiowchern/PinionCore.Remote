@@ -1,4 +1,4 @@
-using PinionCore.Remote;
+﻿using PinionCore.Remote;
 namespace PinionCore.Network
 {
     public interface IStreamable

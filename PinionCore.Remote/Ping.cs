@@ -1,5 +1,4 @@
-using PinionCore.Utility;
-using System;
+﻿using PinionCore.Utility;
 
 namespace PinionCore.Remote
 {
@@ -27,13 +26,13 @@ namespace PinionCore.Remote
         }
         private float _GetSeconds()
         {
-            if(_Trigger == false&& _TimeCounter.Second > _Interval)
+            if (_Trigger == false && _TimeCounter.Second > _Interval)
             {
                 _TimeCounter.Reset();
                 _Trigger = true;
 
                 TriggerEvent();
-                
+
             }
             return _Seconds;
         }

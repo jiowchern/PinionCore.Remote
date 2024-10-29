@@ -1,15 +1,16 @@
-using System;
+﻿using System;
 using System.Reactive.Linq;
 
 
 namespace PinionCore.Remote.Reactive
 {
-    
+
     public static class Extensions
     {
         public static IObservable<System.Reactive.Unit> ReturnVoid(this System.Action action)
         {
-            return Observable.Defer(() => {
+            return Observable.Defer(() =>
+            {
                 action();
                 return Observable.Return(System.Reactive.Unit.Default);
             });
@@ -30,9 +31,9 @@ namespace PinionCore.Remote.Reactive
         }
         public static IObservable<T> SupplyEvent<T>(this INotifier<T> notifier)
         {
-            return Observable.FromEvent<Action<T>, T>(h => notifier.Supply += h, h => notifier.Supply -= h);            
+            return Observable.FromEvent<Action<T>, T>(h => notifier.Supply += h, h => notifier.Supply -= h);
         }
-        public static IObservable<T> UnsupplyEvent<T>(this Notifier<T> notifier) where T: class
+        public static IObservable<T> UnsupplyEvent<T>(this Notifier<T> notifier) where T : class
         {
             return UnsupplyEvent(notifier.Base);
         }

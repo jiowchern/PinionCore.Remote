@@ -1,6 +1,6 @@
-using Microsoft.CodeAnalysis;
-using System;
+﻿using System;
 using System.Linq;
+using Microsoft.CodeAnalysis;
 
 namespace PinionCore.Remote.Tools.Protocol.Sources
 {
@@ -18,15 +18,15 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
 
         public EssentialReference(Microsoft.CodeAnalysis.Compilation compilation, INamedTypeSymbol tag)
         {
-            
+
             this.Compilation = compilation;
-            
+
             PinionCoreRemoteProtocolCreaterAttribute = _GetType("PinionCore.Remote.Protocol.CreaterAttribute");
             PinionCoreRemoteProperty = _GetType("PinionCore.Remote.Property`1");
             PinionCoreRemoteNotifier = _GetType("PinionCore.Remote.Notifier`1");
             PinionCoreRemoteValue = _GetType("PinionCore.Remote.Value`1");
 
-            
+
             SystemActions = new[]
             {
                 _GetType("System.Action"),
@@ -66,12 +66,12 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
 
         INamedTypeSymbol _GetType(string metaname)
         {
-            var type = Compilation.GetTypeByMetadataName(metaname);
+            INamedTypeSymbol type = Compilation.GetTypeByMetadataName(metaname);
             if (type == null)
-            {                
+            {
                 throw new MissingTypeException(metaname);
             }
-                
+
 
             return type;
         }

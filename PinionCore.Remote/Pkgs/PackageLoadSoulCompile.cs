@@ -1,13 +1,13 @@
-namespace PinionCore.Remote.Packages
+﻿namespace PinionCore.Remote.Packages
 {
-    public struct PackageLoadSoulCompile 
-    {        
+    public struct PackageLoadSoulCompile
+    {
         public int TypeId;
         public long EntityId;
-        public long ReturnId;        
+        public long ReturnId;
     }
-    
-    
+
+
 
 
 }

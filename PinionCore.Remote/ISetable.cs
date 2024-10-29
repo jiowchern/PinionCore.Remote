@@ -1,4 +1,4 @@
-namespace PinionCore.Remote
+﻿namespace PinionCore.Remote
 {
     internal interface IAccessable
     {

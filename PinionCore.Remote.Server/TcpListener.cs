@@ -1,13 +1,12 @@
+﻿using System;
 using PinionCore.Network;
 using PinionCore.Network.Tcp;
-using PinionCore.Remote.Soul;
-using System;
 
 namespace PinionCore.Remote.Server.Tcp
 {
     public class Listener : Soul.IListenable
     {
-        
+
         readonly PinionCore.Network.Tcp.Listener _Listener;
         readonly PinionCore.Remote.NotifiableCollection<IStreamable> _NotifiableCollection;
         public Listener()
@@ -50,17 +49,19 @@ namespace PinionCore.Remote.Server.Tcp
             _Listener.Bind(port);
         }
 
-        public void Close() {
+        public void Close()
+        {
             _Listener.Close();
         }
 
         private void _Join(Peer peer)
         {
-            peer.BreakEvent += () => {                 
+            peer.BreakEvent += () =>
+            {
                 lock (_NotifiableCollection)
-                    _NotifiableCollection.Items.Remove(peer);                
+                    _NotifiableCollection.Items.Remove(peer);
             };
-            
+
             lock (_NotifiableCollection)
                 _NotifiableCollection.Items.Add(peer);
         }

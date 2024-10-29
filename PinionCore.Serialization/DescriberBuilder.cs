@@ -1,5 +1,5 @@
+﻿using System;
 using PinionCore.Serialization.Dynamic;
-using System;
 
 namespace PinionCore.Serialization
 {
@@ -7,7 +7,7 @@ namespace PinionCore.Serialization
     {
         public readonly DescriberProvider Describers;
 
-        
+
         public DescriberBuilder(params Type[] types)
         {
             Describers = _BuildDescribers(types);
@@ -20,13 +20,13 @@ namespace PinionCore.Serialization
 
         DescriberProvider _BuildDescribers(ITypeFinder type_finder)
         {
-            Dynamic.DescribersFinder describersFinder = new Dynamic.DescribersFinder(type_finder);
+            var describersFinder = new Dynamic.DescribersFinder(type_finder);
             return new DescriberProvider(describersFinder);
         }
         DescriberProvider _BuildDescribers(params Type[] types)
         {
 
-            DescribersFinder finder = new DescribersFinder(types);
+            var finder = new DescribersFinder(types);
             return new DescriberProvider(finder.KeyDescriber, finder);
         }
 

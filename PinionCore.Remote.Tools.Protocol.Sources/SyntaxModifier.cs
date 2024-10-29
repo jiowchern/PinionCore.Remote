@@ -1,12 +1,12 @@
+﻿using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using System.Linq;
-using static Microsoft.CodeAnalysis.SyntaxNodeExtensions;
 using PinionCore.Remote.Tools.Protocol.Sources.Extensions;
+using static Microsoft.CodeAnalysis.SyntaxNodeExtensions;
 namespace PinionCore.Remote.Tools.Protocol.Sources
 {
-    
+
 
     class SyntaxModifier
     {
@@ -31,7 +31,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
         public SyntaxModifier(
             BlockModifiers.MethodVoid method_void,
             BlockModifiers.MethodPinionCoreRemoteValue method_regulus_remote_value,
-            BlockModifiers.EventSystemAction event_system_action ,
+            BlockModifiers.EventSystemAction event_system_action,
             BlockModifiers.PropertyPinionCoreRemoteBlock property_regulus_remote_block,
             Modifiers.EventFieldDeclarationSyntax event_field_declaration_syntax,
             Modifiers.PropertyFieldDeclarationSyntax property_field_declaration_syntax
@@ -48,7 +48,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
 
         public ClassAndTypes Mod(ClassDeclarationSyntax type)
         {
-            var methods = type.DescendantNodes().OfType<MethodDeclarationSyntax>();
+            System.Collections.Generic.IEnumerable<MethodDeclarationSyntax> methods = type.DescendantNodes().OfType<MethodDeclarationSyntax>();
 
             type = _ModifyMethodParameters(type, methods);
 
@@ -56,15 +56,15 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
             var events = new System.Collections.Generic.HashSet<EventDeclarationSyntax>(SyntaxNodeComparer.Default);
             var typesOfSerialization = new System.Collections.Generic.HashSet<TypeSyntax>(SyntaxNodeComparer.Default);
 
-            var blocks = type.DescendantNodes().OfType<BlockSyntax>();
+            System.Collections.Generic.IEnumerable<BlockSyntax> blocks = type.DescendantNodes().OfType<BlockSyntax>();
 
             var replaceBlocks = new System.Collections.Generic.Dictionary<BlockSyntax, BlockSyntax>();
             var unprocessedBlocks = new System.Collections.Generic.List<Microsoft.CodeAnalysis.CSharp.Syntax.BlockSyntax>();
-            foreach (var block in blocks)
+            foreach (BlockSyntax block in blocks)
             {
-                var nodes = block.GetParentPathAndSelf();
+                System.Collections.Generic.IEnumerable<SyntaxNode> nodes = block.GetParentPathAndSelf();
 
-                var esa = _EventSystemAction.Mod(nodes);
+                BlockModifiers.BlockAndEvent esa = _EventSystemAction.Mod(nodes);
                 if (esa != null)
                 {
                     events.Add(esa.Event);
@@ -72,7 +72,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
                     continue;
                 }
 
-                var methodVoid = _MethodVoid.Mod(nodes);
+                BlockModifiers.BlockAndTypes methodVoid = _MethodVoid.Mod(nodes);
                 if (methodVoid != null)
                 {
                     typesOfSerialization.AddRange(methodVoid.Types);
@@ -80,60 +80,62 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
                     continue;
                 }
 
-                var mrrv = _MethodPinionCoreRemoteValue.Mod(nodes);
+                BlockModifiers.BlockAndTypes mrrv = _MethodPinionCoreRemoteValue.Mod(nodes);
                 if (mrrv != null)
                 {
                     typesOfSerialization.AddRange(mrrv.Types);
                     replaceBlocks.Add(block, mrrv.Block);
                     continue;
                 }
-                var prrb = _PropertyPinionCoreRemoteBlock.Mod(nodes);
+                BlockModifiers.PropertyAndBlock prrb = _PropertyPinionCoreRemoteBlock.Mod(nodes);
                 if (prrb != null)
                 {
                     propertys.Add(prrb.Property);
                     replaceBlocks.Add(block, prrb.Block);
                     continue;
                 }
-                unprocessedBlocks.Add(block);                
+                unprocessedBlocks.Add(block);
             }
 
             type = _ModifyBlocks(type, replaceBlocks);
 
-            var eventDeclarationSyntaxes = events;
+            System.Collections.Generic.HashSet<EventDeclarationSyntax> eventDeclarationSyntaxes = events;
 
-            foreach (var eds in eventDeclarationSyntaxes)
+            foreach (EventDeclarationSyntax eds in eventDeclarationSyntaxes)
             {
-                var efds = _EventFieldDeclarationSyntax.Mod(eds);
+                Modifiers.FieldAndTypes efds = _EventFieldDeclarationSyntax.Mod(eds);
                 if (efds == null)
                 {
 
                     continue;
                 }
-                    
+
 
                 type = type.AddMembers(efds.Field);
                 typesOfSerialization.AddRange(efds.Types);
             }
 
-            var propertyDeclarationSyntaxes = propertys;
-            
-            foreach (var pds in propertyDeclarationSyntaxes)
+            System.Collections.Generic.HashSet<PropertyDeclarationSyntax> propertyDeclarationSyntaxes = propertys;
+
+            foreach (PropertyDeclarationSyntax pds in propertyDeclarationSyntaxes)
             {
-                var pfds = _PropertyFieldDeclarationSyntax.Mod(pds);
+                Modifiers.FieldAndTypes pfds = _PropertyFieldDeclarationSyntax.Mod(pds);
                 if (pfds == null)
                 {
-            
+
                     continue;
                 }
-                    
+
                 type = type.AddMembers(pfds.Field);
                 typesOfSerialization.AddRange(pfds.Types);
             }
 
 
-            return new ClassAndTypes { Type = type, 
+            return new ClassAndTypes
+            {
+                Type = type,
                 TypesOfSerialization = typesOfSerialization,
-                UnprocessedBlocks = unprocessedBlocks.ToArray() 
+                UnprocessedBlocks = unprocessedBlocks.ToArray()
             };
 
         }
@@ -154,12 +156,12 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
         private static ClassDeclarationSyntax _ModifyMethodParameters(ClassDeclarationSyntax type, System.Collections.Generic.IEnumerable<MethodDeclarationSyntax> methods)
         {
             var newParams = new System.Collections.Generic.Dictionary<ParameterSyntax, ParameterSyntax>();
-            foreach (var method in methods)
+            foreach (MethodDeclarationSyntax method in methods)
             {
-                int idx = 0;
-                foreach (var p in method.ParameterList.Parameters)
+                var idx = 0;
+                foreach (ParameterSyntax p in method.ParameterList.Parameters)
                 {
-                    var newP = p.WithIdentifier(SyntaxFactory.Identifier($"_{++idx}"));
+                    ParameterSyntax newP = p.WithIdentifier(SyntaxFactory.Identifier($"_{++idx}"));
                     newParams.Add(p, newP);
                 }
             }

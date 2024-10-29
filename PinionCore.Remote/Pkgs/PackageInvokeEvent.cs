@@ -1,8 +1,8 @@
-namespace PinionCore.Remote.Packages
+﻿namespace PinionCore.Remote.Packages
 {
-    public struct PackageInvokeEvent 
+    public struct PackageInvokeEvent
     {
-        
+
 
         public long EntityId;
 
@@ -13,8 +13,8 @@ namespace PinionCore.Remote.Packages
 
         public byte[][] EventParams;
     }
-    
-    
+
+
 
 
 }

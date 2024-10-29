@@ -1,8 +1,6 @@
-using PinionCore.Memorys;
-using PinionCore.Network;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Linq;
+using PinionCore.Memorys;
 
 namespace PinionCore.Remote.Soul
 {
@@ -11,15 +9,15 @@ namespace PinionCore.Remote.Soul
 
     public class UserProvider : IDisposable
     {
-        
+
         private readonly IProtocol _Protocol;
         private readonly ISerializable _Serializable;
         private readonly IListenable _Listenable;
         private readonly IInternalSerializable _InternalSerializable;
-        
+
         readonly System.Collections.Concurrent.ConcurrentDictionary<Network.IStreamable, User> _Users;
-        public readonly IReadOnlyDictionary<Network.IStreamable,User> Users;
-        
+        public readonly IReadOnlyDictionary<Network.IStreamable, User> Users;
+
         private readonly IPool _Pool;
         public enum UserLifecycleState
         {
@@ -33,15 +31,15 @@ namespace PinionCore.Remote.Soul
         }
 
         public readonly System.Collections.Concurrent.ConcurrentBag<UserLifecycleEvent> UserLifecycleEvents;
-        
-        public UserProvider(IProtocol protocol, ISerializable serializable , IListenable listenable, PinionCore.Remote.IInternalSerializable internal_serializable , PinionCore.Memorys.IPool pool)
+
+        public UserProvider(IProtocol protocol, ISerializable serializable, IListenable listenable, PinionCore.Remote.IInternalSerializable internal_serializable, PinionCore.Memorys.IPool pool)
         {
-            
+
             _Pool = pool;
 
-            UserLifecycleEvents = new System.Collections.Concurrent.ConcurrentBag<UserLifecycleEvent>();            
+            UserLifecycleEvents = new System.Collections.Concurrent.ConcurrentBag<UserLifecycleEvent>();
             _Users = new System.Collections.Concurrent.ConcurrentDictionary<Network.IStreamable, User>();
-            Users= _Users;
+            Users = _Users;
 
 
             this._Protocol = protocol;
@@ -51,47 +49,48 @@ namespace PinionCore.Remote.Soul
             _Listenable.StreamableEnterEvent += _Join;
             _Listenable.StreamableLeaveEvent += _Leave;
 
-        
+
         }
 
         void _Join(Network.IStreamable stream)
         {
             var reader = new PinionCore.Network.PackageReader(stream, _Pool);
             var sender = new PinionCore.Network.PackageSender(stream, _Pool);
-            User user = new User(reader ,sender, _Protocol , _Serializable, _InternalSerializable, _Pool);
-            user.ErrorEvent += () => {
+            var user = new User(reader, sender, _Protocol, _Serializable, _InternalSerializable, _Pool);
+            user.ErrorEvent += () =>
+            {
                 var dispose = sender as IDisposable;
                 dispose.Dispose();
-                _Leave(stream); 
+                _Leave(stream);
 
-            } ;
+            };
             user.Launch();
-            System.Threading.SpinWait.SpinUntil(() => { return _Users.TryAdd(stream, user); });            
-            UserLifecycleEvents.Add(new UserLifecycleEvent { State = UserLifecycleState.Join, User = user });    
+            System.Threading.SpinWait.SpinUntil(() => { return _Users.TryAdd(stream, user); });
+            UserLifecycleEvents.Add(new UserLifecycleEvent { State = UserLifecycleState.Join, User = user });
         }
 
         void _Leave(Network.IStreamable stream)
         {
             User user = null;
-            System.Threading.SpinWait.SpinUntil(() => { return _Users.TryRemove(stream,out user); });
-            
-            if(user != null)
-            {                
+            System.Threading.SpinWait.SpinUntil(() => { return _Users.TryRemove(stream, out user); });
+
+            if (user != null)
+            {
                 user.Shutdown();
                 UserLifecycleEvents.Add(new UserLifecycleEvent { State = UserLifecycleState.Leave, User = user });
             }
         }
 
         void IDisposable.Dispose()
-        {            
+        {
             _Listenable.StreamableEnterEvent -= _Join;
             _Listenable.StreamableLeaveEvent -= _Leave;
 
             _Users.Clear();
         }
 
-        
-                
+
+
     }
 }
 

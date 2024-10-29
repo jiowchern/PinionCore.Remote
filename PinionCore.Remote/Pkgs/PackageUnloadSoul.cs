@@ -1,13 +1,13 @@
-namespace PinionCore.Remote.Packages
+﻿namespace PinionCore.Remote.Packages
 {
-    public struct PackageUnloadSoul 
-    {        
+    public struct PackageUnloadSoul
+    {
 
-        public long EntityId;        
+        public long EntityId;
 
     }
-    
-    
+
+
 
 
 }

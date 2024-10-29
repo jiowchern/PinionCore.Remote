@@ -1,12 +1,11 @@
+﻿using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using PinionCore.Remote.Tools.Protocol.Sources.Extensions;
-using System.Linq;
 
 namespace PinionCore.Remote.Tools.Protocol.Sources.BlockModifiers
 {
-    
+
     internal class MethodPinionCoreRemoteValue
     {
         private readonly Compilation _Compilation;
@@ -21,12 +20,12 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.BlockModifiers
             var block = nodes.Skip(0).FirstOrDefault() as BlockSyntax;
             var md = nodes.Skip(1).FirstOrDefault() as MethodDeclarationSyntax;
             var cd = nodes.Skip(2).FirstOrDefault() as ClassDeclarationSyntax;
-            
 
-            if (Extensions.SyntaxExtensions.AnyNull(block, md,cd))
+
+            if (Extensions.SyntaxExtensions.AnyNull(block, md, cd))
             {
                 return null;
-            }            
+            }
             if (!_Compilation.AllSerializable(md.ParameterList.Parameters.Select(p => p.Type)))
                 return null;
             if ((from p in md.ParameterList.Parameters
@@ -38,7 +37,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.BlockModifiers
             var interfaceCode = md.ExplicitInterfaceSpecifier.Name.ToFullString();
             var methodCode = md.Identifier.ToFullString();
             var methodCallParamsCode = string.Join(",", from p in md.ParameterList.Parameters select p.Identifier.ToFullString());
-            var returnType = md.ReturnType;
+            TypeSyntax returnType = md.ReturnType;
             var qn = returnType as QualifiedNameSyntax;
 
             if (qn == null)
@@ -66,7 +65,7 @@ return returnValue;
                                             ")),
                 Types = (from p in md.ParameterList.Parameters select p.Type).Union(gn.TypeArgumentList.Arguments)
             };
-            
+
         }
     }
 }

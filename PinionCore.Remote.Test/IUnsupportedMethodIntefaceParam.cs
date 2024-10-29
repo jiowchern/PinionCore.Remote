@@ -1,4 +1,4 @@
-namespace RemotingTest
+﻿namespace RemotingTest
 {
     public interface IUnsupportedMethodIntefaceParam
     {

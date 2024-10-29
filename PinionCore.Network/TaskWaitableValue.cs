@@ -1,4 +1,4 @@
-
+﻿
 
 
 using System;
@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 namespace PinionCore.Network
 {
     using PinionCore.Remote;
-    class TaskWaitableValue<T> : IWaitableValue<T> , IAwaitable<T>
+    class TaskWaitableValue<T> : IWaitableValue<T>, IAwaitable<T>
     {
         readonly PinionCore.Remote.Value<T> _Value;
         readonly System.Threading.Tasks.Task<T> _Task;
@@ -29,8 +29,8 @@ namespace PinionCore.Network
 
         private async void _Set(Task<T> task)
         {
-            var val = await task;
-            _Value.SetValue(val);        
+            T val = await task;
+            _Value.SetValue(val);
         }
 
         T IAwaitable<T>.GetResult()

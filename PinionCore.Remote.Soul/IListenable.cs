@@ -1,4 +1,4 @@
-namespace PinionCore.Remote.Soul
+﻿namespace PinionCore.Remote.Soul
 {
     public interface IListenable
     {

@@ -1,4 +1,4 @@
-namespace PinionCore.Remote.Standalone.Test
+﻿namespace PinionCore.Remote.Standalone.Test
 {
     internal class GhostIGpiA : IGpiA, IGhost
     {
@@ -47,7 +47,7 @@ namespace PinionCore.Remote.Standalone.Test
             }
         }
 
-        
+
 
         long IGhost.GetID()
         {
@@ -64,6 +64,6 @@ namespace PinionCore.Remote.Standalone.Test
             return false;
         }
 
-        
+
     }
 }

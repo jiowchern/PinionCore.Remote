@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Linq;
 
 using System.Reflection;
@@ -23,7 +23,7 @@ namespace PinionCore.Serialization
             _Type = type;
             _TypeSet = finder;
             _Fields = (from field in _Type.GetFields()
-                       where field.IsStatic == false && field.IsPublic && field.FieldType.IsAbstract == false 
+                       where field.IsStatic == false && field.IsPublic && field.FieldType.IsAbstract == false
                        orderby field.Name
                        select field).ToArray();
         }
@@ -47,14 +47,14 @@ namespace PinionCore.Serialization
                        }).Where(validField => object.Equals(_GetDescriber(validField.field).Default, validField.field.GetValue(instance)) == false).ToArray();
 
 
-                int validCount = Varint.GetByteCount(validFields.Length);
-                int count = 0;
-                for (int i = 0; i < validFields.Length; i++)
+                var validCount = Varint.GetByteCount(validFields.Length);
+                var count = 0;
+                for (var i = 0; i < validFields.Length; i++)
                 {
 
                     var validField = validFields[i];
                     var index = validField.index;
-                    var field = validField.field;
+                    FieldInfo field = validField.field;
 
                     count = _GetCount(instance, count, index, field);
                 }
@@ -69,12 +69,12 @@ namespace PinionCore.Serialization
 
         private int _GetCount(object instance, int count, int index, FieldInfo field)
         {
-            object value = field.GetValue(instance);
+            var value = field.GetValue(instance);
             Type valueType = value.GetType();
-            int valueTypeCount = _TypeSet.Get().GetByteCount(valueType);
+            var valueTypeCount = _TypeSet.Get().GetByteCount(valueType);
             ITypeDescriber describer = _TypeSet.Get(valueType);
-            int byteCount = describer.GetByteCount(value);
-            int indexCount = Varint.GetByteCount(index);
+            var byteCount = describer.GetByteCount(value);
+            var indexCount = Varint.GetByteCount(index);
             count += byteCount + indexCount + valueTypeCount;
             return count;
         }
@@ -89,8 +89,8 @@ namespace PinionCore.Serialization
 
             try
             {
-                var bytes = buffer.Bytes;
-                int offset = begin;
+                ArraySegment<byte> bytes = buffer.Bytes;
+                var offset = begin;
                 var validFields = _Fields.Select(
                            (field, index) => new
                            {
@@ -104,7 +104,7 @@ namespace PinionCore.Serialization
 
                 foreach (var validField in validFields)
                 {
-                    int index = validField.index;
+                    var index = validField.index;
                     FieldInfo field = validField.field;
 
                     offset = _ToBuffer(instance, buffer, offset, index, field);
@@ -123,9 +123,9 @@ namespace PinionCore.Serialization
 
         private int _ToBuffer(object instance, Memorys.Buffer buffer, int offset, int index, FieldInfo field)
         {
-            var bytes = buffer.Bytes;
+            ArraySegment<byte> bytes = buffer.Bytes;
             offset += Varint.NumberToBuffer(bytes.Array, bytes.Offset + offset, index);
-            object value = field.GetValue(instance);
+            var value = field.GetValue(instance);
             Type valueType = value.GetType();
             offset += _TypeSet.Get().ToBuffer(valueType, buffer, offset);
             ITypeDescriber describer = _TypeSet.Get(valueType);
@@ -139,12 +139,12 @@ namespace PinionCore.Serialization
             {
                 instance = _CreateInstance();
 
-                int offset = begin;
+                var offset = begin;
 
                 ulong validLength;
                 offset += Varint.BufferToNumber(buffer, offset, out validLength);
 
-                for (ulong i = 0ul; i < validLength; i++)
+                for (var i = 0ul; i < validLength; i++)
                 {
                     offset = _ToObject(buffer, instance, offset);
                 }
@@ -182,9 +182,9 @@ namespace PinionCore.Serialization
             if (constructor != null)
             {
                 Type[] argTypes = constructor.GetParameters().Select(info => info.ParameterType).ToArray();
-                object[] objArgs = new object[argTypes.Length];
+                var objArgs = new object[argTypes.Length];
 
-                for (int i = 0; i < argTypes.Length; i++)
+                for (var i = 0; i < argTypes.Length; i++)
                 {
                     objArgs[i] = Activator.CreateInstance(argTypes[i]);
                 }

@@ -1,6 +1,4 @@
-using System;
-
-namespace PinionCore.Profiles.StandaloneAllFeature.Protocols
+﻿namespace PinionCore.Profiles.StandaloneAllFeature.Protocols
 {
     public static partial class ProtocolProvider
     {

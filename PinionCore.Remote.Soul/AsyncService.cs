@@ -1,23 +1,23 @@
-using System;
+﻿using System;
 using System.Threading.Tasks;
 
 namespace PinionCore.Remote.Soul
 {
     public class AsyncService : Soul.IService
     {
-        
-        
+
+
 
         readonly SyncService _SyncService;
         readonly IDisposable _Disposed;
 
         readonly System.Threading.Tasks.Task _ThreadUpdater;
         volatile bool _Enable;
-        public AsyncService(SyncService syncService) 
+        public AsyncService(SyncService syncService)
         {
             _SyncService = syncService;
             _Disposed = _SyncService;
-            
+
             _Enable = true;
             _ThreadUpdater = Task.Factory.StartNew(() => _Update(), TaskCreationOptions.LongRunning);
         }
@@ -25,11 +25,11 @@ namespace PinionCore.Remote.Soul
         private void _Update()
         {
             var ar = new PinionCore.Utility.AutoPowerRegulator(new PinionCore.Utility.PowerRegulator());
-            while(_Enable)
+            while (_Enable)
             {
                 _SyncService.Update();
                 ar.Operate();
-            }            
+            }
         }
 
         void IDisposable.Dispose()
@@ -38,7 +38,7 @@ namespace PinionCore.Remote.Soul
             _ThreadUpdater.Wait();
             _Disposed.Dispose();
         }
-        
+
     }
 }
 

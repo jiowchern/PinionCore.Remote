@@ -1,5 +1,4 @@
-using PinionCore.Remote;
-using System;
+﻿using System;
 
 namespace PinionCore.Remote.Test
 {

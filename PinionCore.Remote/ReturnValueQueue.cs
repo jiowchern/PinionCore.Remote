@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace PinionCore.Remote
 {
@@ -20,7 +20,7 @@ namespace PinionCore.Remote
 
         public long PushReturnValue(IValue value)
         {
-            long id = _IdLandlord.Rent();
+            var id = _IdLandlord.Rent();
             _ReturnValues.Add(id, value);
             return id;
         }

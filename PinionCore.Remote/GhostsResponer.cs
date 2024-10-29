@@ -1,4 +1,4 @@
-using PinionCore.Remote.Packages;
+﻿using PinionCore.Remote.Packages;
 
 namespace PinionCore.Remote
 {
@@ -10,7 +10,7 @@ namespace PinionCore.Remote
             private readonly GhostsHandler _GhostHandler;
             private readonly GhostsReturnValueHandler _ReturnValueHandler;
             private readonly PingHandler _PingHandler;
-            private readonly GhostsOwner _ProviderManager;            
+            private readonly GhostsOwner _ProviderManager;
             private readonly IProtocol _Protocol;
             private bool _Active;
 
@@ -21,13 +21,13 @@ namespace PinionCore.Remote
                 GhostsHandler ghost_handler,
                 GhostsReturnValueHandler returnValueHandler,
                 PingHandler pingHandler,
-                GhostsOwner ghostsProviderManager,                
+                GhostsOwner ghostsProviderManager,
                 IProtocol protocol)
             {
                 _InternalSerializer = internalSerializer;
                 _GhostHandler = ghost_handler;
                 _ReturnValueHandler = returnValueHandler;
-                _PingHandler = pingHandler;                
+                _PingHandler = pingHandler;
                 _Protocol = protocol;
                 _ProviderManager = ghostsProviderManager;
             }
@@ -97,17 +97,17 @@ namespace PinionCore.Remote
                         break;
                 }
             }
-            
+
             private void LoadSoulCompile(int typeId, long entityId, long returnId)
             {
-                var map = _Protocol.GetMemberMap();
-                var type = map.GetInterface(typeId);
-                var provider = _ProviderManager.QueryProvider(type);
+                MemberMap map = _Protocol.GetMemberMap();
+                System.Type type = map.GetInterface(typeId);
+                IProvider provider = _ProviderManager.QueryProvider(type);
 
-                var handler = _GhostHandler.FindHandler(entityId);
+                GhostResponseHandler handler = _GhostHandler.FindHandler(entityId);
                 if (returnId != 0)
                 {
-                    var ghost = handler.FindGhost();
+                    IGhost ghost = handler.FindGhost();
                     _ReturnValueHandler.PopReturnValue(returnId, ghost);
                 }
                 else

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 
 namespace PinionCore.Serialization
 {
@@ -10,7 +10,7 @@ namespace PinionCore.Serialization
         object Default { get; }
 
         int GetByteCount(object instance);
-        int ToBuffer(object instance,PinionCore.Memorys.Buffer buffer, int begin);
+        int ToBuffer(object instance, PinionCore.Memorys.Buffer buffer, int begin);
         int ToObject(PinionCore.Memorys.Buffer buffer, int begin, out object instnace);
     }
 }

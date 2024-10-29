@@ -1,10 +1,8 @@
-using PinionCore.Profiles.StandaloneAllFeature.Protocols;
-using PinionCore.Remote;
-using System.Diagnostics;
+﻿using PinionCore.Remote;
 
 namespace PinionCore.Profiles.StandaloneAllFeature.Server
 {
-    class Entry : PinionCore.Remote.IEntry 
+    class Entry : PinionCore.Remote.IEntry
     {
         readonly System.Collections.Generic.List<User> _Users;
 
@@ -14,11 +12,11 @@ namespace PinionCore.Profiles.StandaloneAllFeature.Server
         }
 
         void IBinderProvider.RegisterClientBinder(IBinder binder)
-        {            
-            
+        {
+
             var user = new User(binder);
             _Users.Add(user);
-            
+
         }
 
         void IBinderProvider.UnregisterClientBinder(IBinder binder)
@@ -28,7 +26,7 @@ namespace PinionCore.Profiles.StandaloneAllFeature.Server
 
         void IEntry.Update()
         {
-            
+
         }
     }
 }

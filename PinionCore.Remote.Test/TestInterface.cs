@@ -1,5 +1,5 @@
+﻿using System;
 using PinionCore.Remote;
-using System;
 
 namespace RemotingTest
 {
@@ -9,7 +9,7 @@ namespace RemotingTest
 
         Value<int> ITestInterface.Add(int a, int b)
         {
-            int v = a - a - b;
+            var v = a - a - b;
             _ReturnEvent(v);
             return v;
         }

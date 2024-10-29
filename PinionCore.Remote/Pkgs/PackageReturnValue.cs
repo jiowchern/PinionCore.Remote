@@ -1,14 +1,14 @@
-namespace PinionCore.Remote.Packages
+﻿namespace PinionCore.Remote.Packages
 {
-    public struct PackageReturnValue 
-    {        
+    public struct PackageReturnValue
+    {
 
         public long ReturnTarget;
 
         public byte[] ReturnValue;
     }
-    
-    
+
+
 
 
 }

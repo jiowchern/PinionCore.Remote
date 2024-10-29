@@ -1,5 +1,4 @@
-using System;
-using System.Net;
+﻿using System;
 using System.Net.WebSockets;
 using System.Threading.Tasks;
 
@@ -7,7 +6,7 @@ namespace PinionCore.Network.Web
 {
     public class Connecter : Peer
     {
-        
+
         readonly ClientWebSocket _Socket;
 
         public Connecter(ClientWebSocket socket) : base(socket)
@@ -16,14 +15,14 @@ namespace PinionCore.Network.Web
         }
 
         public System.Threading.Tasks.Task<bool> ConnectAsync(string address)
-        {            
+        {
             Task connectTask = _Socket.ConnectAsync(new Uri(address), System.Threading.CancellationToken.None);
             return connectTask.ContinueWith<bool>(_ConnectResult);
         }
 
         public Task DisconnectAsync()
         {
-            return _Socket.CloseAsync(WebSocketCloseStatus.NormalClosure,"close", System.Threading.CancellationToken.None);
+            return _Socket.CloseAsync(WebSocketCloseStatus.NormalClosure, "close", System.Threading.CancellationToken.None);
         }
 
         private bool _ConnectResult(Task arg)

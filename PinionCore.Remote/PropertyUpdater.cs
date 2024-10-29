@@ -1,17 +1,15 @@
-using System;
-
-namespace PinionCore.Remote
+﻿namespace PinionCore.Remote
 {
     public class PropertyUpdater : IPropertyIdValue
     {
         private readonly IDirtyable _Dirtyable;
         public readonly int PropertyId;
-        public event System.Action<IPropertyIdValue , object> ChnageEvent;
+        public event System.Action<IPropertyIdValue, object> ChnageEvent;
         bool _Dirty;
         bool _Close;
         object _Object;
         object _StatusObject;
-        
+
 
         int IPropertyIdValue.Id => PropertyId;
 
@@ -30,17 +28,17 @@ namespace PinionCore.Remote
             _Dirty = true;
             _Object = instance;
 
-            if(_Update())
+            if (_Update())
             {
-                ChnageEvent(this,_Object);
+                ChnageEvent(this, _Object);
             }
         }
 
-       
+
 
         bool _Update()
-        {            
-          
+        {
+
             if (_Close)
                 return false;
             if (_Dirty)
@@ -53,7 +51,7 @@ namespace PinionCore.Remote
             return false;
         }
 
-        
+
         public void Release()
         {
             _Dirtyable.ChangeEvent -= _SetDirty;
@@ -62,9 +60,9 @@ namespace PinionCore.Remote
         internal void Reset()
         {
             _Close = false;
-            if(_Update())
+            if (_Update())
             {
-                ChnageEvent(this,_Object);
+                ChnageEvent(this, _Object);
             }
         }
     }

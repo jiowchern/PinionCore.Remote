@@ -1,12 +1,12 @@
+﻿using System;
 using PinionCore.Network;
-using System;
 
 namespace PinionCore.Remote.Ghost
 {
-    public interface IAgent : INotifierQueryable 
-    {                
+    public interface IAgent : INotifierQueryable
+    {
         bool Active { get; }
-     
+
         float Ping { get; }
 
         event Action<string, string> ErrorMethodEvent;

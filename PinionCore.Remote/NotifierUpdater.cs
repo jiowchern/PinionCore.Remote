@@ -1,25 +1,24 @@
-using System;
-using System.Linq;
+﻿using System.Linq;
 
 
 namespace PinionCore.Remote
 {
-    class NotifierUpdater   
+    class NotifierUpdater
     {
-        
+
         readonly int _Id;
         readonly ITypeObjectNotifiable _Notifiable;
         readonly System.Collections.Generic.List<ISoul> _Souls;
-        public event System.Func<int, TypeObject,ISoul> SupplyEvent;
+        public event System.Func<int, TypeObject, ISoul> SupplyEvent;
         public event System.Action<int, long> UnsupplyEvent;
-        public NotifierUpdater(int id , ITypeObjectNotifiable notifiable)
-        {            
+        public NotifierUpdater(int id, ITypeObjectNotifiable notifiable)
+        {
             this._Id = id;
             this._Notifiable = notifiable;
             _Souls = new System.Collections.Generic.List<ISoul>();
         }
-        
-    
+
+
         internal void Initial()
         {
             _Notifiable.SupplyEvent += _Create;
@@ -32,14 +31,14 @@ namespace PinionCore.Remote
             _Notifiable.UnsupplyEvent -= _Destroy;
 
             ISoul[] souls;
-            lock(_Souls)
+            lock (_Souls)
             {
                 souls = _Souls.ToArray();
                 _Souls.Clear();
             }
-            
 
-            foreach (var soul in souls)
+
+            foreach (ISoul soul in souls)
             {
                 UnsupplyEvent(_Id, soul.Id);
             }
@@ -49,21 +48,21 @@ namespace PinionCore.Remote
         private void _Destroy(TypeObject obj)
         {
             ISoul soul;
-            lock(_Souls)
+            lock (_Souls)
             {
                 soul = (from s in _Souls where s.IsTypeObject(obj) select s).First();
                 _Souls.Remove(soul);
-            }            
-            UnsupplyEvent(_Id , soul.Id);
+            }
+            UnsupplyEvent(_Id, soul.Id);
         }
 
         private void _Create(TypeObject obj)
         {
-            var soul = SupplyEvent(_Id,obj);
-            lock(_Souls)
-                _Souls.Add( soul);
+            ISoul soul = SupplyEvent(_Id, obj);
+            lock (_Souls)
+                _Souls.Add(soul);
         }
 
-        
+
     }
 }

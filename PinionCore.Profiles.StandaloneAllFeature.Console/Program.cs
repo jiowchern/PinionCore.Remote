@@ -1,10 +1,5 @@
-
-using System.ComponentModel.DataAnnotations;
-using System.Diagnostics;
-using System.Linq;
+﻿using System.Diagnostics;
 using System.Reactive.Linq;
-using System.Threading;
-using PinionCore.Remote;
 using PinionCore.Remote.Reactive;
 
 namespace PinionCore.Profiles.StandaloneAllFeature.Console
@@ -13,9 +8,9 @@ namespace PinionCore.Profiles.StandaloneAllFeature.Console
     {
         static void Main(string[] args)
         {
-            var protocol = PinionCore.Profiles.StandaloneAllFeature.Protocols.ProtocolProvider.Create();
+            Remote.IProtocol protocol = PinionCore.Profiles.StandaloneAllFeature.Protocols.ProtocolProvider.Create();
             var entry = new Server.Entry();
-            int range = 10;
+            var range = 10;
 
 
 
@@ -37,39 +32,40 @@ namespace PinionCore.Profiles.StandaloneAllFeature.Console
             */
 
 
-            var service = PinionCore.Remote.Standalone.Provider.CreateService(entry, protocol);
-            ProcessAgents(range, () => {
+            Remote.Standalone.Service service = PinionCore.Remote.Standalone.Provider.CreateService(entry, protocol);
+            ProcessAgents(range, () =>
+            {
                 lock (service)
                     return service.Create();
             });
 
-            
+
 
         }
 
-        private static void ProcessAgents(int range,Func<PinionCore.Remote.Ghost.IAgent> agent_provider)
+        private static void ProcessAgents(int range, Func<PinionCore.Remote.Ghost.IAgent> agent_provider)
         {
-            ParallelOptions options = new ParallelOptions
+            var options = new ParallelOptions
             {
                 MaxDegreeOfParallelism = 10,
             };
 
             var ticks = 0L;
-            for (int i = 1;i<=range;i++)
+            for (var i = 1; i <= range; i++)
             {
 
                 System.Threading.Tasks.Parallel.For(0, 10, options, index =>
                 {
                     var user = new User(agent_provider(), i * (index + 1));
-                    var agent = user.Agent;
+                    Remote.Ghost.IAgent agent = user.Agent;
 
-                    var obs = from e in agent.QueryNotifier<PinionCore.Profiles.StandaloneAllFeature.Protocols.Featureable>().SupplyEvent()
-                              from num in System.Reactive.Linq.Observable.Range(0, range)
-                              from v in e.Inc(System.Guid.NewGuid().ToString() + System.Guid.NewGuid().ToString()+ System.Guid.NewGuid().ToString()+ System.Guid.NewGuid().ToString()+ System.Guid.NewGuid().ToString()+ System.Guid.NewGuid().ToString()+ System.Guid.NewGuid().ToString()+ System.Guid.NewGuid().ToString()+ System.Guid.NewGuid().ToString()+ System.Guid.NewGuid().ToString()+ System.Guid.NewGuid().ToString()+ System.Guid.NewGuid().ToString()).RemoteValue()
-                              select v;
-                    bool enable = true;
+                    IObservable<string> obs = from e in agent.QueryNotifier<PinionCore.Profiles.StandaloneAllFeature.Protocols.Featureable>().SupplyEvent()
+                                              from num in System.Reactive.Linq.Observable.Range(0, range)
+                                              from v in e.Inc(System.Guid.NewGuid().ToString() + System.Guid.NewGuid().ToString() + System.Guid.NewGuid().ToString() + System.Guid.NewGuid().ToString() + System.Guid.NewGuid().ToString() + System.Guid.NewGuid().ToString() + System.Guid.NewGuid().ToString() + System.Guid.NewGuid().ToString() + System.Guid.NewGuid().ToString() + System.Guid.NewGuid().ToString() + System.Guid.NewGuid().ToString() + System.Guid.NewGuid().ToString()).RemoteValue()
+                                              select v;
+                    var enable = true;
 
-                    var bufferObs = obs.Buffer(range);
+                    IObservable<IList<string>> bufferObs = obs.Buffer(range);
                     var stopWatch = new Stopwatch();
                     stopWatch.Restart();
                     System.Console.WriteLine($"Start {user.Id}/{range * 10}");
@@ -109,8 +105,8 @@ namespace PinionCore.Profiles.StandaloneAllFeature.Console
 
             //service.Dispose();
 
-            var chunks = PinionCore.Memorys.PoolProvider.Shared.Chunks;
-            foreach (var chunk in chunks)
+            IReadOnlyCollection<Memorys.Chankable> chunks = PinionCore.Memorys.PoolProvider.Shared.Chunks;
+            foreach (Memorys.Chankable? chunk in chunks)
             {
                 System.Console.WriteLine($"Remote Chunk : {chunk.BufferSize} {chunk.AvailableCount} {chunk.DefaultAllocationThreshold} {chunk.PageSize}");
             }

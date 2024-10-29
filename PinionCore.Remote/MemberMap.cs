@@ -1,11 +1,11 @@
-using PinionCore.Utility;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Reflection;
+using PinionCore.Utility;
 
 namespace PinionCore.Remote
 {
-    
+
     public class MemberMap : IEqualityComparer<Type>, IEqualityComparer<PropertyInfo>, IEqualityComparer<EventInfo>, IEqualityComparer<MethodInfo>, IEqualityComparer<int>
     {
 
@@ -14,7 +14,7 @@ namespace PinionCore.Remote
         private readonly BilateralMap<int, PropertyInfo> _Propertys;
         private readonly BilateralMap<int, Type> _Interfaces;
         private readonly Dictionary<Type, Func<IProvider>> _Providers;
-        
+
         public readonly IReadOnlyBilateralMap<int, PropertyInfo> Propertys;
 
 
@@ -26,8 +26,8 @@ namespace PinionCore.Remote
             _Propertys = new BilateralMap<int, PropertyInfo>(this, this);
             _Interfaces = new BilateralMap<int, Type>(this, this);
 
-            
-            int id = 0;
+
+            var id = 0;
             foreach (MethodInfo method in methods)
             {
                 _Methods.Add(++id, method);

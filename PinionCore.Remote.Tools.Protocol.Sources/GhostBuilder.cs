@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -7,7 +7,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using PinionCore.Remote.Tools.Protocol.Sources.Extensions;
 namespace PinionCore.Remote.Tools.Protocol.Sources
 {
-    class GhostBuilder  
+    class GhostBuilder
     {
 
         public readonly IEnumerable<TypeSyntax> Types;
@@ -17,34 +17,34 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
         public readonly string Namespace;
         public readonly IEnumerable<ClassAndTypes> ClassAndTypess;
 
-        
+
         public GhostBuilder(SyntaxModifier modifier, IEnumerable<INamedTypeSymbol> symbols)
         {
-            
+
             var builders = new Dictionary<INamedTypeSymbol, InterfaceInheritor>(SymbolEqualityComparer.Default);
 
             var souls = new List<InterfaceDeclarationSyntax>();
-            foreach (var item in from i in symbols
-                                 select new KeyValuePair<INamedTypeSymbol, InterfaceInheritor>(i, new InterfaceInheritor(i.ToInferredInterface())))
+            foreach (KeyValuePair<INamedTypeSymbol, InterfaceInheritor> item in from i in symbols
+                                                                                select new KeyValuePair<INamedTypeSymbol, InterfaceInheritor>(i, new InterfaceInheritor(i.ToInferredInterface())))
             {
-                if(!builders.ContainsKey(item.Key))
+                if (!builders.ContainsKey(item.Key))
                 {
                     builders.Add(item.Key, item.Value);
                     souls.Add(item.Value.Base);
-                }                    
+                }
             }
             Souls = souls;
 
-            var types  = new System.Collections.Generic.List<TypeSyntax>();
+            var types = new System.Collections.Generic.List<TypeSyntax>();
             var ghosts = new System.Collections.Generic.List<ClassDeclarationSyntax>();
-            var eventProxys= new System.Collections.Generic.List<ClassDeclarationSyntax>();
-            
+            var eventProxys = new System.Collections.Generic.List<ClassDeclarationSyntax>();
+
             var classAndTypess = new System.Collections.Generic.List<ClassAndTypes>();
-            foreach (var symbol in symbols)
+            foreach (INamedTypeSymbol symbol in symbols)
             {
-              
+
                 var name = $"C{symbol.ToDisplayString().Replace('.', '_')}";
-                var type = SyntaxFactory.ClassDeclaration(name);
+                ClassDeclarationSyntax type = SyntaxFactory.ClassDeclaration(name);
                 type = type.WithOpenBraceToken(
                      SyntaxFactory.Token(
                         SyntaxFactory.TriviaList(
@@ -64,18 +64,18 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
                         SyntaxFactory.TriviaList()
                     )
                 );
-                foreach (var i2 in symbol.AllInterfaces.Union(new[] { symbol }))
+                foreach (INamedTypeSymbol i2 in symbol.AllInterfaces.Union(new[] { symbol }))
                 {
-                    var builder = builders[i2];
+                    InterfaceInheritor builder = builders[i2];
                     type = builder.Inherite(type);
                 }
 
                 eventProxys.AddRange(type.DescendantNodes().OfType<EventDeclarationSyntax>().Select(e => e.CreatePinionCoreRemoteIEventProxyCreater()));
 
-                var classAndTypes = modifier.Mod(type);
+                ClassAndTypes classAndTypes = modifier.Mod(type);
                 classAndTypess.Add(classAndTypes);
                 types.AddRange(classAndTypes.TypesOfSerialization);
-                type = classAndTypes.Type; 
+                type = classAndTypes.Type;
                 type = type.ImplementPinionCoreRemoteIGhost();
                 type = type.WithCloseBraceToken(
                             SyntaxFactory.Token(
@@ -99,9 +99,9 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
                 ghosts.Add(type);
 
             }
-            
+
             ClassAndTypess = classAndTypess;
-            Types = new HashSet<TypeSyntax>(_WithOutNamespaceFilter(types) , SyntaxNodeComparer.Default);
+            Types = new HashSet<TypeSyntax>(_WithOutNamespaceFilter(types), SyntaxNodeComparer.Default);
             Ghosts = new HashSet<ClassDeclarationSyntax>(ghosts, SyntaxNodeComparer.Default);
             EventProxys = new HashSet<ClassDeclarationSyntax>(eventProxys, SyntaxNodeComparer.Default);
 
@@ -109,20 +109,20 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
             var all = string.Join("", Types.Select(t => t.ToFullString()).Union(Ghosts.Select(g => g.Identifier.ToFullString())).Union(EventProxys.Select(e => e.Identifier.ToFullString())));
 
 
-            Namespace = $"PinionCoreRemoteProtocol{all.ToMd5().ToMd5String().Replace("-","")}";
+            Namespace = $"PinionCoreRemoteProtocol{all.ToMd5().ToMd5String().Replace("-", "")}";
 
 
         }
 
         private IEnumerable<TypeSyntax> _WithOutNamespaceFilter(List<TypeSyntax> types)
         {
-            
-            foreach(var type in types)
+
+            foreach (TypeSyntax type in types)
             {
-                
+
                 yield return type;
             }
-            
+
         }
     }
 

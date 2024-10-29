@@ -1,17 +1,16 @@
-using PinionCore.Memorys;
-using System;
-using System.Collections.Concurrent;
+﻿using System;
 using System.Threading.Tasks;
+using PinionCore.Memorys;
 
 
 namespace PinionCore.Network
 {
     public class PackageSender : IDisposable
-    {        
+    {
         private readonly IStreamable _Stream;
         private readonly IPool _Pool;
-        
-        
+
+
         private Task<int> _Sending;
 
         public PackageSender(IStreamable stream, PinionCore.Memorys.IPool pool)
@@ -28,10 +27,10 @@ namespace PinionCore.Network
                 return;
 
             var packageVarintCount = PinionCore.Serialization.Varint.GetByteCount(buffer.Bytes.Count);
-            var sendBuffer = _Pool.Alloc(packageVarintCount + buffer.Bytes.Count);
+            Memorys.Buffer sendBuffer = _Pool.Alloc(packageVarintCount + buffer.Bytes.Count);
             var offset = PinionCore.Serialization.Varint.NumberToBuffer(sendBuffer.Bytes.Array, sendBuffer.Bytes.Offset, buffer.Bytes.Count);
 
-            for (int i = 0; i < buffer.Bytes.Count; i++)
+            for (var i = 0; i < buffer.Bytes.Count; i++)
             {
                 sendBuffer.Bytes.Array[sendBuffer.Bytes.Offset + offset + i] = buffer.Bytes.Array[buffer.Bytes.Offset + i];
             }
@@ -41,20 +40,20 @@ namespace PinionCore.Network
         }
 
         void IDisposable.Dispose()
-        {            
+        {
         }
 
-        
+
 
         private void _Push(Memorys.Buffer buffer)
         {
-            if(_Sending.IsCompleted || _Sending.IsFaulted || _Sending.IsCanceled )
+            if (_Sending.IsCompleted || _Sending.IsFaulted || _Sending.IsCanceled)
             {
                 _Sending = _SendBufferAsync(buffer);
             }
             else
             {
-                _Sending = _Sending.ContinueWith(t=> _SendBufferAsync(buffer)).Unwrap();
+                _Sending = _Sending.ContinueWith(t => _SendBufferAsync(buffer)).Unwrap();
             }
         }
 
@@ -71,7 +70,7 @@ namespace PinionCore.Network
             } while (sendCount < buffer.Count);
             return sendCount;
         }
-        
+
 
 
     }

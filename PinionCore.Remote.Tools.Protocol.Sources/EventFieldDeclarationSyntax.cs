@@ -1,15 +1,14 @@
-using Microsoft.CodeAnalysis.CSharp;
+﻿using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using System.Linq;
 namespace PinionCore.Remote.Tools.Protocol.Sources.Modifiers
 {
     internal class EventFieldDeclarationSyntax
     {
-        
+
         public FieldAndTypes Mod(EventDeclarationSyntax ed)
         {
-            
-            var ownerName = ed.ExplicitInterfaceSpecifier.Name;
+
+            NameSyntax ownerName = ed.ExplicitInterfaceSpecifier.Name;
             var name = $"_{ownerName}.{ed.Identifier}";
             name = name.Replace('.', '_');
 
@@ -21,7 +20,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.Modifiers
             if (qn.Left.ToString() != "System")
                 return null;
 
-            var sn = qn.Right ;
+            SimpleNameSyntax sn = qn.Right;
             if (sn == null)
                 return null;
 
@@ -33,9 +32,9 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.Modifiers
             {
                 types.AddRange(gn.TypeArgumentList.Arguments);
             }
-            
 
-            return new FieldAndTypes() { Field = _CreateGhostEventHandler(name), Types = types};
+
+            return new FieldAndTypes() { Field = _CreateGhostEventHandler(name), Types = types };
         }
 
         private static FieldDeclarationSyntax _CreateGhostEventHandler(string name)

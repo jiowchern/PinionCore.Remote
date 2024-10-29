@@ -1,5 +1,4 @@
-using System;
-using System.Diagnostics;
+﻿using System;
 
 namespace PinionCore.Remote.Soul
 {
@@ -8,7 +7,7 @@ namespace PinionCore.Remote.Soul
         readonly IEntry _Entry;
         readonly UserProvider _UserProvider;
         readonly IDisposable _UserProviderDisposable;
-        
+
 
 
         public SyncService(IEntry entry, UserProvider user_provider)
@@ -20,32 +19,32 @@ namespace PinionCore.Remote.Soul
 
         public void Update()
         {
-            
-            while (_UserProvider.UserLifecycleEvents.TryTake(out var userAction))
+
+            while (_UserProvider.UserLifecycleEvents.TryTake(out UserProvider.UserLifecycleEvent userAction))
             {
-                if(userAction.State == UserProvider.UserLifecycleState.Join)
+                if (userAction.State == UserProvider.UserLifecycleState.Join)
                 {
                     _Entry.RegisterClientBinder(userAction.User.Binder);
                 }
-                else if(userAction.State == UserProvider.UserLifecycleState.Leave)
+                else if (userAction.State == UserProvider.UserLifecycleState.Leave)
                 {
                     _Entry.UnregisterClientBinder(userAction.User.Binder);
                 }
-                
+
             }
 
             _Entry.Update();
-            
-            
+
+
             foreach (Advanceable user in _UserProvider.Users.Values)
             {
                 user.Advance();
             }
-            
+
         }
 
         void IDisposable.Dispose()
-        {            
+        {
             _UserProviderDisposable.Dispose();
         }
     }

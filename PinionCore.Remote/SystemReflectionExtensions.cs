@@ -1,10 +1,10 @@
-namespace PinionCore.Remote.Extensions
+﻿namespace PinionCore.Remote.Extensions
 {
     static class SystemReflectionExtensions
     {
         public static string GetPathName(this System.Reflection.MemberInfo info)
         {
-            return $"{info.DeclaringType.FullName.Replace('.', '_').Replace('+','_')}_{info.Name}";
+            return $"{info.DeclaringType.FullName.Replace('.', '_').Replace('+', '_')}_{info.Name}";
         }
     }
 }

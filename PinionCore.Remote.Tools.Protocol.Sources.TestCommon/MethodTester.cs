@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 
 namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon
 {
@@ -6,7 +6,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon
     {
         Value<int[]> IMethodable.GetValue0(int _1, string _2, float _3, double _4, decimal _5, Guid _6)
         {
-            return new int[] {_1 };
+            return new int[] { _1 };
         }
 
         Value<int> IMethodable1.GetValue1()

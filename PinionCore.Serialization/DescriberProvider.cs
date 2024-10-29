@@ -1,4 +1,4 @@
-namespace PinionCore.Serialization
+﻿namespace PinionCore.Serialization
 {
     public class DescriberProvider
     {

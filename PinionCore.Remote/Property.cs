@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 
 namespace PinionCore.Remote
 {
@@ -18,7 +18,7 @@ namespace PinionCore.Remote
         public T Value
         {
             get
-            {                
+            {
                 return _Value;
             }
             set
@@ -29,8 +29,8 @@ namespace PinionCore.Remote
         }
 
         private void _SetValue(T value)
-        {            
-            _Value = value;            
+        {
+            _Value = value;
             DirtyEvent(_Value);
         }
 
@@ -65,7 +65,7 @@ namespace PinionCore.Remote
 
         private bool _EqualElement(Property<T> other)
         {
-            IEquatable<T> equipable = other.Value as IEquatable<T>;
+            var equipable = other.Value as IEquatable<T>;
             if (equipable != null)
                 return equipable.Equals(_Value);
             return false;

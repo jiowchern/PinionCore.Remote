@@ -1,8 +1,4 @@
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.CodeAnalysis;
+﻿using System.Threading.Tasks;
 using Microsoft.CodeAnalysis.CSharp;
 using NUnit.Framework;
 
@@ -31,7 +27,7 @@ namespace NS1
 }
 
 ";
-            var tree = CSharpSyntaxTree.ParseText(source);
+            Microsoft.CodeAnalysis.SyntaxTree tree = CSharpSyntaxTree.ParseText(source);
 
 
             await new GhostTest(tree).RunAsync();

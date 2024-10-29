@@ -1,9 +1,8 @@
-using Microsoft.CodeAnalysis;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 
 namespace PinionCore.Remote.Tools.Protocol.Sources
@@ -22,7 +21,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
 
             var protocolName = _BuildProtocolName(md5);
             var verCode = _BuildVerificationCode(md5);
-            string code = $@"
+            var code = $@"
 using System;  
 using System.Collections.Generic;
 using PinionCore.Remote;
@@ -92,7 +91,7 @@ public class {protocolName} : PinionCore.Remote.IProtocol
 
         private byte[] _BuildMd5(string codes)
         {
-            MD5 md5 = MD5.Create();
+            var md5 = MD5.Create();
             return md5.ComputeHash(Encoding.ASCII.GetBytes(codes));
         }
 

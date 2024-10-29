@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Reflection;
 
 namespace PinionCore.Remote
@@ -22,7 +22,7 @@ namespace PinionCore.Remote
             if (notifierType.GetGenericTypeDefinition() != typeof(INotifier<>))
                 return null;
 
-            object notifier = property.GetValue(instance);
+            var notifier = property.GetValue(instance);
             return new NotifierEventBinder(notifier, notifierType.GetEvent(event_name), invoker);
         }
         public NotifierEventBinder(object notifier, EventInfo info, Action<object> invoker)
@@ -32,13 +32,13 @@ namespace PinionCore.Remote
             _Invoker = invoker;
             Type type = info.DeclaringType.GetGenericArguments()[0];
 
-            Utility.Reflection.TypeMethodCatcher catcherSupply = new PinionCore.Utility.Reflection.TypeMethodCatcher((System.Linq.Expressions.Expression<Action<NotifierEventBinder>>)(ins => ins._Supply<object>(null)));
+            var catcherSupply = new PinionCore.Utility.Reflection.TypeMethodCatcher((System.Linq.Expressions.Expression<Action<NotifierEventBinder>>)(ins => ins._Supply<object>(null)));
             MethodInfo supplyGenericMethod = catcherSupply.Method.GetGenericMethodDefinition();
             MethodInfo supplyMethod = supplyGenericMethod.MakeGenericMethod(type);
 
             Type actionT1 = typeof(System.Action<>);
             Type actionT = actionT1.MakeGenericType(type);
-            Delegate delegateSupply = Delegate.CreateDelegate(actionT, this, supplyMethod);
+            var delegateSupply = Delegate.CreateDelegate(actionT, this, supplyMethod);
             _Delegate = delegateSupply;
 
         }

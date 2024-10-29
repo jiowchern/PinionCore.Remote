@@ -1,14 +1,11 @@
-using System.Linq;
+﻿using System.Linq;
 using System.Reflection;
-using System.Text;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 using NUnit.Framework;
-
-using PinionCore.Remote.Tools.Protocol.Sources.Extensions;
 
 
 
@@ -43,15 +40,15 @@ namespace NS1
 
             var assemblyName = "TestProject";
             System.Collections.Generic.IEnumerable<Microsoft.CodeAnalysis.MetadataReference> references = new Microsoft.CodeAnalysis.MetadataReference[]
-            {                
+            {
 
             };
-            CSharpCompilation compilation = CSharpCompilation.Create(assemblyName, new[] { syntaxBuilder.Tree }, references);
+            var compilation = CSharpCompilation.Create(assemblyName, new[] { syntaxBuilder.Tree }, references);
 
-            
+
             try
             {
-                new EssentialReference(compilation,null);
+                new EssentialReference(compilation, null);
             }
             catch (MissingTypeException me)
             {
@@ -87,7 +84,7 @@ namespace NS1
                 new PinionCore.Remote.Tools.Protocol.Sources.SyntaxTreeBuilder(SourceText.From(source,
                     System.Text.Encoding.UTF8));
 
-            await new GhostTest( syntaxBuilder.Tree).RunAsync();
+            await new GhostTest(syntaxBuilder.Tree).RunAsync();
         }
 
         [Test]
@@ -142,7 +139,7 @@ namespace NS1
                 new PinionCore.Remote.Tools.Protocol.Sources.SyntaxTreeBuilder(SourceText.From(source,
                     System.Text.Encoding.UTF8));
 
-            await new GhostTest( syntaxBuilder.Tree).RunAsync();
+            await new GhostTest(syntaxBuilder.Tree).RunAsync();
         }
         [Test]
         public async Task InterfaceInheritPropertyTest()
@@ -236,7 +233,7 @@ namespace NS
     }
 }
 ";
-           
+
             var syntaxBuilder =
                 new PinionCore.Remote.Tools.Protocol.Sources.SyntaxTreeBuilder(SourceText.From(source,
                     System.Text.Encoding.UTF8));
@@ -334,7 +331,7 @@ namespace NS
             var syntaxBuilder =
                 new PinionCore.Remote.Tools.Protocol.Sources.SyntaxTreeBuilder(SourceText.From(source,
                     System.Text.Encoding.UTF8));
-            await new GhostTest( syntaxBuilder.Tree).RunAsync();
+            await new GhostTest(syntaxBuilder.Tree).RunAsync();
         }
 
         [Test]
@@ -379,7 +376,7 @@ public interface IB {
             await new GhostTest(syntaxBuilder.Tree).RunAsync();
         }
         [Test]
-        
+
         public void GhostBuilderUnprocessedsTest()
         {
             var source = @"
@@ -408,16 +405,16 @@ namespace NS1
 }
 
 ";
-            var tree = Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(source);
-            var com = tree.Compilation();
-            SyntaxModifier modifier = SyntaxModifier.Create(com);
-            var builder = new GhostBuilder(modifier, com.FindAllInterfaceSymbol());            
+            SyntaxTree tree = Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(source);
+            CSharpCompilation com = tree.Compilation();
+            var modifier = SyntaxModifier.Create(com);
+            var builder = new GhostBuilder(modifier, com.FindAllInterfaceSymbol());
 
-            var cnt = builder.ClassAndTypess.First();
-            var methods = cnt.GetSyntaxs<MethodDeclarationSyntax>().ToArray();
-            var indexs = cnt.GetSyntaxs<IndexerDeclarationSyntax>().ToArray();
-            var events = cnt.GetSyntaxs<EventDeclarationSyntax>().ToArray();
-            var propertys = cnt.GetSyntaxs<PropertyDeclarationSyntax>().ToArray();
+            ClassAndTypes cnt = builder.ClassAndTypess.First();
+            MethodDeclarationSyntax[] methods = cnt.GetSyntaxs<MethodDeclarationSyntax>().ToArray();
+            IndexerDeclarationSyntax[] indexs = cnt.GetSyntaxs<IndexerDeclarationSyntax>().ToArray();
+            EventDeclarationSyntax[] events = cnt.GetSyntaxs<EventDeclarationSyntax>().ToArray();
+            PropertyDeclarationSyntax[] propertys = cnt.GetSyntaxs<PropertyDeclarationSyntax>().ToArray();
             NUnit.Framework.Assert.AreEqual(1, methods.Count());
             NUnit.Framework.Assert.AreEqual(2, indexs.Count());
             NUnit.Framework.Assert.AreEqual(2, events.Count());
@@ -425,7 +422,7 @@ namespace NS1
 
 
             var dialogProvider = new DialogProvider();
-            var dialogs = dialogProvider.Unsupports(builder.ClassAndTypess).ToArray();
+            Diagnostic[] dialogs = dialogProvider.Unsupports(builder.ClassAndTypess).ToArray();
             NUnit.Framework.Assert.AreEqual(8, dialogs.Count());
         }
 
@@ -463,40 +460,40 @@ namespace NS1
 }
 
 ";
-            var tree = Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(source);
-            var com = tree.Compilation();
-            SyntaxModifier modifier = SyntaxModifier.Create(com);
-            var builder = new GhostBuilder(modifier , com.FindAllInterfaceSymbol());
-            var trees = builder.Ghosts.Union(builder.EventProxys).Select( c=> CSharpSyntaxTree.ParseText(c.NormalizeWhitespace().ToFullString()));
+            SyntaxTree tree = Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(source);
+            CSharpCompilation com = tree.Compilation();
+            var modifier = SyntaxModifier.Create(com);
+            var builder = new GhostBuilder(modifier, com.FindAllInterfaceSymbol());
+            System.Collections.Generic.IEnumerable<SyntaxTree> trees = builder.Ghosts.Union(builder.EventProxys).Select(c => CSharpSyntaxTree.ParseText(c.NormalizeWhitespace().ToFullString()));
 
-            var ghostCom = HelperExt.Compile(trees.Union(new[] { tree }));
+            CSharpCompilation ghostCom = HelperExt.Compile(trees.Union(new[] { tree }));
 
             var asm = ghostCom.ToAssembly();
 
-            var eTypes = asm.GetTypes();
-            var cia = (from t in eTypes where t.FullName == "CNS1_IA" select t).Single();
-            var ciaCons = cia.GetConstructor(new[] { typeof(long), typeof(bool) });
+            System.Type[] eTypes = asm.GetTypes();
+            System.Type cia = (from t in eTypes where t.FullName == "CNS1_IA" select t).Single();
+            ConstructorInfo ciaCons = cia.GetConstructor(new[] { typeof(long), typeof(bool) });
 
 
             var instance = ciaCons.Invoke(new object[] { 1, false });
             var ghost = instance as PinionCore.Remote.IGhost;
 
 
-            System.Collections.Generic.List<object> values = new System.Collections.Generic.List<object>();
-            ghost.CallMethodEvent += (mi, args, ret) => values.Add(args[0])  ;
+            var values = new System.Collections.Generic.List<object>();
+            ghost.CallMethodEvent += (mi, args, ret) => values.Add(args[0]);
 
 
-            var m123 = cia.GetMethod("NS1.IA.M123", BindingFlags.Instance | BindingFlags.NonPublic);
+            MethodInfo m123 = cia.GetMethod("NS1.IA.M123", BindingFlags.Instance | BindingFlags.NonPublic);
             m123.Invoke(ghost, new object[] { 1 });
 
-            var methodRefTest = cia.GetMethod("NS1.IA.MethodRefTest", BindingFlags.Instance | BindingFlags.NonPublic);
+            MethodInfo methodRefTest = cia.GetMethod("NS1.IA.MethodRefTest", BindingFlags.Instance | BindingFlags.NonPublic);
             methodRefTest.Invoke(ghost, new object[] { 2 });
 
 
 
-            var noSupple = cia.GetMethod("NS1.IA.NoSupple", BindingFlags.Instance | BindingFlags.NonPublic);
+            MethodInfo noSupple = cia.GetMethod("NS1.IA.NoSupple", BindingFlags.Instance | BindingFlags.NonPublic);
 
-            bool hasException = false;
+            var hasException = false;
             try
             {
                 noSupple.Invoke(ghost, new object[] { 1 });
@@ -509,7 +506,7 @@ namespace NS1
             NUnit.Framework.Assert.True(hasException);
             NUnit.Framework.Assert.AreEqual(1, values[0]);
             NUnit.Framework.Assert.AreEqual(2, values[1]);
-            
+
         }
 
         [Test]
@@ -566,39 +563,39 @@ namespace NS1
 }
 ";
 
-            
-            var tree = Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(source);
-            var com = tree.Compilation();
 
-            var builder = new ProjectSourceBuilder(new EssentialReference(com,null));
+            SyntaxTree tree = Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(source);
+            CSharpCompilation com = tree.Compilation();
 
-            
-            var ghostCom = HelperExt.Compile(builder.Sources.Union(new[] { tree }));
+            var builder = new ProjectSourceBuilder(new EssentialReference(com, null));
+
+
+            CSharpCompilation ghostCom = HelperExt.Compile(builder.Sources.Union(new[] { tree }));
 
             var asm = ghostCom.ToAssembly();
 
 
-            var eTypes = asm.GetTypes();
-            var cia = (from t in eTypes where t.Name == "CNS1_IA" select t).Single();
-            var ciaCons = cia.GetConstructor(new[] { typeof(long), typeof(bool) });
+            System.Type[] eTypes = asm.GetTypes();
+            System.Type cia = (from t in eTypes where t.Name == "CNS1_IA" select t).Single();
+            ConstructorInfo ciaCons = cia.GetConstructor(new[] { typeof(long), typeof(bool) });
 
 
-            var instance = ciaCons.Invoke( new object[] { 1, false });
+            var instance = ciaCons.Invoke(new object[] { 1, false });
             var ghost = instance as PinionCore.Remote.IGhost;
             object arg1 = null;
             ghost.CallMethodEvent += (mi, args, ret) => arg1 = args[0];
 
-            
-            var m123 = cia.GetMethod("NS1.IA.M123", BindingFlags.Instance | BindingFlags.NonPublic);
-            m123.Invoke(ghost, new object[] { 1});
+
+            MethodInfo m123 = cia.GetMethod("NS1.IA.M123", BindingFlags.Instance | BindingFlags.NonPublic);
+            m123.Invoke(ghost, new object[] { 1 });
 
 
-            var noSupple = cia.GetMethod("NS1.IA.NoSupple", BindingFlags.Instance | BindingFlags.NonPublic);
+            MethodInfo noSupple = cia.GetMethod("NS1.IA.NoSupple", BindingFlags.Instance | BindingFlags.NonPublic);
 
-            
 
-            ThrowTest(()=> noSupple.Invoke(ghost, new object[] { 1 }));
-            
+
+            ThrowTest(() => noSupple.Invoke(ghost, new object[] { 1 }));
+
             NUnit.Framework.Assert.AreEqual(1, arg1);
         }
 
@@ -619,8 +616,8 @@ namespace NS1
             }
         }
 
-       
+
     }
 
-    
+
 }

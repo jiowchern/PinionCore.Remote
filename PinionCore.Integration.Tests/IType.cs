@@ -1,4 +1,4 @@
-namespace PinionCore.Integration.Tests
+﻿namespace PinionCore.Integration.Tests
 {
     public interface IType
     {

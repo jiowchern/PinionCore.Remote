@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Runtime.InteropServices;
 
 
@@ -64,11 +64,11 @@ namespace PinionCore.Serialization
         private int _ToBuffer(object instance, PinionCore.Memorys.Buffer buffer, int begin)
         {
             int readCount;
-            GCHandle pinStructure = GCHandle.Alloc(instance, GCHandleType.Pinned);
+            var pinStructure = GCHandle.Alloc(instance, GCHandleType.Pinned);
             try
             {
                 readCount = _Size;
-                var bytes = buffer.Bytes;
+                ArraySegment<byte> bytes = buffer.Bytes;
                 Marshal.Copy(pinStructure.AddrOfPinnedObject(), bytes.Array, bytes.Offset + begin, readCount);
             }
             catch (Exception ex)
@@ -91,8 +91,8 @@ namespace PinionCore.Serialization
 
             try
             {
-                var bytes = buffer.Bytes;
-                int size = Marshal.SizeOf(_Type);
+                ArraySegment<byte> bytes = buffer.Bytes;
+                var size = Marshal.SizeOf(_Type);
 
                 IntPtr ptr = Marshal.AllocHGlobal(size);
 

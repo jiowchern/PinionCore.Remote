@@ -1,6 +1,6 @@
+﻿using System.Linq;
 using NUnit.Framework;
 using PinionCore.Remote;
-using System.Linq;
 
 namespace PinionCore.Integration.Tests
 {
@@ -11,9 +11,9 @@ namespace PinionCore.Integration.Tests
         [Test]
         public void InterfaceProviderTyepsTest()
         {
-            System.Collections.Generic.Dictionary<System.Type, System.Type> types = new System.Collections.Generic.Dictionary<System.Type, System.Type>();
+            var types = new System.Collections.Generic.Dictionary<System.Type, System.Type>();
             types.Add(typeof(IType), typeof(CType));
-            InterfaceProvider ip = new InterfaceProvider(types);
+            var ip = new InterfaceProvider(types);
 
             System.Type type = ip.Types.First();
 
@@ -26,16 +26,16 @@ namespace PinionCore.Integration.Tests
         [Test]
         public void AgentEventRectifierSupplyTest()
         {
-            System.Collections.Generic.Dictionary<System.Type, System.Type> types = new System.Collections.Generic.Dictionary<System.Type, System.Type>();
+            var types = new System.Collections.Generic.Dictionary<System.Type, System.Type>();
             types.Add(typeof(IType), typeof(CType));
-            InterfaceProvider ip = new InterfaceProvider(types);
+            var ip = new InterfaceProvider(types);
 
-            TestAgent agent = new TestAgent();
-            CType cType = new CType(1);
+            var agent = new TestAgent();
+            var cType = new CType(1);
 
             object outSupplyInstance = null;
 
-            using (Remote.Client.AgentEventRectifier rectifier = new Remote.Client.AgentEventRectifier(ip.Types, agent))
+            using (var rectifier = new Remote.Client.AgentEventRectifier(ip.Types, agent))
             {
 
                 rectifier.SupplyEvent += (type, instance) =>
@@ -53,17 +53,17 @@ namespace PinionCore.Integration.Tests
         [Test]
         public void AgentEventRectifierUnsupplyTest()
         {
-            System.Collections.Generic.Dictionary<System.Type, System.Type> types = new System.Collections.Generic.Dictionary<System.Type, System.Type>();
+            var types = new System.Collections.Generic.Dictionary<System.Type, System.Type>();
             types.Add(typeof(IType), typeof(CType));
-            InterfaceProvider ip = new InterfaceProvider(types);
+            var ip = new InterfaceProvider(types);
 
 
-            TestAgent agent = new TestAgent();
-            CType cType = new CType(1);
+            var agent = new TestAgent();
+            var cType = new CType(1);
 
             object outInstance = null;
             System.Type outType = null;
-            using (Remote.Client.AgentEventRectifier rectifier = new Remote.Client.AgentEventRectifier(ip.Types, agent))
+            using (var rectifier = new Remote.Client.AgentEventRectifier(ip.Types, agent))
             {
                 rectifier.SupplyEvent += (type, instance) => { };
                 rectifier.UnsupplyEvent += (type, instance) =>
@@ -84,9 +84,9 @@ namespace PinionCore.Integration.Tests
         [Test]
         public void MethodStringInvokerTest1()
         {
-            CType test = new CType(1);
+            var test = new CType(1);
             System.Reflection.MethodInfo method = typeof(IType).GetMethod(nameof(IType.TestMethod1));
-            Remote.Client.MethodStringInvoker invoker = new Remote.Client.MethodStringInvoker(test, method, new Remote.Client.TypeConverterSet());
+            var invoker = new Remote.Client.MethodStringInvoker(test, method, new Remote.Client.TypeConverterSet());
             invoker.Invoke("1", "2", "3");
 
             Assert.AreEqual(true, test.TestMethod1Invoked);
@@ -97,10 +97,10 @@ namespace PinionCore.Integration.Tests
         [Test]
         public void AgentCommandTest1()
         {
-            CType test = new CType(1);
+            var test = new CType(1);
             System.Reflection.MethodInfo method = typeof(IType).GetMethod(nameof(IType.TestMethod1));
-            Remote.Client.MethodStringInvoker invoker = new Remote.Client.MethodStringInvoker(test, method, new Remote.Client.TypeConverterSet());
-            Remote.Client.AgentCommand agentCommand = new Remote.Client.AgentCommand(new Remote.Client.AgentCommandVersionProvider(), typeof(IType), invoker);
+            var invoker = new Remote.Client.MethodStringInvoker(test, method, new Remote.Client.TypeConverterSet());
+            var agentCommand = new Remote.Client.AgentCommand(new Remote.Client.AgentCommandVersionProvider(), typeof(IType), invoker);
             Assert.AreEqual("IType-0.TestMethod1 [a1,a2,a3]", agentCommand.Name);
 
         }
@@ -108,20 +108,20 @@ namespace PinionCore.Integration.Tests
         public void AgentCommandRegisterTest1()
         {
 
-            Utility.Command command = new Utility.Command();
-            int regCount = 0;
+            var command = new Utility.Command();
+            var regCount = 0;
             command.RegisterEvent += (cmd, ret, args) =>
             {
                 regCount++;
             };
-            int unregCount = 0;
+            var unregCount = 0;
             command.UnregisterEvent += (cmd) =>
             {
                 unregCount++;
             };
-            Remote.Client.AgentCommandRegister agentCommandRegister = new Remote.Client.AgentCommandRegister(command, new Remote.Client.TypeConverterSet());
+            var agentCommandRegister = new Remote.Client.AgentCommandRegister(command, new Remote.Client.TypeConverterSet());
 
-            CType test = new CType(1);
+            var test = new CType(1);
 
             agentCommandRegister.Regist(typeof(IType), test);
             agentCommandRegister.Unregist(test);

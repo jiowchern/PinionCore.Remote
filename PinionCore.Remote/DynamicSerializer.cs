@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 
 namespace PinionCore.Remote
 {
@@ -11,7 +11,7 @@ namespace PinionCore.Remote
             _Serializer = new PinionCore.Serialization.Dynamic.Serializer();
         }
 
-        
+
 
         object ISerializable.Deserialize(Type type, PinionCore.Memorys.Buffer buffer)
         {
@@ -23,8 +23,8 @@ namespace PinionCore.Remote
             return _Serializer.ObjectToBuffer(instance);
         }
     }
-    
-    
+
+
 
 
 }

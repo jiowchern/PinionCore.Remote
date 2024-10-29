@@ -1,11 +1,9 @@
-using System.Collections.Generic;
-
-namespace PinionCore.Remote
+﻿namespace PinionCore.Remote
 {
     internal class LongProvider : ILandlordProviable<long>
     {
-        
-        
+
+
         long _Current;
         public LongProvider()
         {
@@ -23,7 +21,7 @@ namespace PinionCore.Remote
     {
 
         readonly System.Collections.Concurrent.ConcurrentBag<T> _Enrollments;
-        
+
         readonly ILandlordProviable<T> _Provider;
         public Landlord(ILandlordProviable<T> provider)
         {
@@ -44,7 +42,7 @@ namespace PinionCore.Remote
         }
         public void Return(T obj)
         {
-            _Enrollments.Add(obj);            
+            _Enrollments.Add(obj);
         }
 
     }

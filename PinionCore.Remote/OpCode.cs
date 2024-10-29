@@ -1,4 +1,4 @@
-namespace PinionCore.Remote
+﻿namespace PinionCore.Remote
 {
     public enum ClientToServerOpCode : byte
     {
@@ -10,7 +10,7 @@ namespace PinionCore.Remote
 
         UpdateProperty,
         AddEvent,
-        RemoveEvent,        
+        RemoveEvent,
     };
 
     public enum ServerToClientOpCode : byte

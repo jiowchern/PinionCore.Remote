@@ -1,6 +1,4 @@
-using System;
-
-namespace PinionCore.Remote.Tools.Protocol.Sources.IdentifyTestCommon
+﻿namespace PinionCore.Remote.Tools.Protocol.Sources.IdentifyTestCommon
 {
     public interface IInterface1 : PinionCore.Remote.Protocolable
     {

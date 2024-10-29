@@ -1,4 +1,4 @@
-namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon
+﻿namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon
 {
     namespace MultipleNotices
     {
@@ -6,7 +6,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon
         {
             PinionCore.Remote.Value<int> GetNumber1Count();
             PinionCore.Remote.Value<int> GetNumber2Count();
-            PinionCore.Remote.Notifier<INumber> Numbers1{ get; }
+            PinionCore.Remote.Notifier<INumber> Numbers1 { get; }
             PinionCore.Remote.Notifier<INumber> Numbers2 { get; }
         }
     }

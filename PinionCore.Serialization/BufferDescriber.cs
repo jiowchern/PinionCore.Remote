@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 
 namespace PinionCore.Serialization
 {
@@ -36,20 +36,20 @@ namespace PinionCore.Serialization
 
         int ITypeDescriber.GetByteCount(object instance)
         {
-            Array src = instance as Array;
-            int bufferLength = Buffer.ByteLength(src);
-            int bufferLen = Varint.GetByteCount(bufferLength);
-            int elementLen = Varint.GetByteCount(src.Length);
+            var src = instance as Array;
+            var bufferLength = Buffer.ByteLength(src);
+            var bufferLen = Varint.GetByteCount(bufferLength);
+            var elementLen = Varint.GetByteCount(src.Length);
             return bufferLen + bufferLength + elementLen;
         }
 
         int ITypeDescriber.ToBuffer(object instance, PinionCore.Memorys.Buffer buffer, int begin)
         {
-            var bytes = buffer.Bytes;
-            Array src = instance as Array;
-            int bufferLength = Buffer.ByteLength(src);
-            int offset = begin;
-            offset += Varint.NumberToBuffer(bytes.Array , bytes.Offset + offset, bufferLength);
+            ArraySegment<byte> bytes = buffer.Bytes;
+            var src = instance as Array;
+            var bufferLength = Buffer.ByteLength(src);
+            var offset = begin;
+            offset += Varint.NumberToBuffer(bytes.Array, bytes.Offset + offset, bufferLength);
             offset += Varint.NumberToBuffer(bytes.Array, bytes.Offset + offset, src.Length);
 
 
@@ -60,14 +60,14 @@ namespace PinionCore.Serialization
 
         int ITypeDescriber.ToObject(PinionCore.Memorys.Buffer buffer, int begin, out object instnace)
         {
-            int offset = begin;
-            int bufferLen = 0;
+            var offset = begin;
+            var bufferLen = 0;
             offset += Varint.BufferToNumber(buffer, offset, out bufferLen);
-            int elementLen = 0;
+            var elementLen = 0;
             offset += Varint.BufferToNumber(buffer, offset, out elementLen);
             Array dst = _Create(elementLen);
 
-            var bytes = buffer.Bytes;
+            ArraySegment<byte> bytes = buffer.Bytes;
             Buffer.BlockCopy(bytes.Array, bytes.Offset + offset, dst, 0, bufferLen);
 
             instnace = dst;

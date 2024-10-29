@@ -1,6 +1,6 @@
-using System;
-using System.Linq;
+﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -38,7 +38,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.Tests
         public static CSharpCompilation Compilation(this SyntaxTree tree)
         {
             var assemblyName = Guid.NewGuid().ToString();
-            
+
             IEnumerable<MetadataReference> references = new MetadataReference[]
             {
                 MetadataReference.CreateFromFile(typeof(PinionCore.Remote.Protocol.CreaterAttribute).GetTypeInfo().Assembly.Location),
@@ -51,26 +51,26 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.Tests
                 MetadataReference.CreateFromFile(Assembly.Load("netstandard, Version=2.0.0.0").Location),
                 MetadataReference.CreateFromFile(Assembly.Load("System.Collections, Version=4.1.2.0").Location),
                 MetadataReference.CreateFromFile(Assembly.Load("System.Linq.Expressions, Version=4.2.2.0").Location)
-                
+
             };
-        
-            return CSharpCompilation.Create(assemblyName, new []{ tree }, references);
+
+            return CSharpCompilation.Create(assemblyName, new[] { tree }, references);
         }
 
 
 
         public static System.Reflection.Assembly ToAssembly(this Microsoft.CodeAnalysis.CSharp.CSharpCompilation compilation)
         {
-            
+
             Assembly assembly = null;
             using (var memoryStream = new System.IO.MemoryStream())
             {
-                var emitResult = compilation.Emit(memoryStream);
+                Microsoft.CodeAnalysis.Emit.EmitResult emitResult = compilation.Emit(memoryStream);
                 if (emitResult.Success)
                 {
                     memoryStream.Seek(0, System.IO.SeekOrigin.Begin);
 
-                    var assemblyLoadContext = System.Runtime.Loader.AssemblyLoadContext.Default;
+                    System.Runtime.Loader.AssemblyLoadContext assemblyLoadContext = System.Runtime.Loader.AssemblyLoadContext.Default;
 
                     assembly = assemblyLoadContext.Assemblies.FirstOrDefault(a => a.GetName()?.Name == compilation.AssemblyName);
                     if (assembly == null)

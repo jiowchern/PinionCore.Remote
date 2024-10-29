@@ -1,8 +1,6 @@
-using System;
-
-namespace PinionCore.Remote.Packages
+﻿namespace PinionCore.Remote.Packages
 {
-    public struct PackageErrorMethod 
+    public struct PackageErrorMethod
     {
         public long ReturnTarget;
 
@@ -10,8 +8,8 @@ namespace PinionCore.Remote.Packages
 
         public string Message;
     }
-    
-    
+
+
 
 
 }

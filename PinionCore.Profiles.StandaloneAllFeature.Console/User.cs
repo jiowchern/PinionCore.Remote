@@ -1,4 +1,4 @@
-using PinionCore.Profiles.StandaloneAllFeature.Protocols;
+﻿using PinionCore.Profiles.StandaloneAllFeature.Protocols;
 using PinionCore.Remote;
 
 namespace PinionCore.Profiles.StandaloneAllFeature.Server
@@ -16,7 +16,7 @@ namespace PinionCore.Profiles.StandaloneAllFeature.Server
 
         Value<string> Featureable.Inc(string value)
         {
-            string reversed = new string(value.Reverse().ToArray());
+            var reversed = new string(value.Reverse().ToArray());
             return new Value<string>(reversed);
         }
     }

@@ -1,11 +1,11 @@
-namespace PinionCore.Remote.Packages
+﻿namespace PinionCore.Remote.Packages
 {
-    public struct PackageRelease 
-    {        
+    public struct PackageRelease
+    {
         public long EntityId;
     }
-    
-    
+
+
 
 
 }

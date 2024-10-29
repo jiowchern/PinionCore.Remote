@@ -1,8 +1,8 @@
-using PinionCore.Remote.Extensions;
-using PinionCore.Remote.Packages;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Reflection;
+using PinionCore.Remote.Extensions;
+using PinionCore.Remote.Packages;
 
 namespace PinionCore.Remote
 {
@@ -11,35 +11,35 @@ namespace PinionCore.Remote
         public class GhostsHandler : ClientExchangeable
         {
             private readonly Dictionary<long, GhostResponseHandler> _GhostResponseHandlers;
-            
+
             private readonly AutoRelease<long, IGhost> _AutoRelease;
             private readonly IProtocol _Protocol;
             private readonly ISerializable _Serializer;
             private readonly IInternalSerializable _InternalSerializer;
-            
+
             private readonly GhostsOwner _GhostsOwner;
             private readonly GhostsReturnValueHandler _ReturnValueHandler;
             private readonly InterfaceProvider _InterfaceProvider;
-            
+
 
             public GhostsHandler(
                 IProtocol protocol,
                 ISerializable serializer,
-                IInternalSerializable internalSerializer,                
+                IInternalSerializable internalSerializer,
                 GhostsOwner ghosts_owner,
                 GhostsReturnValueHandler returnValueHandler)
             {
                 _Protocol = protocol;
                 _Serializer = serializer;
-                _InternalSerializer = internalSerializer;                
+                _InternalSerializer = internalSerializer;
                 _GhostsOwner = ghosts_owner;
                 _ReturnValueHandler = returnValueHandler;
                 _InterfaceProvider = _Protocol.GetInterfaceProvider();
                 _GhostResponseHandlers = new Dictionary<long, GhostResponseHandler>();
-                _AutoRelease = new AutoRelease<long, IGhost>();                
+                _AutoRelease = new AutoRelease<long, IGhost>();
             }
-            
-           
+
+
             event Action<ClientToServerOpCode, Memorys.Buffer> _ResponseEvent;
 
             event Action<ClientToServerOpCode, Memorys.Buffer> Exchangeable<ServerToClientOpCode, ClientToServerOpCode>.ResponseEvent
@@ -57,13 +57,13 @@ namespace PinionCore.Remote
 
             public void LoadSoul(int typeId, long id, bool returnType)
             {
-                var map = _Protocol.GetMemberMap();
-                var type = map.GetInterface(typeId);
-                var ghost = BuildGhost(type, id, returnType);
+                MemberMap map = _Protocol.GetMemberMap();
+                Type type = map.GetInterface(typeId);
+                IGhost ghost = BuildGhost(type, id, returnType);
 
                 var gm = new GhostMethodHandler(ghost.GetID(), _ReturnValueHandler, _Protocol, _Serializer, _InternalSerializer);
                 ghost.CallMethodEvent += gm.Run;
-                ClientExchangeable gmec = gm ;
+                ClientExchangeable gmec = gm;
                 gmec.ResponseEvent += _ResponseEvent;
 
                 var gem = new GhostEventMoveHandler(ghost.GetID(), _Protocol, _InternalSerializer);
@@ -83,7 +83,7 @@ namespace PinionCore.Remote
                 }
                 else
                 {
-                    var provider = _GhostsOwner.QueryProvider(type);
+                    IProvider provider = _GhostsOwner.QueryProvider(type);
                     provider.Add(ghost);
                 }
             }
@@ -93,12 +93,12 @@ namespace PinionCore.Remote
                 _GhostsOwner.RemoveGhost(id);
                 lock (_GhostResponseHandlers)
                     _GhostResponseHandlers.Remove(id);
-                
+
             }
 
             public void UpdateSetProperty(long entityId, int propertyId, byte[] payload)
             {
-                var ghostHandler = _FindHandler(entityId);
+                GhostResponseHandler ghostHandler = _FindHandler(entityId);
                 if (ghostHandler == null)
                     return;
                 ghostHandler.UpdateSetProperty(propertyId, payload);
@@ -113,7 +113,7 @@ namespace PinionCore.Remote
 
             public void InvokeEvent(long ghostId, int eventId, long handlerId, byte[][] eventParams)
             {
-                var ghostHandler = _FindHandler(ghostId);
+                GhostResponseHandler ghostHandler = _FindHandler(ghostId);
                 if (ghostHandler == null)
                     return;
                 ghostHandler.InvokeEvent(eventId, handlerId, eventParams);
@@ -131,15 +131,15 @@ namespace PinionCore.Remote
 
             internal void _PropertySoulAccesser(PackagePropertySoul data, System.Linq.Expressions.Expression<GetObjectAccesserMethod> oper)
             {
-                var owner_handler = _FindHandler(data.OwnerId);
+                GhostResponseHandler owner_handler = _FindHandler(data.OwnerId);
                 if (owner_handler == null)
                     return;
 
-                var entity = _FindHandler(data.EntityId);
+                GhostResponseHandler entity = _FindHandler(data.EntityId);
                 if (entity == null)
                     return;
 
-                var entity_ghost = entity.FindGhost();
+                IGhost entity_ghost = entity.FindGhost();
 
                 oper.Execute().Invoke(owner_handler.GetAccesser(data.PropertyId), new object[] { entity_ghost.GetInstance() });
             }
@@ -151,7 +151,7 @@ namespace PinionCore.Remote
             {
                 lock (_GhostResponseHandlers)
                 {
-                    if (_GhostResponseHandlers.TryGetValue(ghostId, out var handler))
+                    if (_GhostResponseHandlers.TryGetValue(ghostId, out GhostResponseHandler handler))
                     {
                         if (handler.IsValid())
                             return handler;
@@ -164,7 +164,7 @@ namespace PinionCore.Remote
             {
                 Type ghostType = _InterfaceProvider.Find(ghostBaseType);
                 ConstructorInfo constructor = ghostType.GetConstructor(new[] { typeof(long), typeof(bool) });
-                object o = constructor.Invoke(new object[] { id, returnType });
+                var o = constructor.Invoke(new object[] { id, returnType });
                 return (IGhost)o;
             }
 

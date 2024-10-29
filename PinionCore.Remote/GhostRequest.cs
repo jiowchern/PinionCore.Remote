@@ -1,14 +1,14 @@
-namespace PinionCore.Remote
+﻿namespace PinionCore.Remote
 {
-    public interface Exchangeable<TReq,TRes>
+    public interface Exchangeable<TReq, TRes>
     {
-//        TReq[] RequestCodes { get; }
+        //        TReq[] RequestCodes { get; }
         void Request(TReq code, PinionCore.Memorys.Buffer args);
         event System.Action<TRes, PinionCore.Memorys.Buffer> ResponseEvent;
     }
-    public interface ServerExchangeable: Exchangeable<ClientToServerOpCode , ServerToClientOpCode>
+    public interface ServerExchangeable : Exchangeable<ClientToServerOpCode, ServerToClientOpCode>
     {
-        
+
     }
 
     public interface ClientExchangeable : Exchangeable<ServerToClientOpCode, ClientToServerOpCode>

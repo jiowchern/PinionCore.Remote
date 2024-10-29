@@ -1,14 +1,14 @@
-namespace PinionCore.Remote.Packages
+﻿namespace PinionCore.Remote.Packages
 {
-    public struct PackageAddEvent 
-    {      
+    public struct PackageAddEvent
+    {
         public long Entity;
         public int Event;
         public long Handler;
 
     }
-    
-    
+
+
 
 
 }

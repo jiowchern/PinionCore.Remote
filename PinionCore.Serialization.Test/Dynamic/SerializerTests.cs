@@ -1,7 +1,6 @@
+﻿using System;
 using NUnit.Framework;
 using PinionCore.Serialization.Tests;
-using System;
-using System.Linq;
 
 namespace PinionCore.Serialization.Dynamic.Tests
 {
@@ -12,10 +11,10 @@ namespace PinionCore.Serialization.Dynamic.Tests
         public void TestSerializerInt()
         {
 
-            Serializer ser = new PinionCore.Serialization.Dynamic.Serializer();
+            var ser = new PinionCore.Serialization.Dynamic.Serializer();
 
-            var buf = ser.ObjectToBuffer(12345);
-            int val = (int)ser.BufferToObject(buf);
+            Memorys.Buffer buf = ser.ObjectToBuffer(12345);
+            var val = (int)ser.BufferToObject(buf);
             Assert.AreEqual(12345, val);
         }
 
@@ -23,10 +22,10 @@ namespace PinionCore.Serialization.Dynamic.Tests
         public void TestSerializerString()
         {
 
-            Serializer ser = new PinionCore.Serialization.Dynamic.Serializer();
+            var ser = new PinionCore.Serialization.Dynamic.Serializer();
 
-            var buf = ser.ObjectToBuffer("12345");
-            string val = (string)ser.BufferToObject(buf);
+            Memorys.Buffer buf = ser.ObjectToBuffer("12345");
+            var val = (string)ser.BufferToObject(buf);
             Assert.AreEqual("12345", val);
         }
 
@@ -35,10 +34,10 @@ namespace PinionCore.Serialization.Dynamic.Tests
         public void TestSerializerNull()
         {
 
-            Serializer ser = new PinionCore.Serialization.Dynamic.Serializer();
+            var ser = new PinionCore.Serialization.Dynamic.Serializer();
 
-            var buf = ser.ObjectToBuffer(null);
-            object val = ser.BufferToObject(buf);
+            Memorys.Buffer buf = ser.ObjectToBuffer(null);
+            var val = ser.BufferToObject(buf);
             Assert.AreEqual(null, val);
         }
 
@@ -47,10 +46,10 @@ namespace PinionCore.Serialization.Dynamic.Tests
         public void TestSerializerArray()
         {
 
-            Serializer ser = new PinionCore.Serialization.Dynamic.Serializer();
+            var ser = new PinionCore.Serialization.Dynamic.Serializer();
 
-            var buf = ser.ObjectToBuffer(new[] { 1, 2, 3, 4, 5 });
-            int[] val = (int[])ser.BufferToObject(buf);
+            Memorys.Buffer buf = ser.ObjectToBuffer(new[] { 1, 2, 3, 4, 5 });
+            var val = (int[])ser.BufferToObject(buf);
             Assert.AreEqual(1, val[0]);
             Assert.AreEqual(2, val[1]);
             Assert.AreEqual(3, val[2]);
@@ -65,10 +64,10 @@ namespace PinionCore.Serialization.Dynamic.Tests
         public void TestSerializerStringArray()
         {
 
-            Serializer ser = new PinionCore.Serialization.Dynamic.Serializer();
+            var ser = new PinionCore.Serialization.Dynamic.Serializer();
 
-            var buf = ser.ObjectToBuffer(new[] { "1", "2", "3", "4", "5" });
-            string[] val = (string[])ser.BufferToObject(buf);
+            Memorys.Buffer buf = ser.ObjectToBuffer(new[] { "1", "2", "3", "4", "5" });
+            var val = (string[])ser.BufferToObject(buf);
             Assert.AreEqual("1", val[0]);
             Assert.AreEqual("2", val[1]);
             Assert.AreEqual("3", val[2]);
@@ -82,20 +81,20 @@ namespace PinionCore.Serialization.Dynamic.Tests
         [NUnit.Framework.Test]
         public void TestInherit()
         {
-            Serializer ser = new PinionCore.Serialization.Dynamic.Serializer();
+            var ser = new PinionCore.Serialization.Dynamic.Serializer();
 
 
-            TestGrandson test = new TestGrandson();
+            var test = new TestGrandson();
             test.Data = 100;
-            TestChild testChild = test as TestChild;
+            var testChild = test as TestChild;
             testChild.Data = 1;
-            TestParent testParent = test as TestParent;
+            var testParent = test as TestParent;
             testParent.Data = 33;
 
-            var buf = ser.ObjectToBuffer(test);
-            TestGrandson val = (TestGrandson)ser.BufferToObject(buf);
-            TestParent valParent = val as TestParent;
-            TestChild child = val as TestChild;
+            Memorys.Buffer buf = ser.ObjectToBuffer(test);
+            var val = (TestGrandson)ser.BufferToObject(buf);
+            var valParent = val as TestParent;
+            var child = val as TestChild;
 
 
             Assert.AreEqual(100, val.Data);
@@ -126,39 +125,39 @@ namespace PinionCore.Serialization.Dynamic.Tests
 
 
 
-            TestGrandson test = new TestGrandson();
+            var test = new TestGrandson();
             test.Data = 100;
-            TestChild testChild = test as TestChild;
+            var testChild = test as TestChild;
             testChild.Data = 1;
-            TestParent testParent = test as TestParent;
+            var testParent = test as TestParent;
             testParent.Data = 33;
 
-            Serializer serializer =
+            var serializer =
                 new PinionCore.Serialization.Dynamic.Serializer(new CustomFinder((name) => Type.GetType(name)));
-            var buf = serializer.ObjectToBuffer(new TestParent[] { test, testChild, testParent });
-            TestParent[] val = (TestParent[])serializer.BufferToObject(buf);
+            Memorys.Buffer buf = serializer.ObjectToBuffer(new TestParent[] { test, testChild, testParent });
+            var val = (TestParent[])serializer.BufferToObject(buf);
 
             Assert.AreEqual(100, (val[0] as TestGrandson).Data);
             Assert.AreEqual(1, (val[1] as TestChild).Data);
-            Assert.AreEqual(33, (val[2] as TestParent).Data);
+            Assert.AreEqual(33, val[2].Data);
 
 
         }
         [NUnit.Framework.Test]
         public void TestClassPolytype1()
         {
-            TestGrandson g = new TestGrandson();
+            var g = new TestGrandson();
             g.Data = 100;
-            TestPoly test = new TestPoly();
+            var test = new TestPoly();
             test.Parent = g;
 
 
 
-            Serializer serializer =
+            var serializer =
                 new PinionCore.Serialization.Dynamic.Serializer(new CustomFinder((name) => Type.GetType(name)));
-            var buf = serializer.ObjectToBuffer(test);
-            TestPoly val = (TestPoly)serializer.BufferToObject(buf);
-            TestGrandson valChild = val.Parent as TestGrandson;
+            Memorys.Buffer buf = serializer.ObjectToBuffer(test);
+            var val = (TestPoly)serializer.BufferToObject(buf);
+            var valChild = val.Parent as TestGrandson;
             Assert.AreEqual(100, valChild.Data);
         }
     }

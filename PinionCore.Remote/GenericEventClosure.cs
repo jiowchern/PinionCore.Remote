@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 
 namespace PinionCore.Remote
 {
@@ -35,5 +35,5 @@ namespace PinionCore.Remote
         }
     }
 
-    
+
 }

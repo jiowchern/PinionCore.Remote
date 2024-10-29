@@ -1,7 +1,5 @@
-using System.Diagnostics;
-
-namespace PinionCore.Remote
-{    
+﻿namespace PinionCore.Remote
+{
     public interface IEntry : IBinderProvider
     {
         void Update();

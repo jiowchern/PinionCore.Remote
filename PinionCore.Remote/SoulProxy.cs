@@ -1,6 +1,6 @@
-using System;
-using System.Linq;
+﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 
 namespace PinionCore.Remote
@@ -25,34 +25,35 @@ namespace PinionCore.Remote
 
         public delegate ISoul OnSupplyPropertySoul(long soul_id, int property_id, TypeObject type_object);
         public delegate void OnUnsupplyPropertySoul(long soul_id, int property_id, long property_soul_id);
-        public event OnSupplyPropertySoul SupplySoulEvent;        
+        public event OnSupplyPropertySoul SupplySoulEvent;
         public event OnUnsupplyPropertySoul UnsupplySoulEvent;
-        
-        public event System.Action<long ,IPropertyIdValue> PropertyChangedEvent;
+
+        public event System.Action<long, IPropertyIdValue> PropertyChangedEvent;
 
         public readonly int InterfaceId;
 
         long ISoul.Id => Id;
         object ISoul.Instance => ObjectInstance;
 
-        
-        public SoulProxy(long id, int interface_id, Type object_type, object object_instance )
+
+        public SoulProxy(long id, int interface_id, Type object_type, object object_instance)
         {
-            
+
             MethodInfos = _GetInterfaces(object_type).SelectMany(i => i.GetMethods()).Union(new MethodInfo[0]).ToArray();
-            
-            PropertyInfos = _GetInterfaces(object_type).SelectMany(s => s.GetProperties(BindingFlags.GetProperty | BindingFlags.Instance | BindingFlags.Public)).Union(new PropertyInfo[0] ).ToArray();
+
+            PropertyInfos = _GetInterfaces(object_type).SelectMany(s => s.GetProperties(BindingFlags.GetProperty | BindingFlags.Instance | BindingFlags.Public)).Union(new PropertyInfo[0]).ToArray();
             ObjectInstance = object_instance;
             ObjectType = object_type;
             InterfaceId = interface_id;
             Id = id;
-                        
-            
-            _EventHandlers = new List<SoulProxyEventHandler>();            
+
+
+            _EventHandlers = new List<SoulProxyEventHandler>();
             _TypeObjectNotifiables = new List<NotifierUpdater>();
             _PropertyUpdaters = new List<PropertyUpdater>();
 
-            _Dispose = () => {
+            _Dispose = () =>
+            {
 
                 _Unregist(_PropertyUpdaters);
                 _Unregist(_TypeObjectNotifiables);
@@ -73,7 +74,7 @@ namespace PinionCore.Remote
                 }
                 _PropertyUpdaters.Clear();
 
-                
+
                 _TypeObjectNotifiables.Clear();
             };
         }
@@ -85,12 +86,12 @@ namespace PinionCore.Remote
             _TypeObjectNotifiables.AddRange(_BuildNotifier(ObjectInstance, ObjectType, property_ids));
             _Regist(_TypeObjectNotifiables);
         }
-        
 
-        private IEnumerable<Tuple<int, PropertyInfo>> _GetPropertys(Type soul_type , System.Collections.Generic.IReadOnlyDictionary<PropertyInfo, int> property_ids)
-        {            
+
+        private IEnumerable<Tuple<int, PropertyInfo>> _GetPropertys(Type soul_type, System.Collections.Generic.IReadOnlyDictionary<PropertyInfo, int> property_ids)
+        {
             return from p in PropertyInfos
-                   select new Tuple<int, PropertyInfo>(property_ids[p] , p);            
+                   select new Tuple<int, PropertyInfo>(property_ids[p], p);
         }
 
         private IEnumerable<NotifierUpdater> _BuildNotifier(object soul, Type soul_type, System.Collections.Generic.IReadOnlyDictionary<PropertyInfo, int> propertyIds)
@@ -98,31 +99,31 @@ namespace PinionCore.Remote
             return from p in _GetPropertys(soul_type, propertyIds)
                    let property = p.Item2
                    let id = p.Item1
-                   where property.PropertyType.GetInterfaces().Any(t => t == typeof(ITypeObjectNotifiable))       
+                   where property.PropertyType.GetInterfaces().Any(t => t == typeof(ITypeObjectNotifiable))
                    let propertyValue = property.GetValue(soul)
                    select new NotifierUpdater(id, propertyValue as ITypeObjectNotifiable);
         }
         private IEnumerable<PropertyUpdater> _BuildProperty(object soul, Type soul_type, System.Collections.Generic.IReadOnlyDictionary<PropertyInfo, int> propertyIds)
-        {            
-            foreach (var item in _GetPropertys(soul_type,propertyIds))
+        {
+            foreach (Tuple<int, PropertyInfo> item in _GetPropertys(soul_type, propertyIds))
             {
                 PropertyInfo property = item.Item2;
                 var id = item.Item1;
                 if (property.PropertyType.GetInterfaces().Any(t => t == typeof(IDirtyable)))
                 {
-                    object propertyValue = property.GetValue(soul);
-                    IDirtyable dirtyable = propertyValue as IDirtyable;
+                    var propertyValue = property.GetValue(soul);
+                    var dirtyable = propertyValue as IDirtyable;
                     yield return new PropertyUpdater(dirtyable, id);
                 }
             }
-            
+
         }
 
-       
+
 
         private void _Regist(List<NotifierUpdater> updaters)
         {
-            foreach (var updater  in updaters)
+            foreach (NotifierUpdater updater in updaters)
             {
                 updater.SupplyEvent += _SupplySoul;
                 updater.UnsupplyEvent += _UnsupplySoul;
@@ -131,7 +132,7 @@ namespace PinionCore.Remote
         }
         private void _Regist(List<PropertyUpdater> property_updaters)
         {
-            foreach (var updater in property_updaters)
+            foreach (PropertyUpdater updater in property_updaters)
             {
                 updater.ChnageEvent += _ChangeInvoke;
             }
@@ -143,14 +144,14 @@ namespace PinionCore.Remote
         }
 
         internal void Release()
-        {            
+        {
 
             _Dispose();
         }
 
         private void _Unregist(List<PropertyUpdater> property_updaters)
         {
-            foreach (var updater in property_updaters)
+            foreach (PropertyUpdater updater in property_updaters)
             {
 
                 updater.ChnageEvent -= _ChangeInvoke;
@@ -159,14 +160,14 @@ namespace PinionCore.Remote
 
         private void _Unregist(List<NotifierUpdater> updaters)
         {
-            foreach (var updater in updaters)
+            foreach (NotifierUpdater updater in updaters)
             {
                 updater.Finial();
                 updater.SupplyEvent -= _SupplySoul;
                 updater.UnsupplyEvent -= _UnsupplySoul;
             }
         }
-        
+
         private void _UnsupplySoul(int property_id, long soul_id)
         {
             UnsupplySoulEvent(Id, property_id, soul_id);
@@ -174,16 +175,16 @@ namespace PinionCore.Remote
 
         private ISoul _SupplySoul(int property_id, TypeObject type_object)
         {
-            return SupplySoulEvent(Id , property_id, type_object);
-        }        
+            return SupplySoulEvent(Id, property_id, type_object);
+        }
 
         internal void PropertyUpdateReset(int property)
         {
-            
 
-            foreach (var updater in _PropertyUpdaters)
+
+            foreach (PropertyUpdater updater in _PropertyUpdaters)
             {
-                if(updater.PropertyId == property)
+                if (updater.PropertyId == property)
                 {
                     updater.Reset();
                 }
@@ -191,19 +192,19 @@ namespace PinionCore.Remote
 
         }
 
-        
+
 
         internal void AddEvent(SoulProxyEventHandler handler)
         {
-            lock(_EventHandlers)
+            lock (_EventHandlers)
                 _EventHandlers.Add(handler);
-            
+
         }
 
         internal void RemoveEvent(EventInfo eventInfo, long handler_id)
         {
-            
-            lock(_EventHandlers)
+
+            lock (_EventHandlers)
             {
                 SoulProxyEventHandler eventHandler = _EventHandlers.FirstOrDefault(eh => eh.HandlerId == handler_id && eh.EventInfo == eventInfo);
                 if (eventHandler == null)
@@ -211,12 +212,12 @@ namespace PinionCore.Remote
                     PinionCore.Utility.Log.Instance.WriteInfo($" RemoveEvent {handler_id} {eventInfo.Name} not found.");
                     return;
                 }
-                    
+
                 _EventHandlers.Remove(eventHandler);
 
                 eventHandler.Release();
             }
-            
+
         }
 
         bool ISoul.IsTypeObject(TypeObject obj)
@@ -234,9 +235,9 @@ namespace PinionCore.Remote
         IEnumerable<Type> _GetInterfaces(Type object_type)
         {
             yield return object_type;
-            foreach (var item in object_type.GetInterfaces())
+            foreach (Type item in object_type.GetInterfaces())
             {
-                foreach (var item2 in _GetInterfaces(item))
+                foreach (Type item2 in _GetInterfaces(item))
                 {
                     yield return item2;
                 }

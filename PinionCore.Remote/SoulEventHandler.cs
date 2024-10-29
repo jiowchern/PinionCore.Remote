@@ -1,8 +1,8 @@
-using System;
+﻿using System;
+using System.Collections.Concurrent;
 using System.Linq;
 using System.Reflection;
 using PinionCore.Remote.Packages;
-using System.Collections.Concurrent;
 
 namespace PinionCore.Remote
 {
@@ -34,24 +34,24 @@ namespace PinionCore.Remote
 
         public void AddEvent(long entityId, int eventId, long handlerId)
         {
-            if (!_Souls.TryGetValue(entityId, out var soul))
+            if (!_Souls.TryGetValue(entityId, out SoulProxy soul))
                 return;
 
-            var eventInfo = _Protocol.GetMemberMap().GetEvent(eventId);
+            EventInfo eventInfo = _Protocol.GetMemberMap().GetEvent(eventId);
             if (eventInfo == null || !soul.Is(eventInfo.DeclaringType))
                 return;
 
-            var del = _BuildDelegate(eventInfo, soul.Id, handlerId, _InvokeEvent);
+            Delegate del = _BuildDelegate(eventInfo, soul.Id, handlerId, _InvokeEvent);
             var handler = new SoulProxyEventHandler(soul.ObjectInstance, del, eventInfo, handlerId);
             soul.AddEvent(handler);
         }
 
         public void RemoveEvent(long entityId, int eventId, long handlerId)
         {
-            if (!_Souls.TryGetValue(entityId, out var soul))
+            if (!_Souls.TryGetValue(entityId, out SoulProxy soul))
                 return;
 
-            var eventInfo = _Protocol.GetMemberMap().GetEvent(eventId);
+            EventInfo eventInfo = _Protocol.GetMemberMap().GetEvent(eventId);
             if (eventInfo == null || !soul.Is(eventInfo.DeclaringType))
                 return;
 
@@ -60,7 +60,7 @@ namespace PinionCore.Remote
 
         private void _InvokeEvent(long entityId, int eventId, long handlerId, object[] args)
         {
-            var info = _Protocol.GetMemberMap().GetEvent(eventId);
+            EventInfo info = _Protocol.GetMemberMap().GetEvent(eventId);
             var package = new PackageInvokeEvent
             {
                 EntityId = entityId,
@@ -73,9 +73,9 @@ namespace PinionCore.Remote
 
         private Delegate _BuildDelegate(EventInfo info, long entityId, long handlerId, InvokeEventCallabck invokeEvent)
         {
-            var eventCreator = _EventProvider.Find(info);
-            var map = _Protocol.GetMemberMap();
-            int id = map.GetEvent(info);
+            IEventProxyCreater eventCreator = _EventProvider.Find(info);
+            MemberMap map = _Protocol.GetMemberMap();
+            var id = map.GetEvent(info);
             return eventCreator.Create(entityId, id, handlerId, invokeEvent);
         }
     }

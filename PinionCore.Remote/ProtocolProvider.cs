@@ -1,4 +1,4 @@
-using System.Linq;
+﻿using System.Linq;
 
 namespace PinionCore.Remote.Protocol
 {
@@ -7,12 +7,12 @@ namespace PinionCore.Remote.Protocol
         public static System.Collections.Generic.IEnumerable<PinionCore.Remote.IProtocol> Create(System.Reflection.Assembly protocol_assembly)
         {
             System.Type[] types = protocol_assembly.GetExportedTypes();
-            var protocolTypes = types.Where(type => type.GetInterface(nameof(PinionCore.Remote.IProtocol)) != null);
-            foreach (var type in protocolTypes)
+            System.Collections.Generic.IEnumerable<System.Type> protocolTypes = types.Where(type => type.GetInterface(nameof(PinionCore.Remote.IProtocol)) != null);
+            foreach (System.Type type in protocolTypes)
             {
                 yield return System.Activator.CreateInstance(type) as PinionCore.Remote.IProtocol;
             }
-            
+
         }
 
         public static System.Collections.Generic.IEnumerable<System.Type> GetProtocols()

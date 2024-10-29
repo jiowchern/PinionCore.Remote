@@ -1,0 +1,46 @@
+# 根據檔案名稱套用規則
+root = true
+
+# 通用設定
+[*]
+charset = utf-8-bom
+end_of_line = crlf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# C# 特定設定
+[*.cs]
+indent_style = space
+indent_size = 4
+dotnet_sort_system_directives_first = true
+csharp_new_line_before_open_brace = all
+csharp_style_var_for_built_in_types = true:suggestion
+csharp_style_var_when_type_is_apparent = true:suggestion
+csharp_style_var_elsewhere = false:suggestion
+csharp_prefer_braces = true
+
+# 公開欄位命名規則 (PascalCase)
+dotnet_naming_rule.public_fields_should_be_pascal_case.severity = suggestion
+dotnet_naming_rule.public_fields_should_be_pascal_case.symbols = public_fields
+dotnet_naming_rule.public_fields_should_be_pascal_case.style = pascal_case
+dotnet_naming_symbols.public_fields.applicable_kinds = field
+dotnet_naming_symbols.public_fields.applicable_accessibilities = public
+dotnet_naming_style.pascal_case.capitalization = pascal_case
+
+# 私有欄位命名規則 (camelCase + 後綴 "_")
+dotnet_naming_rule.private_fields_should_be_camel_case_with_trailing_underscore.severity = suggestion
+dotnet_naming_rule.private_fields_should_be_camel_case_with_trailing_underscore.symbols = private_fields
+dotnet_naming_rule.private_fields_should_be_camel_case_with_trailing_underscore.style = camel_case_with_trailing_underscore
+dotnet_naming_symbols.private_fields.applicable_kinds = field
+dotnet_naming_symbols.private_fields.applicable_accessibilities = private
+dotnet_naming_style.camel_case_with_trailing_underscore.capitalization = pascal_case
+dotnet_naming_style.camel_case_with_trailing_underscore.required_suffix = _
+
+# 事件命名規則 (PascalCase + 後綴 "Event")
+dotnet_naming_rule.events_should_have_event_suffix.severity = suggestion
+dotnet_naming_rule.events_should_have_event_suffix.symbols = events
+dotnet_naming_rule.events_should_have_event_suffix.style = pascal_case_with_event_suffix
+dotnet_naming_symbols.events.applicable_kinds = field
+dotnet_naming_symbols.events.applicable_accessibilities = public, protected, private
+dotnet_naming_style.pascal_case_with_event_suffix.capitalization = pascal_case
+dotnet_naming_style.pascal_case_with_event_suffix.required_suffix = Event

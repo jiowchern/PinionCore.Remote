@@ -1,4 +1,4 @@
-using System.Linq;
+﻿using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
 
@@ -14,12 +14,12 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.Tests
         {
             var source = @"public interface IA {}";
             var syntaxBuilder = new PinionCore.Remote.Tools.Protocol.Sources.SyntaxTreeBuilder(SourceText.From(source));
-            var interfaces = syntaxBuilder.GetInterfaces("IA");
-            Assert.AreEqual(1 , interfaces.Count());
+            System.Collections.Generic.IEnumerable<Microsoft.CodeAnalysis.CSharp.Syntax.InterfaceDeclarationSyntax> interfaces = syntaxBuilder.GetInterfaces("IA");
+            Assert.AreEqual(1, interfaces.Count());
         }
 
 
-        
+
 
     }
 }

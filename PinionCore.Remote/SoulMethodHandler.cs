@@ -1,11 +1,11 @@
-using PinionCore.Memorys;
-using PinionCore.Remote.Packages;
-using PinionCore.Utility;
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using PinionCore.Memorys;
+using PinionCore.Remote.Packages;
+using PinionCore.Utility;
 
 namespace PinionCore.Remote
 {
@@ -68,7 +68,7 @@ namespace PinionCore.Remote
 
                 IEnumerable<object> argObjects = args.Zip(methodInfo.GetParameters(), (arg, par) => _Serializer.Deserialize(par.ParameterType, arg.AsBuffer()));
 
-                object returnValue = methodInfo.Invoke(soulInfo.ObjectInstance, argObjects.ToArray());
+                var returnValue = methodInfo.Invoke(soulInfo.ObjectInstance, argObjects.ToArray());
                 if (returnValue != null)
                 {
                     _ReturnValue(returnId, returnValue as IValue);
@@ -76,7 +76,7 @@ namespace PinionCore.Remote
             }
             catch (DeserializeException deserialize_exception)
             {
-                string message = deserialize_exception.Base.ToString();
+                var message = deserialize_exception.Base.ToString();
                 _ErrorDeserialize(method_id.ToString(), returnId, message);
             }
             catch (Exception e)

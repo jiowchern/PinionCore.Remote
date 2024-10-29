@@ -1,8 +1,7 @@
-using System;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Collections.Generic;
-using System.Collections;
 
 namespace PinionCore.Network
 {
@@ -11,7 +10,7 @@ namespace PinionCore.Network
         private readonly IStreamable _Stream;
         private readonly PinionCore.Memorys.IPool _Pool;
         private readonly Memorys.Buffer _Empty;
-        
+
         public struct Package
         {
             public PinionCore.Memorys.Buffer Buffer;
@@ -20,41 +19,41 @@ namespace PinionCore.Network
 
         public PackageReader(IStreamable stream, PinionCore.Memorys.IPool pool)
         {
-                        
+
             _Stream = stream;
             _Pool = pool;
             _Empty = _Pool.Alloc(0);
         }
-        
+
         public async Task<List<PinionCore.Memorys.Buffer>> Read()
-        {            
-            return await ReadBuffers( new Package { Buffer = _Empty, Segment = _Empty.Bytes });
+        {
+            return await ReadBuffers(new Package { Buffer = _Empty, Segment = _Empty.Bytes });
         }
         public async Task<List<PinionCore.Memorys.Buffer>> ReadBuffers(Package unfin)
         {
             var packages = new List<Package>();
-            var headBuffer = _Pool.Alloc(8);
+            Memorys.Buffer headBuffer = _Pool.Alloc(8);
             _CopyBuffer(unfin.Segment, headBuffer.Bytes, unfin.Segment.Count);
-            var headReadCount = await _ReadFromStream( headBuffer.Bytes.Array, offset: headBuffer.Bytes.Offset + unfin.Segment.Count, count: headBuffer.Bytes.Count - unfin.Segment.Count);
+            var headReadCount = await _ReadFromStream(headBuffer.Bytes.Array, offset: headBuffer.Bytes.Offset + unfin.Segment.Count, count: headBuffer.Bytes.Count - unfin.Segment.Count);
             if (headReadCount == 0)
                 return new List<PinionCore.Memorys.Buffer>();
             headReadCount += unfin.Segment.Count;
             var readedSeg = new ArraySegment<byte>(headBuffer.Bytes.Array, headBuffer.Bytes.Offset, headReadCount);
-            int varintPackagesLen = 0;
-            var varintPackages = PinionCore.Serialization.Varint.FindPackages(readedSeg).ToArray();
-            foreach (var pkg in varintPackages)
+            var varintPackagesLen = 0;
+            Serialization.Varint.Package[] varintPackages = PinionCore.Serialization.Varint.FindPackages(readedSeg).ToArray();
+            foreach (Serialization.Varint.Package pkg in varintPackages)
             {
-                varintPackagesLen += pkg.Head.Count + pkg.Body.Count  ;
-                packages.Add(new Package { Buffer = headBuffer , Segment = pkg.Body });
+                varintPackagesLen += pkg.Head.Count + pkg.Body.Count;
+                packages.Add(new Package { Buffer = headBuffer, Segment = pkg.Body });
             }
 
-            var remaining = new ArraySegment<byte>(readedSeg.Array , readedSeg.Offset + varintPackagesLen , readedSeg.Count - varintPackagesLen);
-            
-            var remainingHeadVarint = PinionCore.Serialization.Varint.FindVarint(ref remaining);
+            var remaining = new ArraySegment<byte>(readedSeg.Array, readedSeg.Offset + varintPackagesLen, readedSeg.Count - varintPackagesLen);
+
+            ArraySegment<byte> remainingHeadVarint = PinionCore.Serialization.Varint.FindVarint(ref remaining);
             if (remainingHeadVarint.Count > 0)
             {
                 var offset = PinionCore.Serialization.Varint.BufferToNumber(remaining.Array, remaining.Offset, out int bodySize);
-                var body = _Pool.Alloc(bodySize);
+                Memorys.Buffer body = _Pool.Alloc(bodySize);
                 _CopyBuffer(remaining, offset, body.Bytes, 0, remaining.Count - offset);
                 var remainingBodySize = bodySize - (remaining.Count - offset);
                 if (remainingBodySize > 0)
@@ -64,7 +63,7 @@ namespace PinionCore.Network
                     while (bodyReadCount < remainingBodySize)
                     {
                         var readed = await _ReadFromStream(body.Bytes.Array, body.Bytes.Offset + readOffset + bodyReadCount, remainingBodySize - bodyReadCount);
-                        if(readed == 0)
+                        if (readed == 0)
                             return new List<PinionCore.Memorys.Buffer>();
                         bodyReadCount += readed;
                     }
@@ -72,22 +71,22 @@ namespace PinionCore.Network
                 packages.Add(new Package { Buffer = body, Segment = new ArraySegment<byte>(body.Bytes.Array, body.Bytes.Offset, bodySize) });
                 return _Convert(packages).ToList();
             }
-            if(varintPackages.Length == 0 )
+            if (varintPackages.Length == 0)
                 throw new SystemException("head size greater than 8.");
             var buffers = _Convert(packages).ToList();
             if (remaining.Count > 0)
             {
-                var nestBuffers = await ReadBuffers(new Package { Buffer = headBuffer, Segment = remaining });
+                List<Memorys.Buffer> nestBuffers = await ReadBuffers(new Package { Buffer = headBuffer, Segment = remaining });
                 buffers.AddRange(nestBuffers);
             }
-            return buffers;            
+            return buffers;
         }
 
         IEnumerable<PinionCore.Memorys.Buffer> _Convert(IEnumerable<Package> packages)
         {
-            foreach (var pkg in packages)
+            foreach (Package pkg in packages)
             {
-                var buf = _Pool.Alloc(pkg.Segment.Count);
+                Memorys.Buffer buf = _Pool.Alloc(pkg.Segment.Count);
                 _CopyBuffer(pkg.Segment, buf.Bytes, pkg.Segment.Count);
                 yield return buf;
             }

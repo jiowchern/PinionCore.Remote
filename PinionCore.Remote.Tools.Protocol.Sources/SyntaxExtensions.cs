@@ -1,4 +1,4 @@
-
+﻿
 using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -11,14 +11,14 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.Extensions
     {
         public static bool AnyNull(params SyntaxNode[] nodes)
         {
-            
-                
+
+
             return nodes.Any(n => n == null);
         }
 
         public static System.Collections.Generic.IEnumerable<SyntaxNode> GetParentPathAndSelf(this SyntaxNode syntax)
-        {            
-            while(syntax != null)
+        {
+            while (syntax != null)
             {
                 yield return syntax;
                 syntax = syntax.Parent;
@@ -26,17 +26,17 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.Extensions
         }
         public static string GetNamePath(this BaseTypeDeclarationSyntax syntax)
         {
-            
+
             var names = new System.Collections.Generic.Stack<string>();
 
             NamespaceDeclarationSyntax @namespace = default;
             while (syntax != null)
             {
-                names.Push(syntax.Identifier.ValueText);                
+                names.Push(syntax.Identifier.ValueText);
 
                 if (syntax.Parent is BaseTypeDeclarationSyntax type)
                     syntax = type;
-                else if(syntax.Parent is NamespaceDeclarationSyntax ns)
+                else if (syntax.Parent is NamespaceDeclarationSyntax ns)
                 {
                     @namespace = ns;
                     break;
@@ -47,40 +47,40 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.Extensions
                 }
             }
 
-            while(@namespace !=null)
+            while (@namespace != null)
             {
                 names.Push(@namespace.Name.ToString());
 
-                if(@namespace.Parent is NamespaceDeclarationSyntax ns)
+                if (@namespace.Parent is NamespaceDeclarationSyntax ns)
                 {
-                    @namespace = ns; 
+                    @namespace = ns;
                 }
                 else
                 {
                     break;
                 }
-                
-                  
+
+
             }
-            
+
             return string.Join(".", names);
         }
 
         public static InterfaceDeclarationSyntax ToInferredInterface(this INamedTypeSymbol symbol)
         {
-            
-            var syntax = SyntaxFactory.InterfaceDeclaration(symbol.Name);
 
-            foreach (var member in symbol.GetMembers())
+            InterfaceDeclarationSyntax syntax = SyntaxFactory.InterfaceDeclaration(symbol.Name);
+
+            foreach (ISymbol member in symbol.GetMembers())
             {
                 MemberDeclarationSyntax memberSyntax = null;
                 if (member is IMethodSymbol methodSymbol && methodSymbol.MethodKind == MethodKind.Ordinary)
-                {                    
-                    memberSyntax = _ToMethod(methodSymbol);                    
+                {
+                    memberSyntax = _ToMethod(methodSymbol);
                 }
                 else if (member is IPropertySymbol propertySymbol)
                 {
-                    if(propertySymbol.IsIndexer)
+                    if (propertySymbol.IsIndexer)
                     {
                         memberSyntax = _ToIndexer(propertySymbol);
                     }
@@ -88,7 +88,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.Extensions
                     {
                         memberSyntax = _ToProperty(propertySymbol);
                     }
-                    
+
                 }
                 else if (member is IEventSymbol eventSymbol)
                 {
@@ -102,55 +102,55 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.Extensions
                 syntax = syntax.AddMembers(memberSyntax);
             }
 
-            var root = SyntaxFactory.CompilationUnit();
+            CompilationUnitSyntax root = SyntaxFactory.CompilationUnit();
 
-            var namespaceSymbol = symbol.ContainingNamespace;
+            INamespaceSymbol namespaceSymbol = symbol.ContainingNamespace;
             if (namespaceSymbol.IsGlobalNamespace)
             {
                 root = root.AddMembers(syntax);
             }
             else
             {
-                var namespaceSyntax = SyntaxFactory.NamespaceDeclaration(SyntaxFactory.ParseName(namespaceSymbol.ToDisplayString()));
+                NamespaceDeclarationSyntax namespaceSyntax = SyntaxFactory.NamespaceDeclaration(SyntaxFactory.ParseName(namespaceSymbol.ToDisplayString()));
                 namespaceSyntax = namespaceSyntax.AddMembers(syntax);
-                root = root.AddMembers(namespaceSyntax);                
+                root = root.AddMembers(namespaceSyntax);
             }
 
-            
+
             return root.DescendantNodes().OfType<InterfaceDeclarationSyntax>().First();
         }
 
-       
+
 
         private static MemberDeclarationSyntax _ToEvent(IEventSymbol event_symbol)
         {
-            var type = _GetTypeSyntax(event_symbol.Type);
+            TypeSyntax type = _GetTypeSyntax(event_symbol.Type);
 
-            
+
             SeparatedSyntaxList<VariableDeclaratorSyntax> vars = default;
             vars = vars.Add(SyntaxFactory.VariableDeclarator(SyntaxFactory.Identifier(event_symbol.Name)));
-            var varibable = SyntaxFactory.VariableDeclaration(type , vars );
+            VariableDeclarationSyntax varibable = SyntaxFactory.VariableDeclaration(type, vars);
 
-            
-            var member = SyntaxFactory.EventFieldDeclaration(varibable);
+
+            EventFieldDeclarationSyntax member = SyntaxFactory.EventFieldDeclaration(varibable);
 
             return member;
 
         }
         private static MemberDeclarationSyntax _ToIndexer(IPropertySymbol property_symbol)
         {
-            var type = _GetTypeSyntax(property_symbol.Type);            
-            var property = SyntaxFactory.IndexerDeclaration(type);
+            TypeSyntax type = _GetTypeSyntax(property_symbol.Type);
+            IndexerDeclarationSyntax property = SyntaxFactory.IndexerDeclaration(type);
 
             if (property_symbol.SetMethod != null)
             {
-                var ad = SyntaxKind.SetAccessorDeclaration;
+                SyntaxKind ad = SyntaxKind.SetAccessorDeclaration;
                 AccessorDeclarationSyntax access = _AccessorSyntax(ad);
                 property = property.AddAccessorListAccessors(access);
             }
             if (property_symbol.GetMethod != null)
             {
-                var ad = SyntaxKind.GetAccessorDeclaration;
+                SyntaxKind ad = SyntaxKind.GetAccessorDeclaration;
                 AccessorDeclarationSyntax access = _AccessorSyntax(ad);
                 property = property.AddAccessorListAccessors(access);
             }
@@ -158,18 +158,18 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.Extensions
         }
         private static PropertyDeclarationSyntax _ToProperty(IPropertySymbol property_symbol)
         {
-            var type = _GetTypeSyntax(property_symbol.Type);
-            var property = SyntaxFactory.PropertyDeclaration(type, property_symbol.Name);
+            TypeSyntax type = _GetTypeSyntax(property_symbol.Type);
+            PropertyDeclarationSyntax property = SyntaxFactory.PropertyDeclaration(type, property_symbol.Name);
 
-            if(property_symbol.SetMethod != null)
+            if (property_symbol.SetMethod != null)
             {
-                var ad = SyntaxKind.SetAccessorDeclaration;
+                SyntaxKind ad = SyntaxKind.SetAccessorDeclaration;
                 AccessorDeclarationSyntax access = _AccessorSyntax(ad);
                 property = property.AddAccessorListAccessors(access);
             }
             if (property_symbol.GetMethod != null)
             {
-                var ad = SyntaxKind.GetAccessorDeclaration;
+                SyntaxKind ad = SyntaxKind.GetAccessorDeclaration;
                 AccessorDeclarationSyntax access = _AccessorSyntax(ad);
                 property = property.AddAccessorListAccessors(access);
             }
@@ -183,16 +183,16 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.Extensions
 
         private static MethodDeclarationSyntax _ToMethod(IMethodSymbol methodSymbol)
         {
-            var retType = _GetTypeSyntax(methodSymbol.ReturnType);
-            var method = SyntaxFactory.MethodDeclaration(retType, methodSymbol.Name);
-            var list = SyntaxFactory.ParameterList();
+            TypeSyntax retType = _GetTypeSyntax(methodSymbol.ReturnType);
+            MethodDeclarationSyntax method = SyntaxFactory.MethodDeclaration(retType, methodSymbol.Name);
+            ParameterListSyntax list = SyntaxFactory.ParameterList();
 
-            foreach (var parameter in methodSymbol.Parameters)
+            foreach (IParameterSymbol parameter in methodSymbol.Parameters)
             {
-                var p = SyntaxFactory.Parameter(SyntaxFactory.Identifier(parameter.Name));
+                ParameterSyntax p = SyntaxFactory.Parameter(SyntaxFactory.Identifier(parameter.Name));
 
-                
-                if(parameter.RefKind == RefKind.Out)
+
+                if (parameter.RefKind == RefKind.Out)
                 {
                     p = p.AddModifiers(SyntaxFactory.Token(SyntaxKind.OutKeyword));
                 }
@@ -223,9 +223,9 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.Extensions
             {
                 return SyntaxFactory.ParseTypeName("void");
             }
-           
-            
-            var syntax = SyntaxFactory.ParseTypeName(symbol.ToDisplayString(FullSpreadSymbolDisplayFormat.Default));
+
+
+            TypeSyntax syntax = SyntaxFactory.ParseTypeName(symbol.ToDisplayString(FullSpreadSymbolDisplayFormat.Default));
             return syntax;
         }
     }

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 
 namespace PinionCore.Serialization
 {
@@ -27,26 +27,26 @@ namespace PinionCore.Serialization
 
         int ITypeDescriber.GetByteCount(object instance)
         {
-            string str = instance as string;
-            char[] chars = str.ToCharArray();
+            var str = instance as string;
+            var chars = str.ToCharArray();
 
-            int charCount = _CharArrayDescriber.GetByteCount(chars);
+            var charCount = _CharArrayDescriber.GetByteCount(chars);
 
             return charCount;
         }
 
         int ITypeDescriber.ToBuffer(object instance, PinionCore.Memorys.Buffer buffer, int begin)
-        {            
-            string str = instance as string;
-            char[] chars = str.ToCharArray();
-            int offset = begin;
+        {
+            var str = instance as string;
+            var chars = str.ToCharArray();
+            var offset = begin;
             offset += _CharArrayDescriber.ToBuffer(chars, buffer, offset);
             return offset - begin;
         }
 
         int ITypeDescriber.ToObject(PinionCore.Memorys.Buffer buffer, int begin, out object instnace)
         {
-            int offset = begin;
+            var offset = begin;
             object chars;
             offset += _CharArrayDescriber.ToObject(buffer, offset, out chars);
 

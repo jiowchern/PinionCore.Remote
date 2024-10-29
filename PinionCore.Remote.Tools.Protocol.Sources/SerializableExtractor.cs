@@ -1,45 +1,43 @@
-using System.Linq;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace PinionCore.Remote.Tools.Protocol.Sources
 {
-    using System;
     using System.Linq;
 
-   
+
 
     class SerializableExtractor
     {
         public string Code;
 
-        
+
 
         public SerializableExtractor(Compilation compilation, IEnumerable<TypeSyntax> types)
         {
             var serializable = new System.Collections.Generic.List<ITypeSymbol>();
-            var ttt = types.ToArray();
-            foreach (var t in types)
+            TypeSyntax[] ttt = types.ToArray();
+            foreach (TypeSyntax t in types)
             {
-                var type = t;                
+                TypeSyntax type = t;
                 var typeName = type.ToFullString();
-                var typeSymbol = compilation.GetTypeByMetadataName(typeName);                
-                
-                _Collect(typeSymbol , serializable);
+                INamedTypeSymbol typeSymbol = compilation.GetTypeByMetadataName(typeName);
 
-                if(type is ArrayTypeSyntax arrayType)
+                _Collect(typeSymbol, serializable);
+
+                if (type is ArrayTypeSyntax arrayType)
                 {
-                    var elementType = arrayType.ElementType;
+                    TypeSyntax elementType = arrayType.ElementType;
                     var elementTypeName = elementType.ToFullString();
-                    var elementTypeSymbol = compilation.GetTypeByMetadataName(elementTypeName);
-                    if(elementTypeSymbol == null)
+                    INamedTypeSymbol elementTypeSymbol = compilation.GetTypeByMetadataName(elementTypeName);
+                    if (elementTypeSymbol == null)
                     {
-                           continue;
+                        continue;
                     }
-                    _Collect(elementTypeSymbol , serializable);
-                    var arraySymbol = compilation.CreateArrayTypeSymbol(elementTypeSymbol);
-                    _Collect(arraySymbol , serializable);
+                    _Collect(elementTypeSymbol, serializable);
+                    IArrayTypeSymbol arraySymbol = compilation.CreateArrayTypeSymbol(elementTypeSymbol);
+                    _Collect(arraySymbol, serializable);
                 }
             }
 
@@ -56,15 +54,15 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
 
             if (typeSymbol is IArrayTypeSymbol arraySymbol)
             {
-                _Collect(arraySymbol.ElementType , serializables);                
+                _Collect(arraySymbol.ElementType, serializables);
             }
 
-            var fields = typeSymbol.GetMembers().OfType<IFieldSymbol>().Where(f => f.DeclaredAccessibility == Accessibility.Public);
-            foreach (var field in fields)
+            IEnumerable<IFieldSymbol> fields = typeSymbol.GetMembers().OfType<IFieldSymbol>().Where(f => f.DeclaredAccessibility == Accessibility.Public);
+            foreach (IFieldSymbol field in fields)
             {
-                _Collect(field.Type , serializables);
+                _Collect(field.Type, serializables);
             }
         }
-       
+
     }
 }

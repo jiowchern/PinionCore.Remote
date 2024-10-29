@@ -1,6 +1,5 @@
-using System;
+﻿using System;
 using System.Linq;
-using PinionCore.Memorys;
 namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
 {
     public class OpCodeExchanger : ServerExchangeable
@@ -10,7 +9,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
         {
             Requests = new System.Collections.Generic.Queue<Tuple<ClientToServerOpCode, byte[]>>();
         }
-        public Action<ServerToClientOpCode, PinionCore.Memorys.Buffer> Responser; 
+        public Action<ServerToClientOpCode, PinionCore.Memorys.Buffer> Responser;
         event Action<ServerToClientOpCode, PinionCore.Memorys.Buffer> Exchangeable<ClientToServerOpCode, ServerToClientOpCode>.ResponseEvent
         {
             add
@@ -28,7 +27,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
         public event Action<ClientToServerOpCode, byte[]> RequestEvent;
         void Exchangeable<ClientToServerOpCode, ServerToClientOpCode>.Request(ClientToServerOpCode code, PinionCore.Memorys.Buffer args)
         {
-            Requests.Enqueue(new Tuple<ClientToServerOpCode, byte[]>(code, args.ToArray()) );
+            Requests.Enqueue(new Tuple<ClientToServerOpCode, byte[]>(code, args.ToArray()));
         }
         public Tuple<ClientToServerOpCode, byte[]> IgnoreUntil(ClientToServerOpCode code)
         {

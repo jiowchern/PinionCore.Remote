@@ -1,6 +1,4 @@
-using PinionCore.Serialization;
-
-namespace PinionCore.Remote
+﻿namespace PinionCore.Remote
 {
     public interface IProtocol
     {

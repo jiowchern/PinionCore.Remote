@@ -1,11 +1,10 @@
-using PinionCore.Memorys;
-using PinionCore.Network;
-using PinionCore.Serialization;
-using PinionCore.Utility;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using PinionCore.Memorys;
+using PinionCore.Network;
+using PinionCore.Utility;
 
 namespace PinionCore.Remote.Ghost
 {
@@ -16,16 +15,16 @@ namespace PinionCore.Remote.Ghost
         private readonly IInternalSerializable _Serializable;
         private readonly System.Collections.Concurrent.ConcurrentQueue<PinionCore.Remote.Packages.ResponsePackage> _Receives;
 
-        
+
         private readonly System.Collections.Concurrent.ConcurrentBag<System.Exception> _Exceptions;
         public event System.Action<System.Exception> ErrorEvent;
-        public GhostSerializer(PinionCore.Network.PackageReader reader , PackageSender sender, IInternalSerializable serializable)
+        public GhostSerializer(PinionCore.Network.PackageReader reader, PackageSender sender, IInternalSerializable serializable)
         {
             _Exceptions = new System.Collections.Concurrent.ConcurrentBag<Exception>();
             _Reader = reader;
             _Sender = sender;
             this._Serializable = serializable;
-        
+
             _Receives = new System.Collections.Concurrent.ConcurrentQueue<PinionCore.Remote.Packages.ResponsePackage>();
 
             _ResponseEvent += _Empty;
@@ -52,8 +51,8 @@ namespace PinionCore.Remote.Ghost
         }
 
         void Exchangeable<ClientToServerOpCode, ServerToClientOpCode>.Request(ClientToServerOpCode code, PinionCore.Memorys.Buffer args)
-        {            
-            var buf = _Serializable.Serialize(new PinionCore.Remote.Packages.RequestPackage()
+        {
+            Memorys.Buffer buf = _Serializable.Serialize(new PinionCore.Remote.Packages.RequestPackage()
             {
                 Data = args.ToArray(),
                 Code = code
@@ -64,14 +63,14 @@ namespace PinionCore.Remote.Ghost
         public void Start()
         {
             Singleton<Log>.Instance.WriteInfo("Agent online enter.");
-            Task.Run( async () => await _ReaderStart());
+            Task.Run(async () => await _ReaderStart());
         }
 
         public void Stop()
         {
-            
+
             _ReaderStop();
-            
+
             PinionCore.Remote.Packages.ResponsePackage val2;
             while (_Receives.TryDequeue(out val2))
             {
@@ -82,31 +81,32 @@ namespace PinionCore.Remote.Ghost
 
         void _Update()
         {
-            if(_Exceptions.TryTake( out var e))
+            if (_Exceptions.TryTake(out Exception e))
             {
                 ErrorEvent.Invoke(e);
                 return;
             }
-            _Process(); 
+            _Process();
         }
 
         private void _Process()
         {
-            
-            
-            while(_Receives.TryDequeue(out var receivePkg))
-            {            
+
+
+            while (_Receives.TryDequeue(out Packages.ResponsePackage receivePkg))
+            {
                 _ResponseEvent(receivePkg.Code, receivePkg.Data.AsBuffer());
             }
         }
 
-       
+
 
         private async Task _ReaderStart()
         {
 
-            var packages = await _Reader.Read().ContinueWith(t => { 
-                if(t.Exception != null)
+            List<Memorys.Buffer> packages = await _Reader.Read().ContinueWith(t =>
+            {
+                if (t.Exception != null)
                 {
                     Singleton<Log>.Instance.WriteInfo($" Agent online error : {t.Exception}");
                     _Exceptions.Add(t.Exception);
@@ -114,18 +114,18 @@ namespace PinionCore.Remote.Ghost
                 }
                 return t.Result;
             });
-            if(packages.Count == 0)
+            if (packages.Count == 0)
             {
-                _Exceptions.Add(new System.Exception("Agent online error : read 0"));      
+                _Exceptions.Add(new System.Exception("Agent online error : read 0"));
                 return;
             }
             _ReadDone(packages);
-            await System.Threading.Tasks.Task.Delay(0).ContinueWith(t=> _ReaderStart());            
+            await System.Threading.Tasks.Task.Delay(0).ContinueWith(t => _ReaderStart());
         }
 
         private void _ReadDone(List<Memorys.Buffer> buffers)
         {
-            foreach (var buffer in buffers)
+            foreach (Memorys.Buffer buffer in buffers)
             {
                 var pkg = (Packages.ResponsePackage)_Serializable.Deserialize(buffer);
                 _Receives.Enqueue(pkg);
@@ -134,7 +134,7 @@ namespace PinionCore.Remote.Ghost
 
         private void _ReaderStop()
         {
-         
+
         }
 
         public void Update()

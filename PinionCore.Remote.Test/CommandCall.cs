@@ -1,8 +1,8 @@
+﻿using System;
 using NSubstitute;
 using PinionCore.Remote;
 using PinionCore.Remote.Extension;
 using PinionCore.Utility;
-using System;
 
 namespace RemotingTest
 {
@@ -13,14 +13,14 @@ namespace RemotingTest
         public void TestCommandCall()
         {
             CommandParam param = Substitute.For<CommandParam>();
-            bool called = false;
+            var called = false;
             param.Types = new[]
             {
                 typeof(string)
             };
             param.Callback = new Action<string>(msg => { called = true; });
 
-            Command command = new Command();
+            var command = new Command();
             command.Register("123", param);
             command.Run(
                 "123",
@@ -47,7 +47,7 @@ namespace RemotingTest
             param.Callback = new Func<int, int, float>((a, b) => { return a + b; });
             param.Return = new Action<float>(val => { value = val; });
 
-            Command command = new Command();
+            var command = new Command();
             command.Register("123", param);
             command.Run(
                 "123",
@@ -63,20 +63,20 @@ namespace RemotingTest
         [NUnit.Framework.Test]
         public void TestGPIBinder()
         {
-            Command command = new Command();
+            var command = new Command();
             IBinderTest tester = Substitute.For<IBinderTest>();
-            TestNotifier notifier = new TestNotifier(tester);
+            var notifier = new TestNotifier(tester);
 
 
-            GPIBinder<IBinderTest> binder = new GPIBinder<IBinderTest>(notifier, command);
+            var binder = new GPIBinder<IBinderTest>(notifier, command);
             IBootable boot = binder;
             boot.Launch();
 
 
             binder.Bind(t => t.Function1());
             binder.Bind<int>((t, arg) => t.Function2(arg));
-            bool returnValue = false;
-            int returnProperty = 0;
+            var returnValue = false;
+            var returnProperty = 0;
             binder.Bind(t => t.Function3(), ret => { returnValue = true; });
 
             binder.Bind(t => t.Property1, ret => { returnProperty = 12345; });
@@ -130,7 +130,7 @@ namespace RemotingTest
                 remove { }
             }
 
-            
+
 
 
         }

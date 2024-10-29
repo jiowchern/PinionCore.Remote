@@ -1,5 +1,4 @@
-using System;
-using System.Linq;
+﻿using System;
 using System.Net.Sockets;
 
 namespace PinionCore.Network.Tcp
@@ -9,12 +8,12 @@ namespace PinionCore.Network.Tcp
     public class SockerTransactor
     {
         public delegate IAsyncResult OnStart(byte[] buffer, int offset, int size, SocketFlags socketFlags, out SocketError errorCode, AsyncCallback callback, object state);
-        
-        
-        OnStart _StartHandler;
+
+
+        readonly OnStart _StartHandler;
 
         public delegate int OnEnd(IAsyncResult arg);
-        OnEnd _EndHandler;
+        readonly OnEnd _EndHandler;
 
         event Action<SocketError> _SocketErrorEvent;
         public event Action<SocketError> SocketErrorEvent
@@ -30,35 +29,35 @@ namespace PinionCore.Network.Tcp
             }
         }
 
-        public SockerTransactor(OnStart start , OnEnd end )
+        public SockerTransactor(OnStart start, OnEnd end)
         {
-            
+
             _StartHandler = start;
             _EndHandler = end;
             _SocketErrorEvent += (e) => { };
         }
-         
-        
+
+
         public IWaitableValue<int> Transact(byte[] readed_byte, int offset, int count)
         {
             SocketError error;
-            var ar = _StartHandler(readed_byte, offset, count, SocketFlags.None, out error, _StartDone, null);
+            IAsyncResult ar = _StartHandler(readed_byte, offset, count, SocketFlags.None, out error, _StartDone, null);
 
-            if(error != SocketError.Success && error != SocketError.IOPending)
+            if (error != SocketError.Success && error != SocketError.IOPending)
             {
                 _SocketErrorEvent(error);
                 return System.Threading.Tasks.Task.Delay(1000).ContinueWith(t =>
                 {
                     return 0;
                 }).ToWaitableValue();
-                
+
             }
 
-            return System.Threading.Tasks.Task<int>.Factory.FromAsync(ar, (a)=> { return _EndHandler(a); }).ToWaitableValue();
+            return System.Threading.Tasks.Task<int>.Factory.FromAsync(ar, (a) => { return _EndHandler(a); }).ToWaitableValue();
         }
         private void _StartDone(IAsyncResult arg)
         {
-            
+
         }
     }
 

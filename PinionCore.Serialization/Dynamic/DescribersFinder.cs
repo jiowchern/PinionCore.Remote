@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -26,7 +26,7 @@ namespace PinionCore.Serialization.Dynamic
 
         ITypeDescriber IDescribersFinder.Get(Type id)
         {
-            lock(_TypeDescribers)
+            lock (_TypeDescribers)
             {
                 ITypeDescriber des;
                 if (!_TypeDescribers.TryGetValue(id, out des))
@@ -42,7 +42,7 @@ namespace PinionCore.Serialization.Dynamic
                 return des;
             }
 
-            
+
         }
     }
 }

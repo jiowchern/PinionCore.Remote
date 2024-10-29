@@ -1,5 +1,4 @@
-using System;
-using System.Linq;
+﻿using System;
 
 namespace PinionCore.Remote
 {
@@ -9,20 +8,20 @@ namespace PinionCore.Remote
         private readonly long _Ghost;
 
         private readonly IProtocol _Protocol;
-        
-        
-        IInternalSerializable _InternalSerializable;
-        public GhostEventMoveHandler(long ghost, IProtocol protocol,  IInternalSerializable internal_serializable)
+
+
+        readonly IInternalSerializable _InternalSerializable;
+        public GhostEventMoveHandler(long ghost, IProtocol protocol, IInternalSerializable internal_serializable)
         {
             _InternalSerializable = internal_serializable;
             this._Ghost = ghost;
-            _Protocol = protocol;                        
+            _Protocol = protocol;
         }
         void Exchangeable<ServerToClientOpCode, ClientToServerOpCode>.Request(ServerToClientOpCode code, Memorys.Buffer args)
         {
-            
+
         }
-        
+
 
         event Action<ClientToServerOpCode, Memorys.Buffer> _ResponseEvent;
         event Action<ClientToServerOpCode, Memorys.Buffer> Exchangeable<ServerToClientOpCode, ClientToServerOpCode>.ResponseEvent
@@ -37,15 +36,15 @@ namespace PinionCore.Remote
                 _ResponseEvent -= value;
             }
         }
-        
+
 
         internal void Add(System.Reflection.EventInfo info, long handler)
         {
             MemberMap map = _Protocol.GetMemberMap();
 
 
-            PinionCore.Remote.Packages.PackageAddEvent package = new PinionCore.Remote.Packages.PackageAddEvent();
-            
+            var package = new PinionCore.Remote.Packages.PackageAddEvent();
+
             package.Entity = _Ghost;
             package.Event = map.GetEvent(info);
             package.Handler = handler;
@@ -54,14 +53,14 @@ namespace PinionCore.Remote
 
         }
 
-       
+
 
         internal void Remove(System.Reflection.EventInfo info, long handler)
         {
             MemberMap map = _Protocol.GetMemberMap();
-            
 
-            PinionCore.Remote.Packages.PackageRemoveEvent package = new PinionCore.Remote.Packages.PackageRemoveEvent();
+
+            var package = new PinionCore.Remote.Packages.PackageRemoveEvent();
 
 
             package.Entity = _Ghost;
@@ -72,6 +71,6 @@ namespace PinionCore.Remote
 
         }
 
-        
+
     }
 }

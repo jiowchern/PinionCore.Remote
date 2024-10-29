@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography;
 
@@ -8,7 +8,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
     {
         public static byte[] ToMd5(this string source)
         {
-            MD5 md5 = MD5.Create();
+            var md5 = MD5.Create();
             return md5.ComputeHash(System.Text.Encoding.ASCII.GetBytes(source));
         }
 
@@ -18,7 +18,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
         }
         public static IEnumerable<int> GetSeries(this int count)
         {
-            for (int i = 0; i < count; i++)
+            for (var i = 0; i < count; i++)
             {
                 yield return i;
             }

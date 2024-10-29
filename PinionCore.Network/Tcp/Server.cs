@@ -1,11 +1,11 @@
-using PinionCore.Utility;
-using System;
+﻿using System;
 using System.Net;
 using System.Net.Sockets;
+using PinionCore.Utility;
 
 namespace PinionCore.Network.Tcp
 {
-    public class Listener 
+    public class Listener
     {
         private readonly System.Net.Sockets.Socket _Socket;
         private event Action<Peer> _AcceptEvent;
@@ -21,8 +21,8 @@ namespace PinionCore.Network.Tcp
             _Socket.NoDelay = true;
         }
         public void Bind(int Port)
-        {            
-            _Socket.Bind(new IPEndPoint(IPAddress.Any, Port));            
+        {
+            _Socket.Bind(new IPEndPoint(IPAddress.Any, Port));
             _Socket.Listen(backlog: 5);
             _Socket.BeginAccept(_Accept, state: null);
         }

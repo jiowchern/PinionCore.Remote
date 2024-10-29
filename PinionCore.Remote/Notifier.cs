@@ -1,54 +1,54 @@
-using System;
+﻿using System;
 using System.Linq;
 
 namespace PinionCore.Remote
 {
-    public class Notifier<T> : IObjectAccessible , ITypeObjectNotifiable ,System.IDisposable      where T : class   
+    public class Notifier<T> : IObjectAccessible, ITypeObjectNotifiable, System.IDisposable where T : class
     {
-        
+
         public readonly INotifier<T> Base;
         readonly System.Collections.Generic.ICollection<T> _Collection;
         readonly PinionCore.Remote.NotifiableCollection<TypeObject> _TypeObjects;
 
-        public Notifier(INotifier<T> notifier , System.Collections.Generic.ICollection<T>  collection)
+        public Notifier(INotifier<T> notifier, System.Collections.Generic.ICollection<T> collection)
         {
             _TypeObjects = new NotifiableCollection<TypeObject>();
             _Collection = collection;
             Base = notifier;
             Base.Supply += _OnSupply;
-            Base.Unsupply += _OnUnsupply;                     
+            Base.Unsupply += _OnUnsupply;
         }
         public Notifier(NotifiableCollection<T> collection) : this(collection, collection)
         {
-            
+
         }
 
         public Notifier() : this(new NotifiableCollection<T>())
-        {            
+        {
         }
 
         private void _OnUnsupply(T obj)
         {
-            
-            
-            lock(_TypeObjects)
+
+
+            lock (_TypeObjects)
             {
-                var items = from item in _TypeObjects.Items where item.Instance == obj && item.Type == typeof(T) select item;
-                var i = items.First();
+                System.Collections.Generic.IEnumerable<TypeObject> items = from item in _TypeObjects.Items where item.Instance == obj && item.Type == typeof(T) select item;
+                TypeObject i = items.First();
                 _TypeObjects.Items.Remove(i);
             }
-            
+
         }
 
         private void _OnSupply(T obj)
         {
-            
+
             var to = new TypeObject(typeof(T), obj);
-            lock(_TypeObjects)
-                _TypeObjects.Items.Add(to);            
+            lock (_TypeObjects)
+                _TypeObjects.Items.Add(to);
         }
 
-        
+
         event Action<TypeObject> ITypeObjectNotifiable.SupplyEvent
         {
             add
@@ -69,7 +69,7 @@ namespace PinionCore.Remote
             Base.Unsupply -= _OnUnsupply;
         }
 
-        
+
         event Action<TypeObject> ITypeObjectNotifiable.UnsupplyEvent
         {
             add
@@ -92,7 +92,7 @@ namespace PinionCore.Remote
         {
             _Collection.Remove((T)instance);
         }
-        
+
 
         void IDisposable.Dispose()
         {

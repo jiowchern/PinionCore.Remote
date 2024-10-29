@@ -1,8 +1,8 @@
-using PinionCore.Memorys;
-using PinionCore.Remote.Extensions;
-using System;
+﻿using System;
 using System.Linq;
 using System.Reflection;
+using PinionCore.Memorys;
+using PinionCore.Remote.Extensions;
 using static PinionCore.Remote.Extensions.SystemReflectionExtensions;
 namespace PinionCore.Remote
 {
@@ -11,41 +11,41 @@ namespace PinionCore.Remote
         readonly WeakReference<IGhost> _Base;
         readonly MemberMap _MemberMap;
         readonly ISerializable _Serializer;
-        public GhostResponseHandler(WeakReference<IGhost> ghost, MemberMap map , ISerializable serializable)
+        public GhostResponseHandler(WeakReference<IGhost> ghost, MemberMap map, ISerializable serializable)
         {
             _MemberMap = map;
             _Serializer = serializable;
             _Base = ghost;
         }
-        
+
         public IObjectAccessible GetAccesser(int property)
         {
             MemberMap map = _MemberMap;
             PropertyInfo info = map.GetProperty(property);
 
             IGhost ghost = _Base.GetTargetOrException();
-            
+
             var instance = ghost.GetInstance();
-            var type = instance.GetType();
+            Type type = instance.GetType();
             var fieldName = $"_{info.GetPathName()}";
             FieldInfo field = type.GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic);
-            object filedValue = field.GetValue(instance);
+            var filedValue = field.GetValue(instance);
             return filedValue as IObjectAccessible;
         }
         public void UpdateSetProperty(int property, byte[] payload)
         {
-            
-            
-            var map = _MemberMap;
-            var info = map.GetProperty(property);
+
+
+            MemberMap map = _MemberMap;
+            PropertyInfo info = map.GetProperty(property);
             var value = _Serializer.Deserialize(info.DeclaringType, payload.AsBuffer());
 
             IGhost ghost = _Base.GetTargetOrException();
-            object instance = ghost.GetInstance();
-            var type = instance.GetType();
+            var instance = ghost.GetInstance();
+            Type type = instance.GetType();
 
             var fieldName = $"_{info.GetPathName()}";
-            var field = type.GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic);
+            FieldInfo field = type.GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic);
             if (field == null)
             {
                 throw new Exception($"Can't find field {fieldName}.");
@@ -53,25 +53,25 @@ namespace PinionCore.Remote
 
             var filedValue = field.GetValue(instance);
             var updateable = filedValue as IAccessable;
-            updateable.Set(value);            
+            updateable.Set(value);
         }
 
         public void InvokeEvent(int event_id, long handler_id, byte[][] event_params)
         {
-            IGhost ghost = _Base.GetTargetOrException(); 
+            IGhost ghost = _Base.GetTargetOrException();
 
             MemberMap map = _MemberMap;
             EventInfo info = map.GetEvent(event_id);
 
-            object instance = ghost.GetInstance();
+            var instance = ghost.GetInstance();
             Type type = instance.GetType();
 
             var fieldName = $"_{info.GetPathName()}";
             FieldInfo eventInfo = type.GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic);
-            object fieldValue = eventInfo.GetValue(instance);
+            var fieldValue = eventInfo.GetValue(instance);
             if (fieldValue is GhostEventHandler fieldValueDelegate)
             {
-                object[] pars = (from payload in event_params select _Serializer.Deserialize(eventInfo.FieldType, payload.AsBuffer())).ToArray();
+                var pars = (from payload in event_params select _Serializer.Deserialize(eventInfo.FieldType, payload.AsBuffer())).ToArray();
                 try
                 {
                     fieldValueDelegate.Invoke(handler_id, pars);

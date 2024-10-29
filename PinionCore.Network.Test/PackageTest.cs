@@ -1,9 +1,6 @@
-using NSubstitute.Extensions;
-using NUnit.Framework.Constraints;
-using PinionCore.Memorys;
-using PinionCore.Serialization;
-using System;
+﻿using System;
 using System.Linq;
+using PinionCore.Serialization;
 
 
 namespace PinionCore.Network.Tests
@@ -12,7 +9,7 @@ namespace PinionCore.Network.Tests
     {
         struct TestStruct
         {
-            public int A;            
+            public int A;
         }
         [NUnit.Framework.Test]
         public async System.Threading.Tasks.Task Test1()
@@ -21,28 +18,28 @@ namespace PinionCore.Network.Tests
 
             var sendStream = new Stream();
             var readStream = new PinionCore.Network.ReverseStream(sendStream);
-            
-            
+
+
             var sender = new PinionCore.Network.PackageSender(sendStream, PinionCore.Memorys.PoolProvider.Shared);
             var testStruct = new TestStruct();
             testStruct.A = -1;
-            
-            var testStructBuffer = serializer.ObjectToBuffer(testStruct);
+
+            Memorys.Buffer testStructBuffer = serializer.ObjectToBuffer(testStruct);
 
             sender.Push(testStructBuffer);
 
 
             var reader = new PinionCore.Network.PackageReader(readStream, PinionCore.Memorys.PoolProvider.Shared);
 
-            
-            
-            var buffers = await reader.Read();
-            var buffer = buffers.Single();
 
 
-            var readStruct = (TestStruct)serializer.BufferToObject(buffer)  ;
+            System.Collections.Generic.List<Memorys.Buffer> buffers = await reader.Read();
+            Memorys.Buffer buffer = buffers.Single();
+
+
+            var readStruct = (TestStruct)serializer.BufferToObject(buffer);
             NUnit.Framework.Assert.AreEqual(testStruct.A, readStruct.A);
-            
+
 
         }
 
@@ -54,19 +51,19 @@ namespace PinionCore.Network.Tests
             var sendStream = new Stream();
             var readStream = new PinionCore.Network.ReverseStream(sendStream);
 
-            
+
             var sender = new PinionCore.Network.PackageSender(sendStream, PinionCore.Memorys.PoolProvider.Shared);
-            var testStructBuffer1 = serializer.ObjectToBuffer(null);
+            Memorys.Buffer testStructBuffer1 = serializer.ObjectToBuffer(null);
             sender.Push(testStructBuffer1);
 
-            var testStructBuffer2 = serializer.ObjectToBuffer(1);
+            Memorys.Buffer testStructBuffer2 = serializer.ObjectToBuffer(1);
             sender.Push(testStructBuffer2);
 
-            var testStructBuffer3 = serializer.ObjectToBuffer(2);
+            Memorys.Buffer testStructBuffer3 = serializer.ObjectToBuffer(2);
             sender.Push(testStructBuffer3);
             var testStruct = new TestStruct();
             testStruct.A = -1;
-            var testStructBuffer4 = serializer.ObjectToBuffer(testStruct);
+            Memorys.Buffer testStructBuffer4 = serializer.ObjectToBuffer(testStruct);
             sender.Push(testStructBuffer4);
 
 
@@ -74,36 +71,36 @@ namespace PinionCore.Network.Tests
 
             var reader = new PinionCore.Network.PackageReader(readStream, PinionCore.Memorys.PoolProvider.Shared);
 
-            System.Collections.Generic.List<PinionCore.Memorys.Buffer> buffers = new System.Collections.Generic.List<Memorys.Buffer>();
+            var buffers = new System.Collections.Generic.List<Memorys.Buffer>();
 
-            while(buffers.Count < 4)
+            while (buffers.Count < 4)
             {
-                var bufs = await reader.Read();
+                System.Collections.Generic.List<Memorys.Buffer> bufs = await reader.Read();
                 if (bufs.Count == 0)
                     break;
                 buffers.AddRange(bufs);
             }
-            
+
             {
-                var buffer = buffers.ElementAt(0);
+                Memorys.Buffer buffer = buffers.ElementAt(0);
                 var readStruct = serializer.BufferToObject(buffer);
                 NUnit.Framework.Assert.AreEqual(null, readStruct);
             }
             for (var i = 1; i < 3; i++)
             {
-                var buffer = buffers.ElementAt(i);
+                Memorys.Buffer buffer = buffers.ElementAt(i);
                 var readStruct = (int)serializer.BufferToObject(buffer);
                 NUnit.Framework.Assert.AreEqual(i, readStruct);
             }
 
-            
+
             {
-                var buffer = buffers.ElementAt(3);
+                Memorys.Buffer buffer = buffers.ElementAt(3);
                 var readStruct = (TestStruct)serializer.BufferToObject(buffer);
                 NUnit.Framework.Assert.AreEqual(-1, readStruct.A);
             }
 
-            
+
 
 
 
@@ -118,16 +115,16 @@ namespace PinionCore.Network.Tests
             var sendStream = new Stream();
             var readStream = new PinionCore.Network.ReverseStream(sendStream);
 
-            
+
             var sender = new PinionCore.Network.PackageSender(sendStream, PinionCore.Memorys.PoolProvider.Shared);
 
-            var buff = PinionCore.Memorys.PoolProvider.DirectShared.Alloc(0);
+            Memorys.Buffer buff = PinionCore.Memorys.PoolProvider.DirectShared.Alloc(0);
             sender.Push(buff);
 
-            var testStructBuffer2 = serializer.ObjectToBuffer(null);
+            Memorys.Buffer testStructBuffer2 = serializer.ObjectToBuffer(null);
             sender.Push(testStructBuffer2);
 
-            var testStructBuffer3 = serializer.ObjectToBuffer(null);
+            Memorys.Buffer testStructBuffer3 = serializer.ObjectToBuffer(null);
             sender.Push(testStructBuffer3);
 
             var reader = new PinionCore.Network.PackageReader(readStream, PinionCore.Memorys.PoolProvider.Shared);
@@ -135,21 +132,21 @@ namespace PinionCore.Network.Tests
             var buffers = new System.Collections.Generic.List<PinionCore.Memorys.Buffer>();
             while (buffers.Count < 2)
             {
-                var bufs = await reader.Read();
+                System.Collections.Generic.List<Memorys.Buffer> bufs = await reader.Read();
                 if (bufs.Count == 0)
                     break;
 
                 buffers.AddRange(bufs);
             }
-            
+
             for (var i = 0; i < 2; i++)
             {
-                var buffer = buffers.ElementAt(i);
+                Memorys.Buffer buffer = buffers.ElementAt(i);
                 var readStruct = serializer.BufferToObject(buffer);
                 NUnit.Framework.Assert.AreEqual(null, readStruct);
             }
 
-            
+
         }
     }
 }

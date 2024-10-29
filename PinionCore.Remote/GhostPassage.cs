@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 
 namespace PinionCore.Remote
 {
@@ -13,7 +13,7 @@ namespace PinionCore.Remote
 
         public void Through(object gpi)
         {
-            T tgpi = (T)gpi;
+            var tgpi = (T)gpi;
             ThroughEvent(tgpi);
             Owner(tgpi);
         }

@@ -1,5 +1,4 @@
-using Microsoft.CodeAnalysis;
-using System.Linq;
+﻿using Microsoft.CodeAnalysis;
 namespace PinionCore.Remote.Tools.Protocol.Sources
 {
     class IdentifyFinder

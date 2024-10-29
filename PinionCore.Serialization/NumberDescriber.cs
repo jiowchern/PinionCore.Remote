@@ -1,10 +1,10 @@
-using System;
+﻿using System;
 using System.Runtime.InteropServices;
 
 namespace PinionCore.Serialization
 {
 
-   
+
     public class NumberDescriber<T> : NumberDescriber
     {
         public NumberDescriber() : base(typeof(T)) { }
@@ -35,21 +35,21 @@ namespace PinionCore.Serialization
 
         int ITypeDescriber.GetByteCount(object instance)
         {
-            ulong instanceVal = _GetUInt64(instance);
+            var instanceVal = _GetUInt64(instance);
             return Varint.GetByteCount(instanceVal);
         }
         public object Default { get { return _Default; } }
         int ITypeDescriber.ToBuffer(object instance, PinionCore.Memorys.Buffer buffer, int begin)
         {
-            var bytes = buffer.Bytes;
-            ulong instanceVal = _GetUInt64(instance);
+            ArraySegment<byte> bytes = buffer.Bytes;
+            var instanceVal = _GetUInt64(instance);
             return Varint.NumberToBuffer(bytes.Array, bytes.Offset + begin, instanceVal);
         }
 
 
         private ulong _GetUInt64(object instance)
         {
-            byte[] bytes = new byte[_Size];
+            var bytes = new byte[_Size];
 
             IntPtr ptr = Marshal.AllocHGlobal(_Size);
 
@@ -59,10 +59,10 @@ namespace PinionCore.Serialization
 
             Marshal.FreeHGlobal(ptr);
 
-            ulong val = 0ul;
-            for (int i = 0; i < _Size; i++)
+            var val = 0ul;
+            for (var i = 0; i < _Size; i++)
             {
-                ulong b = (ulong)bytes[i];
+                var b = (ulong)bytes[i];
                 b <<= i * 8;
                 val |= b;
             }
@@ -73,7 +73,7 @@ namespace PinionCore.Serialization
         int ITypeDescriber.ToObject(PinionCore.Memorys.Buffer buffer, int begin, out object instance)
         {
             ulong value;
-            int readed = Varint.BufferToNumber(buffer, begin, out value);
+            var readed = Varint.BufferToNumber(buffer, begin, out value);
 
             if (Type == typeof(byte))
             {

@@ -1,4 +1,4 @@
-namespace PinionCore.Remote.Standalone.Test
+﻿namespace PinionCore.Remote.Standalone.Test
 {
     internal class SoulGpiA : IGpiA
     {

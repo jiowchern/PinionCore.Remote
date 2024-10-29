@@ -1,7 +1,7 @@
-namespace PinionCore.Remote.Packages
+﻿namespace PinionCore.Remote.Packages
 {
-    public struct PackageLoadSoul 
-    {       
+    public struct PackageLoadSoul
+    {
 
         public int TypeId;
 
@@ -9,8 +9,8 @@ namespace PinionCore.Remote.Packages
 
         public bool ReturnType;
     }
-    
-    
+
+
 
 
 }

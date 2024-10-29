@@ -1,4 +1,4 @@
-namespace PinionCore.Remote.Tools.Protocol.Sources.IdentifyTestCommon
+﻿namespace PinionCore.Remote.Tools.Protocol.Sources.IdentifyTestCommon
 {
     public static partial class ProtocolProvider
     {

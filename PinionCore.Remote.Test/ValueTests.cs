@@ -1,9 +1,8 @@
-
+﻿
 namespace PinionCore.Remote.Tests
 {
-    using PinionCore.Remote.Reactive;
-    
     using System.Reactive.Linq;
+    using PinionCore.Remote.Reactive;
 
     public class PingTests
     {
@@ -11,7 +10,7 @@ namespace PinionCore.Remote.Tests
         public void OnePingTest()
         {
             var ping = new PinionCore.Remote.Ping(1f);
-            int count = 0;
+            var count = 0;
             ping.TriggerEvent += () =>
             {
                 count++;
@@ -25,7 +24,7 @@ namespace PinionCore.Remote.Tests
             System.Threading.Thread.Sleep(1000);
             ping.GetSeconds();
             NUnit.Framework.Assert.AreEqual(1, count);
-            
+
             ping.Update();
 
             System.Threading.Thread.Sleep(500);
@@ -44,13 +43,13 @@ namespace PinionCore.Remote.Tests
         public void TimeTest()
         {
             var ping = new PinionCore.Remote.Ping(1f);
-            System.Threading.Thread.Sleep(1000);            
+            System.Threading.Thread.Sleep(1000);
             ping.Update();
             var sec1 = ping.GetSeconds();
-            NUnit.Framework.Assert.LessOrEqual(1f , sec1);
+            NUnit.Framework.Assert.LessOrEqual(1f, sec1);
             ping.Update();
             var sec2 = ping.GetSeconds();
-            NUnit.Framework.Assert.LessOrEqual(sec2 , 1f );
+            NUnit.Framework.Assert.LessOrEqual(sec2, 1f);
 
 
 
@@ -58,13 +57,13 @@ namespace PinionCore.Remote.Tests
     }
     public class ValueTests
     {
-        
+
         [NUnit.Framework.Test]
         public async System.Threading.Tasks.Task ConstructorOnValueTest()
         {
             var val = new PinionCore.Remote.Value<int>(1);
-            var vObs = from v in val.RemoteValue()
-                            select v;
+            System.IObservable<int> vObs = from v in val.RemoteValue()
+                                           select v;
             var result = await vObs.FirstAsync();
             NUnit.Framework.Assert.AreEqual(1, result);
 
@@ -73,8 +72,8 @@ namespace PinionCore.Remote.Tests
         public async System.Threading.Tasks.Task SetOnValueTest()
         {
             var val = new PinionCore.Remote.Value<int>();
-            var vObs = from v in val.RemoteValue()
-                       select v;
+            System.IObservable<int> vObs = from v in val.RemoteValue()
+                                           select v;
 
             val.SetValue(1);
             var result = await vObs.FirstAsync();
@@ -95,7 +94,7 @@ namespace PinionCore.Remote.Tests
         {
             var val = new PinionCore.Remote.Value<int>();
             val.SetValue(1);
-            
+
             NUnit.Framework.Assert.AreEqual(1, await val);
         }
     }

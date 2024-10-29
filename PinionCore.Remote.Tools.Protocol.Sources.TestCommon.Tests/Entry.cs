@@ -1,5 +1,4 @@
-using System;
-using System.Diagnostics;
+﻿using System;
 
 
 namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
@@ -26,7 +25,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
 
         void IEntry.Update()
         {
-            
+
         }
     }
 }

@@ -1,13 +1,13 @@
-using System;
+﻿using System;
 
 
 namespace PinionCore.Remote.Tests
 {
     class Serializer : ISerializable
     {
-        
+
         private readonly Serialization.Dynamic.Serializer _Serializer;
-        public readonly ISerializable Serializable ;
+        public readonly ISerializable Serializable;
         public Serializer()
         {
             _Serializer = new PinionCore.Serialization.Dynamic.Serializer();

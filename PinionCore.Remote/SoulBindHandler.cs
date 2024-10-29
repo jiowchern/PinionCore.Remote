@@ -1,9 +1,8 @@
-// BindHandler.cs
-using PinionCore.Remote.Packages;
-using PinionCore.Remote;
-using System.Collections.Concurrent;
+﻿// BindHandler.cs
 using System;
+using System.Collections.Concurrent;
 using System.Linq;
+using PinionCore.Remote.Packages;
 
 namespace PinionCore.Remote
 {
@@ -60,7 +59,7 @@ namespace PinionCore.Remote
 
         private SoulProxy _Bind(object soul, Type soulType, bool returnType, long returnId)
         {
-            var newSoul = _NewSoul(soul, soulType);
+            SoulProxy newSoul = _NewSoul(soul, soulType);
             _LoadSoul(newSoul.InterfaceId, newSoul.Id, returnType);
             _LoadProperty(newSoul);
             _LoadSoulCompile(newSoul.InterfaceId, newSoul.Id, returnId);
@@ -70,7 +69,7 @@ namespace PinionCore.Remote
 
         private SoulProxy _NewSoul(object soul, Type soulType)
         {
-            int interfaceId = _Protocol.GetMemberMap().GetInterface(soulType);
+            var interfaceId = _Protocol.GetMemberMap().GetInterface(soulType);
             var newSoul = new SoulProxy(_IdLandlord.Rent(), interfaceId, soulType, soul);
             newSoul.SupplySoulEvent += _PropertyBind;
             newSoul.UnsupplySoulEvent += _PropertyUnbind;
@@ -81,7 +80,7 @@ namespace PinionCore.Remote
 
         private void _Unbind(ISoul soul)
         {
-            if (!_Souls.TryRemove(soul.Id, out var soulInfo))
+            if (!_Souls.TryRemove(soul.Id, out SoulProxy soulInfo))
                 throw new Exception($"Can't find the soul {soul.Id} to delete.");
 
             soulInfo.Release();
@@ -108,12 +107,12 @@ namespace PinionCore.Remote
         }
         private void _LoadProperty(SoulProxy soul)
         {
-            var properties = soul.PropertyInfos;
-            var map = _Protocol.GetMemberMap();
+            System.Reflection.PropertyInfo[] properties = soul.PropertyInfos;
+            MemberMap map = _Protocol.GetMemberMap();
 
-            foreach (var property in properties)
+            foreach (System.Reflection.PropertyInfo property in properties)
             {
-                int id = map.GetProperty(property);
+                var id = map.GetProperty(property);
                 if (typeof(IDirtyable).IsAssignableFrom(property.PropertyType))
                 {
                     var value = property.GetValue(soul.ObjectInstance);
@@ -125,7 +124,7 @@ namespace PinionCore.Remote
 
         private void _LoadProperty(long id, int propertyId, object value)
         {
-            var info = _Protocol.GetMemberMap().GetProperty(propertyId);
+            System.Reflection.PropertyInfo info = _Protocol.GetMemberMap().GetProperty(propertyId);
             var package = new PackageSetProperty
             {
                 EntityId = id,
@@ -154,7 +153,7 @@ namespace PinionCore.Remote
 
         private ISoul _PropertyBind(long soulId, int propertyId, TypeObject typeObject)
         {
-            var soul = _Bind(typeObject.Instance, typeObject.Type, false, 0);
+            SoulProxy soul = _Bind(typeObject.Instance, typeObject.Type, false, 0);
             var package = new PackagePropertySoul
             {
                 OwnerId = soulId,
@@ -175,7 +174,7 @@ namespace PinionCore.Remote
             };
             _Queue.Push(ServerToClientOpCode.RemovePropertySoul, _InternalSerializable.Serialize(package));
 
-            if (_Souls.TryGetValue(propertySoulId, out var soul))
+            if (_Souls.TryGetValue(propertySoulId, out SoulProxy soul))
             {
                 _Unbind(soul);
             }

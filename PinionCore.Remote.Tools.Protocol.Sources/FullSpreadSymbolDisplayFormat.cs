@@ -1,4 +1,4 @@
-using Microsoft.CodeAnalysis;
+﻿using Microsoft.CodeAnalysis;
 
 
 namespace PinionCore.Remote.Tools.Protocol.Sources

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace PinionCore.Remote
@@ -20,7 +20,7 @@ namespace PinionCore.Remote
             {
                 lock (_Providers)
                 {
-                    if (!_Providers.TryGetValue(type, out var provider))
+                    if (!_Providers.TryGetValue(type, out IProvider provider))
                     {
                         provider = BuildProvider(type);
                         _Providers.Add(type, provider);
@@ -44,7 +44,7 @@ namespace PinionCore.Remote
             {
                 lock (_Providers)
                 {
-                    foreach (var provider in _Providers.Values)
+                    foreach (IProvider provider in _Providers.Values)
                     {
                         provider.ClearGhosts();
                     }
@@ -56,7 +56,7 @@ namespace PinionCore.Remote
             {
                 lock (_Providers)
                 {
-                    foreach (var provider in _Providers.Values)
+                    foreach (IProvider provider in _Providers.Values)
                     {
                         provider.Remove(id);
                     }

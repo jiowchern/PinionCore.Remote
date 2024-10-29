@@ -1,15 +1,12 @@
+﻿using System;
 using PinionCore.Network;
-using PinionCore.Memorys;
-using System;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace PinionCore.Remote.Tests
 {
     public class SocketReaderTestPeer : IStreamable
     {
 
-        public byte[] Buffer = new byte[] { 0,1,2,3,4,5,6,7,8,9};        
+        public byte[] Buffer = new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
         public System.Collections.Generic.Queue<int> ReadStepQueue = new System.Collections.Generic.Queue<int>(
             new int[] { 10 }
             );
@@ -18,10 +15,10 @@ namespace PinionCore.Remote.Tests
         {
             return System.Threading.Tasks.Task<int>.Run(() =>
             {
-                if(ReadStepQueue.Count == 0)
-                    return 0; 
+                if (ReadStepQueue.Count == 0)
+                    return 0;
                 var step = ReadStepQueue.Dequeue();
-                int count = 0;
+                var count = 0;
                 for (byte i = 0; i < step; ++i)
                 {
                     buffer[offset + i] = Buffer[i];
@@ -38,6 +35,6 @@ namespace PinionCore.Remote.Tests
         }
     }
 
-   
+
 
 }

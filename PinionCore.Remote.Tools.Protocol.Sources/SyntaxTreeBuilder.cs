@@ -1,6 +1,4 @@
-using System;
-using System.Linq;
-using System.Xml.Schema;
+﻿using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -15,20 +13,20 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
         {
             Tree = SyntaxFactory.ParseSyntaxTree(source);
 
-            
+
         }
 
         public System.Collections.Generic.IEnumerable<InterfaceDeclarationSyntax> GetInterfaces(string name)
         {
 
 
-           
-            var ids = from i in Tree.GetRoot().DescendantNodes().OfType<InterfaceDeclarationSyntax>()
-                    where i.Identifier.ToString() == name
-                     select i;
-                ;
 
-                return ids;
+            System.Collections.Generic.IEnumerable<InterfaceDeclarationSyntax> ids = from i in Tree.GetRoot().DescendantNodes().OfType<InterfaceDeclarationSyntax>()
+                                                                                     where i.Identifier.ToString() == name
+                                                                                     select i;
+            ;
+
+            return ids;
         }
     }
 }

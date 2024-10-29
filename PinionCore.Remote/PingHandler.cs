@@ -1,5 +1,5 @@
+﻿using System;
 using PinionCore.Memorys;
-using System;
 
 namespace PinionCore.Remote
 {
@@ -7,15 +7,15 @@ namespace PinionCore.Remote
     {
         public class PingHandler : ClientExchangeable
         {
-            
+
             private readonly Ping _Ping;
 
             public float PingTime => _Ping.GetSeconds();
-            
+
 
             public PingHandler()
             {
-                
+
                 _Ping = new Ping(1f);
                 _Ping.TriggerEvent += SendPing;
                 _ResponseEvent += (a1, a2) => { };
@@ -37,7 +37,7 @@ namespace PinionCore.Remote
 
             private void SendPing()
             {
-                _ResponseEvent(ClientToServerOpCode.Ping, new byte[0].AsBuffer());                
+                _ResponseEvent(ClientToServerOpCode.Ping, new byte[0].AsBuffer());
             }
 
             public void HandlePingResponse()
@@ -47,7 +47,7 @@ namespace PinionCore.Remote
 
             void Exchangeable<ServerToClientOpCode, ClientToServerOpCode>.Request(ServerToClientOpCode code, Memorys.Buffer args)
             {
-                
+
             }
         }
 

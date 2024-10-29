@@ -1,4 +1,4 @@
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 
 namespace PinionCore.Remote
 {
@@ -26,7 +26,7 @@ namespace PinionCore.Remote
 
         public void SetPropertyDone(long entityId, int propertyId)
         {
-            if (_Souls.TryGetValue(entityId, out var soul))
+            if (_Souls.TryGetValue(entityId, out SoulProxy soul))
             {
                 soul.PropertyUpdateReset(propertyId);
             }

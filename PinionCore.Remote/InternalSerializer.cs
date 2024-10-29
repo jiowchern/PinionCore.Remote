@@ -1,6 +1,4 @@
-using PinionCore.Serialization;
-
-namespace PinionCore.Remote
+﻿namespace PinionCore.Remote
 {
     public class InternalSerializer : PinionCore.Remote.IInternalSerializable
     {
@@ -51,8 +49,8 @@ namespace PinionCore.Remote
             return _Serializer.ObjectToBuffer(instance);
         }
     }
-    
-    
+
+
 
 
 }

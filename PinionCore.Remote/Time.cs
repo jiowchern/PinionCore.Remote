@@ -1,5 +1,5 @@
+﻿using System;
 using PinionCore.Utility;
-using System;
 
 namespace PinionCore.Remote
 {

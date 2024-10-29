@@ -1,21 +1,21 @@
-using System;
+﻿using System;
 
 namespace PinionCore.Serialization
 {
 
 
-    public class Serializer 
+    public class Serializer
     {
         private readonly DescriberProvider _Provider;
 
-        Memorys.IPool _Pool;
+        readonly Memorys.IPool _Pool;
 
 
         public Serializer(DescriberProvider provider) : this(provider, PinionCore.Memorys.PoolProvider.Shared)
         {
 
         }
-        public Serializer(DescriberProvider provider , Memorys.IPool pool)
+        public Serializer(DescriberProvider provider, Memorys.IPool pool)
         {
             _Provider = provider;
             _Pool = pool;
@@ -35,11 +35,11 @@ namespace PinionCore.Serialization
                 Type type = instance.GetType();
                 ITypeDescriber describer = _Provider.TypeDescriberFinders.Get(type);
 
-                int idCount = _Provider.KeyDescriber.GetByteCount(type);
-                int bufferCount = describer.GetByteCount(instance);
-                var buffer = _Pool.Alloc(idCount + bufferCount);
-                var bytes = buffer.Bytes;
-                int readCount = _Provider.KeyDescriber.ToBuffer(type, buffer, 0);
+                var idCount = _Provider.KeyDescriber.GetByteCount(type);
+                var bufferCount = describer.GetByteCount(instance);
+                Memorys.Buffer buffer = _Pool.Alloc(idCount + bufferCount);
+                ArraySegment<byte> bytes = buffer.Bytes;
+                var readCount = _Provider.KeyDescriber.ToBuffer(type, buffer, 0);
                 describer.ToBuffer(instance, buffer, readCount);
                 return buffer;
             }
@@ -60,9 +60,9 @@ namespace PinionCore.Serialization
 
         private Memorys.Buffer _NullBuffer()
         {
-            int idCount = Varint.GetByteCount(0);
-            var buffer = _Pool.Alloc(idCount);
-            var bytes = buffer.Bytes;
+            var idCount = Varint.GetByteCount(0);
+            Memorys.Buffer buffer = _Pool.Alloc(idCount);
+            ArraySegment<byte> bytes = buffer.Bytes;
             Varint.NumberToBuffer(bytes.Array, bytes.Offset, 0);
             return buffer;
         }
@@ -73,7 +73,7 @@ namespace PinionCore.Serialization
             try
             {
 
-                int readIdCount = _Provider.KeyDescriber.ToObject(buffer, 0, out id);
+                var readIdCount = _Provider.KeyDescriber.ToObject(buffer, 0, out id);
                 if (id == null)
                     return null;
 
@@ -97,7 +97,7 @@ namespace PinionCore.Serialization
 
 
 
-      
+
 
         public bool TryBufferToObject<T>(PinionCore.Memorys.Buffer buffer, out T pkg)
         {
@@ -105,7 +105,7 @@ namespace PinionCore.Serialization
             pkg = default(T);
             try
             {
-                object instance = BufferToObject(buffer);
+                var instance = BufferToObject(buffer);
                 pkg = (T)instance;
                 return true;
             }
@@ -123,7 +123,7 @@ namespace PinionCore.Serialization
             pkg = null;
             try
             {
-                object instance = BufferToObject(buffer);
+                var instance = BufferToObject(buffer);
                 pkg = instance;
                 return true;
             }
@@ -134,7 +134,7 @@ namespace PinionCore.Serialization
 
             return false;
         }
-       
+
     }
 
 

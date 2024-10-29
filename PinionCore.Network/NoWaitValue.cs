@@ -1,9 +1,9 @@
-using System;
+﻿using System;
 using System.Runtime.CompilerServices;
 using PinionCore.Remote;
 namespace PinionCore.Network
 {
-    public class NoWaitValue<T> : IWaitableValue<T> , IAwaitable<T>
+    public class NoWaitValue<T> : IWaitableValue<T>, IAwaitable<T>
     {
         private readonly PinionCore.Remote.Value<T> _Value;
 

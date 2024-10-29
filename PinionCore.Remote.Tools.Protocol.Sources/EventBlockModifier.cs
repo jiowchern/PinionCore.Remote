@@ -1,8 +1,7 @@
+﻿using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-
-using System.Linq;
 namespace PinionCore.Remote.Tools.Protocol.Sources.Modifiers
 {
 }
@@ -20,16 +19,16 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.BlockModifiers
 
         public BlockAndEvent Mod(System.Collections.Generic.IEnumerable<SyntaxNode> nodes)
         {
-            
+
             var block = nodes.Skip(0).FirstOrDefault() as BlockSyntax;
             var ad = nodes.Skip(1).FirstOrDefault() as AccessorDeclarationSyntax;
             var al = nodes.Skip(2).FirstOrDefault() as AccessorListSyntax;
             var ed = nodes.Skip(3).FirstOrDefault() as EventDeclarationSyntax;
             var cd = nodes.Skip(4).FirstOrDefault() as ClassDeclarationSyntax;
-            
+
             if (Extensions.SyntaxExtensions.AnyNull(block, ad, al, ed, cd))
             {
-                return null; 
+                return null;
             }
             var qn = ed.Type as QualifiedNameSyntax;
 
@@ -38,27 +37,27 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.BlockModifiers
 
             if (qn.Left.ToString() != "System")
                 return null;
-            
-            var sn = qn.Right ;
+
+            SimpleNameSyntax sn = qn.Right;
             if (sn == null)
                 return null;
 
             if (sn.Identifier.ToString() != "Action")
                 return null;
-            if(sn is GenericNameSyntax gn)
+            if (sn is GenericNameSyntax gn)
             {
                 if (!_Compilation.AllSerializable(gn.TypeArgumentList.Arguments))
                 {
                     return null;
-                }                
+                }
             }
-            
 
-            var ownerName = ed.ExplicitInterfaceSpecifier.Name;
+
+            NameSyntax ownerName = ed.ExplicitInterfaceSpecifier.Name;
             var name = $"_{ownerName}.{ed.Identifier}";
             name = name.Replace('.', '_');
-            
-            string ghostEventHandlerMethod = "";
+
+            var ghostEventHandlerMethod = "";
             if (ad.IsKind(SyntaxKind.AddAccessorDeclaration))
             {
                 ghostEventHandlerMethod = "Add";
@@ -67,21 +66,24 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.BlockModifiers
             {
                 ghostEventHandlerMethod = "Remove";
             }
-           
-            
-            var newBlock = SyntaxFactory.Block(SyntaxFactory.ParseStatement(
+
+
+            BlockSyntax newBlock = SyntaxFactory.Block(SyntaxFactory.ParseStatement(
 $@"
 var id = {name}.{ghostEventHandlerMethod}(value);
 _{ghostEventHandlerMethod}EventEvent(typeof({ownerName}).GetEvent(""{ed.Identifier}""),id);
 "));
 
-            return new BlockAndEvent { Block = newBlock , 
-             Event =ed} ;
+            return new BlockAndEvent
+            {
+                Block = newBlock,
+                Event = ed
+            };
         }
 
 
-        
 
-        
+
+
     }
 }

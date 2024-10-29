@@ -1,7 +1,7 @@
+﻿using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using System.Linq;
 namespace PinionCore.Remote.Tools.Protocol.Sources.BlockModifiers
 {
     internal class PropertyPinionCoreRemoteBlock
@@ -20,7 +20,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.BlockModifiers
             var pd = nodes.Skip(3).FirstOrDefault() as PropertyDeclarationSyntax;
             var cd = nodes.Skip(4).FirstOrDefault() as ClassDeclarationSyntax;
 
-            if (Extensions.SyntaxExtensions.AnyNull(block, ad , al,pd, cd))
+            if (Extensions.SyntaxExtensions.AnyNull(block, ad, al, pd, cd))
             {
                 return null;
             }
@@ -40,7 +40,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.BlockModifiers
             if (gn.Identifier.ToString() != "Property" && gn.Identifier.ToString() != "Notifier")
                 return null;
 
-            if(gn.Identifier.ToString() == "Property")
+            if (gn.Identifier.ToString() == "Property")
             {
                 if (!_Compilation.AllSerializable(gn.TypeArgumentList.Arguments))
                 {
@@ -50,10 +50,10 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.BlockModifiers
 
             if (gn.Identifier.ToString() == "Notifier")
             {
-                if(!_Compilation.AllGhostable(gn.TypeArgumentList.Arguments))
+                if (!_Compilation.AllGhostable(gn.TypeArgumentList.Arguments))
                 {
                     return null;
-                }                
+                }
             }
 
 
@@ -62,15 +62,15 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.BlockModifiers
                 return null;
             }
 
-            var ownerName = pd.ExplicitInterfaceSpecifier.Name;
+            NameSyntax ownerName = pd.ExplicitInterfaceSpecifier.Name;
             var name = $"_{ownerName}.{pd.Identifier}";
             name = name.Replace('.', '_');
 
-            var newBlock = SyntaxFactory.Block(SyntaxFactory.ParseStatement(
+            BlockSyntax newBlock = SyntaxFactory.Block(SyntaxFactory.ParseStatement(
 $@"
 return {name};
 "));
-            return new PropertyAndBlock() { Block =newBlock  , Property = pd };
+            return new PropertyAndBlock() { Block = newBlock, Property = pd };
         }
     }
 }

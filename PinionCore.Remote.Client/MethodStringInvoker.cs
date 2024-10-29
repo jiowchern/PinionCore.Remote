@@ -1,12 +1,11 @@
-using System;
-using System.Linq;
+﻿using System;
 using System.Reflection;
 
 namespace PinionCore.Remote.Client
 {
     public class MethodStringInvoker
     {
-         private readonly TypeConverterSet _TypeConverterSet ;
+        private readonly TypeConverterSet _TypeConverterSet;
         public readonly object Target;
         public readonly MethodInfo Method;
 
@@ -25,11 +24,11 @@ namespace PinionCore.Remote.Client
             if (in_args.Length != argInfos.Length)
                 throw new Exception($"Method parameter is {argInfos.Length}, input parameter is {in_args.Length}");
 
-            System.Collections.Generic.List<object> argInstances = new System.Collections.Generic.List<object>();
-            for (int i = 0; i < argInfos.Length; ++i)
+            var argInstances = new System.Collections.Generic.List<object>();
+            for (var i = 0; i < argInfos.Length; ++i)
             {
                 ParameterInfo argInfo = argInfos[i];
-                string inArg = in_args[i];
+                var inArg = in_args[i];
                 object val;
 
                 try
@@ -54,7 +53,7 @@ namespace PinionCore.Remote.Client
 
             PinionCore.Utility.Command.TryConversion(inArg, out val, parameterType);
         }
-        
+
 
 
     }

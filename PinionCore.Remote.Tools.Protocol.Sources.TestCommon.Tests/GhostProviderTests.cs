@@ -1,11 +1,10 @@
-using NSubstitute;
-using PinionCore.Remote.ProviderHelper;
-using System;
+﻿using System;
 using System.Linq;
+using PinionCore.Remote.ProviderHelper;
 
 namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
 {
-    
+
     public class GhostProviderTests
     {
         static bool _HasSub = false;
@@ -13,15 +12,16 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
         public void AuroReleaseTest()
         {
 
-            var protocol = PinionCore.Remote.Tools.Protocol.Sources.TestCommon.ProtocolProvider.CreateCase1();
+            IProtocol protocol = PinionCore.Remote.Tools.Protocol.Sources.TestCommon.ProtocolProvider.CreateCase1();
             var es = new PinionCore.Remote.Serializer(protocol.SerializeTypes);
             IInternalSerializable iniers = new PinionCore.Remote.InternalSerializer();
             var exchanger = new OpCodeExchanger();
             var ghostOwner = new GhostsOwner(protocol);
             var provider = new PinionCore.Remote.GhostProviderQueryer(protocol, es, iniers, ghostOwner);
             ClientExchangeable providerExchange = provider;
-            System.Collections.Generic.List<PinionCore.Remote.ClientToServerOpCode> opcodes = new System.Collections.Generic.List<PinionCore.Remote.ClientToServerOpCode>();
-            providerExchange.ResponseEvent += (code , buf) => {
+            var opcodes = new System.Collections.Generic.List<PinionCore.Remote.ClientToServerOpCode>();
+            providerExchange.ResponseEvent += (code, buf) =>
+            {
                 opcodes.Add(code);
             };
             provider.Start();
@@ -50,7 +50,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
                 package.ReturnId = 0;
                 providerExchange.Request(ServerToClientOpCode.LoadSoulCompile, iniers.Serialize(package));
             }
-            
+
 
             _HasSub = false;
             _SetHasSub(methodable);
@@ -81,24 +81,24 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
 
 
             GC.Collect(2, GCCollectionMode.Forced, true);
-            
+
             {
                 providerExchange.Request(ServerToClientOpCode.Ping, iniers.Serialize(new byte[0]));
             }
-            
-            
+
+
 
             provider.Stop();
             NUnit.Framework.Assert.True(_HasSub);
             NUnit.Framework.Assert.AreNotEqual(null, opcodes.Any(o => o == ClientToServerOpCode.Release));
         }
 
-        
+
 
         private static void _SetHasSub(IMethodable methodable)
         {
             methodable.GetValueSelf().OnValue += (gpi) => _HasSub = true;
-            
+
         }
 
     }

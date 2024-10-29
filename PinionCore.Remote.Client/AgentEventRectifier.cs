@@ -1,11 +1,11 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace PinionCore.Remote.Client
 {
 
-    
+
     public class AgentEventRectifier : IDisposable
     {
         readonly System.Collections.Generic.List<System.Action> _RemoveHandlers;
@@ -27,7 +27,7 @@ namespace PinionCore.Remote.Client
                 System.Reflection.MethodInfo agentQueryNotifierT = agentQueryNotifier.MakeGenericMethod(type);
 
 
-                object notifyInstance = agentQueryNotifierT.Invoke(agent_instance, new object[0]);
+                var notifyInstance = agentQueryNotifierT.Invoke(agent_instance, new object[0]);
 
                 Type notifyTypeT = typeof(INotifier<>).MakeGenericType(type);
 
@@ -35,11 +35,11 @@ namespace PinionCore.Remote.Client
                 System.Reflection.EventInfo notifySupply = notifyTypeT.GetEvent(nameof(INotifier<object>.Supply));
                 System.Reflection.EventInfo notifyUnsupply = notifyTypeT.GetEvent(nameof(INotifier<object>.Unsupply));
 
-                Utility.Reflection.TypeMethodCatcher catcherSupply = new PinionCore.Utility.Reflection.TypeMethodCatcher((System.Linq.Expressions.Expression<Action<AgentEventRectifier>>)(ins => ins._Supply<object>(null)));
+                var catcherSupply = new PinionCore.Utility.Reflection.TypeMethodCatcher((System.Linq.Expressions.Expression<Action<AgentEventRectifier>>)(ins => ins._Supply<object>(null)));
                 System.Reflection.MethodInfo supplyGenericMethod = catcherSupply.Method.GetGenericMethodDefinition();
                 System.Reflection.MethodInfo supplyMethod = supplyGenericMethod.MakeGenericMethod(type);
 
-                Utility.Reflection.TypeMethodCatcher catcherUnsupply = new PinionCore.Utility.Reflection.TypeMethodCatcher((System.Linq.Expressions.Expression<Action<AgentEventRectifier>>)(ins => ins._Unsupply<object>(null)));
+                var catcherUnsupply = new PinionCore.Utility.Reflection.TypeMethodCatcher((System.Linq.Expressions.Expression<Action<AgentEventRectifier>>)(ins => ins._Unsupply<object>(null)));
                 System.Reflection.MethodInfo unsupplyGenericMethod = catcherUnsupply.Method.GetGenericMethodDefinition();
                 System.Reflection.MethodInfo unsupplyMethod = unsupplyGenericMethod.MakeGenericMethod(type);
 
@@ -48,8 +48,8 @@ namespace PinionCore.Remote.Client
 
 
 
-                Delegate delegateSupply = Delegate.CreateDelegate(actionT, this, supplyMethod);
-                Delegate delegateUnsupply = Delegate.CreateDelegate(actionT, this, unsupplyMethod);
+                var delegateSupply = Delegate.CreateDelegate(actionT, this, supplyMethod);
+                var delegateUnsupply = Delegate.CreateDelegate(actionT, this, unsupplyMethod);
                 notifySupply.AddEventHandler(notifyInstance, delegateSupply);
                 notifyUnsupply.AddEventHandler(notifyInstance, delegateUnsupply);
                 _RemoveHandlers.Add(() =>

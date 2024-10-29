@@ -1,4 +1,4 @@
-
+﻿
 using PinionCore.Remote;
 public static partial class ProtocolProviderCase3
 {

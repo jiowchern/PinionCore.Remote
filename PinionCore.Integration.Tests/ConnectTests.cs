@@ -1,12 +1,11 @@
-using PinionCore.Remote;
-using NUnit.Framework;
-using System.Linq;
-using System.Reactive.Linq;
-using PinionCore.Remote.Reactive;
-using NSubstitute;
-using System.Net.Sockets;
+﻿using System.Linq;
 using System.Net;
+using System.Net.Sockets;
+using System.Reactive.Linq;
 using System.Threading.Tasks;
+using NUnit.Framework;
+using PinionCore.Remote;
+using PinionCore.Remote.Reactive;
 namespace PinionCore.Integration.Tests
 {
     public class ConnectTests
@@ -17,29 +16,30 @@ namespace PinionCore.Integration.Tests
         {
             var port = PinionCore.Network.Tcp.Tools.GetAvailablePort();
             var tester = new PinionCore.Remote.Tools.Protocol.Sources.TestCommon.MethodTester();
-            var entry = NSubstitute.Substitute.For<IEntry>();
+            IEntry entry = NSubstitute.Substitute.For<IEntry>();
             entry.RegisterClientBinder(NSubstitute.Arg.Do<IBinder>(b => b.Bind<PinionCore.Remote.Tools.Protocol.Sources.TestCommon.IMethodable>(tester)));
             IProtocol protocol = PinionCore.Remote.Tools.Protocol.Sources.TestCommon.ProtocolProvider.CreateCase1();
 
-            var server = PinionCore.Remote.Server.Provider.CreateTcpService(entry, protocol);
+            Remote.Server.TcpListenSet server = PinionCore.Remote.Server.Provider.CreateTcpService(entry, protocol);
             server.Listener.Bind(port);
 
-            var client = PinionCore.Remote.Client.Provider.CreateTcpAgent(protocol);
+            Remote.Client.TcpConnectSet client = PinionCore.Remote.Client.Provider.CreateTcpAgent(protocol);
             System.Exception ex;
 
-            client.Agent.ExceptionEvent += (exc) => { 
-                ex = exc;                 
+            client.Agent.ExceptionEvent += (exc) =>
+            {
+                ex = exc;
             };
 
-            var peer = await client.Connector.Connect(new IPEndPoint(IPAddress.Loopback, port));
-            bool peerBreak = false;
+            Network.Tcp.Peer peer = await client.Connector.Connect(new IPEndPoint(IPAddress.Loopback, port));
+            var peerBreak = false;
             peer.BreakEvent += () =>
             {
                 peerBreak = true;
             };
-            
-            
-            
+
+
+
 
             client.Agent.Enable(peer);
 
@@ -50,7 +50,7 @@ namespace PinionCore.Integration.Tests
                 client.Agent.Update();
             }
 
-            
+
         }
         [Test]
         public async Task TcpLocalConnectTest()
@@ -58,30 +58,30 @@ namespace PinionCore.Integration.Tests
             // 獲取一個臨時可用的端口
             int GetAvailablePort()
             {
-                TcpListener listener = new TcpListener(IPAddress.Loopback, 0);
+                var listener = new TcpListener(IPAddress.Loopback, 0);
                 listener.Start();
-                int port = ((IPEndPoint)listener.LocalEndpoint).Port;
+                var port = ((IPEndPoint)listener.LocalEndpoint).Port;
                 listener.Stop();
                 return port;
             }
             var port = GetAvailablePort();
             // bind interface
             var tester = new PinionCore.Remote.Tools.Protocol.Sources.TestCommon.MethodTester();
-            var entry = NSubstitute.Substitute.For<IEntry>();            
-            entry.RegisterClientBinder(NSubstitute.Arg.Do<IBinder>(b=>b.Bind<PinionCore.Remote.Tools.Protocol.Sources.TestCommon.IMethodable>(tester) ));
+            IEntry entry = NSubstitute.Substitute.For<IEntry>();
+            entry.RegisterClientBinder(NSubstitute.Arg.Do<IBinder>(b => b.Bind<PinionCore.Remote.Tools.Protocol.Sources.TestCommon.IMethodable>(tester)));
 
             // create protocol
             IProtocol protocol = PinionCore.Remote.Tools.Protocol.Sources.TestCommon.ProtocolProvider.CreateCase1();
 
             // create server and client
-            var server = PinionCore.Remote.Server.Provider.CreateTcpService(entry, protocol);
-            
-            server.Listener.Bind(port);
-            
-            var client = PinionCore.Remote.Client.Provider.CreateTcpAgent(protocol);
+            Remote.Server.TcpListenSet server = PinionCore.Remote.Server.Provider.CreateTcpService(entry, protocol);
 
-            bool stop = false;
-            var task = System.Threading.Tasks.Task.Run(() => 
+            server.Listener.Bind(port);
+
+            Remote.Client.TcpConnectSet client = PinionCore.Remote.Client.Provider.CreateTcpAgent(protocol);
+
+            var stop = false;
+            var task = System.Threading.Tasks.Task.Run(() =>
             {
                 while (!stop)
                 {
@@ -91,9 +91,9 @@ namespace PinionCore.Integration.Tests
             });
 
             // do connect
-            System.Net.IPEndPoint endPoint;            
+            System.Net.IPEndPoint endPoint;
             System.Net.IPEndPoint.TryParse($"127.0.0.1:{port}", out endPoint);
-            var peer = await client.Connector.Connect(endPoint);
+            Network.Tcp.Peer peer = await client.Connector.Connect(endPoint);
 
             client.Agent.Enable(peer);
             // get values
@@ -113,7 +113,7 @@ namespace PinionCore.Integration.Tests
             client.Agent.Disable();
 
             server.Listener.Close();
-            
+
             server.Service.Dispose();
 
             // test

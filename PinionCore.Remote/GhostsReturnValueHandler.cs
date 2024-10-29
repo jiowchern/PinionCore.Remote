@@ -1,5 +1,5 @@
+﻿using System;
 using PinionCore.Memorys;
-using System;
 
 namespace PinionCore.Remote
 {
@@ -23,7 +23,7 @@ namespace PinionCore.Remote
                 IValue value = _ReturnValueQueue.PopReturnValue(returnTarget);
                 if (value != null)
                 {
-                    object returnInstance = _Serializer.Deserialize(value.GetObjectType(), returnValue.AsBuffer());
+                    var returnInstance = _Serializer.Deserialize(value.GetObjectType(), returnValue.AsBuffer());
                     value.SetValue(returnInstance);
                 }
             }
@@ -41,7 +41,7 @@ namespace PinionCore.Remote
                     value.SetValue(ghost);
                 }
             }
-            
+
 
             public IValue GetReturnValue(long returnId)
             {

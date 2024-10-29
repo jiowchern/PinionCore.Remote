@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 
 
 namespace PinionCore.Remote.Reactive
@@ -14,7 +14,7 @@ namespace PinionCore.Remote.Reactive
         {
             this._Property = property;
             _Value = _Property.Value;
-            _ThreadUpdater = new ThreadUpdater(() => {});
+            _ThreadUpdater = new ThreadUpdater(() => { });
             _ThreadUpdater.Start();
         }
 

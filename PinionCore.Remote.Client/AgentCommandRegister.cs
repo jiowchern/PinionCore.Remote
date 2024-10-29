@@ -1,7 +1,7 @@
-using PinionCore.Utility;
-using System;
+﻿using System;
 using System.Linq;
 using System.Reflection;
+using PinionCore.Utility;
 
 namespace PinionCore.Remote.Client
 {
@@ -32,15 +32,15 @@ namespace PinionCore.Remote.Client
                     continue;
                 PinionCore.Utility.Log.Instance.WriteInfo($"method name = {method.Name} ");
 
-                MethodStringInvoker invoker = new MethodStringInvoker(instance, method, _TypeConverterSet);
-                AgentCommand ac = new AgentCommand(_VersionProvider, type, invoker);
+                var invoker = new MethodStringInvoker(instance, method, _TypeConverterSet);
+                var ac = new AgentCommand(_VersionProvider, type, invoker);
                 _Invokers.Add(ac);
                 _Command.Register(ac.Name, (args) => invoker.Invoke(args), method.ReturnParameter.ParameterType, method.GetParameters().Select((p) => p.ParameterType).ToArray());
             }
 
         }
 
-        
+
 
         public void Unregist(object instance)
         {

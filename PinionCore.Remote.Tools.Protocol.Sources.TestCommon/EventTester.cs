@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 
 namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon
 {
@@ -12,14 +12,14 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon
         {
             add
             {
-                
+
                 _IEventabe2Event1 += value;
                 LisCount++;
             }
 
             remove
             {
-                
+
                 _IEventabe2Event1 -= value;
                 LisCount--;
             }
@@ -30,14 +30,14 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon
         {
             add
             {
-                
+
                 _IEventabe1Event1 += value;
                 LisCount++;
             }
 
             remove
             {
-                
+
                 _IEventabe1Event1 -= value;
                 LisCount--;
             }
@@ -48,14 +48,14 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon
         {
             add
             {
-                
+
                 _IEventabe2Event2 += value;
                 LisCount++;
             }
 
             remove
             {
-                
+
                 _IEventabe2Event2 -= value;
                 LisCount--;
             }
@@ -66,14 +66,14 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon
         {
             add
             {
-                
+
                 _IEventabe1Event2 += value;
                 LisCount++;
             }
 
             remove
             {
-                
+
                 _IEventabe1Event2 -= value;
                 LisCount--;
             }
@@ -83,12 +83,12 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon
         {
             add
             {
-                
+
             }
 
             remove
             {
-                
+
             }
         }
 
@@ -134,7 +134,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon
         }
 
         public void Invoke22(int val)
-        {  
+        {
             _IEventabe2Event2(val);
         }
     }

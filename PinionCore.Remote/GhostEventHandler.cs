@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace PinionCore.Remote
@@ -20,7 +20,7 @@ namespace PinionCore.Remote
         }
         public long Add(Delegate value)
         {
-            long id = _IdLandlord.Rent();
+            var id = _IdLandlord.Rent();
             _Runners.Add(new Invoker() { Id = id, Runner = value });
             return id;
         }

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Linq;
 
 namespace PinionCore.Serialization
@@ -28,7 +28,7 @@ namespace PinionCore.Serialization
             }
             else if (_IsByteArray(type))
             {
-                NumberDescriber byteDescriber = new NumberDescriber(typeof(int));
+                var byteDescriber = new NumberDescriber(typeof(int));
                 Describers = new ITypeDescriber[] { new ByteArrayDescriber(byteDescriber), byteDescriber };
             }
             else if (_IsBuffer(type))
@@ -41,7 +41,7 @@ namespace PinionCore.Serialization
             }
             else if (_IsString(type))
             {
-                BufferDescriber chars = new BufferDescriber(typeof(char[]));
+                var chars = new BufferDescriber(typeof(char[]));
                 Describers = new ITypeDescriber[] { new StringDescriber(chars), chars };
             }
             else if (_IsArray(type))

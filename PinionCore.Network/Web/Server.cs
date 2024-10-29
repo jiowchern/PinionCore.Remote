@@ -1,11 +1,10 @@
-using PinionCore.Utility;
-using System;
+﻿using System;
 using System.Net;
 using System.Threading.Tasks;
 
 namespace PinionCore.Network.Web
 {
-    public class Listener 
+    public class Listener
     {
         readonly System.Net.HttpListener _HttpListener;
         private readonly System.Threading.CancellationTokenSource _CancelGetContext;
@@ -45,7 +44,7 @@ namespace PinionCore.Network.Web
                 return;
             if (!task.IsCompleted)
             {
-                return;   
+                return;
             }
 
             HttpListenerContext context = task.Result;
@@ -57,21 +56,21 @@ namespace PinionCore.Network.Web
 
         private async void _Accept(HttpListenerContext context)
         {
-            
+
             System.Net.WebSockets.HttpListenerWebSocketContext webSocketContext = await context.AcceptWebSocketAsync(null);
 
-            var webSocket = webSocketContext.WebSocket;
+            System.Net.WebSockets.WebSocket webSocket = webSocketContext.WebSocket;
 
 
-            var status = await Task<System.Net.WebSockets.WebSocketState>.Factory.StartNew(() =>
+            System.Net.WebSockets.WebSocketState status = await Task<System.Net.WebSockets.WebSocketState>.Factory.StartNew(() =>
             {
                 while (webSocket.State == System.Net.WebSockets.WebSocketState.Connecting)
-                {                    
+                {
                     System.Threading.Thread.Sleep(1);
                 }
                 return webSocket.State;
             });
-            if(status == System.Net.WebSockets.WebSocketState.Open)
+            if (status == System.Net.WebSockets.WebSocketState.Open)
                 _AcceptEvent(new Peer(webSocket));
         }
 

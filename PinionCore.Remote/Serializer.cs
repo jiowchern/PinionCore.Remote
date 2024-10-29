@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Linq;
 namespace PinionCore.Remote
 {
@@ -18,8 +18,8 @@ namespace PinionCore.Remote
 
         PinionCore.Memorys.Buffer ISerializable.Serialize(Type type, object instance)
         {
-            return _Serializer.ObjectToBuffer(instance);    
-        } 
+            return _Serializer.ObjectToBuffer(instance);
+        }
     }
 
 

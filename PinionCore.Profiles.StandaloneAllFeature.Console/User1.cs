@@ -1,4 +1,4 @@
-namespace PinionCore.Profiles.StandaloneAllFeature.Console
+﻿namespace PinionCore.Profiles.StandaloneAllFeature.Console
 {
     class User
     {

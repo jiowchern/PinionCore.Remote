@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Microsoft.CodeAnalysis;
 
 namespace PinionCore.Remote.Tools.Protocol.Sources
@@ -13,7 +13,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
 
         int IEqualityComparer<SyntaxNode>.GetHashCode(SyntaxNode obj)
         {
-            
+
             return obj.ToFullString().GetHashCode();
         }
 

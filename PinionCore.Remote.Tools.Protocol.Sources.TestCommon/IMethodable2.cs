@@ -1,4 +1,4 @@
-namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon
+﻿namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon
 {
     public class HelloRequest
     {
@@ -9,7 +9,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon
     {
         public string Message;
     }
-    
+
 
     public interface IMethodable2 : IMethodable1
     {

@@ -1,6 +1,6 @@
-namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon
+﻿namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon
 {
-    public static partial class ProtocolProvider 
+    public static partial class ProtocolProvider
     {
         public static PinionCore.Remote.IProtocol CreateCase1()
         {

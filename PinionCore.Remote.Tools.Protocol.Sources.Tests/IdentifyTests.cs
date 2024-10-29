@@ -1,10 +1,10 @@
+﻿using System.Linq;
+using System.Reflection;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 using NUnit.Framework;
-using System.Linq;
-using System.Reflection;
 
 namespace PinionCore.Remote.Tools.Protocol.Sources.Tests
 {
@@ -36,21 +36,21 @@ public interface IWithTag : PinionCore.Remote.Protocolable {
                 MetadataReference.CreateFromFile(typeof(System.Action<,,,,,,,,>).GetTypeInfo().Assembly.Location),
                 MetadataReference.CreateFromFile(typeof(PinionCore.Remote.Protocolable).GetTypeInfo().Assembly.Location),
             };
-            CSharpCompilation compilation = CSharpCompilation.Create(assemblyName, new[] { syntaxBuilder.Tree }, references);
+            var compilation = CSharpCompilation.Create(assemblyName, new[] { syntaxBuilder.Tree }, references);
 
-            var tag = new IdentifyFinder(compilation).Tag;
+            INamedTypeSymbol tag = new IdentifyFinder(compilation).Tag;
             var builder = new ProjectSourceBuilder(new EssentialReference(compilation, tag));
-            var sources = builder.Sources.ToArray();
-            var names = from source in sources
-                        let name = source.GetRoot().DescendantNodes().OfType<ClassDeclarationSyntax>().FirstOrDefault()?.Identifier.ToString()
-                        where name != null
-                        select name;
+            SyntaxTree[] sources = builder.Sources.ToArray();
+            System.Collections.Generic.IEnumerable<string> names = from source in sources
+                                                                   let name = source.GetRoot().DescendantNodes().OfType<ClassDeclarationSyntax>().FirstOrDefault()?.Identifier.ToString()
+                                                                   where name != null
+                                                                   select name;
 
             NUnit.Framework.Assert.True(names.Any(n => n == "CIWithTag"));
             NUnit.Framework.Assert.False(names.Any(n => n == "CIWithoutTag"));
 
         }
-        
+
     }
 
 

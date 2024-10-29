@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -10,10 +10,10 @@ namespace PinionCore.Serialization
         public readonly IKeyDescriber KeyDescriber;
         public DescribersFinder(params Type[] types)
         {
-            List<ITypeDescriber> describers = new List<ITypeDescriber>();
+            var describers = new List<ITypeDescriber>();
             foreach (Type type in types)
             {
-                TypeIdentifier identifier = new TypeIdentifier(type, this);
+                var identifier = new TypeIdentifier(type, this);
                 describers.AddRange(identifier.Describers);
             }
 

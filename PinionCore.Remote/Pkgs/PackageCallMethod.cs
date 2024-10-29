@@ -1,6 +1,6 @@
-namespace PinionCore.Remote.Packages
+﻿namespace PinionCore.Remote.Packages
 {
-    public struct PackageCallMethod 
+    public struct PackageCallMethod
     {
         public long EntityId;
 
@@ -10,8 +10,8 @@ namespace PinionCore.Remote.Packages
 
         public byte[][] MethodParams;
     }
-    
-    
+
+
 
 
 }

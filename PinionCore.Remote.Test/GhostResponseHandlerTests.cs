@@ -1,11 +1,9 @@
-using System;
+﻿using System;
 using System.Linq;
-using System.Reflection;
-using NSubstitute;
 
 namespace PinionCore.Remote.Tests
 {
-    
+
 
     public class GhostResponseHandlerTests
     {
@@ -18,11 +16,11 @@ namespace PinionCore.Remote.Tests
         class GhostIA : IA, IGhost
         {
             public GhostIA()
-            {                
-                
+            {
+
             }
 
-            
+
             event CallMethodCallback IGhost.CallMethodEvent
             {
                 add
@@ -61,7 +59,7 @@ namespace PinionCore.Remote.Tests
                     throw new System.NotImplementedException();
                 }
             }
-            
+
             private readonly GhostEventHandler _PinionCore_Remote_Tests_GhostResponseHandlerTests_IA_Event1 = new GhostEventHandler();
             event Action<int> IA.Event1
             {
@@ -75,7 +73,7 @@ namespace PinionCore.Remote.Tests
                     _PinionCore_Remote_Tests_GhostResponseHandlerTests_IA_Event1.Remove(value);
                 }
             }
-            
+
             private readonly Property<int> _PinionCore_Remote_Tests_GhostResponseHandlerTests_IA_Property1 = new Property<int>();
             Property<int> IA.Property1 => _PinionCore_Remote_Tests_GhostResponseHandlerTests_IA_Property1;
 
@@ -111,29 +109,29 @@ namespace PinionCore.Remote.Tests
             var ghostIA = new GhostIA();
             ISerializable serializable = new PinionCore.Remote.Tests.Serializer().Serializable;
             var map = new MemberMap(typeof(IA).GetMethods(), typeof(IA).GetEvents(), typeof(IA).GetProperties(), new System.Tuple<System.Type, System.Func<PinionCore.Remote.IProvider>>[] { });
-            
+
             _Serializable = serializable;
-            _GhostResponseHandler = new GhostResponseHandler(new System.WeakReference<IGhost>(ghostIA), map , serializable);
+            _GhostResponseHandler = new GhostResponseHandler(new System.WeakReference<IGhost>(ghostIA), map, serializable);
             _MemberMap = map;
             _IA = ghostIA;
         }
         [NUnit.Framework.Test]
         public void BaseTest()
         {
-            var ghost = NSubstitute.Substitute.For<IGhost>();
-            var handler = new PinionCore.Remote.GhostResponseHandler(new WeakReference<IGhost>(ghost),null, null);
-            NUnit.Framework.Assert.AreEqual(ghost , handler.FindGhost());
+            IGhost ghost = NSubstitute.Substitute.For<IGhost>();
+            var handler = new PinionCore.Remote.GhostResponseHandler(new WeakReference<IGhost>(ghost), null, null);
+            NUnit.Framework.Assert.AreEqual(ghost, handler.FindGhost());
         }
 
         [NUnit.Framework.Test]
         public void InvokeEvent()
         {
-            var handler = _GhostResponseHandler;
+            GhostResponseHandler handler = _GhostResponseHandler;
             var eventId = _MemberMap.GetEvent(typeof(IA).GetEvents()[0]);
-            int value = 0;
+            var value = 0;
             _IA.Event1 += (v) => value = v;
 
-            byte[][] buffers = new byte[][] { _Serializable.Serialize(typeof(int), 10).ToArray() };
+            var buffers = new byte[][] { _Serializable.Serialize(typeof(int), 10).ToArray() };
             handler.InvokeEvent(eventId, 1, buffers);
             NUnit.Framework.Assert.AreEqual(10, value);
         }
@@ -141,18 +139,18 @@ namespace PinionCore.Remote.Tests
         [NUnit.Framework.Test]
         public void UpdateSetPropertyTest()
         {
-            var handler = _GhostResponseHandler;
+            GhostResponseHandler handler = _GhostResponseHandler;
             var property = _MemberMap.GetProperty(typeof(IA).GetProperties()[0]);
-            handler.UpdateSetProperty(property, _Serializable.Serialize(typeof(int) , 2).ToArray());
+            handler.UpdateSetProperty(property, _Serializable.Serialize(typeof(int), 2).ToArray());
             NUnit.Framework.Assert.AreEqual(2, _IA.Property1.Value);
         }
 
         [NUnit.Framework.Test]
         public void GetAccesserTest()
         {
-            var handler = _GhostResponseHandler;
+            GhostResponseHandler handler = _GhostResponseHandler;
             var property = _MemberMap.GetProperty(typeof(IA).GetProperties()[1]);
-            var accesser =  handler.GetAccesser(property);
+            IObjectAccessible accesser = handler.GetAccesser(property);
 
             IA ia = null;
             _IA.Property2.Base.Supply += obj => ia = obj;
@@ -162,5 +160,5 @@ namespace PinionCore.Remote.Tests
         }
 
 
-    }    
+    }
 }

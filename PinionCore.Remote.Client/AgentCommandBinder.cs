@@ -1,31 +1,31 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace PinionCore.Remote.Client
 {
-    
 
-    public class AgentCommandBinder 
+
+    public class AgentCommandBinder
     {
 
-        private readonly Type[] _WatchTypes;        
+        private readonly Type[] _WatchTypes;
         readonly List<RectifierBinder> _Users;
 
         readonly PinionCore.Remote.Client.AgentCommandRegister _Register;
-        
-        public AgentCommandBinder(AgentCommandRegister register ,  IEnumerable<Type> watch_types) 
+
+        public AgentCommandBinder(AgentCommandRegister register, IEnumerable<Type> watch_types)
         {
-            _WatchTypes = watch_types.Union(new Type[0] ).ToArray();            
+            _WatchTypes = watch_types.Union(new Type[0]).ToArray();
             _Users = new List<RectifierBinder>();
             _Register = register;
         }
 
         public System.Guid Bind(INotifierQueryable notifier)
         {
-            AgentEventRectifier rectifier = new AgentEventRectifier(_WatchTypes, notifier);
-            RectifierBinder user = new RectifierBinder(rectifier);
-            _Users.Add(user);            
+            var rectifier = new AgentEventRectifier(_WatchTypes, notifier);
+            var user = new RectifierBinder(rectifier);
+            _Users.Add(user);
             foreach (Tuple<Type, object> g in user.Ghosts)
             {
                 _Register.Regist(g.Item1, g.Item2);
@@ -44,10 +44,10 @@ namespace PinionCore.Remote.Client
             {
                 _Register.Unregist(g.Item2);
             }
-            _Users.RemoveAll(u => u.Id == id);            
+            _Users.RemoveAll(u => u.Id == id);
             user.Dispose();
         }
-        
+
 
 
     }

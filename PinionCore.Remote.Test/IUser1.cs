@@ -1,4 +1,4 @@
-namespace RemotingTest
+﻿namespace RemotingTest
 {
     internal interface IUser
     {

@@ -1,4 +1,4 @@
-namespace PinionCore.Serialization.Tests
+﻿namespace PinionCore.Serialization.Tests
 {
     public enum TEST1
     {

@@ -1,4 +1,4 @@
-namespace PinionCore.Remote.Tools.Protocol.Sources
+﻿namespace PinionCore.Remote.Tools.Protocol.Sources
 {
     public class MissingTypeException : System.Exception
     {

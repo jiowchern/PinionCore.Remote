@@ -1,11 +1,11 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace PinionCore.Remote.Client
 {
     public class RectifierBinder
     {
-         
+
         public readonly System.Guid Id;
 
 
@@ -14,7 +14,7 @@ namespace PinionCore.Remote.Client
         public RectifierBinder(AgentEventRectifier rectifier)
         {
             Id = System.Guid.NewGuid();
-            _Ghosts = new List<Tuple<Type, object>>();            
+            _Ghosts = new List<Tuple<Type, object>>();
 
             rectifier.SupplyEvent += _Add;
             rectifier.UnsupplyEvent += _Remove;

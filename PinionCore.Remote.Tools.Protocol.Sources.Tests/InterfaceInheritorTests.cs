@@ -1,8 +1,7 @@
-using Microsoft.CodeAnalysis.CSharp.Syntax;
+﻿using System.Linq;
 using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.Text;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using NUnit.Framework;
-using System.Linq;
 
 namespace PinionCore.Remote.Tools.Protocol.Sources.Tests
 {
@@ -17,19 +16,19 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.Tests
 interface IA {
     void Method1();
 }
-";          
-            
-            var tree = Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(source);
-            
+";
+
+            Microsoft.CodeAnalysis.SyntaxTree tree = Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(source);
+
             var builder = new PinionCore.Remote.Tools.Protocol.Sources.InterfaceInheritor(tree.GetRoot().DescendantNodes().OfType<InterfaceDeclarationSyntax>().Single());
 
-            
-            var cia = SyntaxFactory.ClassDeclaration("CIA");
+
+            ClassDeclarationSyntax cia = SyntaxFactory.ClassDeclaration("CIA");
             cia = builder.Inherite(cia);
-            var member = cia.DescendantNodes().OfType<MethodDeclarationSyntax>().Single();            
+            MethodDeclarationSyntax member = cia.DescendantNodes().OfType<MethodDeclarationSyntax>().Single();
             NUnit.Framework.Assert.AreEqual("IA", member.ExplicitInterfaceSpecifier.Name.ToFullString());
 
-            var exp = member.DescendantNodes().OfType<BlockSyntax>().Single();            
+            BlockSyntax exp = member.DescendantNodes().OfType<BlockSyntax>().Single();
             NUnit.Framework.Assert.True(builder.Expression.IsEquivalentTo(exp));
         }
 
@@ -49,16 +48,16 @@ namespace N2
 
 
 ";
-            var tree = Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(source);
+            Microsoft.CodeAnalysis.SyntaxTree tree = Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(source);
 
             var builder = new PinionCore.Remote.Tools.Protocol.Sources.InterfaceInheritor(tree.GetRoot().DescendantNodes().OfType<InterfaceDeclarationSyntax>().Single());
 
-            var cia = SyntaxFactory.ClassDeclaration("CIA");
+            ClassDeclarationSyntax cia = SyntaxFactory.ClassDeclaration("CIA");
             cia = builder.Inherite(cia);
-            var member = cia.DescendantNodes().OfType<MethodDeclarationSyntax>().Single();
+            MethodDeclarationSyntax member = cia.DescendantNodes().OfType<MethodDeclarationSyntax>().Single();
             NUnit.Framework.Assert.AreEqual("N2.N1.IA", member.ExplicitInterfaceSpecifier.Name.ToFullString());
 
-            var exp = member.DescendantNodes().OfType<BlockSyntax>().Single();
+            BlockSyntax exp = member.DescendantNodes().OfType<BlockSyntax>().Single();
             NUnit.Framework.Assert.True(builder.Expression.IsEquivalentTo(exp));
         }
 
@@ -75,17 +74,17 @@ interface IA {
         }
 }
 ";
-            var tree = Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(source);            
+            Microsoft.CodeAnalysis.SyntaxTree tree = Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(source);
 
             var builder = new PinionCore.Remote.Tools.Protocol.Sources.InterfaceInheritor(tree.GetRoot().DescendantNodes().OfType<InterfaceDeclarationSyntax>().Single());
 
-            var cia = SyntaxFactory.ClassDeclaration("CIA");
+            ClassDeclarationSyntax cia = SyntaxFactory.ClassDeclaration("CIA");
             cia = builder.Inherite(cia);
-            var member = cia.DescendantNodes().OfType<IndexerDeclarationSyntax>().Single();
+            IndexerDeclarationSyntax member = cia.DescendantNodes().OfType<IndexerDeclarationSyntax>().Single();
 
             NUnit.Framework.Assert.AreEqual("IA", member.ExplicitInterfaceSpecifier.Name.ToFullString());
 
-            var exps = member.DescendantNodes().OfType<BlockSyntax>().ToArray();
+            BlockSyntax[] exps = member.DescendantNodes().OfType<BlockSyntax>().ToArray();
             NUnit.Framework.Assert.True(builder.Expression.IsEquivalentTo(exps[0]));
             NUnit.Framework.Assert.True(builder.Expression.IsEquivalentTo(exps[1]));
 
@@ -100,15 +99,15 @@ interface IA {
     int Property1 {get; set;}
 }
 ";
-            var tree = Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(source);
-            
+            Microsoft.CodeAnalysis.SyntaxTree tree = Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(source);
+
             var builder = new PinionCore.Remote.Tools.Protocol.Sources.InterfaceInheritor(tree.GetRoot().DescendantNodes().OfType<InterfaceDeclarationSyntax>().Single());
-            var cia = SyntaxFactory.ClassDeclaration("CIA");
+            ClassDeclarationSyntax cia = SyntaxFactory.ClassDeclaration("CIA");
             cia = builder.Inherite(cia);
-            var member = cia.DescendantNodes().OfType<PropertyDeclarationSyntax>().Single();
-            
+            PropertyDeclarationSyntax member = cia.DescendantNodes().OfType<PropertyDeclarationSyntax>().Single();
+
             NUnit.Framework.Assert.AreEqual("IA", member.ExplicitInterfaceSpecifier.Name.ToFullString());
-            var exps = member.DescendantNodes().OfType<BlockSyntax>().ToArray();
+            BlockSyntax[] exps = member.DescendantNodes().OfType<BlockSyntax>().ToArray();
             NUnit.Framework.Assert.True(builder.Expression.IsEquivalentTo(exps[0]));
             NUnit.Framework.Assert.True(builder.Expression.IsEquivalentTo(exps[1]));
         }
@@ -121,18 +120,18 @@ interface IA {
 interface IA {    
 }
 ";
-            var tree = Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(source);
+            Microsoft.CodeAnalysis.SyntaxTree tree = Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(source);
 
 
             var builder = new PinionCore.Remote.Tools.Protocol.Sources.InterfaceInheritor(tree.GetRoot().DescendantNodes().OfType<InterfaceDeclarationSyntax>().Single());
-            var cia = SyntaxFactory.ClassDeclaration("CIA");
+            ClassDeclarationSyntax cia = SyntaxFactory.ClassDeclaration("CIA");
             cia = builder.Inherite(cia);
 
-            var base1 = cia.BaseList.Types[0];
+            BaseTypeSyntax base1 = cia.BaseList.Types[0];
             NUnit.Framework.Assert.AreEqual("IA", base1.ToFullString());
         }
 
-        
+
 
 
         [Test]
@@ -144,18 +143,18 @@ interface IA {
     int Property1 {get; }
 }
 ";
-            var tree = Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(source);
+            Microsoft.CodeAnalysis.SyntaxTree tree = Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(source);
 
 
             var builder = new PinionCore.Remote.Tools.Protocol.Sources.InterfaceInheritor(tree.GetRoot().DescendantNodes().OfType<InterfaceDeclarationSyntax>().Single());
-            var cia = SyntaxFactory.ClassDeclaration("CIA");
+            ClassDeclarationSyntax cia = SyntaxFactory.ClassDeclaration("CIA");
             cia = builder.Inherite(cia);
-            var member = cia.DescendantNodes().OfType<PropertyDeclarationSyntax>().Single();
+            PropertyDeclarationSyntax member = cia.DescendantNodes().OfType<PropertyDeclarationSyntax>().Single();
 
             NUnit.Framework.Assert.AreEqual("IA", member.ExplicitInterfaceSpecifier.Name.ToFullString());
-            var exp = member.DescendantNodes().OfType<BlockSyntax>().Single();
+            BlockSyntax exp = member.DescendantNodes().OfType<BlockSyntax>().Single();
             NUnit.Framework.Assert.True(builder.Expression.IsEquivalentTo(exp));
-            
+
 
         }
 
@@ -167,23 +166,23 @@ interface IA {
     event System.Action<int> Event1;
 }
 ";
-            var tree = Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(source);
-            
+            Microsoft.CodeAnalysis.SyntaxTree tree = Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(source);
+
 
             var builder = new PinionCore.Remote.Tools.Protocol.Sources.InterfaceInheritor(tree.GetRoot().DescendantNodes().OfType<InterfaceDeclarationSyntax>().Single());
 
-            var cia = SyntaxFactory.ClassDeclaration("CIA");
+            ClassDeclarationSyntax cia = SyntaxFactory.ClassDeclaration("CIA");
             cia = builder.Inherite(cia);
-            var member = cia.DescendantNodes().OfType<EventDeclarationSyntax>().Single();            
+            EventDeclarationSyntax member = cia.DescendantNodes().OfType<EventDeclarationSyntax>().Single();
             NUnit.Framework.Assert.AreEqual("IA", member.ExplicitInterfaceSpecifier.Name.ToFullString());
             NUnit.Framework.Assert.AreEqual("System.Action<int> ", member.Type.ToFullString());
 
-            var exps = member.DescendantNodes().OfType<BlockSyntax>().ToArray();
+            BlockSyntax[] exps = member.DescendantNodes().OfType<BlockSyntax>().ToArray();
             NUnit.Framework.Assert.True(builder.Expression.IsEquivalentTo(exps[0]));
             NUnit.Framework.Assert.True(builder.Expression.IsEquivalentTo(exps[1]));
 
-        }       
+        }
 
-       
+
     }
 }

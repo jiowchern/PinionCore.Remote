@@ -1,6 +1,4 @@
-using PinionCore.Remote;
-using PinionCore.Utility;
-using System.Diagnostics;
+﻿using PinionCore.Remote;
 
 
 namespace RemotingTest
@@ -33,7 +31,7 @@ namespace RemotingTest
 
         void IEntry.Update()
         {
-            
+
         }
     }
 }

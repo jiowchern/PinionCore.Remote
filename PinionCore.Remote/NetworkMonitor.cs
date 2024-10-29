@@ -1,5 +1,5 @@
+﻿using System.Threading;
 using PinionCore.Utility;
-using System.Threading;
 
 namespace PinionCore.Remote
 {
@@ -60,7 +60,7 @@ namespace PinionCore.Remote
         }
     }
 
-    public class NetworkMonitor  
+    public class NetworkMonitor
     {
         private volatile bool _Reset;
 
@@ -93,11 +93,11 @@ namespace PinionCore.Remote
 
         private void _Update(object state)
         {
-            Updater updater = new Updater();
+            var updater = new Updater();
             updater.Add(Read);
             updater.Add(Write);
 
-            TimeCounter counter = new TimeCounter();
+            var counter = new TimeCounter();
             do
             {
                 updater.Working();

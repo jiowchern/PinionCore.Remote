@@ -1,11 +1,11 @@
-using Microsoft.CodeAnalysis.CSharp;
+﻿using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 namespace PinionCore.Remote.Tools.Protocol.Sources.Codes
 {
     public static partial class PinionCoreRemoteIGhost
     {
-        
+
         public static BlockSyntax _Block(SyntaxKind exp_1, string field_name)
         {
             return Block(

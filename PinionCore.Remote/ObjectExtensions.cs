@@ -1,4 +1,4 @@
-namespace PinionCore.Remote.Extensions
+﻿namespace PinionCore.Remote.Extensions
 {
     static class ObjectExtensions
     {

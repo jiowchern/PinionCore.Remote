@@ -1,4 +1,4 @@
-using NUnit.Framework;
+﻿using NUnit.Framework;
 
 namespace PinionCore.Remote.Tests
 {
@@ -7,11 +7,11 @@ namespace PinionCore.Remote.Tests
         [NUnit.Framework.Test]
         public void LongTest()
         {
-            Landlord<long> landlord = new Landlord<long>(new LongProvider());
-            long l1 = landlord.Rent();
-            long l2 = landlord.Rent();
+            var landlord = new Landlord<long>(new LongProvider());
+            var l1 = landlord.Rent();
+            var l2 = landlord.Rent();
             landlord.Return(l2);
-            long l3 = landlord.Rent();
+            var l3 = landlord.Rent();
             Assert.AreEqual(1, l1);
             Assert.AreEqual(2, l2);
             Assert.AreEqual(2, l3);

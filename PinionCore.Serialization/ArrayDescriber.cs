@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 
@@ -66,12 +66,12 @@ namespace PinionCore.Serialization
 
         private ValidObjectSet _GetSet(object instance)
         {
-            IList array = instance as IList;
+            var array = instance as IList;
 
-            int validLength = 0;
-            for (int i = 0; i < array.Count; i++)
+            var validLength = 0;
+            for (var i = 0; i < array.Count; i++)
             {
-                object obj = array[i];
+                var obj = array[i];
                 if (object.Equals(obj, _DefaultElement) == false)
                 {
                     validLength++;
@@ -80,11 +80,11 @@ namespace PinionCore.Serialization
 
 
 
-            List<ValidObject> validObjects = new List<ValidObject>();
-            for (int i = 0; i < array.Count; i++)
+            var validObjects = new List<ValidObject>();
+            for (var i = 0; i < array.Count; i++)
             {
-                object obj = array[i];
-                int index = i;
+                var obj = array[i];
+                var index = i;
                 if (object.Equals(obj, _DefaultElement) == false)
                 {
 
@@ -104,15 +104,15 @@ namespace PinionCore.Serialization
             ValidObjectSet set = _GetSet(instance);
 
 
-            int lenCount = Varint.GetByteCount(set.TotalLength);
-            int validCount = Varint.GetByteCount(set.ValidLength);
+            var lenCount = Varint.GetByteCount(set.TotalLength);
+            var validCount = Varint.GetByteCount(set.ValidLength);
 
 
-            int instanceCount = 0;
-            for (int i = 0; i < set.ValidObjects.Length; i++)
+            var instanceCount = 0;
+            for (var i = 0; i < set.ValidObjects.Length; i++)
             {
-                int index = set.ValidObjects[i].Index;
-                object obj = set.ValidObjects[i].Object;
+                var index = set.ValidObjects[i].Index;
+                var obj = set.ValidObjects[i].Object;
 
                 ITypeDescriber describer = _TypeSet.Get(obj.GetType());
 
@@ -129,17 +129,17 @@ namespace PinionCore.Serialization
 
             try
             {
-                var bytes = buffer.Bytes;
+                ArraySegment<byte> bytes = buffer.Bytes;
                 ValidObjectSet set = _GetSet(instance);
-                int offset = begin;
+                var offset = begin;
                 offset += Varint.NumberToBuffer(bytes.Array, bytes.Offset + offset, set.TotalLength);
                 offset += Varint.NumberToBuffer(bytes.Array, bytes.Offset + offset, set.ValidLength);
 
 
-                for (int i = 0; i < set.ValidObjects.Length; i++)
+                for (var i = 0; i < set.ValidObjects.Length; i++)
                 {
-                    int index = set.ValidObjects[i].Index;
-                    object obj = set.ValidObjects[i].Object;
+                    var index = set.ValidObjects[i].Index;
+                    var obj = set.ValidObjects[i].Object;
                     offset += Varint.NumberToBuffer(bytes.Array, bytes.Offset + offset, index);
                     Type objType = obj.GetType();
                     ITypeDescriber describer = _TypeSet.Get(objType);
@@ -161,19 +161,19 @@ namespace PinionCore.Serialization
         {
             try
             {
-                int offset = begin;
+                var offset = begin;
                 ulong count;
                 offset += Varint.BufferToNumber(buffer, offset, out count);
-                IList array = Activator.CreateInstance(_Type, (int)count) as IList;
+                var array = Activator.CreateInstance(_Type, (int)count) as IList;
                 instnace = array;
 
                 ulong validCount;
                 offset += Varint.BufferToNumber(buffer, offset, out validCount);
 
 
-                for (ulong i = 0UL; i < validCount; i++)
+                for (var i = 0UL; i < validCount; i++)
                 {
-                    ulong index = 0LU;
+                    var index = 0LU;
 
                     offset += Varint.BufferToNumber(buffer, offset, out index);
 

@@ -1,12 +1,12 @@
-using NUnit.Framework;
-using System.Linq;
+﻿using System.Linq;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using NUnit.Framework;
 using PinionCore.Remote.Tools.Protocol.Sources.Extensions;
 
 namespace PinionCore.Remote.Tools.Protocol.Sources.Tests
 {
-    
+
 
     public class SyntaxExtensionsTests
     {
@@ -26,12 +26,12 @@ namespace N1
 }
 
 ";
-            var tree = Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(source);
-            var com = tree.Compilation();
-            var symbol = com.GetSemanticModel(tree).GetDeclaredSymbol(tree.GetRoot().DescendantNodes().OfType<InterfaceDeclarationSyntax>().Single());
+            Microsoft.CodeAnalysis.SyntaxTree tree = Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(source);
+            CSharpCompilation com = tree.Compilation();
+            Microsoft.CodeAnalysis.INamedTypeSymbol symbol = com.GetSemanticModel(tree).GetDeclaredSymbol(tree.GetRoot().DescendantNodes().OfType<InterfaceDeclarationSyntax>().Single());
 
-            var syntax = symbol.ToInferredInterface();
-            var type = syntax;
+            InterfaceDeclarationSyntax syntax = symbol.ToInferredInterface();
+            InterfaceDeclarationSyntax type = syntax;
 
             NUnit.Framework.Assert.AreEqual("IA", type.Identifier.ToFullString());
         }
@@ -52,12 +52,12 @@ namespace N1
 }
 
 ";
-            var tree = Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(source);
-            var com = tree.Compilation();
-            var symbol = com.GetSemanticModel(tree).GetDeclaredSymbol(tree.GetRoot().DescendantNodes().OfType<InterfaceDeclarationSyntax>().Single());
+            Microsoft.CodeAnalysis.SyntaxTree tree = Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(source);
+            CSharpCompilation com = tree.Compilation();
+            Microsoft.CodeAnalysis.INamedTypeSymbol symbol = com.GetSemanticModel(tree).GetDeclaredSymbol(tree.GetRoot().DescendantNodes().OfType<InterfaceDeclarationSyntax>().Single());
 
-            
-            var syntax = symbol.ToInferredInterface().Ancestors().OfType<NamespaceDeclarationSyntax>().Single();
+
+            NamespaceDeclarationSyntax syntax = symbol.ToInferredInterface().Ancestors().OfType<NamespaceDeclarationSyntax>().Single();
 
             NUnit.Framework.Assert.AreEqual("N1.N2", syntax.Name.ToFullString());
         }
@@ -85,13 +85,13 @@ namespace N1
 }
 
 ";
-            var tree = Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(source);
-            var type = tree.GetRoot().DescendantNodes().OfType<InterfaceDeclarationSyntax>().Single();
+            Microsoft.CodeAnalysis.SyntaxTree tree = Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(source);
+            InterfaceDeclarationSyntax type = tree.GetRoot().DescendantNodes().OfType<InterfaceDeclarationSyntax>().Single();
 
             NUnit.Framework.Assert.AreEqual("N1.N2.C1.C2.IA", type.GetNamePath());
-            
+
         }
-        
+
 
         [Test]
         public void NamespaceNoName()
@@ -101,9 +101,9 @@ interface IA
         {    
         }
 ";
-            var tree = Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(source);
-            var com = tree.Compilation();
-            var symbol = com.GetSemanticModel(tree).GetDeclaredSymbol(tree.GetRoot().DescendantNodes().OfType<InterfaceDeclarationSyntax>().Single());
+            Microsoft.CodeAnalysis.SyntaxTree tree = Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(source);
+            CSharpCompilation com = tree.Compilation();
+            Microsoft.CodeAnalysis.INamedTypeSymbol symbol = com.GetSemanticModel(tree).GetDeclaredSymbol(tree.GetRoot().DescendantNodes().OfType<InterfaceDeclarationSyntax>().Single());
 
 
             var syntax = symbol.ToInferredInterface().DescendantNodes().OfType<NamespaceDeclarationSyntax>().Any();
@@ -121,14 +121,14 @@ interface IA {
     void Method1();
 }
 ";
-            var tree = Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(source);
-            var com = tree.Compilation();
-            var symbol = com.GetSemanticModel(tree).GetDeclaredSymbol(tree.GetRoot().DescendantNodes().OfType<InterfaceDeclarationSyntax>().Single());
+            Microsoft.CodeAnalysis.SyntaxTree tree = Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(source);
+            CSharpCompilation com = tree.Compilation();
+            Microsoft.CodeAnalysis.INamedTypeSymbol symbol = com.GetSemanticModel(tree).GetDeclaredSymbol(tree.GetRoot().DescendantNodes().OfType<InterfaceDeclarationSyntax>().Single());
 
-            var syntax = symbol.ToInferredInterface();
-            var method = syntax.DescendantNodes().OfType<MethodDeclarationSyntax>().Single();
+            InterfaceDeclarationSyntax syntax = symbol.ToInferredInterface();
+            MethodDeclarationSyntax method = syntax.DescendantNodes().OfType<MethodDeclarationSyntax>().Single();
 
-            NUnit.Framework.Assert.AreEqual("Method1" , method.Identifier.ToString());
+            NUnit.Framework.Assert.AreEqual("Method1", method.Identifier.ToString());
         }
 
         [Test]
@@ -140,11 +140,11 @@ interface IA {
     event System.Action Event;
 }
 ";
-            var tree = Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(source);
-            var com = tree.Compilation();
-            var symbol = com.GetSemanticModel(tree).GetDeclaredSymbol(tree.GetRoot().DescendantNodes().OfType<InterfaceDeclarationSyntax>().Single());
+            Microsoft.CodeAnalysis.SyntaxTree tree = Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(source);
+            CSharpCompilation com = tree.Compilation();
+            Microsoft.CodeAnalysis.INamedTypeSymbol symbol = com.GetSemanticModel(tree).GetDeclaredSymbol(tree.GetRoot().DescendantNodes().OfType<InterfaceDeclarationSyntax>().Single());
 
-            var syntax = symbol.ToInferredInterface();
+            InterfaceDeclarationSyntax syntax = symbol.ToInferredInterface();
             var count = syntax.DescendantNodes().OfType<MethodDeclarationSyntax>().Count();
 
             NUnit.Framework.Assert.AreEqual(0, count);
@@ -162,18 +162,18 @@ interface IA {
     void Method1(int p1);
 }
 ";
-            var tree = Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(source);
-  
-            var com = tree.Compilation();
-            var symbol = com.GetSemanticModel(tree).GetDeclaredSymbol(tree.GetRoot().DescendantNodes().OfType<InterfaceDeclarationSyntax>().Single());
+            Microsoft.CodeAnalysis.SyntaxTree tree = Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(source);
 
-            var syntax = symbol.ToInferredInterface();
-  
-            var parameter = syntax.DescendantNodes().OfType<ParameterSyntax>().Single();
+            CSharpCompilation com = tree.Compilation();
+            Microsoft.CodeAnalysis.INamedTypeSymbol symbol = com.GetSemanticModel(tree).GetDeclaredSymbol(tree.GetRoot().DescendantNodes().OfType<InterfaceDeclarationSyntax>().Single());
+
+            InterfaceDeclarationSyntax syntax = symbol.ToInferredInterface();
+
+            ParameterSyntax parameter = syntax.DescendantNodes().OfType<ParameterSyntax>().Single();
 
             NUnit.Framework.Assert.AreEqual("p1", parameter.Identifier.ToString());
             NUnit.Framework.Assert.AreEqual("System.Int32", parameter.Type.ToFullString());
-            
+
         }
 
         [Test]
@@ -184,15 +184,15 @@ using System;
 interface IA {
     void Method1(ICloneable p1);
 }
-";            
-            var tree = Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(source);
+";
+            Microsoft.CodeAnalysis.SyntaxTree tree = Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(source);
 
-            var com = tree.Compilation();
-            var symbol = com.GetSemanticModel(tree).GetDeclaredSymbol(tree.GetRoot().DescendantNodes().OfType<InterfaceDeclarationSyntax>().Single());
+            CSharpCompilation com = tree.Compilation();
+            Microsoft.CodeAnalysis.INamedTypeSymbol symbol = com.GetSemanticModel(tree).GetDeclaredSymbol(tree.GetRoot().DescendantNodes().OfType<InterfaceDeclarationSyntax>().Single());
 
-            var syntax = symbol.ToInferredInterface();
+            InterfaceDeclarationSyntax syntax = symbol.ToInferredInterface();
 
-            var parameter = syntax.DescendantNodes().OfType<ParameterSyntax>().Single();
+            ParameterSyntax parameter = syntax.DescendantNodes().OfType<ParameterSyntax>().Single();
 
             NUnit.Framework.Assert.AreEqual("p1", parameter.Identifier.ToString());
             NUnit.Framework.Assert.AreEqual("System.ICloneable", parameter.Type.ToFullString());
@@ -210,14 +210,14 @@ interface IA {
     IDisposable Method1(int p1);
 }
 ";
-            
-            var tree = Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(source);
-            var com = tree.Compilation();
-            var symbol = com.GetSemanticModel(tree).GetDeclaredSymbol(tree.GetRoot().DescendantNodes().OfType<InterfaceDeclarationSyntax>().Single());
 
-            var syntax = symbol.ToInferredInterface();
-            var method = syntax.DescendantNodes().OfType<MethodDeclarationSyntax>().Single();
-            
+            Microsoft.CodeAnalysis.SyntaxTree tree = Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(source);
+            CSharpCompilation com = tree.Compilation();
+            Microsoft.CodeAnalysis.INamedTypeSymbol symbol = com.GetSemanticModel(tree).GetDeclaredSymbol(tree.GetRoot().DescendantNodes().OfType<InterfaceDeclarationSyntax>().Single());
+
+            InterfaceDeclarationSyntax syntax = symbol.ToInferredInterface();
+            MethodDeclarationSyntax method = syntax.DescendantNodes().OfType<MethodDeclarationSyntax>().Single();
+
             NUnit.Framework.Assert.AreEqual("System.IDisposable", method.ReturnType.ToFullString());
         }
 
@@ -232,13 +232,13 @@ interface IA {
     Tuple<Guid,int> Method1(int p1);
 }
 ";
-            
-            var tree = Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(source);
-            var com = tree.Compilation();
-            var symbol = com.GetSemanticModel(tree).GetDeclaredSymbol(tree.GetRoot().DescendantNodes().OfType<InterfaceDeclarationSyntax>().Single());
 
-            var syntax = symbol.ToInferredInterface();
-            var method = syntax.DescendantNodes().OfType<MethodDeclarationSyntax>().Single();
+            Microsoft.CodeAnalysis.SyntaxTree tree = Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(source);
+            CSharpCompilation com = tree.Compilation();
+            Microsoft.CodeAnalysis.INamedTypeSymbol symbol = com.GetSemanticModel(tree).GetDeclaredSymbol(tree.GetRoot().DescendantNodes().OfType<InterfaceDeclarationSyntax>().Single());
+
+            InterfaceDeclarationSyntax syntax = symbol.ToInferredInterface();
+            MethodDeclarationSyntax method = syntax.DescendantNodes().OfType<MethodDeclarationSyntax>().Single();
 
             NUnit.Framework.Assert.AreEqual("System.Tuple<System.Guid, System.Int32>", method.ReturnType.ToFullString());
         }
@@ -255,14 +255,14 @@ interface IA {
 }
 ";
 
-            var tree = Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(source);
-            var com = tree.Compilation();
+            Microsoft.CodeAnalysis.SyntaxTree tree = Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(source);
+            CSharpCompilation com = tree.Compilation();
 
-            
-            var symbol = com.GetSemanticModel(tree).GetDeclaredSymbol(com.SyntaxTrees[0].GetRoot().DescendantNodes().OfType<InterfaceDeclarationSyntax>().Single());
 
-            var syntax = symbol.ToInferredInterface();
-            var method = syntax.DescendantNodes().OfType<MethodDeclarationSyntax>().Single();
+            Microsoft.CodeAnalysis.INamedTypeSymbol symbol = com.GetSemanticModel(tree).GetDeclaredSymbol(com.SyntaxTrees[0].GetRoot().DescendantNodes().OfType<InterfaceDeclarationSyntax>().Single());
+
+            InterfaceDeclarationSyntax syntax = symbol.ToInferredInterface();
+            MethodDeclarationSyntax method = syntax.DescendantNodes().OfType<MethodDeclarationSyntax>().Single();
 
             NUnit.Framework.Assert.AreEqual("PinionCore.Remote.Value<System.Int32>", method.ReturnType.ToFullString());
         }
@@ -279,21 +279,21 @@ interface IA {
 }
 ";
 
-            var tree = Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(source);
-            var com = tree.Compilation();
-            var symbol = com.GetSemanticModel(tree).GetDeclaredSymbol(tree.GetRoot().DescendantNodes().OfType<InterfaceDeclarationSyntax>().Single());
+            Microsoft.CodeAnalysis.SyntaxTree tree = Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(source);
+            CSharpCompilation com = tree.Compilation();
+            Microsoft.CodeAnalysis.INamedTypeSymbol symbol = com.GetSemanticModel(tree).GetDeclaredSymbol(tree.GetRoot().DescendantNodes().OfType<InterfaceDeclarationSyntax>().Single());
 
-            var syntax = symbol.ToInferredInterface();
-            
-            var parameter = syntax.DescendantNodes().OfType<ParameterSyntax>().Single();
+            InterfaceDeclarationSyntax syntax = symbol.ToInferredInterface();
+
+            ParameterSyntax parameter = syntax.DescendantNodes().OfType<ParameterSyntax>().Single();
 
             NUnit.Framework.Assert.AreEqual("ref", parameter.Modifiers[0].Text);
-            
+
             NUnit.Framework.Assert.AreEqual("p1", parameter.Identifier.ToString());
 
         }
 
-      
+
 
 
         [Test]
@@ -305,18 +305,18 @@ interface IA {
 }
 ";
 
-            
-            var tree = Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(source);
-            var com = tree.Compilation();
-            
-            var symbol = com.GetSemanticModel(tree).GetDeclaredSymbol(tree.GetRoot().DescendantNodes().OfType<InterfaceDeclarationSyntax>().Single());
 
-            var syntax = symbol.ToInferredInterface();
-            var member = syntax.DescendantNodes().OfType<PropertyDeclarationSyntax>().Single();
+            Microsoft.CodeAnalysis.SyntaxTree tree = Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(source);
+            CSharpCompilation com = tree.Compilation();
 
-            var accessor = member.DescendantNodes().OfType<AccessorDeclarationSyntax>().Single();
-            
-             
+            Microsoft.CodeAnalysis.INamedTypeSymbol symbol = com.GetSemanticModel(tree).GetDeclaredSymbol(tree.GetRoot().DescendantNodes().OfType<InterfaceDeclarationSyntax>().Single());
+
+            InterfaceDeclarationSyntax syntax = symbol.ToInferredInterface();
+            PropertyDeclarationSyntax member = syntax.DescendantNodes().OfType<PropertyDeclarationSyntax>().Single();
+
+            AccessorDeclarationSyntax accessor = member.DescendantNodes().OfType<AccessorDeclarationSyntax>().Single();
+
+
 
             NUnit.Framework.Assert.AreEqual("Property1", member.Identifier.ToFullString());
             NUnit.Framework.Assert.AreEqual(SyntaxKind.GetAccessorDeclaration, accessor.Kind());
@@ -326,7 +326,7 @@ interface IA {
         public void Event()
         {
 
-        var source = @"
+            var source = @"
 using System;
 namespace N1
 {
@@ -338,15 +338,15 @@ interface IA
     event N1.TestDelegate Event1;
 }   
 ";
-            var tree = Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(source);
-            var com = tree.Compilation();
+            Microsoft.CodeAnalysis.SyntaxTree tree = Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(source);
+            CSharpCompilation com = tree.Compilation();
 
-            var symbol = com.GetSemanticModel(tree).GetDeclaredSymbol(tree.GetRoot().DescendantNodes().OfType<InterfaceDeclarationSyntax>().Single());
+            Microsoft.CodeAnalysis.INamedTypeSymbol symbol = com.GetSemanticModel(tree).GetDeclaredSymbol(tree.GetRoot().DescendantNodes().OfType<InterfaceDeclarationSyntax>().Single());
 
-            var syntax = symbol.ToInferredInterface();
+            InterfaceDeclarationSyntax syntax = symbol.ToInferredInterface();
 
-            var member = syntax.DescendantNodes().OfType<EventFieldDeclarationSyntax>().Single();
-            
+            EventFieldDeclarationSyntax member = syntax.DescendantNodes().OfType<EventFieldDeclarationSyntax>().Single();
+
             NUnit.Framework.Assert.AreEqual("Event1", member.Declaration.Variables[0].Identifier.ToFullString());
 
             NUnit.Framework.Assert.AreEqual("N1.TestDelegate", member.Declaration.Type.ToFullString());
@@ -365,15 +365,15 @@ interface IA
 {
     event System.Action<ICloneable> Event1;
 }   
-";            
-            var tree = Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(source);
-            var com = tree.Compilation();
+";
+            Microsoft.CodeAnalysis.SyntaxTree tree = Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(source);
+            CSharpCompilation com = tree.Compilation();
 
-            var symbol = com.GetSemanticModel(tree).GetDeclaredSymbol(tree.GetRoot().DescendantNodes().OfType<InterfaceDeclarationSyntax>().Single());
+            Microsoft.CodeAnalysis.INamedTypeSymbol symbol = com.GetSemanticModel(tree).GetDeclaredSymbol(tree.GetRoot().DescendantNodes().OfType<InterfaceDeclarationSyntax>().Single());
 
-            var syntax = symbol.ToInferredInterface();
+            InterfaceDeclarationSyntax syntax = symbol.ToInferredInterface();
 
-            var member = syntax.DescendantNodes().OfType<EventFieldDeclarationSyntax>().Single();
+            EventFieldDeclarationSyntax member = syntax.DescendantNodes().OfType<EventFieldDeclarationSyntax>().Single();
 
             NUnit.Framework.Assert.AreEqual("Event1", member.Declaration.Variables[0].Identifier.ToFullString());
 
@@ -396,19 +396,19 @@ interface IA
     }
 }   
 ";
-            var tree = Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(source);
-            var nodes = tree.GetRoot().DescendantNodes().ToArray();
-            var com = tree.Compilation();
+            Microsoft.CodeAnalysis.SyntaxTree tree = Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(source);
+            Microsoft.CodeAnalysis.SyntaxNode[] nodes = tree.GetRoot().DescendantNodes().ToArray();
+            CSharpCompilation com = tree.Compilation();
 
 
 
-            var symbol = com.GetSemanticModel(tree).GetDeclaredSymbol(tree.GetRoot().DescendantNodes().OfType<InterfaceDeclarationSyntax>().Single());
+            Microsoft.CodeAnalysis.INamedTypeSymbol symbol = com.GetSemanticModel(tree).GetDeclaredSymbol(tree.GetRoot().DescendantNodes().OfType<InterfaceDeclarationSyntax>().Single());
 
-            var syntax = symbol.ToInferredInterface();
+            InterfaceDeclarationSyntax syntax = symbol.ToInferredInterface();
 
-            var member = syntax.DescendantNodes().OfType<IndexerDeclarationSyntax>().Single();
+            IndexerDeclarationSyntax member = syntax.DescendantNodes().OfType<IndexerDeclarationSyntax>().Single();
             NUnit.Framework.Assert.AreEqual("System.String", member.Type.ToFullString());
-            
+
 
 
 
@@ -419,6 +419,6 @@ interface IA
 
 
 
-   
+
 
 }

@@ -1,7 +1,7 @@
+﻿using System.Collections.Generic;
+using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using System.Collections.Generic;
-using System.Linq;
 
 public class TypeFieldCollector
 {
@@ -17,7 +17,7 @@ public class TypeFieldCollector
         var collectedTypes = new HashSet<ITypeSymbol>(SymbolEqualityComparer.Default);
         var result = new List<ITypeSymbol>();
 
-        foreach (var typeSyntax in typeSyntaxes)
+        foreach (TypeSyntax typeSyntax in typeSyntaxes)
         {
             CollectFieldsRecursive(typeSyntax, collectedTypes, result);
         }
@@ -27,18 +27,18 @@ public class TypeFieldCollector
 
     private void CollectFieldsRecursive(TypeSyntax typeSyntax, HashSet<ITypeSymbol> collectedTypes, List<ITypeSymbol> result)
     {
-        var typeSymbol = _semanticModel.GetTypeInfo(typeSyntax).Type;
+        ITypeSymbol typeSymbol = _semanticModel.GetTypeInfo(typeSyntax).Type;
 
         if (typeSymbol != null && !collectedTypes.Contains(typeSymbol))
         {
             collectedTypes.Add(typeSymbol);
             result.Add(typeSymbol);
 
-            var fields = typeSymbol.GetMembers().OfType<IFieldSymbol>().Where(f => f.DeclaredAccessibility == Accessibility.Public);
+            IEnumerable<IFieldSymbol> fields = typeSymbol.GetMembers().OfType<IFieldSymbol>().Where(f => f.DeclaredAccessibility == Accessibility.Public);
 
-            foreach (var field in fields)
+            foreach (IFieldSymbol field in fields)
             {
-                var fieldTypeSymbol = field.Type;
+                ITypeSymbol fieldTypeSymbol = field.Type;
 
                 if (fieldTypeSymbol != null)
                 {

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 
 namespace PinionCore.Serialization
 {
@@ -45,14 +45,14 @@ namespace PinionCore.Serialization
 
         int ITypeDescriber.ToBuffer(object instance, PinionCore.Memorys.Buffer buffer, int begin)
         {
-            var bytes = buffer.Bytes;
+            ArraySegment<byte> bytes = buffer.Bytes;
             return Varint.NumberToBuffer(bytes.Array, bytes.Offset + begin, Convert.ToUInt64(instance));
         }
 
         int ITypeDescriber.ToObject(PinionCore.Memorys.Buffer buffer, int begin, out object instnace)
         {
             ulong value;
-            int readed = Varint.BufferToNumber(buffer, begin, out value);
+            var readed = Varint.BufferToNumber(buffer, begin, out value);
 
             instnace = Enum.ToObject(_Type, value);
             return readed;

@@ -1,5 +1,5 @@
+﻿using System;
 using PinionCore.Utility;
-using System;
 
 namespace RemotingTest
 {
@@ -22,8 +22,8 @@ namespace RemotingTest
         public void TestEnumFlagForeach()
         {
             TESTFLAG flags = TESTFLAG.F2 | TESTFLAG.F3;
-            TESTFLAG[] result = new TESTFLAG[2];
-            int i = 0;
+            var result = new TESTFLAG[2];
+            var i = 0;
             foreach (TESTFLAG flag in flags.GetFlags())
             {
                 result[i++] = flag;

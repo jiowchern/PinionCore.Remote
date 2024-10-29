@@ -1,12 +1,12 @@
-namespace PinionCore.Remote.Packages
+﻿namespace PinionCore.Remote.Packages
 {
-    public struct PackageProtocolSubmit 
-    {        
+    public struct PackageProtocolSubmit
+    {
         public byte[] VerificationCode;
 
     }
-    
-    
+
+
 
 
 }

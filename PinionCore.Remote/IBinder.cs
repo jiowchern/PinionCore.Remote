@@ -1,10 +1,8 @@
-using System;
-
-namespace PinionCore.Remote
+﻿namespace PinionCore.Remote
 {
 
     public interface IBinder
-    {        
+    {
 
         ISoul Return<TSoul>(TSoul soul);
 

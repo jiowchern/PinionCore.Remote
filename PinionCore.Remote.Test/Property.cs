@@ -1,4 +1,4 @@
-using NUnit.Framework;
+﻿using NUnit.Framework;
 
 namespace RemotingTest
 {
@@ -7,24 +7,24 @@ namespace RemotingTest
         [NUnit.Framework.Test]
         public void Equip()
         {
-            PinionCore.Remote.Property<int> p1 = new PinionCore.Remote.Property<int>(1);
-            PinionCore.Remote.Property<int> p2 = new PinionCore.Remote.Property<int>(1);
+            var p1 = new PinionCore.Remote.Property<int>(1);
+            var p2 = new PinionCore.Remote.Property<int>(1);
 
-            bool result = p1 == p2;
+            var result = p1 == p2;
             Assert.True(result);
         }
 
         [NUnit.Framework.Test]
         public void PropertyUpdaterTest()
         {
-            
-            PinionCore.Remote.Property<int> p1 = new PinionCore.Remote.Property<int>(0);
-            
+
+            var p1 = new PinionCore.Remote.Property<int>(0);
+
             var updater = new PinionCore.Remote.PropertyUpdater(p1, 1);
             PinionCore.Remote.IPropertyIdValue idValue = updater;
 
-            System.Collections.Generic.Queue<object> objs = new System.Collections.Generic.Queue<object>();
-            updater.ChnageEvent +=(u,o) => objs.Enqueue(o);
+            var objs = new System.Collections.Generic.Queue<object>();
+            updater.ChnageEvent += (u, o) => objs.Enqueue(o);
             p1.Value = 1;
             p1.Value = 2;
             p1.Value = 3;
@@ -44,7 +44,7 @@ namespace RemotingTest
             Assert.True((int)idValue.Instance == 5);
         }
 
-      
+
 
     }
 }

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 
 namespace PinionCore.Serialization
 {
@@ -25,22 +25,22 @@ namespace PinionCore.Serialization
 
         int ITypeDescriber.GetByteCount(object instance)
         {
-            Array array = instance as Array;
-            int len = array.Length;
-            int lenByetCount = _IntTypeDescriber.GetByteCount(len);
+            var array = instance as Array;
+            var len = array.Length;
+            var lenByetCount = _IntTypeDescriber.GetByteCount(len);
             return len + lenByetCount;
         }
 
         int ITypeDescriber.ToBuffer(object instance, PinionCore.Memorys.Buffer buffer, int begin)
         {
-            byte[] array = instance as byte[];
-            int len = array.Length;
+            var array = instance as byte[];
+            var len = array.Length;
 
-            int offset = begin;
+            var offset = begin;
 
 
             offset += _IntTypeDescriber.ToBuffer(len, buffer, offset);
-            for (int i = 0; i < len; i++)
+            for (var i = 0; i < len; i++)
             {
                 buffer[offset++] = array[i];
             }
@@ -49,13 +49,13 @@ namespace PinionCore.Serialization
 
         int ITypeDescriber.ToObject(PinionCore.Memorys.Buffer buffer, int begin, out object instnace)
         {
-            int offset = begin;
+            var offset = begin;
             object lenObject = null;
             offset += _IntTypeDescriber.ToObject(buffer, offset, out lenObject);
 
-            int len = (int)lenObject;
-            byte[] array = new byte[len];
-            for (int i = 0; i < len; i++)
+            var len = (int)lenObject;
+            var array = new byte[len];
+            for (var i = 0; i < len; i++)
             {
                 array[i] = buffer[offset++];
             }

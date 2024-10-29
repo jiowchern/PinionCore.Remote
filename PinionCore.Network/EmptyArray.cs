@@ -1,4 +1,4 @@
-namespace PinionCore.Network
+﻿namespace PinionCore.Network
 {
     public class EmptyArray<T>
     {

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Linq;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
@@ -13,13 +13,13 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
         [SetUp]
         public void Setup()
         {
-            
+
         }
         [Test]
         public void CreateIdentifyProtocol()
         {
-            var protocol = PinionCore.Remote.Tools.Protocol.Sources.IdentifyTestCommon.ProtocolProvider.CreateCase1();
-            var i1  = protocol.GetMemberMap().GetInterface(typeof(PinionCore.Remote.Tools.Protocol.Sources.IdentifyTestCommon.IInterface1)); ;
+            IProtocol protocol = PinionCore.Remote.Tools.Protocol.Sources.IdentifyTestCommon.ProtocolProvider.CreateCase1();
+            var i1 = protocol.GetMemberMap().GetInterface(typeof(PinionCore.Remote.Tools.Protocol.Sources.IdentifyTestCommon.IInterface1)); ;
             var i2 = protocol.GetMemberMap().GetInterface(typeof(PinionCore.Remote.Tools.Protocol.Sources.IdentifyTestCommon.IInterface2)); ;
 
             NUnit.Framework.Assert.Zero(i2);
@@ -30,21 +30,21 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
         public void CreateProtocolTest1()
         {
 
-            var protocol = PinionCore.Remote.Tools.Protocol.Sources.TestCommon.ProtocolProvider.CreateCase1();
+            IProtocol protocol = PinionCore.Remote.Tools.Protocol.Sources.TestCommon.ProtocolProvider.CreateCase1();
             NUnit.Framework.Assert.IsNotNull(protocol);
         }
 
         [Test]
         public void CreateProtocolTest2()
         {
-            var protocol = PinionCore.Remote.Tools.Protocol.Sources.TestCommon.ProtocolProvider.CreateCase2();
+            IProtocol protocol = PinionCore.Remote.Tools.Protocol.Sources.TestCommon.ProtocolProvider.CreateCase2();
             NUnit.Framework.Assert.IsNotNull(protocol);
         }
 
         [Test]
         public void CreateProtocolSerializeTypesTest()
         {
-            var protocol = PinionCore.Remote.Tools.Protocol.Sources.TestCommon.ProtocolProvider.CreateCase1();
+            IProtocol protocol = PinionCore.Remote.Tools.Protocol.Sources.TestCommon.ProtocolProvider.CreateCase1();
             NUnit.Framework.Assert.IsTrue(protocol.SerializeTypes.Any(t => t == typeof(int)));
 
             NUnit.Framework.Assert.AreEqual(13, protocol.SerializeTypes.Length);
@@ -55,7 +55,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
         [Test]
         public void CreateProtocolTest3()
         {
-            var protocol = ProtocolProviderCase3.CreateCase3();
+            IProtocol protocol = ProtocolProviderCase3.CreateCase3();
             NUnit.Framework.Assert.IsNotNull(protocol);
         }
         [Test]
@@ -77,26 +77,26 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
             multipleNotices.Numbers2.Items.Add(n2);
             multipleNotices.Numbers2.Items.Add(n3);
 
-            var supplyn1Obs = from mn in env.Queryable.QueryNotifier<IMultipleNotices>().SupplyEvent()
-                              from n in mn.Numbers1.Base.SupplyEvent()
-                              select n.Value.Value;
+            IObservable<int> supplyn1Obs = from mn in env.Queryable.QueryNotifier<IMultipleNotices>().SupplyEvent()
+                                           from n in mn.Numbers1.Base.SupplyEvent()
+                                           select n.Value.Value;
 
-            var supplyn2Obs = from mn in env.Queryable.QueryNotifier<IMultipleNotices>().SupplyEvent()
-                              from n in mn.Numbers2.Base.SupplyEvent()
-                              select n.Value.Value;
+            IObservable<int> supplyn2Obs = from mn in env.Queryable.QueryNotifier<IMultipleNotices>().SupplyEvent()
+                                           from n in mn.Numbers2.Base.SupplyEvent()
+                                           select n.Value.Value;
 
-            var unsupplyn1Obs = from mn in env.Queryable.QueryNotifier<IMultipleNotices>().SupplyEvent()
-                                from n in mn.Numbers1.Base.UnsupplyEvent()
-                                select n.Value.Value;
+            IObservable<int> unsupplyn1Obs = from mn in env.Queryable.QueryNotifier<IMultipleNotices>().SupplyEvent()
+                                             from n in mn.Numbers1.Base.UnsupplyEvent()
+                                             select n.Value.Value;
 
-            var unsupplyn2Obs = from mn in env.Queryable.QueryNotifier<IMultipleNotices>().SupplyEvent()
-                                from n in mn.Numbers2.Base.UnsupplyEvent()
-                                select n.Value.Value;
+            IObservable<int> unsupplyn2Obs = from mn in env.Queryable.QueryNotifier<IMultipleNotices>().SupplyEvent()
+                                             from n in mn.Numbers2.Base.UnsupplyEvent()
+                                             select n.Value.Value;
 
 
 
-            var num1s = supplyn1Obs.Buffer(4).FirstAsync().Wait();
-            var num2s = supplyn2Obs.Buffer(2).FirstAsync().Wait();
+            System.Collections.Generic.IList<int> num1s = supplyn1Obs.Buffer(4).FirstAsync().Wait();
+            System.Collections.Generic.IList<int> num2s = supplyn2Obs.Buffer(2).FirstAsync().Wait();
 
 
 
@@ -140,24 +140,24 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
             multipleNotices.Numbers1.Items.Add(n1);
             multipleNotices.Numbers2.Items.Add(n1);
 
-            var supplyn1Obs = from mn in env.Queryable.QueryNotifier<IMultipleNotices>().SupplyEvent()
-                              from n in mn.Numbers1.Base.SupplyEvent()
-                              select n.Value.Value;
+            IObservable<int> supplyn1Obs = from mn in env.Queryable.QueryNotifier<IMultipleNotices>().SupplyEvent()
+                                           from n in mn.Numbers1.Base.SupplyEvent()
+                                           select n.Value.Value;
 
-            var supplyn2Obs = from mn in env.Queryable.QueryNotifier<IMultipleNotices>().SupplyEvent()
-                              from n in mn.Numbers2.Base.SupplyEvent()
-                              select n.Value.Value;
+            IObservable<int> supplyn2Obs = from mn in env.Queryable.QueryNotifier<IMultipleNotices>().SupplyEvent()
+                                           from n in mn.Numbers2.Base.SupplyEvent()
+                                           select n.Value.Value;
 
-            var unsupplyn1Obs = from mn in env.Queryable.QueryNotifier<IMultipleNotices>().SupplyEvent()
-                                from n in mn.Numbers1.Base.UnsupplyEvent()
-                                select n.Value.Value;
+            IObservable<int> unsupplyn1Obs = from mn in env.Queryable.QueryNotifier<IMultipleNotices>().SupplyEvent()
+                                             from n in mn.Numbers1.Base.UnsupplyEvent()
+                                             select n.Value.Value;
 
-            var unsupplyn2Obs = from mn in env.Queryable.QueryNotifier<IMultipleNotices>().SupplyEvent()
-                                from n in mn.Numbers2.Base.UnsupplyEvent()
-                                select n.Value.Value;
+            IObservable<int> unsupplyn2Obs = from mn in env.Queryable.QueryNotifier<IMultipleNotices>().SupplyEvent()
+                                             from n in mn.Numbers2.Base.UnsupplyEvent()
+                                             select n.Value.Value;
 
-            var num1s = supplyn1Obs.Buffer(2).FirstAsync().Wait();
-            var num2s = supplyn2Obs.Buffer(1).FirstAsync().Wait();
+            System.Collections.Generic.IList<int> num1s = supplyn1Obs.Buffer(2).FirstAsync().Wait();
+            System.Collections.Generic.IList<int> num2s = supplyn2Obs.Buffer(1).FirstAsync().Wait();
 
             NUnit.Framework.Assert.AreEqual(1, num1s[0]);
             NUnit.Framework.Assert.AreEqual(1, num1s[1]);
@@ -168,13 +168,13 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
             unsupplyn1Obs.Subscribe(removeNums.Add);
             unsupplyn2Obs.Subscribe(removeNums.Add);
 
-            var count1Obs = from mn in env.Queryable.QueryNotifier<IMultipleNotices>().SupplyEvent()
-                            from count in mn.GetNumber1Count().RemoteValue()
-                            select count;
+            IObservable<int> count1Obs = from mn in env.Queryable.QueryNotifier<IMultipleNotices>().SupplyEvent()
+                                         from count in mn.GetNumber1Count().RemoteValue()
+                                         select count;
 
-            var count2Obs = from mn in env.Queryable.QueryNotifier<IMultipleNotices>().SupplyEvent()
-                            from count in mn.GetNumber2Count().RemoteValue()
-                            select count;
+            IObservable<int> count2Obs = from mn in env.Queryable.QueryNotifier<IMultipleNotices>().SupplyEvent()
+                                         from count in mn.GetNumber2Count().RemoteValue()
+                                         select count;
 
 
 
@@ -206,31 +206,31 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
 
             var env = new TestEnv<Entry<IEventabe>, IEventabe>(new Entry<IEventabe>(tester));
 
-            var eventerObs = from e in env.Queryable.QueryNotifier<IEventabe>().SupplyEvent()
-                             select e;
+            IObservable<IEventabe> eventerObs = from e in env.Queryable.QueryNotifier<IEventabe>().SupplyEvent()
+                                                select e;
 
-            var eventer = eventerObs.FirstAsync().Wait();
+            IEventabe eventer = eventerObs.FirstAsync().Wait();
 
             CustomDelegate testAction = () => { };
 
             NUnit.Framework.Assert.Throws<PinionCore.Remote.Exceptions.NotSupportedException>(() => eventer.CustomDelegateEvent += testAction);
-            
-            
+
+
 
         }
 
-            [Test]
+        [Test]
         public void EventRemoveTest()
         {
             var tester = new EventTester();
 
-            
+
             var env = new TestEnv<Entry<IEventabe>, IEventabe>(new Entry<IEventabe>(tester));
 
-            var eventerObs = from e in env.Queryable.QueryNotifier<IEventabe>().SupplyEvent()
-                             select e;
+            IObservable<IEventabe> eventerObs = from e in env.Queryable.QueryNotifier<IEventabe>().SupplyEvent()
+                                                select e;
 
-            var eventer = eventerObs.FirstAsync().Wait();
+            IEventabe eventer = eventerObs.FirstAsync().Wait();
 
             System.Action actionEmpty = () => { };
             eventer.Event02 += actionEmpty;
@@ -252,26 +252,26 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
         {
             var tester = new EventTester();
 
-            
+
             var env = new TestEnv<Entry<IEventabe>, IEventabe>(new Entry<IEventabe>(tester));
 
 
 
-            var event11Obs = from eventer in env.Queryable.QueryNotifier<IEventabe>().SupplyEvent()
-                             from n in Reactive.Extensions.EventObservable((h) => eventer.Event1 += h, (h) => eventer.Event1 -= h)
-                             select n;
-            var event12Obs = from eventer in env.Queryable.QueryNotifier<IEventabe>().SupplyEvent()
-                             from n in Reactive.Extensions.EventObservable((h) => eventer.Event21 += h, (h) => eventer.Event21 -= h)
-                             select n;
+            IObservable<System.Reactive.Unit> event11Obs = from eventer in env.Queryable.QueryNotifier<IEventabe>().SupplyEvent()
+                                                           from n in Reactive.Extensions.EventObservable((h) => eventer.Event1 += h, (h) => eventer.Event1 -= h)
+                                                           select n;
+            IObservable<System.Reactive.Unit> event12Obs = from eventer in env.Queryable.QueryNotifier<IEventabe>().SupplyEvent()
+                                                           from n in Reactive.Extensions.EventObservable((h) => eventer.Event21 += h, (h) => eventer.Event21 -= h)
+                                                           select n;
 
-            var event21Obs = from eventer in env.Queryable.QueryNotifier<IEventabe>().SupplyEvent()
-                             from n in Reactive.Extensions.EventObservable<int>((h) => eventer.Event2 += h, (h) => eventer.Event2 -= h)
-                             select n;
-            var event22Obs = from eventer in env.Queryable.QueryNotifier<IEventabe>().SupplyEvent()
-                             from n in Reactive.Extensions.EventObservable<int>(
-                                 (h) => eventer.Event22 += h,
-                                 (h) => eventer.Event22 -= h)
-                             select n;
+            IObservable<int> event21Obs = from eventer in env.Queryable.QueryNotifier<IEventabe>().SupplyEvent()
+                                          from n in Reactive.Extensions.EventObservable<int>((h) => eventer.Event2 += h, (h) => eventer.Event2 -= h)
+                                          select n;
+            IObservable<int> event22Obs = from eventer in env.Queryable.QueryNotifier<IEventabe>().SupplyEvent()
+                                          from n in Reactive.Extensions.EventObservable<int>(
+                                              (h) => eventer.Event22 += h,
+                                              (h) => eventer.Event22 -= h)
+                                          select n;
 
             var vals = new System.Collections.Generic.List<int>();
             event11Obs.Subscribe((unit) => vals.Add(1));
@@ -282,7 +282,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
 
             System.Console.WriteLine("wait EventTest tester.LisCount ...");
             System.Threading.SpinWait.SpinUntil(() => tester.LisCount == 4, 5000);
-            
+
 
             tester.Invoke22(9);
             tester.Invoke21();
@@ -293,7 +293,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
             System.Console.WriteLine("wait EventTest vals.Count ...");
 
             System.Threading.SpinWait.SpinUntil(() => vals.Count == 4, 5000);
-            
+
 
             env.Dispose();
 
@@ -313,10 +313,10 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
             var tester = new MethodTester();
 
             var env = new TestEnv<Entry<IMethodable>, IMethodable>(new Entry<IMethodable>(tester));
-            var gpiObs = from g in env.Queryable.QueryNotifier<IMethodable>().SupplyEvent()
-                         select g;
+            IObservable<IMethodable> gpiObs = from g in env.Queryable.QueryNotifier<IMethodable>().SupplyEvent()
+                                              select g;
 
-            var gpi= gpiObs.FirstAsync().Wait();
+            IMethodable gpi = gpiObs.FirstAsync().Wait();
             try
             {
                 gpi.NotSupported();
@@ -331,19 +331,19 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
             NUnit.Framework.Assert.Fail();
         }
 
-            [Test]
+        [Test]
         public void MethodTest()
         {
 
 
             var tester = new MethodTester();
-            
+
             var env = new TestEnv<Entry<IMethodable>, IMethodable>(new Entry<IMethodable>(tester));
             var valuesObs = from gpi in env.Queryable.QueryNotifier<IMethodable>().SupplyEvent()
-                             from v1 in gpi.GetValue1().RemoteValue()
-                             from v2 in gpi.GetValue2().RemoteValue()
-                             from v0 in gpi.GetValue0(0,"",0,0,0,Guid.Empty).RemoteValue()
-                            select new {v1,v2,v0};
+                            from v1 in gpi.GetValue1().RemoteValue()
+                            from v2 in gpi.GetValue2().RemoteValue()
+                            from v0 in gpi.GetValue0(0, "", 0, 0, 0, Guid.Empty).RemoteValue()
+                            select new { v1, v2, v0 };
 
             var values = valuesObs.FirstAsync().Wait();
             env.Dispose();
@@ -352,22 +352,22 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
             Assert.AreEqual(2, values.v2);
             Assert.AreEqual(0, values.v0[0]);
         }
-        
+
         //[Test , Timeout(1000*60)]
         public async Task MethodReturnTypeTest()
         {
-            
+
             var tester = new MethodTester();
 
             var env = new TestEnv<Entry<IMethodable>, IMethodable>(new Entry<IMethodable>(tester));
-            var methodObs = from gpi in env.Queryable.QueryNotifier<IMethodable>().SupplyEvent()
-                            from v1 in gpi.GetValueSelf().RemoteValue()                            
-                            select v1;
+            IObservable<IMethodable> methodObs = from gpi in env.Queryable.QueryNotifier<IMethodable>().SupplyEvent()
+                                                 from v1 in gpi.GetValueSelf().RemoteValue()
+                                                 select v1;
             System.Console.WriteLine("methodObs.FirstAsync().Wait()");
-            var method = await methodObs.FirstAsync();
+            IMethodable method = await methodObs.FirstAsync();
 
-            var valueObs = from v1 in method.GetValue1().RemoteValue()
-                            select v1;
+            IObservable<int> valueObs = from v1 in method.GetValue1().RemoteValue()
+                                        select v1;
             System.Console.WriteLine("valueObs.FirstAsync().Wait()");
             var value = await valueObs.FirstAsync();
 
@@ -378,7 +378,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
             System.Console.WriteLine("end gc collect");
 
             env.Dispose();
-            Assert.AreEqual(1, value);            
+            Assert.AreEqual(1, value);
         }
 
         [Test]
@@ -389,15 +389,15 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
             var tester = new MethodTester();
 
             var env = new TestEnv<Entry<IMethodable>, IMethodable>(new Entry<IMethodable>(tester));
-            var valuesObs = from gpi in env.Queryable.QueryNotifier<IMethodable>().SupplyEvent()
-                            from response in gpi.SayHello(new HelloRequest() { Name = "jc"}).RemoteValue()
-                            select response;
+            IObservable<HelloReply> valuesObs = from gpi in env.Queryable.QueryNotifier<IMethodable>().SupplyEvent()
+                                                from response in gpi.SayHello(new HelloRequest() { Name = "jc" }).RemoteValue()
+                                                select response;
 
-            var values = valuesObs.FirstAsync().Wait();
+            HelloReply values = valuesObs.FirstAsync().Wait();
             env.Dispose();
 
             Assert.AreEqual("jc", values.Message);
-            
+
         }
 
         [Test]
@@ -407,10 +407,10 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
             var tester = new PropertyTester();
             var env = new TestEnv<Entry<IPropertyable>, IPropertyable>(new Entry<IPropertyable>(tester));
 
-            var gpiObs = from g in env.Queryable.QueryNotifier<IPropertyable>().SupplyEvent()
-                         select g;
+            IObservable<IPropertyable> gpiObs = from g in env.Queryable.QueryNotifier<IPropertyable>().SupplyEvent()
+                                                select g;
 
-            var gpi = gpiObs.FirstAsync().Wait();
+            IPropertyable gpi = gpiObs.FirstAsync().Wait();
 
             Assert.AreEqual(1, gpi.Property1.Value);
             Assert.AreEqual(2, gpi.Property2.Value);
@@ -418,19 +418,20 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
             tester.Property1.Value++;
             tester.Property2.Value++;
 
-            System.Threading.SpinWait.SpinUntil(() => {
-                
+            System.Threading.SpinWait.SpinUntil(() =>
+            {
+
                 return gpi.Property1.Value == 2 && gpi.Property2.Value == 3;
-            } ,60000);
-            
+            }, 60000);
+
             Assert.AreEqual(2, gpi.Property1.Value);
             Assert.AreEqual(3, gpi.Property2.Value);
 
             env.Dispose();
 
-            
+
         }
 
-        
+
     }
 }

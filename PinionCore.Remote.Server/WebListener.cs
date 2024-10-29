@@ -1,18 +1,17 @@
+﻿using System;
 using PinionCore.Network;
 using PinionCore.Network.Web;
-using PinionCore.Remote.Soul;
-using System;
 
 namespace PinionCore.Remote.Server.Web
 {
     public class Listener : Soul.IListenable
     {
-        
+
         readonly PinionCore.Network.Web.Listener _Listener;
         readonly PinionCore.Remote.NotifiableCollection<IStreamable> _NotifiableCollection;
         public Listener()
         {
-        
+
             _NotifiableCollection = new NotifiableCollection<IStreamable>();
             _Listener = new Network.Web.Listener();
 
@@ -46,7 +45,7 @@ namespace PinionCore.Remote.Server.Web
             }
         }
 
-        public void Bind(string  address)
+        public void Bind(string address)
         {
             _Listener.Bind(address);
         }
@@ -58,7 +57,8 @@ namespace PinionCore.Remote.Server.Web
 
         private void _Join(Peer peer)
         {
-            peer.ErrorEvent += (status) => {
+            peer.ErrorEvent += (status) =>
+            {
                 lock (_NotifiableCollection)
                     _NotifiableCollection.Items.Remove(peer);
             };

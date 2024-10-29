@@ -1,9 +1,8 @@
-
-using PinionCore.Remote;
-using PinionCore.Serialization;
+﻿
 using System;
 using System.Linq;
 using System.Reflection;
+using PinionCore.Remote;
 
 namespace PinionCore.Remote.Tests
 {
@@ -34,7 +33,7 @@ namespace PinionCore.Utility.Client.JIT.Tests
             throw new System.NotImplementedException();
         }
 
-        
+
     }
 
     public class AgentProivderTests
@@ -56,6 +55,6 @@ namespace PinionCore.Utility.Client.JIT.Tests
             NUnit.Framework.Assert.AreEqual(typeof(TestProtocol), protocols[0]);
         }
 
-      
+
     }
 }

@@ -1,4 +1,4 @@
-using System.Linq;
+﻿using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -7,18 +7,18 @@ using static PinionCore.Remote.Tools.Protocol.Sources.Codes.PinionCoreRemoteIGho
 namespace PinionCore.Remote.Tools.Protocol.Sources
 {
     public static class ClassDeclarationSyntaxExtensions
-    {        
+    {
         public static ClassDeclarationSyntax ImplementPinionCoreRemoteIGhost(this ClassDeclarationSyntax class_declaration)
         {
-            var cd = class_declaration;            
+            ClassDeclarationSyntax cd = class_declaration;
 
-         
-            var type = SimpleBaseType(_PinionCoreRemoteIGhost);
 
-            var baseList = cd.BaseList ?? SyntaxFactory.BaseList();
+            SimpleBaseTypeSyntax type = SimpleBaseType(_PinionCoreRemoteIGhost);
 
-            var baseTypes = baseList.Types.ToArray();
-            
+            BaseListSyntax baseList = cd.BaseList ?? SyntaxFactory.BaseList();
+
+            BaseTypeSyntax[] baseTypes = baseList.Types.ToArray();
+
             baseList = baseList.WithTypes(new SeparatedSyntaxList<BaseTypeSyntax>().Add(type).AddRange(baseTypes));
             return cd.WithBaseList(baseList).AddMembers(_CreateMembers(class_declaration.Identifier));
         }
@@ -41,6 +41,6 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
                 };
         }
 
-        
+
     }
 }

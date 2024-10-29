@@ -1,4 +1,4 @@
-namespace PinionCore.Remote.Protocol
+﻿namespace PinionCore.Remote.Protocol
 {
     [System.AttributeUsage(System.AttributeTargets.Method)]
 

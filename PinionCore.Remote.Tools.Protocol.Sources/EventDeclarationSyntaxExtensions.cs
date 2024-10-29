@@ -1,5 +1,4 @@
-using System.Linq;
-using Microsoft.CodeAnalysis;
+﻿using System.Linq;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
@@ -10,13 +9,13 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
     {
         public static ClassDeclarationSyntax CreatePinionCoreRemoteIEventProxyCreater(this EventDeclarationSyntax eds)
         {
-            
+
             var een = eds.ExplicitInterfaceSpecifier.Name.ToString().Replace('.', '_');
 
             var fieldName = eds.Identifier.ValueText;
             var typeName = eds.ExplicitInterfaceSpecifier.Name.ToString();
             var className = $"C{een}_{eds.Identifier}";
-            var baseName = QualifiedName(
+            QualifiedNameSyntax baseName = QualifiedName(
                             QualifiedName(
                                 IdentifierName("PinionCore"),
                                 IdentifierName("Remote")
@@ -24,7 +23,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
                             IdentifierName("IEventProxyCreater")
                         );
 
-            var paramList = SyntaxFactory.ParameterList();
+            ParameterListSyntax paramList = SyntaxFactory.ParameterList();
 
 
             var paramExpression = "";
@@ -32,18 +31,18 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
             if (eds.Type is QualifiedNameSyntax qn)
             {
 
-                var typeList = qn.Right.DescendantNodes().OfType<TypeArgumentListSyntax>().FirstOrDefault() ?? SyntaxFactory.TypeArgumentList();
+                TypeArgumentListSyntax typeList = qn.Right.DescendantNodes().OfType<TypeArgumentListSyntax>().FirstOrDefault() ?? SyntaxFactory.TypeArgumentList();
                 var paramCount = typeList.Arguments.Count;
 
                 var names = new string[paramCount];
-                for (int i = 0; i < paramCount; i++)
+                for (var i = 0; i < paramCount; i++)
                 {
-                    var name = $"_{i + 1 }";
+                    var name = $"_{i + 1}";
                     names[i] = name;
                     paramList = paramList.AddParameters(SyntaxFactory.Parameter(SyntaxFactory.Identifier(name)));
                 }
                 paramExpression = string.Join(",", names);
-                if(paramCount > 0)
+                if (paramCount > 0)
                     typesExpression = typeList.ToString();
             }
 
@@ -82,7 +81,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
                 }}
                         ";
 
-            var tree = CSharpSyntaxTree.ParseText(source);
+            Microsoft.CodeAnalysis.SyntaxTree tree = CSharpSyntaxTree.ParseText(source);
 
             return tree.GetRoot().DescendantNodesAndSelf().OfType<ClassDeclarationSyntax>().Single();
         }

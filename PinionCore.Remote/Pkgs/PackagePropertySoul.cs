@@ -1,14 +1,14 @@
-namespace PinionCore.Remote.Packages
+﻿namespace PinionCore.Remote.Packages
 {
     public struct PackagePropertySoul
     {
-       
+
         public long OwnerId;
         public long EntityId;
         public int PropertyId;
     }
-    
-    
+
+
 
 
 }

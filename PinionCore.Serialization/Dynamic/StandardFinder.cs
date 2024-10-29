@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Linq;
 
 namespace PinionCore.Serialization.Dynamic
@@ -7,7 +7,7 @@ namespace PinionCore.Serialization.Dynamic
     {
         Type ITypeFinder.Find(string type_name)
         {
-            Type retType = Type.GetType(type_name);
+            var retType = Type.GetType(type_name);
             if (retType != null)
                 return retType;
 

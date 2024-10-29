@@ -1,4 +1,4 @@
-namespace PinionCore.Remote.Client
+﻿namespace PinionCore.Remote.Client
 {
     public interface IAgentProvider
     {

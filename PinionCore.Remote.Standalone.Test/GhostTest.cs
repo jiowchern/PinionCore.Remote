@@ -1,9 +1,8 @@
+﻿using System.Linq;
 using NSubstitute;
 using NUnit.Framework;
-using System.Linq;
-using PinionCore.Network;
 using PinionCore.Memorys;
-using PinionCore.Remote.Ghost;
+using PinionCore.Network;
 
 namespace PinionCore.Remote.Standalone.Test
 {
@@ -11,15 +10,15 @@ namespace PinionCore.Remote.Standalone.Test
     {
         public static byte[] ServerToClient<T>(this PinionCore.Remote.IInternalSerializable serializer, ServerToClientOpCode opcode, T instance)
         {
-            var buf = serializer.Serialize(instance);
-            PinionCore.Remote.Packages.ResponsePackage pkg = new PinionCore.Remote.Packages.ResponsePackage() { Code = opcode, Data = buf.ToArray() };
-            
+            Buffer buf = serializer.Serialize(instance);
+            var pkg = new PinionCore.Remote.Packages.ResponsePackage() { Code = opcode, Data = buf.ToArray() };
+
             buf = serializer.Serialize(pkg);
             var bytes = buf.ToArray();
-            
+
             return bytes;
         }
-       
+
     }
 
     public class ProtocolHelper
@@ -29,11 +28,11 @@ namespace PinionCore.Remote.Standalone.Test
             IProtocol protocol = NSubstitute.Substitute.For<IProtocol>();
             var types = new System.Collections.Generic.Dictionary<System.Type, System.Type>();
             types.Add(typeof(IGpiA), typeof(GhostIGpiA));
-            InterfaceProvider interfaceProvider = new InterfaceProvider(types);
+            var interfaceProvider = new InterfaceProvider(types);
             protocol.GetInterfaceProvider().Returns(interfaceProvider);
-            
+
             System.Func<IProvider> gpiaProviderProvider = () => new TProvider<IGpiA>();
-            System.Tuple<System.Type, System.Func<IProvider>>[] typeProviderProvider = new System.Tuple<System.Type, System.Func<IProvider>>[] { new System.Tuple<System.Type, System.Func<IProvider>>(typeof(IGpiA), gpiaProviderProvider) };
+            var typeProviderProvider = new System.Tuple<System.Type, System.Func<IProvider>>[] { new System.Tuple<System.Type, System.Func<IProvider>>(typeof(IGpiA), gpiaProviderProvider) };
             protocol.GetMemberMap().Returns(new MemberMap(new System.Reflection.MethodInfo[0], new System.Reflection.EventInfo[0], new System.Reflection.PropertyInfo[0], typeProviderProvider));
             return protocol;
         }
@@ -41,58 +40,58 @@ namespace PinionCore.Remote.Standalone.Test
     public class GhostTest
     {
         //[Test()]    
-        public void  CommunicationDevicePushTestMutli()
+        public void CommunicationDevicePushTestMutli()
         {
-            var tasks = from _ in System.Linq.Enumerable.Range(0, 10000000)
-                        select CommunicationDevicePushTest();
+            System.Collections.Generic.IEnumerable<System.Threading.Tasks.Task> tasks = from _ in System.Linq.Enumerable.Range(0, 10000000)
+                                                                                        select CommunicationDevicePushTest();
 
             System.Threading.Tasks.Task.WhenAll(tasks);
 
 
-            
+
 
         }
         [Test(/*Timeout = 5000*/)]
         public async System.Threading.Tasks.Task CommunicationDevicePushTest()
         {
-            byte[] sendBuf = new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-            byte[] recvBuf = new byte[10];
+            var sendBuf = new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+            var recvBuf = new byte[10];
 
-            Stream cd = new PinionCore.Remote.Standalone.Stream();
-            IStreamable peer = cd as IStreamable;
+            var cd = new PinionCore.Remote.Standalone.Stream();
+            var peer = cd as IStreamable;
             await cd.Push(sendBuf, 0, sendBuf.Length);
-            
 
-            int receiveCount1 =await peer.Receive(recvBuf, 0, 4);
-            int receiveCount2 = await peer.Receive(recvBuf, 4, 5);
-            int receiveCount3 = await peer.Receive(recvBuf, 9, 2);
+
+            var receiveCount1 = await peer.Receive(recvBuf, 0, 4);
+            var receiveCount2 = await peer.Receive(recvBuf, 4, 5);
+            var receiveCount3 = await peer.Receive(recvBuf, 9, 2);
 
             Assert.AreEqual(4, receiveCount1);
             Assert.AreEqual(5, receiveCount2);
             Assert.AreEqual(1, receiveCount3);
         }
 
-        [Test(),Timeout(5000)]        
+        [Test(), Timeout(5000)]
         public async System.Threading.Tasks.Task CommunicationDevicePopTest()
         {
-            byte[] sendBuf = new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-            byte[] recvBuf = new byte[10];
+            var sendBuf = new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+            var recvBuf = new byte[10];
 
-            Stream cd = new PinionCore.Remote.Standalone.Stream();
-            IStreamable peer = cd as IStreamable;
+            var cd = new PinionCore.Remote.Standalone.Stream();
+            var peer = cd as IStreamable;
 
-            var result1 = peer.Send(sendBuf, 0, 4);
-            int sendResult1 = await result1;
+            IWaitableValue<int> result1 = peer.Send(sendBuf, 0, 4);
+            var sendResult1 = await result1;
 
-            var result2 = peer.Send(sendBuf, 4, 6);
-            int sendResult2 = await result2;
+            IWaitableValue<int> result2 = peer.Send(sendBuf, 4, 6);
+            var sendResult2 = await result2;
 
 
-            var streamTask1 = cd.Pop(recvBuf, 0, 3);
-            int stream1 = await streamTask1;
+            IWaitableValue<int> streamTask1 = cd.Pop(recvBuf, 0, 3);
+            var stream1 = await streamTask1;
 
-            var streamTask2 = cd.Pop(recvBuf, stream1, recvBuf.Length - stream1);
-            int stream2 = await streamTask2;
+            IWaitableValue<int> streamTask2 = cd.Pop(recvBuf, stream1, recvBuf.Length - stream1);
+            var stream2 = await streamTask2;
 
             //var streamTask3 = cd.Pop(recvBuf, stream1 + stream2, recvBuf.Length - (stream1 + stream2));
             //int stream3 = await streamTask3;
@@ -117,15 +116,15 @@ namespace PinionCore.Remote.Standalone.Test
         {
             var serializer = new PinionCore.Remote.DynamicSerializer();
             IInternalSerializable internalSerializable = new InternalSerializer();
-            Stream cd = new PinionCore.Remote.Standalone.Stream();
+            var cd = new PinionCore.Remote.Standalone.Stream();
             IStreamable peer = cd;
-            byte[] buf = internalSerializable.ServerToClient(ServerToClientOpCode.LoadSoul, new PinionCore.Remote.Packages.PackageLoadSoul() { EntityId = 1, ReturnType = false, TypeId = 1 });
+            var buf = internalSerializable.ServerToClient(ServerToClientOpCode.LoadSoul, new PinionCore.Remote.Packages.PackageLoadSoul() { EntityId = 1, ReturnType = false, TypeId = 1 });
             await cd.Push(buf, 0, buf.Length);
 
-            byte[] recvBuf = new byte[buf.Length];
+            var recvBuf = new byte[buf.Length];
             await peer.Receive(recvBuf, 0, recvBuf.Length);
-            PinionCore.Remote.Packages.ResponsePackage responsePkg = (PinionCore.Remote.Packages.ResponsePackage)internalSerializable.Deserialize(recvBuf.AsBuffer())  ;
-            PinionCore.Remote.Packages.PackageLoadSoul lordsoulPkg = (PinionCore.Remote.Packages.PackageLoadSoul)internalSerializable.Deserialize(responsePkg.Data.AsBuffer())  ;
+            var responsePkg = (PinionCore.Remote.Packages.ResponsePackage)internalSerializable.Deserialize(recvBuf.AsBuffer());
+            var lordsoulPkg = (PinionCore.Remote.Packages.PackageLoadSoul)internalSerializable.Deserialize(responsePkg.Data.AsBuffer());
             Assert.AreEqual(ServerToClientOpCode.LoadSoul, responsePkg.Code);
             Assert.AreEqual(1, lordsoulPkg.EntityId);
             Assert.False(lordsoulPkg.ReturnType);
@@ -138,25 +137,25 @@ namespace PinionCore.Remote.Standalone.Test
         {
             var serializer = new PinionCore.Remote.DynamicSerializer();
             IInternalSerializable internalSerializable = new InternalSerializer();
-            Stream cd = new PinionCore.Remote.Standalone.Stream();
+            var cd = new PinionCore.Remote.Standalone.Stream();
             IStreamable peer = cd;
 
-            byte[] buf = internalSerializable.ServerToClient(ServerToClientOpCode.LoadSoul, new PinionCore.Remote.Packages.PackageLoadSoul() { EntityId = 1, ReturnType = false, TypeId = 1 });
+            var buf = internalSerializable.ServerToClient(ServerToClientOpCode.LoadSoul, new PinionCore.Remote.Packages.PackageLoadSoul() { EntityId = 1, ReturnType = false, TypeId = 1 });
 
             await cd.Push(buf, 0, 1);
             await cd.Push(buf, 1, buf.Length - 1);
 
-            byte[] recvBuf = new byte[buf.Length];
+            var recvBuf = new byte[buf.Length];
             await peer.Receive(recvBuf, 0, recvBuf.Length);
             //await peer.Receive(recvBuf, 1, recvBuf.Length - 1);
-            PinionCore.Remote.Packages.ResponsePackage responsePkg = (PinionCore.Remote.Packages.ResponsePackage)internalSerializable.Deserialize(recvBuf.AsBuffer())  ;
-            PinionCore.Remote.Packages.PackageLoadSoul lordsoulPkg = (PinionCore.Remote.Packages.PackageLoadSoul)internalSerializable.Deserialize(responsePkg.Data.AsBuffer())  ;
+            var responsePkg = (PinionCore.Remote.Packages.ResponsePackage)internalSerializable.Deserialize(recvBuf.AsBuffer());
+            var lordsoulPkg = (PinionCore.Remote.Packages.PackageLoadSoul)internalSerializable.Deserialize(responsePkg.Data.AsBuffer());
             Assert.AreEqual(ServerToClientOpCode.LoadSoul, responsePkg.Code);
             Assert.AreEqual(1, lordsoulPkg.EntityId);
             Assert.False(lordsoulPkg.ReturnType);
             Assert.AreEqual(1, lordsoulPkg.TypeId);
         }
-       
+
 
     }
 }

@@ -1,4 +1,4 @@
-using PinionCore.Utility;
+﻿using PinionCore.Utility;
 
 namespace RemotingTest
 {

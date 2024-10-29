@@ -1,5 +1,4 @@
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
+﻿using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace PinionCore.Remote.Tools.Protocol.Sources.BlockModifiers
 {

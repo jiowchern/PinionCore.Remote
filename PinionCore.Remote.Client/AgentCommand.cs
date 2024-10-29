@@ -1,4 +1,4 @@
-using System.Linq;
+﻿using System.Linq;
 using System.Reflection;
 
 namespace PinionCore.Remote.Client
@@ -13,7 +13,7 @@ namespace PinionCore.Remote.Client
         public AgentCommand(AgentCommandVersionProvider provider, System.Type type, MethodStringInvoker invoker)
         {
             Target = invoker.Target;
-            Name = $"{type.Name}-{ provider.GetVersion(type, invoker.Method)   }.{invoker.Method.Name} [{_BuildParams(invoker.Method)}]";
+            Name = $"{type.Name}-{provider.GetVersion(type, invoker.Method)}.{invoker.Method.Name} [{_BuildParams(invoker.Method)}]";
         }
 
         private string _BuildParams(MethodInfo method)

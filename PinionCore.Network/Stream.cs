@@ -1,8 +1,7 @@
-using PinionCore.Remote;
+﻿using System;
 using System.Buffers;
-using System.Collections.Concurrent;
-using System;
 using System.Threading;
+using PinionCore.Remote;
 namespace PinionCore.Network
 {
     public class Stream : Network.IStreamable
@@ -34,7 +33,7 @@ namespace PinionCore.Network
         private readonly ArrayPool<byte> _BufferPool;
 
         public Stream()
-        {            
+        {
             _ReceivesMre = new System.Threading.ManualResetEvent(false);
             _SendsMre = new System.Threading.ManualResetEvent(false);
             _Sends = new System.Collections.Generic.Queue<BufferSegment>();
@@ -45,58 +44,58 @@ namespace PinionCore.Network
         public IWaitableValue<int> Push(byte[] buffer, int offset, int count)
         {
             // 租借一个缓冲区
-            byte[] pooledBuffer = _BufferPool.Rent(count);
+            var pooledBuffer = _BufferPool.Rent(count);
             Buffer.BlockCopy(buffer, offset, pooledBuffer, 0, count);
 
             // 将缓冲区加入队列
-            lock(_Receives)
+            lock (_Receives)
             {
                 _Receives.Enqueue(new BufferSegment(pooledBuffer, 0, count));
                 System.Threading.SpinWait.SpinUntil(() => _ReceivesMre.Set());
             }
-            
+
             return new NoWaitValue<int>(count);
         }
 
         public IWaitableValue<int> Pop(byte[] buffer, int offset, int count)
         {
-            
+
             return Dequeue(_Sends, buffer, offset, count, _SendsMre);
         }
 
         IWaitableValue<int> IStreamable.Send(byte[] buffer, int offset, int count)
         {
             // 租借一个缓冲区
-            byte[] pooledBuffer = _BufferPool.Rent(count);
+            var pooledBuffer = _BufferPool.Rent(count);
             Buffer.BlockCopy(buffer, offset, pooledBuffer, 0, count);
 
             // 将缓冲区加入队列
-            lock(_Sends)
+            lock (_Sends)
             {
                 _Sends.Enqueue(new BufferSegment(pooledBuffer, 0, count));
                 System.Threading.SpinWait.SpinUntil(() => _SendsMre.Set());
             }
-            
-            
+
+
             return new NoWaitValue<int>(count);
         }
 
         IWaitableValue<int> IStreamable.Receive(byte[] buffer, int offset, int count)
         {
-            
+
             return Dequeue(_Receives, buffer, offset, count, _ReceivesMre);
         }
 
         private IWaitableValue<int> Dequeue(System.Collections.Generic.Queue<BufferSegment> queue, byte[] buffer, int offset, int count, ManualResetEvent mre)
         {
             mre.WaitOne();
-            int totalRead = 0;
-            lock(queue)
+            var totalRead = 0;
+            lock (queue)
             {
                 while (totalRead < count && queue.Count > 0)
                 {
-                    var segment = queue.Peek();
-                    int bytesToCopy = Math.Min(segment.Length, count - totalRead);
+                    BufferSegment segment = queue.Peek();
+                    var bytesToCopy = Math.Min(segment.Length, count - totalRead);
 
                     // 使用 Span 进行高效的内存复制
                     var sourceSpan = new ReadOnlySpan<byte>(segment.Buffer, segment.Offset, bytesToCopy);
@@ -119,7 +118,7 @@ namespace PinionCore.Network
                     System.Threading.SpinWait.SpinUntil(() => mre.Reset());
                 }
             }
-           
+
 
             return new NoWaitValue<int>(totalRead);
         }
