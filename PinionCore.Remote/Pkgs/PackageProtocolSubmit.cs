@@ -2,7 +2,7 @@
 {
     public struct PackageProtocolSubmit
     {
-        public byte[] VerificationCode;
+        public byte[] VersionCode;
 
     }
 

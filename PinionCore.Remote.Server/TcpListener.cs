@@ -9,6 +9,10 @@ namespace PinionCore.Remote.Server.Tcp
 
         readonly PinionCore.Network.Tcp.Listener _Listener;
         readonly PinionCore.Remote.NotifiableCollection<IStreamable> _NotifiableCollection;
+
+        public event System.Action<int> DataReceivedEvent;
+        public event System.Action<int> DataSentEvent;
+
         public Listener()
         {
 
@@ -59,11 +63,21 @@ namespace PinionCore.Remote.Server.Tcp
             peer.BreakEvent += () =>
             {
                 lock (_NotifiableCollection)
+                {
+                    peer.ReceiveEvent -= DataReceivedEvent;
+                    peer.SendEvent -= DataSentEvent;
                     _NotifiableCollection.Items.Remove(peer);
+                }
+                    
             };
 
             lock (_NotifiableCollection)
+            {
+                peer.SendEvent += DataSentEvent;
+                peer.ReceiveEvent += DataReceivedEvent;
                 _NotifiableCollection.Items.Add(peer);
+            }
+                
         }
 
     }

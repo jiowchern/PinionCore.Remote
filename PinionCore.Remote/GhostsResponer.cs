@@ -118,7 +118,7 @@ namespace PinionCore.Remote
 
             private void ProtocolSubmit(PackageProtocolSubmit data)
             {
-                _Active = Comparison(_Protocol.VerificationCode, data.VerificationCode);
+                _Active = Comparison(_Protocol.VersionCode, data.VersionCode);
             }
 
             private bool Comparison(byte[] code1, byte[] code2)

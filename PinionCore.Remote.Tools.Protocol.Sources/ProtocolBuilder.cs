@@ -20,7 +20,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
             var md5 = _BuildMd5(serCode + event_provider_code_builder.Code + interface_provider_code_builder.Code + membermap_code_builder.PropertyInfosCode + membermap_code_builder.EventInfosCode + membermap_code_builder.InterfacesCode + membermap_code_builder.MethodInfosCode);
 
             var protocolName = _BuildProtocolName(md5);
-            var verCode = _BuildVerificationCode(md5);
+            var verCode = _BuildVersionCode(md5);
             var code = $@"
 using System;  
 using System.Collections.Generic;
@@ -53,7 +53,7 @@ public class {protocolName} : PinionCore.Remote.IProtocol
     System.Type[] PinionCore.Remote.IProtocol.SerializeTypes => _SerializeTypes;
 
 
-    byte[] PinionCore.Remote.IProtocol.VerificationCode {{ get {{ return new byte[]{{{verCode}}};}} }}
+    byte[] PinionCore.Remote.IProtocol.VersionCode {{ get {{ return new byte[]{{{verCode}}};}} }}
     PinionCore.Remote.InterfaceProvider PinionCore.Remote.IProtocol.GetInterfaceProvider()
     {{
         return _InterfaceProvider;
@@ -83,7 +83,7 @@ public class {protocolName} : PinionCore.Remote.IProtocol
         {
             return $"C{BitConverter.ToString(code).Replace("-", "")}";
         }
-        private string _BuildVerificationCode(byte[] code)
+        private string _BuildVersionCode(byte[] code)
         {
 
             return string.Join(",", code.Select(val => val.ToString()).ToArray());

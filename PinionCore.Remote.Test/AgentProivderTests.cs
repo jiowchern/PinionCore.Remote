@@ -12,7 +12,7 @@ namespace PinionCore.Utility.Client.JIT.Tests
 
     public class TestProtocol : PinionCore.Remote.IProtocol
     {
-        byte[] IProtocol.VerificationCode => throw new System.NotImplementedException();
+        byte[] IProtocol.VersionCode => throw new System.NotImplementedException();
 
         Assembly IProtocol.Base => throw new System.NotImplementedException();
 

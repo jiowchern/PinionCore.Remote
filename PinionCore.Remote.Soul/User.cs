@@ -77,7 +77,7 @@ namespace PinionCore.Remote.Soul
             });
 
             var pkg = new PinionCore.Remote.Packages.PackageProtocolSubmit();
-            pkg.VerificationCode = _Protocol.VerificationCode;
+            pkg.VersionCode = _Protocol.VersionCode;
 
             Memorys.Buffer buf = _InternalSerializer.Serialize(pkg);
             _ResponseQueue.Push(ServerToClientOpCode.ProtocolSubmit, buf);

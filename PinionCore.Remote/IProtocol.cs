@@ -10,6 +10,6 @@
 
         MemberMap GetMemberMap();
 
-        byte[] VerificationCode { get; }
+        byte[] VersionCode { get; }
     }
 }
