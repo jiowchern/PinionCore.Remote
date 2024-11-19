@@ -12,9 +12,6 @@ namespace PinionCore.Remote
             private readonly PingHandler _PingHandler;
             private readonly GhostsOwner _ProviderManager;
             private readonly IProtocol _Protocol;
-            private bool _Active;
-
-            public bool Active => _Active;
 
             public GhostsResponer(
                 IInternalSerializable internalSerializer,
@@ -32,6 +29,7 @@ namespace PinionCore.Remote
                 _ProviderManager = ghostsProviderManager;
             }
 
+            public event System.Action<byte[], byte[]> VersionCodeErrorEvent;
             public void OnResponse(ServerToClientOpCode code, PinionCore.Memorys.Buffer args)
             {
                 _GhostHandler.UpdateAutoRelease();
@@ -118,7 +116,15 @@ namespace PinionCore.Remote
 
             private void ProtocolSubmit(PackageProtocolSubmit data)
             {
-                _Active = Comparison(_Protocol.VersionCode, data.VersionCode);
+                
+                if (Comparison(_Protocol.VersionCode, data.VersionCode))
+                {
+                    _PingHandler.HandlePingResponse();
+                }
+                else
+                {
+                    VersionCodeErrorEvent?.Invoke(_Protocol.VersionCode, data.VersionCode);
+                }
             }
 
             private bool Comparison(byte[] code1, byte[] code2)

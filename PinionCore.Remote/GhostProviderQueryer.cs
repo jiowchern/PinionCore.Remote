@@ -12,11 +12,19 @@ namespace PinionCore.Remote
         private readonly GhostsResponer _GhostsResponser;
         private readonly ClientExchangeable[] ClientExchangeables;
 
-        public bool Active => _GhostsResponser.Active;
+        
         public float Ping => _PingHandler.PingTime;
 
-
-
+        public event Action<string, string> ErrorMethodEvent
+        {
+            add { _ReturnValueHandler.ErrorMethodEvent += value; }
+            remove { _ReturnValueHandler.ErrorMethodEvent -= value; }
+        }
+        public event Action<byte[], byte[]> VersionCodeErrorEvent
+        {
+            add { _GhostsResponser.VersionCodeErrorEvent += value; }
+            remove { _GhostsResponser.VersionCodeErrorEvent -= value; }
+        }
         public GhostProviderQueryer(
             IProtocol protocol,
             ISerializable serializer,
@@ -30,8 +38,6 @@ namespace PinionCore.Remote
             _GhostManager = new GhostsHandler(protocol, serializer, internalSerializer, _GhostsOwner, _ReturnValueHandler);
 
             _GhostsResponser = new GhostsResponer(internalSerializer, _GhostManager, _ReturnValueHandler, _PingHandler, _GhostsOwner, protocol);
-
-            _ReturnValueHandler.ErrorMethodEvent += (method, message) => ErrorMethodEvent?.Invoke(method, message);
 
             ClientExchangeables = new ClientExchangeable[]
             {
@@ -93,7 +99,7 @@ namespace PinionCore.Remote
             _GhostsResponser.OnResponse(code, args);
         }
 
-        public event Action<string, string> ErrorMethodEvent;
+
     }
 
     delegate System.Action<object> GetObjectAccesserMethod(IObjectAccessible accessible);

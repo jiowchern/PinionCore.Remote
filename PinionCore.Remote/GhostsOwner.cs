@@ -48,7 +48,7 @@ namespace PinionCore.Remote
                     {
                         provider.ClearGhosts();
                     }
-                    _Providers.Clear();
+                    //_Providers.Clear();
                 }
             }
 

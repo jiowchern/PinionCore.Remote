@@ -33,8 +33,7 @@ namespace PinionCore.Remote.Ghost
             _GhostSerializerUpdater = () => { };
             _GhostSerializerStop = () => { };
 
-            Singleton<Log>.Instance.WriteInfo("Agent Launch.");
-            _GhostProvider.ErrorMethodEvent += _ErrorMethodEvent;
+            Singleton<Log>.Instance.WriteInfo("Agent Launch.");            
             _ExceptionEvent += (e) => { };
         }
 
@@ -89,33 +88,24 @@ namespace PinionCore.Remote.Ghost
             return _GhostsOwner.QueryProvider<T>();
         }
 
-
-
-        /*void IDisposable.Dispose()
-        {
-            
-            Disable();
-
-            _GhostProvider.ErrorMethodEvent -= _ErrorMethodEvent;
-
-            Singleton<Log>.Instance.WriteInfo("Agent Shutdown.");
-        }*/
-
         float IAgent.Ping
         {
             get { return _Ping; }
         }
 
-        bool IAgent.Active => _GhostProvider.Active;
+        
+        event Action<byte[], byte[]> IAgent.VersionCodeErrorEvent
+        {
+            add { _GhostProvider.VersionCodeErrorEvent += value; }
+            remove { _GhostProvider.VersionCodeErrorEvent -= value; }
 
+        }
 
-
-        private event Action<string, string> _ErrorMethodEvent;
 
         event Action<string, string> IAgent.ErrorMethodEvent
         {
-            add { this._ErrorMethodEvent += value; }
-            remove { this._ErrorMethodEvent -= value; }
+            add { _GhostProvider.ErrorMethodEvent += value; }
+            remove { _GhostProvider.ErrorMethodEvent -= value; }
         }
 
         event Action<Exception> _ExceptionEvent;

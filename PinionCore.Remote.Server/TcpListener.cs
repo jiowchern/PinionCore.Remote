@@ -7,7 +7,7 @@ namespace PinionCore.Remote.Server.Tcp
     public class Listener : Soul.IListenable
     {
 
-        readonly PinionCore.Network.Tcp.Listener _Listener;
+        PinionCore.Network.Tcp.Listener _Listener;
         readonly PinionCore.Remote.NotifiableCollection<IStreamable> _NotifiableCollection;
 
         public event System.Action<int> DataReceivedEvent;
@@ -17,8 +17,11 @@ namespace PinionCore.Remote.Server.Tcp
         {
 
             _NotifiableCollection = new NotifiableCollection<IStreamable>();
-            _Listener = new Network.Tcp.Listener();
-            _Listener.AcceptEvent += _Join;
+            
+            
+
+            DataReceivedEvent += (size) => { };
+            DataSentEvent += (size) => { };
 
         }
 
@@ -50,12 +53,20 @@ namespace PinionCore.Remote.Server.Tcp
 
         public void Bind(int port)
         {
+            _Listener = new Network.Tcp.Listener();
+            _Listener.AcceptEvent += _Join;
             _Listener.Bind(port);
         }
 
         public void Close()
         {
             _Listener.Close();
+            _Listener.AcceptEvent -= _Join;
+            _Listener = null;
+            lock (_NotifiableCollection)
+            {                
+                _NotifiableCollection.Items.Clear();                
+            }
         }
 
         private void _Join(Peer peer)
@@ -64,8 +75,8 @@ namespace PinionCore.Remote.Server.Tcp
             {
                 lock (_NotifiableCollection)
                 {
-                    peer.ReceiveEvent -= DataReceivedEvent;
-                    peer.SendEvent -= DataSentEvent;
+                    peer.ReceiveEvent -= _Receive;
+                    peer.SendEvent -= _Send;
                     _NotifiableCollection.Items.Remove(peer);
                 }
                     
@@ -73,12 +84,21 @@ namespace PinionCore.Remote.Server.Tcp
 
             lock (_NotifiableCollection)
             {
-                peer.SendEvent += DataSentEvent;
-                peer.ReceiveEvent += DataReceivedEvent;
+                peer.SendEvent += _Send;
+                peer.ReceiveEvent += _Receive;
                 _NotifiableCollection.Items.Add(peer);
             }
                 
         }
 
+        private void _Send(int bytes)
+        {
+            DataSentEvent(bytes);
+        }
+
+        private void _Receive(int bytes)
+        {
+            DataReceivedEvent(bytes);
+        }
     }
 }

@@ -4,11 +4,11 @@ using PinionCore.Network;
 namespace PinionCore.Remote.Ghost
 {
     public interface IAgent : INotifierQueryable
-    {
-        bool Active { get; }
+    {        
 
         float Ping { get; }
 
+        event Action<byte[], byte[]> VersionCodeErrorEvent;
         event Action<string, string> ErrorMethodEvent;
         event Action<System.Exception> ExceptionEvent;
 
