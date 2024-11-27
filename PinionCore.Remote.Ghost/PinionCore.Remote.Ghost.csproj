@@ -1,8 +1,8 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>0.1.12.13</Version>
+    <Version>0.1.13.13</Version>
     <PackageProjectUrl>https://github.com/jiowchern/PinionCore.Remote</PackageProjectUrl>
     <Authors>jc</Authors>
     <Description>frontend lib.</Description>
