@@ -190,9 +190,9 @@ Sample/Protocol>dotnet new classlib
 1. Add References
 ```xml
 <ItemGroup>
-	<PackageReference Include="PinionCore.Remote" Version="0.1.12.15" />
-	<PackageReference Include="PinionCore.Serialization" Version="0.1.12.12" />
-	<PackageReference Include="PinionCore.Remote.Tools.Protocol.Sources" Version="0.0.0.25">
+	<PackageReference Include="PinionCore.Remote" Version="0.1.13.15" />
+	<PackageReference Include="PinionCore.Serialization" Version="0.1.13.12" />
+	<PackageReference Include="PinionCore.Remote.Tools.Protocol.Sources" Version="0.0.1.25">
 		<PrivateAssets>all</PrivateAssets>
 		<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 	</PackageReference>	
@@ -243,7 +243,7 @@ Sample/Server>dotnet new console
 1. Add References
 ```xml
 <ItemGroup>
-	<PackageReference Include="PinionCore.Remote.Server" Version="0.1.12.13" />
+	<PackageReference Include="PinionCore.Remote.Server" Version="0.1.13.13" />
 	<ProjectReference Include="..\Protocol\Protocol.csproj" />	
 </ItemGroup>
 ```
@@ -317,7 +317,7 @@ Sample/Client>dotnet new console
 1. Add References
 ```xml
 <ItemGroup>
-	<PackageReference Include="PinionCore.Remote.Client" Version="0.1.12.12" />
+	<PackageReference Include="PinionCore.Remote.Client" Version="0.1.13.12" />
 	<ProjectReference Include="..\Protocol\Protocol.csproj" />
 </ItemGroup>
 ```
@@ -377,7 +377,7 @@ Sample/Standalone>dotnet new console
 1. Add References
 ```xml
 <ItemGroup>
-	<PackageReference Include="PinionCore.Remote.Standalone" Version="0.1.12.14" />
+	<PackageReference Include="PinionCore.Remote.Standalone" Version="0.1.13.14" />
 	<ProjectReference Include="..\Protocol\Protocol.csproj" />
 	<ProjectReference Include="..\Server\Server.csproj" />
 </ItemGroup>
