@@ -11,9 +11,8 @@
 <!-- [![GitHub release](https://img.shields.io/github/release/jiowchern/regulus.svg?style=flat-square)](https://github.com/jiowchern/PinionCore/releases)![pre-release](https://img.shields.io/github/v/release/jiowchern/PinionCore?include_prereleases) -->
 <!-- [![Gitter](https://badges.gitter.im/JoinChat.svg)](https://gitter.im/PinionCore-Library) -->
 
-![NuGet Downloads](https://img.shields.io/nuget/dt/PinionCore.Remote)
+<!-- ![NuGet Downloads](https://img.shields.io/nuget/dt/PinionCore.Remote) -->
 
-https://github.com/jiowchern/Regulus.Remote/blob/github-readme/Regulus.Network/IStreamable.cs?plain=1#L13
 
 ## Introduction
 PinionCore Remote is a powerful and flexible server-client communication framework developed in C#. Designed to work seamlessly with the Unity game engine and any other .NET Standard 2.0 compliant environments, it simplifies network communication by enabling servers and clients to interact through interfaces. This object-oriented approach reduces the maintenance cost of protocols and enhances code readability and maintainability.  
@@ -77,7 +76,7 @@ end note
  
 ## Usage
 1. Definition Interface ```IGreeter``` .
-[ref](PinionCore.Remote/IEntry.cs)
+
 ```csharp
 namespace Protocol
 {
