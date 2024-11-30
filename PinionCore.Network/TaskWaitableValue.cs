@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 namespace PinionCore.Network
 {
     using PinionCore.Remote;
-    class TaskWaitableValue<T> : IWaitableValue<T>, IAwaitable<T>
+    public class TaskWaitableValue<T> : IWaitableValue<T>, IAwaitable<T>
     {
         readonly PinionCore.Remote.Value<T> _Value;
         readonly System.Threading.Tasks.Task<T> _Task;
