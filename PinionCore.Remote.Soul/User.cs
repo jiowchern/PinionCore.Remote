@@ -101,6 +101,7 @@ namespace PinionCore.Remote.Soul
             });
             if (buffers.Count == 0)
             {
+                PinionCore.Utility.Log.Instance.WriteInfo("User _StartRead buffers.Count == 0.");
                 ErrorEvent();
                 return;
             }
