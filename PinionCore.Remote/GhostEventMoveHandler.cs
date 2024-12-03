@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 
 namespace PinionCore.Remote
 {
@@ -48,7 +49,8 @@ namespace PinionCore.Remote
             package.Entity = _Ghost;
             package.Event = map.GetEvent(info);
             package.Handler = handler;
-
+            
+            PinionCore.Utility.Log.Instance.WriteInfoImmediate($"Add Event: {package.Event} hash:{string.Join("", _Protocol.VersionCode.Select(s => string.Format("{0:X2}", s)))} info:{info.Name}"  );
             _ResponseEvent(ClientToServerOpCode.AddEvent, _InternalSerializable.Serialize(package));
 
         }

@@ -17,9 +17,12 @@ namespace PinionCore.Remote.Ghost
 
 
         private readonly System.Collections.Concurrent.ConcurrentBag<System.Exception> _Exceptions;
+        private Task<List<Memorys.Buffer>> _ReadTask;
+
         public event System.Action<System.Exception> ErrorEvent;
         public GhostSerializer(PinionCore.Network.PackageReader reader, PackageSender sender, IInternalSerializable serializable)
         {
+            
             _Exceptions = new System.Collections.Concurrent.ConcurrentBag<Exception>();
             _Reader = reader;
             _Sender = sender;
@@ -62,8 +65,9 @@ namespace PinionCore.Remote.Ghost
 
         public void Start()
         {
-            Singleton<Log>.Instance.WriteInfo("Agent online enter.");
-            Task.Run(async () => await _ReaderStart());
+            PinionCore.Utility.Log.Instance.WriteInfoImmediate("Agent online enter.");
+            //Singleton<Log>.Instance.WriteInfo("Agent online enter.");
+            _ReadTask = _Reader.Read();
         }
 
         public void Stop()
@@ -86,6 +90,16 @@ namespace PinionCore.Remote.Ghost
                 ErrorEvent.Invoke(e);
                 return;
             }
+
+            if(_ReadTask.IsCompleted)
+            {
+                if(_ReadTask.Result != null)
+                {
+                    _ReadDone(_ReadTask.Result);
+                }
+                
+                _ReadTask = _Reader.Read();
+            }
             _Process();
         }
 
@@ -99,29 +113,7 @@ namespace PinionCore.Remote.Ghost
             }
         }
 
-
-
-        private async Task _ReaderStart()
-        {
-
-            List<Memorys.Buffer> packages = await _Reader.Read().ContinueWith(t =>
-            {
-                if (t.Exception != null)
-                {
-                    Singleton<Log>.Instance.WriteInfo($" Agent online error : {t.Exception}");
-                    _Exceptions.Add(t.Exception);
-                    return new List<PinionCore.Memorys.Buffer>();
-                }
-                return t.Result;
-            });
-            if (packages.Count == 0)
-            {
-                _Exceptions.Add(new System.Exception("Agent online error : read 0"));
-                return;
-            }
-            _ReadDone(packages);
-            await System.Threading.Tasks.Task.Delay(0).ContinueWith(t => _ReaderStart());
-        }
+        
 
         private void _ReadDone(List<Memorys.Buffer> buffers)
         {

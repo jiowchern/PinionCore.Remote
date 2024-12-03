@@ -16,7 +16,7 @@ namespace PinionCore.Profiles.StandaloneAllFeature.Console
 
 
 
-            /*var set = PinionCore.Remote.Server.Provider.CreateTcpService( entry, protocol);
+            var set = PinionCore.Remote.Server.Provider.CreateTcpService( entry, protocol);
             var port = PinionCore.Network.Tcp.Tools.GetAvailablePort();
             set.Listener.Bind(port);
 
@@ -29,7 +29,7 @@ namespace PinionCore.Profiles.StandaloneAllFeature.Console
                 return clientSet.Agent;
             });
             set.Service.Dispose();
-            */
+            
 
 
             Remote.Standalone.Service service = PinionCore.Remote.Standalone.Provider.CreateService(entry, protocol);

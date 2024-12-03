@@ -55,7 +55,7 @@ namespace PinionCore.Remote.Standalone.Test
         public async System.Threading.Tasks.Task CommunicationDevicePushTest()
         {
             var sendBuf = new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-            var recvBuf = new byte[10];
+            var recvBuf = new byte[11];
 
             var cd = new PinionCore.Remote.Standalone.Stream();
             var peer = cd as IStreamable;

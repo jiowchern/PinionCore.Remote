@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using PinionCore.Remote;
 
 namespace PinionCore.Network
 {
@@ -25,16 +26,16 @@ namespace PinionCore.Network
             _Empty = _Pool.Alloc(0);
         }
 
-        public async Task<List<PinionCore.Memorys.Buffer>> Read()
+        public Task<List<PinionCore.Memorys.Buffer>> Read()
         {
-            return await ReadBuffers(new Package { Buffer = _Empty, Segment = _Empty.Bytes });
+            return ReadBuffers(new Package { Buffer = _Empty, Segment = _Empty.Bytes });
         }
         public async Task<List<PinionCore.Memorys.Buffer>> ReadBuffers(Package unfin)
         {
             var packages = new List<Package>();
             Memorys.Buffer headBuffer = _Pool.Alloc(8);
             _CopyBuffer(unfin.Segment, headBuffer.Bytes, unfin.Segment.Count);
-            var headReadCount = await _ReadFromStream(headBuffer.Bytes.Array, offset: headBuffer.Bytes.Offset + unfin.Segment.Count, count: headBuffer.Bytes.Count - unfin.Segment.Count);
+            var headReadCount = await _ReadFromStream(headBuffer.Bytes.Array, offset: headBuffer.Bytes.Offset + unfin.Segment.Count, count: headBuffer.Bytes.Count - unfin.Segment.Count);            
             if (headReadCount == 0)
                 return new List<PinionCore.Memorys.Buffer>();
             headReadCount += unfin.Segment.Count;
@@ -63,6 +64,7 @@ namespace PinionCore.Network
                     while (bodyReadCount < remainingBodySize)
                     {
                         var readed = await _ReadFromStream(body.Bytes.Array, body.Bytes.Offset + readOffset + bodyReadCount, remainingBodySize - bodyReadCount);
+                        
                         if (readed == 0)
                             return new List<PinionCore.Memorys.Buffer>();
                         bodyReadCount += readed;
@@ -91,75 +93,6 @@ namespace PinionCore.Network
                 yield return buf;
             }
         }
-        /*
-        public async Task<List<PinionCore.Memorys.Buffer>> Read2()
-        {           
-            var buffers = new List<PinionCore.Memorys.Buffer>();
-            var remainingBuffer = _Pool.Alloc(0);
-            _IsStop = false;
-            while (!_IsStop)
-            {
-                var headBuffer = _Pool.Alloc(8);
-                _CopyBuffer(remainingBuffer.Bytes, headBuffer.Bytes, remainingBuffer.Bytes.Count);
-                var headReadCount = await _ReadFromStream(headBuffer.Bytes.Array, headBuffer.Bytes.Offset + remainingBuffer.Count, headBuffer.Bytes.Count - remainingBuffer.Count);                
-
-                if(headReadCount == 0)
-                {
-                    return buffers;
-                }
-                //if (headReadCount == 0 && remainingBuffer.Bytes.Count == 0)
-                //    return buffers;
-
-                var remainingBufferCount = remainingBuffer.Count;
-                headReadCount += remainingBuffer.Count;
-                remainingBuffer = _Pool.Alloc(0);
-
-
-                var headReadedBuffer = new ArraySegment<byte>(headBuffer.Bytes.Array, headBuffer.Bytes.Offset, headReadCount);
-                var headVarint = PinionCore.Serialization.Varint.FindVarint(ref headReadedBuffer);
-
-                if (headVarint.Count == 0)
-                    throw new SystemException("head size greater than 8.");
-
-                var bodyVarintSize = PinionCore.Serialization.Varint.BufferToNumber(headBuffer.Bytes.Array, headBuffer.Bytes.Offset, out int bodySize);
-                var remaining = headReadCount - bodyVarintSize;
-                var needReadSize = bodySize - remaining;
-
-                if (needReadSize <= 0)
-                {
-                    var bodyBuffer = _Pool.Alloc(bodySize);
-                    _CopyBuffer(headBuffer.Bytes, bodyVarintSize, bodyBuffer.Bytes, 0, bodySize);
-
-                    if (bodySize > 0)
-                        buffers.Add(bodyBuffer);
-
-                    if (needReadSize == 0)
-                        return buffers;
-
-                    remainingBuffer = _Pool.Alloc(-needReadSize);
-                    _CopyBuffer(headBuffer.Bytes, bodyVarintSize + bodySize, remainingBuffer.Bytes, 0, -needReadSize);
-                    continue;
-                }
-                else
-                {
-                    var bodyBuffer = _Pool.Alloc(bodySize);
-                    _CopyBuffer(headBuffer.Bytes, headReadCount - remaining, bodyBuffer.Bytes, 0, remaining);
-
-                    var bodyReadCount = 0;
-                    while (bodyReadCount < needReadSize)
-                    {
-                        bodyReadCount += await _ReadFromStream(bodyBuffer.Bytes.Array, bodyBuffer.Bytes.Offset + remaining + bodyReadCount, needReadSize - bodyReadCount);                        
-                    }
-
-                    if (bodySize > 0)
-                        buffers.Add(bodyBuffer);
-
-                    return buffers;
-                }
-            }
-
-            return buffers;
-        }*/
 
         private void _CopyBuffer(ArraySegment<byte> source, ArraySegment<byte> destination, int count)
         {
@@ -171,9 +104,10 @@ namespace PinionCore.Network
             Array.Copy(source.Array, source.Offset + sourceOffset, destination.Array, destination.Offset + destOffset, count);
         }
 
-        private async Task<int> _ReadFromStream(byte[] buffer, int offset, int count)
+        private IWaitableValue<int> _ReadFromStream(byte[] buffer, int offset, int count)
         {
-            return await _Stream.Receive(buffer, offset, count);
+            return _Stream.Receive(buffer, offset, count);
+            
         }
     }
 }

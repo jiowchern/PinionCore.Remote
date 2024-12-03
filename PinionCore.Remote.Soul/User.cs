@@ -168,6 +168,8 @@ namespace PinionCore.Remote.Soul
 
         private void _ExternalRequest(PinionCore.Remote.Packages.RequestPackage package)
         {
+            PinionCore.Utility.Log.Instance.WriteInfoImmediate($"_ExternalRequest code {package.Code}.");
+
             if (package.Code == ClientToServerOpCode.CallMethod)
             {
 

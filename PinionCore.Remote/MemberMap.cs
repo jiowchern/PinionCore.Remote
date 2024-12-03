@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using PinionCore.Utility;
 
@@ -21,27 +22,33 @@ namespace PinionCore.Remote
         public MemberMap(IEnumerable<MethodInfo> methods, IEnumerable<EventInfo> events, IEnumerable<PropertyInfo> propertys, IEnumerable<System.Tuple<System.Type, System.Func<PinionCore.Remote.IProvider>>> interfaces)
         {
             _Providers = new Dictionary<Type, Func<IProvider>>();
-            _Methods = new BilateralMap<int, MethodInfo>(this, this);
-            _Events = new BilateralMap<int, EventInfo>(this, this);
-            _Propertys = new BilateralMap<int, PropertyInfo>(this, this);
-            _Interfaces = new BilateralMap<int, Type>(this, this);
+            _Methods = new BilateralMap<int, MethodInfo>();
+            _Events = new BilateralMap<int, EventInfo>();
+            _Propertys = new BilateralMap<int, PropertyInfo>();
+            _Interfaces = new BilateralMap<int, Type>();
 
 
             var id = 0;
             foreach (MethodInfo method in methods)
             {
+                PinionCore.Utility.Log.Instance.WriteInfoImmediate($"add method {method.Name}");
                 _Methods.Add(++id, method);
             }
 
             id = 0;
             foreach (EventInfo eventInfo in events)
             {
-                _Events.Add(++id, eventInfo);
+                ++id;
+                
+                _Events.Add(id, eventInfo);
+                PinionCore.Utility.Log.Instance.WriteInfoImmediate($"add event {eventInfo.Name}:{id} count:{_Events.ReadOnly.Item1s.Count()}");
+                
             }
 
             id = 0;
             foreach (PropertyInfo propertyInfo in propertys)
             {
+                PinionCore.Utility.Log.Instance.WriteInfoImmediate($"add property {propertyInfo.Name}");
                 _Propertys.Add(++id, propertyInfo);
             }
 
@@ -92,6 +99,10 @@ namespace PinionCore.Remote
 
             int id;
             _Events.TryGetItem1(info, out id);
+            PinionCore.Utility.Log.Instance.WriteInfoImmediate($"get event {info.DeclaringType.FullName}_{info.Name} hash:{info.GetHashCode()}");
+            _Events.ReadOnly.Item1s.ToList().ForEach(i => PinionCore.Utility.Log.Instance.WriteInfoImmediate($"event k:{i.Key.DeclaringType}_{i.Key.Name} v:{i.Value} hash:{i.Key.GetHashCode()} equal:{i.Key == info} equalStr:{$"{i.Key.DeclaringType}_{i.Key.Name}" == $"{info.DeclaringType}_{info.Name}"}"));
+
+
             return id;
         }
 
@@ -138,6 +149,7 @@ namespace PinionCore.Remote
 
         private string _GetEvent(Type type, string name)
         {
+            PinionCore.Utility.Log.Instance.WriteInfoImmediate($"get event {type.FullName}_{name}");
             return string.Format("{0}_{1}", type.FullName, name);
         }
 

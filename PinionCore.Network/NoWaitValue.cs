@@ -5,25 +5,29 @@ namespace PinionCore.Network
 {
     public class NoWaitValue<T> : IWaitableValue<T>, IAwaitable<T>
     {
-        private readonly PinionCore.Remote.Value<T> _Value;
+        public readonly PinionCore.Remote.Value<T> Value;
 
+        public NoWaitValue()
+        {
+            Value = new Remote.Value<T>();
+        }
         public NoWaitValue(T val)
         {
-            _Value = new Remote.Value<T>(val);
+            Value = new Remote.Value<T>(val);
         }
 
-        bool IAwaitable<T>.IsCompleted => _Value.HasValue();
+        bool IAwaitable<T>.IsCompleted => Value.HasValue();
 
         event Action<T> IWaitableValue<T>.ValueEvent
         {
             add
             {
-                _Value.OnValue += value;
+                Value.OnValue += value;
             }
 
             remove
             {
-                _Value.OnValue -= value;
+                Value.OnValue -= value;
             }
         }
 
@@ -34,12 +38,13 @@ namespace PinionCore.Network
 
         T IAwaitable<T>.GetResult()
         {
-            return _Value.GetValue();
+            return Value.GetValue();
         }
 
         void INotifyCompletion.OnCompleted(Action continuation)
         {
-            continuation?.Invoke();
+
+            Value.OnValue +=(v)=> continuation?.Invoke();
         }
     }
 }

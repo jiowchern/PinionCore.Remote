@@ -1,4 +1,5 @@
-﻿using PinionCore.Remote.Packages;
+﻿using System;
+using PinionCore.Remote.Packages;
 
 namespace PinionCore.Remote
 {
@@ -33,7 +34,8 @@ namespace PinionCore.Remote
             public void OnResponse(ServerToClientOpCode code, PinionCore.Memorys.Buffer args)
             {
                 _GhostHandler.UpdateAutoRelease();
-
+                if(code != ServerToClientOpCode.Ping)
+                    PinionCore.Utility.Log.Instance.WriteInfoImmediate("OnResponse: " + code);   
                 switch (code)
                 {
                     case ServerToClientOpCode.Ping:

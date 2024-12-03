@@ -41,16 +41,7 @@ namespace PinionCore.Remote.Server
             Soul.IService service = CreateService(entry, protocol, serializable, listener);
             return new WebListenSet(listener, service);
         }
-        public static TcpWebListenSet CreateTcpWebService(IEntry entry, IProtocol protocol)
-        {
-            return CreateTcpWebService(entry, protocol, new PinionCore.Remote.Serializer(protocol.SerializeTypes));
-        }
-
-        public static TcpWebListenSet CreateTcpWebService(IEntry entry, IProtocol protocol, ISerializable serializable)
-        {
-            var listener = new PinionCore.Remote.Server.Tcp.WebListener();
-            Soul.IService service = CreateService(entry, protocol, serializable, listener);
-            return new TcpWebListenSet(listener, service);
-        }
+      
+       
     }
 }
