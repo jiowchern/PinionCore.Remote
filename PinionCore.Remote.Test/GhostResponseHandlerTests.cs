@@ -127,12 +127,12 @@ namespace PinionCore.Remote.Tests
         public void InvokeEvent()
         {
             GhostResponseHandler handler = _GhostResponseHandler;
-            var eventId = _MemberMap.GetEvent(typeof(IA).GetEvents()[0]);
+            
             var value = 0;
             _IA.Event1 += (v) => value = v;
 
             var buffers = new byte[][] { _Serializable.Serialize(typeof(int), 10).ToArray() };
-            handler.InvokeEvent(eventId, 1, buffers);
+            handler.InvokeEvent(1, 1, buffers);
             NUnit.Framework.Assert.AreEqual(10, value);
         }
 

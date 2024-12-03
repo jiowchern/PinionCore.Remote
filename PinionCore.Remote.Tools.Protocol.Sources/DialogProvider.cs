@@ -22,9 +22,9 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
 
         }
 
-        internal System.Collections.Generic.IEnumerable<Diagnostic> Unsupports(IEnumerable<ClassAndTypes> classAndTypess)
+        internal System.Collections.Generic.IEnumerable<Diagnostic> Unsupports(IEnumerable<ModResult> classAndTypess)
         {
-            foreach (ClassAndTypes cnt in classAndTypess)
+            foreach (ModResult cnt in classAndTypess)
             {
                 MethodDeclarationSyntax[] methods = cnt.GetSyntaxs<MethodDeclarationSyntax>().ToArray();
                 IndexerDeclarationSyntax[] indexs = cnt.GetSyntaxs<IndexerDeclarationSyntax>().ToArray();

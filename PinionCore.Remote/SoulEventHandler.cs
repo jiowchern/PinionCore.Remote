@@ -41,7 +41,7 @@ namespace PinionCore.Remote
             if (eventInfo == null || !soul.Is(eventInfo.DeclaringType))
                 return;
 
-            Delegate del = _BuildDelegate(eventInfo, soul.Id, handlerId, _InvokeEvent);
+            Delegate del = _BuildDelegate(eventId, soul.Id, handlerId, _InvokeEvent);
             var handler = new SoulProxyEventHandler(soul.ObjectInstance, del, eventInfo, handlerId);
             soul.AddEvent(handler);
         }
@@ -71,12 +71,14 @@ namespace PinionCore.Remote
             _Queue.Push(ServerToClientOpCode.InvokeEvent, _InternalSerializable.Serialize(package));
         }
 
-        private Delegate _BuildDelegate(EventInfo info, long entityId, long handlerId, InvokeEventCallabck invokeEvent)
+        private Delegate _BuildDelegate(int event_id, long entityId, long handlerId, InvokeEventCallabck invokeEvent)
         {
-            IEventProxyCreater eventCreator = _EventProvider.Find(info);
             MemberMap map = _Protocol.GetMemberMap();
-            var id = map.GetEvent(info);
-            return eventCreator.Create(entityId, id, handlerId, invokeEvent);
+            var info = map.GetEvent(event_id);
+            IEventProxyCreater eventCreator = _EventProvider.Find(info);
+            
+            
+            return eventCreator.Create(entityId, event_id, handlerId, invokeEvent);
         }
     }
 

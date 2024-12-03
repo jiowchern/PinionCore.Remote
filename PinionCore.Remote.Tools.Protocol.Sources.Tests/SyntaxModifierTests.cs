@@ -26,7 +26,7 @@ interface IA {
             ClassDeclarationSyntax cia = SyntaxFactory.ClassDeclaration("CIA");
             cia = builder.Inherite(cia);
 
-            ClassAndTypes modifier = SyntaxModifier.Create(com).Mod(cia);
+            ModResult modifier = SyntaxModifier.Create(com).Mod(cia);
 
 
             BlockSyntax[] exps = modifier.Type.DescendantNodes().OfType<BlockSyntax>().ToArray();
@@ -55,7 +55,7 @@ interface IA {
             ClassDeclarationSyntax cia = SyntaxFactory.ClassDeclaration("CIA");
             cia = builder.Inherite(cia);
 
-            ClassAndTypes modifier = SyntaxModifier.Create(com).Mod(cia);
+            ModResult modifier = SyntaxModifier.Create(com).Mod(cia);
 
             BlockSyntax exp = modifier.Type.DescendantNodes().OfType<BlockSyntax>().Single();
             NUnit.Framework.Assert.AreEqual(1, modifier.TypesOfSerialization.Count());
@@ -81,7 +81,7 @@ interface IA {
             ClassDeclarationSyntax cia = SyntaxFactory.ClassDeclaration("CIA");
             cia = builder.Inherite(cia);
 
-            ClassAndTypes modifier = SyntaxModifier.Create(com).Mod(cia);
+            ModResult modifier = SyntaxModifier.Create(com).Mod(cia);
 
             BlockSyntax exp = modifier.Type.DescendantNodes().OfType<BlockSyntax>().Single();
             NUnit.Framework.Assert.AreEqual(0, modifier.TypesOfSerialization.Count());
@@ -107,7 +107,7 @@ interface IA {
             ClassDeclarationSyntax cia = SyntaxFactory.ClassDeclaration("CIA");
             cia = builder.Inherite(cia);
 
-            ClassAndTypes modifier = SyntaxModifier.Create(com).Mod(cia);
+            ModResult modifier = SyntaxModifier.Create(com).Mod(cia);
 
             BlockSyntax exp = modifier.Type.DescendantNodes().OfType<BlockSyntax>().Single();
             NUnit.Framework.Assert.AreEqual(0, modifier.TypesOfSerialization.Count());
@@ -133,7 +133,7 @@ interface IA {
             ClassDeclarationSyntax cia = SyntaxFactory.ClassDeclaration("CIA");
             cia = builder.Inherite(cia);
 
-            ClassAndTypes modifier = SyntaxModifier.Create(com).Mod(cia);
+            ModResult modifier = SyntaxModifier.Create(com).Mod(cia);
 
             BlockSyntax exp = modifier.Type.DescendantNodes().OfType<BlockSyntax>().Single();
             NUnit.Framework.Assert.AreEqual(0, modifier.TypesOfSerialization.Count());
@@ -160,7 +160,7 @@ interface IA {
             ClassDeclarationSyntax cia = SyntaxFactory.ClassDeclaration("CIA");
             cia = builder.Inherite(cia);
 
-            ClassAndTypes modifier = SyntaxModifier.Create(com).Mod(cia);
+            ModResult modifier = SyntaxModifier.Create(com).Mod(cia);
 
             BlockSyntax[] exps = modifier.Type.DescendantNodes().OfType<BlockSyntax>().ToArray();
             NUnit.Framework.Assert.AreEqual(0, modifier.TypesOfSerialization.Count());
@@ -184,7 +184,7 @@ interface IA {
             ClassDeclarationSyntax cia = SyntaxFactory.ClassDeclaration("CIA");
             cia = builder.Inherite(cia);
 
-            ClassAndTypes modifier = SyntaxModifier.Create(com).Mod(cia);
+            ModResult modifier = SyntaxModifier.Create(com).Mod(cia);
 
             BlockSyntax[] exps = modifier.Type.DescendantNodes().OfType<BlockSyntax>().ToArray();
             NUnit.Framework.Assert.AreEqual(0, modifier.TypesOfSerialization.Count());
@@ -210,7 +210,7 @@ interface IA {
             ClassDeclarationSyntax cia = SyntaxFactory.ClassDeclaration("CIA");
             cia = builder.Inherite(cia);
 
-            ClassAndTypes modifier = SyntaxModifier.Create(com).Mod(cia);
+            ModResult modifier = SyntaxModifier.Create(com).Mod(cia);
 
             BlockSyntax[] exps = modifier.Type.DescendantNodes().OfType<BlockSyntax>().ToArray();
             NUnit.Framework.Assert.AreEqual(1, modifier.TypesOfSerialization.Count());
@@ -235,7 +235,7 @@ interface IA {
             ClassDeclarationSyntax cia = SyntaxFactory.ClassDeclaration("CIA");
             cia = builder.Inherite(cia);
 
-            ClassAndTypes modifier = SyntaxModifier.Create(com).Mod(cia);
+            ModResult modifier = SyntaxModifier.Create(com).Mod(cia);
 
             BlockSyntax[] exps = modifier.Type.DescendantNodes().OfType<BlockSyntax>().ToArray();
             NUnit.Framework.Assert.AreEqual(1, modifier.TypesOfSerialization.Count());
@@ -259,7 +259,7 @@ interface IA {
             ClassDeclarationSyntax cia = SyntaxFactory.ClassDeclaration("CIA");
             cia = builder.Inherite(cia);
 
-            ClassAndTypes modifier = SyntaxModifier.Create(com).Mod(cia);
+            ModResult modifier = SyntaxModifier.Create(com).Mod(cia);
 
             BlockSyntax[] exps = modifier.Type.DescendantNodes().OfType<BlockSyntax>().ToArray();
             NUnit.Framework.Assert.AreEqual(0, modifier.TypesOfSerialization.Count());
@@ -288,7 +288,7 @@ interface IA {
             ClassDeclarationSyntax cia = SyntaxFactory.ClassDeclaration("CIA");
             cia = builder.Inherite(cia);
 
-            ClassAndTypes modifier = SyntaxModifier.Create(com).Mod(cia);
+            ModResult modifier = SyntaxModifier.Create(com).Mod(cia);
             cia = modifier.Type;
 
             BlockSyntax[] exps = cia.DescendantNodes().OfType<BlockSyntax>().ToArray();
@@ -312,7 +312,7 @@ interface IA {
             ClassDeclarationSyntax cia = SyntaxFactory.ClassDeclaration("CIA");
             cia = builder.Inherite(cia);
 
-            ClassAndTypes modifier = SyntaxModifier.Create(com).Mod(cia);
+            ModResult modifier = SyntaxModifier.Create(com).Mod(cia);
             cia = modifier.Type;
 
             BlockSyntax exp = cia.DescendantNodes().OfType<BlockSyntax>().Single();
@@ -335,7 +335,7 @@ interface IA {
             ClassDeclarationSyntax cia = SyntaxFactory.ClassDeclaration("CIA");
             cia = builder.Inherite(cia);
 
-            ClassAndTypes modifier = SyntaxModifier.Create(com).Mod(cia);
+            ModResult modifier = SyntaxModifier.Create(com).Mod(cia);
             cia = modifier.Type;
 
             BlockSyntax exp = cia.DescendantNodes().OfType<BlockSyntax>().Single();
@@ -359,7 +359,7 @@ interface IA {
             ClassDeclarationSyntax cia = SyntaxFactory.ClassDeclaration("CIA");
             cia = builder.Inherite(cia);
 
-            ClassAndTypes modifier = SyntaxModifier.Create(com).Mod(cia);
+            ModResult modifier = SyntaxModifier.Create(com).Mod(cia);
             cia = modifier.Type;
 
             BlockSyntax exp = cia.DescendantNodes().OfType<BlockSyntax>().Single();
@@ -386,7 +386,7 @@ interface IA {
             ClassDeclarationSyntax cia = SyntaxFactory.ClassDeclaration("CIA");
             cia = builder.Inherite(cia);
 
-            ClassAndTypes modifier = SyntaxModifier.Create(com).Mod(cia);
+            ModResult modifier = SyntaxModifier.Create(com).Mod(cia);
             cia = modifier.Type;
 
             BlockSyntax exp = cia.DescendantNodes().OfType<BlockSyntax>().Single();
@@ -412,7 +412,7 @@ interface IA {
             ClassDeclarationSyntax cia = SyntaxFactory.ClassDeclaration("CIA");
             cia = builder.Inherite(cia);
 
-            ClassAndTypes modifier = SyntaxModifier.Create(com).Mod(cia);
+            ModResult modifier = SyntaxModifier.Create(com).Mod(cia);
             cia = modifier.Type;
 
             BlockSyntax exp = cia.DescendantNodes().OfType<BlockSyntax>().Single();
@@ -437,7 +437,7 @@ interface IA {
             ClassDeclarationSyntax cia = SyntaxFactory.ClassDeclaration("CIA");
             cia = builder.Inherite(cia);
 
-            ClassAndTypes modifier = SyntaxModifier.Create(com).Mod(cia);
+            ModResult modifier = SyntaxModifier.Create(com).Mod(cia);
             cia = modifier.Type;
 
             BlockSyntax exp = cia.DescendantNodes().OfType<BlockSyntax>().Single();
@@ -462,7 +462,7 @@ interface IA {
             ClassDeclarationSyntax cia = SyntaxFactory.ClassDeclaration("CIA");
             cia = builder.Inherite(cia);
 
-            ClassAndTypes modifier = SyntaxModifier.Create(com).Mod(cia);
+            ModResult modifier = SyntaxModifier.Create(com).Mod(cia);
             cia = modifier.Type;
 
             BlockSyntax exp = cia.DescendantNodes().OfType<BlockSyntax>().Single();

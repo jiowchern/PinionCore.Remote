@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -11,10 +12,11 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.BlockModifiers
     internal class EventSystemAction
     {
         private readonly Compilation _Compilation;
-
+        public readonly Dictionary<EventDeclarationSyntax,int > EventIds;
         public EventSystemAction(Compilation compilation)
         {
             this._Compilation = compilation;
+            EventIds = new Dictionary<EventDeclarationSyntax,int >();
         }
 
         public BlockAndEvent Mod(System.Collections.Generic.IEnumerable<SyntaxNode> nodes)
@@ -67,11 +69,19 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.BlockModifiers
                 ghostEventHandlerMethod = "Remove";
             }
 
+            
+            if(!EventIds.ContainsKey(ed))
+            {
+                
+                EventIds.Add(ed, EventIds.Count + 1);
+            }
+            var eventId = EventIds[ed];
+
 
             BlockSyntax newBlock = SyntaxFactory.Block(SyntaxFactory.ParseStatement(
 $@"
-var id = {name}.{ghostEventHandlerMethod}(value);
-_{ghostEventHandlerMethod}EventEvent(typeof({ownerName}).GetEvent(""{ed.Identifier}""),id);
+var handlerId = {name}.{ghostEventHandlerMethod}(value);
+_{ghostEventHandlerMethod}EventEvent({eventId},handlerId);
 "));
 
             return new BlockAndEvent

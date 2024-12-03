@@ -410,7 +410,7 @@ namespace NS1
             var modifier = SyntaxModifier.Create(com);
             var builder = new GhostBuilder(modifier, com.FindAllInterfaceSymbol());
 
-            ClassAndTypes cnt = builder.ClassAndTypess.First();
+            ModResult cnt = builder.ClassAndTypess.First();
             MethodDeclarationSyntax[] methods = cnt.GetSyntaxs<MethodDeclarationSyntax>().ToArray();
             IndexerDeclarationSyntax[] indexs = cnt.GetSyntaxs<IndexerDeclarationSyntax>().ToArray();
             EventDeclarationSyntax[] events = cnt.GetSyntaxs<EventDeclarationSyntax>().ToArray();

@@ -46,7 +46,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
         }
 
 
-        public ClassAndTypes Mod(ClassDeclarationSyntax type)
+        public ModResult Mod(ClassDeclarationSyntax type)
         {
             System.Collections.Generic.IEnumerable<MethodDeclarationSyntax> methods = type.DescendantNodes().OfType<MethodDeclarationSyntax>();
 
@@ -131,8 +131,9 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
             }
 
 
-            return new ClassAndTypes
+            return new ModResult
             {
+                EventIds = _EventSystemAction.EventIds,
                 Type = type,
                 TypesOfSerialization = typesOfSerialization,
                 UnprocessedBlocks = unprocessedBlocks.ToArray()

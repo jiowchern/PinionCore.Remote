@@ -8,7 +8,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
     class ProjectSourceBuilder
     {
         public readonly IEnumerable<SyntaxTree> Sources;
-        public readonly IEnumerable<ClassAndTypes> ClassAndTypess;
+        public readonly IEnumerable<ModResult> ClassAndTypess;
 
         public ProjectSourceBuilder(EssentialReference references)
         {

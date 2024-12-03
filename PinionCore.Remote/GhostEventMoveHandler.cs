@@ -39,7 +39,7 @@ namespace PinionCore.Remote
         }
 
 
-        internal void Add(System.Reflection.EventInfo info, long handler)
+        internal void Add(int event_id, long handler)
         {
             MemberMap map = _Protocol.GetMemberMap();
 
@@ -47,17 +47,16 @@ namespace PinionCore.Remote
             var package = new PinionCore.Remote.Packages.PackageAddEvent();
 
             package.Entity = _Ghost;
-            package.Event = map.GetEvent(info);
+            package.Event = event_id;
             package.Handler = handler;
-            
-            PinionCore.Utility.Log.Instance.WriteInfoImmediate($"Add Event: {package.Event} hash:{string.Join("", _Protocol.VersionCode.Select(s => string.Format("{0:X2}", s)))} info:{info.Name}"  );
+                        
             _ResponseEvent(ClientToServerOpCode.AddEvent, _InternalSerializable.Serialize(package));
 
         }
 
 
 
-        internal void Remove(System.Reflection.EventInfo info, long handler)
+        internal void Remove(int event_id, long handler)
         {
             MemberMap map = _Protocol.GetMemberMap();
 
@@ -66,7 +65,7 @@ namespace PinionCore.Remote
 
 
             package.Entity = _Ghost;
-            package.Event = map.GetEvent(info);
+            package.Event = event_id;
             package.Handler = handler;
 
             _ResponseEvent(ClientToServerOpCode.RemoveEvent, _InternalSerializable.Serialize(package));

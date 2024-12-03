@@ -15,7 +15,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
         public readonly IEnumerable<ClassDeclarationSyntax> EventProxys;
         public readonly IEnumerable<InterfaceDeclarationSyntax> Souls;
         public readonly string Namespace;
-        public readonly IEnumerable<ClassAndTypes> ClassAndTypess;
+        public readonly IEnumerable<ModResult> ClassAndTypess;
 
 
         public GhostBuilder(SyntaxModifier modifier, IEnumerable<INamedTypeSymbol> symbols)
@@ -39,7 +39,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
             var ghosts = new System.Collections.Generic.List<ClassDeclarationSyntax>();
             var eventProxys = new System.Collections.Generic.List<ClassDeclarationSyntax>();
 
-            var classAndTypess = new System.Collections.Generic.List<ClassAndTypes>();
+            var classAndTypess = new System.Collections.Generic.List<ModResult>();
             foreach (INamedTypeSymbol symbol in symbols)
             {
 
@@ -72,10 +72,10 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
 
                 eventProxys.AddRange(type.DescendantNodes().OfType<EventDeclarationSyntax>().Select(e => e.CreatePinionCoreRemoteIEventProxyCreater()));
 
-                ClassAndTypes classAndTypes = modifier.Mod(type);
-                classAndTypess.Add(classAndTypes);
-                types.AddRange(classAndTypes.TypesOfSerialization);
-                type = classAndTypes.Type;
+                ModResult modResult = modifier.Mod(type);
+                classAndTypess.Add(modResult);
+                types.AddRange(modResult.TypesOfSerialization);
+                type = modResult.Type;
                 type = type.ImplementPinionCoreRemoteIGhost();
                 type = type.WithCloseBraceToken(
                             SyntaxFactory.Token(

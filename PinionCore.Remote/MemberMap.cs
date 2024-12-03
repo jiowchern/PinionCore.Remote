@@ -11,7 +11,7 @@ namespace PinionCore.Remote
     {
 
         private readonly BilateralMap<int, MethodInfo> _Methods;
-        private readonly BilateralMap<int, EventInfo> _Events;
+        private readonly Dictionary<int, EventInfo> _Events;
         private readonly BilateralMap<int, PropertyInfo> _Propertys;
         private readonly BilateralMap<int, Type> _Interfaces;
         private readonly Dictionary<Type, Func<IProvider>> _Providers;
@@ -23,7 +23,7 @@ namespace PinionCore.Remote
         {
             _Providers = new Dictionary<Type, Func<IProvider>>();
             _Methods = new BilateralMap<int, MethodInfo>();
-            _Events = new BilateralMap<int, EventInfo>();
+            _Events = new Dictionary<int, EventInfo>();
             _Propertys = new BilateralMap<int, PropertyInfo>();
             _Interfaces = new BilateralMap<int, Type>();
 
@@ -41,7 +41,7 @@ namespace PinionCore.Remote
                 ++id;
                 
                 _Events.Add(id, eventInfo);
-                PinionCore.Utility.Log.Instance.WriteInfoImmediate($"add event {eventInfo.Name}:{id} count:{_Events.ReadOnly.Item1s.Count()}");
+                PinionCore.Utility.Log.Instance.WriteInfoImmediate($"add event {eventInfo.Name}:{id} count:{_Events.Count()}");
                 
             }
 
@@ -90,22 +90,9 @@ namespace PinionCore.Remote
         public EventInfo GetEvent(int id)
         {
             EventInfo info;
-            _Events.TryGetItem2(id, out info);
+            _Events.TryGetValue(id, out info);            
             return info;
-        }
-
-        public int GetEvent(EventInfo info)
-        {
-
-            int id;
-            _Events.TryGetItem1(info, out id);
-            PinionCore.Utility.Log.Instance.WriteInfoImmediate($"get event {info.DeclaringType.FullName}_{info.Name} hash:{info.GetHashCode()}");
-            _Events.ReadOnly.Item1s.ToList().ForEach(i => PinionCore.Utility.Log.Instance.WriteInfoImmediate($"event k:{i.Key.DeclaringType}_{i.Key.Name} v:{i.Value} hash:{i.Key.GetHashCode()} equal:{i.Key == info} equalStr:{$"{i.Key.DeclaringType}_{i.Key.Name}" == $"{info.DeclaringType}_{info.Name}"}"));
-
-
-            return id;
-        }
-
+        }        
 
         public int GetProperty(PropertyInfo info)
         {
