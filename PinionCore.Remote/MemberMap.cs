@@ -82,7 +82,7 @@ namespace PinionCore.Remote
 
         public int GetMethod(MethodInfo method_info)
         {
-            int id;
+            int id = 0;
             _Methods.TryGetItem1(method_info, out id);
             return id;
         }
@@ -96,7 +96,7 @@ namespace PinionCore.Remote
 
         public int GetProperty(PropertyInfo info)
         {
-            int id;
+            int id = 0;
             _Propertys.TryGetItem1(info, out id);
             return id;
         }

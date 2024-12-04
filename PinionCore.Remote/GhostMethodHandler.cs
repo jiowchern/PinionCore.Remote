@@ -53,7 +53,11 @@ namespace PinionCore.Remote
             MemberMap map = _Protocol.GetMemberMap();
             ISerializable serialize = _Serializable;
             var method = map.GetMethod(info);
-
+            if (method == 0)
+            {
+                PinionCore.Utility.Log.Instance.WriteInfoImmediate($"method {info.Name} not found");
+                return;
+            }
             var package = new PinionCore.Remote.Packages.PackageCallMethod();
 
 

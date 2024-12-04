@@ -113,6 +113,11 @@ namespace PinionCore.Remote
             foreach (System.Reflection.PropertyInfo property in properties)
             {
                 var id = map.GetProperty(property);
+                if (id == 0)
+                {
+                    PinionCore.Utility.Log.Instance.WriteInfoImmediate($"Property {property.Name} not found in member map.");
+                    continue;
+                }
                 if (typeof(IDirtyable).IsAssignableFrom(property.PropertyType))
                 {
                     var value = property.GetValue(soul.ObjectInstance);
