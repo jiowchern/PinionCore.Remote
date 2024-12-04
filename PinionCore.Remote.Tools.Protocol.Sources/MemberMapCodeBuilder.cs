@@ -17,7 +17,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
         public readonly string EventInfosCode;
         public readonly string PropertyInfosCode;
         public readonly string InterfacesCode;
-        public MemberMapCodeBuilder(IEnumerable<InterfaceDeclarationSyntax> _interfaces)
+        public MemberMapCodeBuilder(IEnumerable<InterfaceDeclarationSyntax> _interfaces, MemberIdProvider memberIdProvider)
         {
             IEnumerable<string> methods = from interfaceSyntax in _interfaces
                                           from methodSyntax in interfaceSyntax.DescendantNodes().OfType<MethodDeclarationSyntax>()
@@ -25,10 +25,16 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
 
             MethodInfosCode = string.Join(",", methods);
 
-            IEnumerable<string> events =
+
+            var eventSyntaxs = from interfaceSyntax in _interfaces
+                              from eventSyntax in interfaceSyntax.DescendantNodes().OfType<EventFieldDeclarationSyntax>()
+                              select new { eventSyntax, interfaceSyntax };
+            IEnumerable<string> events = eventSyntaxs.OrderBy(e => memberIdProvider.GetId(e.eventSyntax)).Select(e => _BuildCode(e.interfaceSyntax,e.eventSyntax));
+
+            /*IEnumerable<string> events =
                          from interfaceSyntax in _interfaces
                          from eventSyntax in interfaceSyntax.DescendantNodes().OfType<EventFieldDeclarationSyntax>()
-                         select _BuildCode(interfaceSyntax, eventSyntax);
+                         select _BuildCode(interfaceSyntax, eventSyntax);*/
 
             EventInfosCode = string.Join(",", events);
 

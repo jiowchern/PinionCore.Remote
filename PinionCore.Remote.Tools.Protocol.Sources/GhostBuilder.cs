@@ -13,13 +13,14 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
         public readonly IEnumerable<TypeSyntax> Types;
         public readonly IEnumerable<ClassDeclarationSyntax> Ghosts;
         public readonly IEnumerable<ClassDeclarationSyntax> EventProxys;
-        public readonly IEnumerable<InterfaceDeclarationSyntax> Souls;
+        
         public readonly string Namespace;
         public readonly IEnumerable<ModResult> ClassAndTypess;
 
 
-        public GhostBuilder(SyntaxModifier modifier, IEnumerable<INamedTypeSymbol> symbols)
+        public GhostBuilder(SyntaxModifier modifier , IEnumerable<INamedTypeSymbol> symbols)
         {
+
 
             var builders = new Dictionary<INamedTypeSymbol, InterfaceInheritor>(SymbolEqualityComparer.Default);
 
@@ -33,7 +34,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
                     souls.Add(item.Value.Base);
                 }
             }
-            Souls = souls;
+
 
             var types = new System.Collections.Generic.List<TypeSyntax>();
             var ghosts = new System.Collections.Generic.List<ClassDeclarationSyntax>();

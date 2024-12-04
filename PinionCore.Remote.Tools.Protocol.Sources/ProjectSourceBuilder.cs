@@ -2,6 +2,8 @@
 using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+using PinionCore.Remote.Tools.Protocol.Sources.Extensions;
 
 namespace PinionCore.Remote.Tools.Protocol.Sources
 {
@@ -14,8 +16,12 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
         {
             Compilation compilation = references.Compilation;
 
-            var ghostBuilder = new GhostBuilder(SyntaxModifier.Create(compilation), compilation.FindAllInterfaceSymbol(references.Tag));
-            //var ghostBuilder = ghost_builder;
+            var symbols = compilation.FindAllInterfaceSymbol(references.Tag);
+            var souls = symbols.Select(symbol => symbol.ToInferredInterface());
+
+
+            var memberIdProvider = new MemberIdProvider(souls);
+            var ghostBuilder = new GhostBuilder(SyntaxModifier.Create(compilation, memberIdProvider), symbols);
             ClassAndTypess = ghostBuilder.ClassAndTypess.ToArray();
             var name = ghostBuilder.Namespace;
 
@@ -28,7 +34,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
 
 
             var interfaceProviderCodeBuilder = new InterfaceProviderCodeBuilder(ghosts);
-            var membermapCodeBuilder = new MemberMapCodeBuilder(ghostBuilder.Souls);
+            var membermapCodeBuilder = new MemberMapCodeBuilder(souls, memberIdProvider);
 
 
 

@@ -12,10 +12,16 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
     {
         public static SyntaxModifier Create(Compilation com)
         {
+            var symbols = com.FindAllInterfaceSymbol();
+            var memberIdProvider = new MemberIdProvider(symbols.Select(symbol => symbol.ToInferredInterface()));
+            return Create(com, memberIdProvider);
+        }
+        public static SyntaxModifier Create(Compilation com , MemberIdProvider memberIdProvider)
+        {
             return new SyntaxModifier(
                     new BlockModifiers.MethodVoid(com),
                     new BlockModifiers.MethodPinionCoreRemoteValue(com),
-                    new BlockModifiers.EventSystemAction(com),
+                    new BlockModifiers.EventSystemAction(com, memberIdProvider),
                     new BlockModifiers.PropertyPinionCoreRemoteBlock(com),
                     new Modifiers.EventFieldDeclarationSyntax(),
                     new Modifiers.PropertyFieldDeclarationSyntax()
@@ -132,8 +138,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
 
 
             return new ModResult
-            {
-                EventIds = _EventSystemAction.EventIds,
+            {                
                 Type = type,
                 TypesOfSerialization = typesOfSerialization,
                 UnprocessedBlocks = unprocessedBlocks.ToArray()

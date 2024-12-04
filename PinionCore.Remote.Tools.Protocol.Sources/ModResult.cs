@@ -6,8 +6,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
     {
         public System.Collections.Generic.IEnumerable<TypeSyntax> TypesOfSerialization;
         public ClassDeclarationSyntax Type;
-        public Microsoft.CodeAnalysis.CSharp.Syntax.BlockSyntax[] UnprocessedBlocks;
-        public Dictionary<EventDeclarationSyntax, int> EventIds;
+        public Microsoft.CodeAnalysis.CSharp.Syntax.BlockSyntax[] UnprocessedBlocks;    
 
         public System.Collections.Generic.IEnumerable<T> GetSyntaxs<T>() where T : Microsoft.CodeAnalysis.SyntaxNode
         {

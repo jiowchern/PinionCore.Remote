@@ -12,11 +12,13 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.BlockModifiers
     internal class EventSystemAction
     {
         private readonly Compilation _Compilation;
-        public readonly Dictionary<EventDeclarationSyntax,int > EventIds;
-        public EventSystemAction(Compilation compilation)
+        private readonly MemberIdProvider MemberIdProvider_;
+        
+        public EventSystemAction(Compilation compilation , MemberIdProvider memberIdProvider)
         {
             this._Compilation = compilation;
-            EventIds = new Dictionary<EventDeclarationSyntax,int >();
+            MemberIdProvider_ = memberIdProvider;
+        
         }
 
         public BlockAndEvent Mod(System.Collections.Generic.IEnumerable<SyntaxNode> nodes)
@@ -70,12 +72,8 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.BlockModifiers
             }
 
             
-            if(!EventIds.ContainsKey(ed))
-            {
-                
-                EventIds.Add(ed, EventIds.Count + 1);
-            }
-            var eventId = EventIds[ed];
+            
+            var eventId = MemberIdProvider_.GetId(ed);
 
 
             BlockSyntax newBlock = SyntaxFactory.Block(SyntaxFactory.ParseStatement(
