@@ -32,7 +32,6 @@ namespace PinionCore.Remote
             var id = 0;
             foreach (MethodInfo method in methods)
             {
-                PinionCore.Utility.Log.Instance.WriteInfoImmediate($"add method {method.Name}");
                 _Methods.Add(++id, method);
             }
 
@@ -41,7 +40,7 @@ namespace PinionCore.Remote
             id = 0;
             foreach (PropertyInfo propertyInfo in propertys)
             {
-                PinionCore.Utility.Log.Instance.WriteInfoImmediate($"add property {propertyInfo.Name}");
+
                 _Propertys.Add(++id, propertyInfo);
             }
 
