@@ -119,7 +119,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon
         }
 
         public void Invoke11()
-        {
+        { 
             _IEventabe1Event1();
         }
 
@@ -137,5 +137,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon
         {
             _IEventabe2Event2(val);
         }
+
+        
     }
 }

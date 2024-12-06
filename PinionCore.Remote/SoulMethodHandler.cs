@@ -49,7 +49,10 @@ namespace PinionCore.Remote
         {
             SoulProxy soul;
             if (!_Souls.TryGetValue(entity_id, out soul))
-                return;
+            {
+                throw new Exception($"Soul not found entity_id:{entity_id}");                
+            }
+                
 
             var soulInfo = new
             {
@@ -62,7 +65,10 @@ namespace PinionCore.Remote
                 (from m in soulInfo.MethodInfos where m == info && m.GetParameters().Count() == args.Count() select m)
                     .FirstOrDefault();
             if (methodInfo == null)
-                return;
+            {
+                throw new Exception($"Method not found method_id:{method_id}");
+            }
+                
             try
             {
 

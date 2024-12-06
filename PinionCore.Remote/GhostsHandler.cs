@@ -100,7 +100,7 @@ namespace PinionCore.Remote
             {
                 GhostResponseHandler ghostHandler = _FindHandler(entityId);
                 if (ghostHandler == null)
-                    return;
+                    throw new Exception($"UpdateSetProperty Can't find ghost handler {entityId} ,propertyId:{propertyId}.");
                 ghostHandler.UpdateSetProperty(propertyId, payload);
 
                 var pkg = new PackageSetPropertyDone
@@ -115,7 +115,7 @@ namespace PinionCore.Remote
             {
                 GhostResponseHandler ghostHandler = _FindHandler(ghostId);
                 if (ghostHandler == null)
-                    return;
+                    throw new Exception($"InvokeEvent Can't find ghost handler {ghostId} ,eventId:{eventId}.");
                 ghostHandler.InvokeEvent(eventId, handlerId, eventParams);
             }
 
@@ -133,11 +133,11 @@ namespace PinionCore.Remote
             {
                 GhostResponseHandler owner_handler = _FindHandler(data.OwnerId);
                 if (owner_handler == null)
-                    return;
+                    throw new Exception($"PropertySoulAccesser Can't find ghost handler {data.OwnerId}.");
 
                 GhostResponseHandler entity = _FindHandler(data.EntityId);
                 if (entity == null)
-                    return;
+                    throw new Exception($"PropertySoulAccesser Can't find ghost handler {data.EntityId}.");
 
                 IGhost entity_ghost = entity.FindGhost();
 

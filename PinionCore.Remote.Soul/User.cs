@@ -168,8 +168,6 @@ namespace PinionCore.Remote.Soul
 
         private void _ExternalRequest(PinionCore.Remote.Packages.RequestPackage package)
         {
-            PinionCore.Utility.Log.Instance.WriteInfoImmediate($"_ExternalRequest code {package.Code}.");
-
             if (package.Code == ClientToServerOpCode.CallMethod)
             {
 
@@ -189,7 +187,7 @@ namespace PinionCore.Remote.Soul
             }
             else
             {
-                PinionCore.Utility.Log.Instance.WriteInfo($"invalid request code {package.Code}.");
+                throw new Exception($"_ExternalRequest invalid request code {package.Code}.");
             }
         }
         private void _InternalRequest(PinionCore.Remote.Packages.RequestPackage package)
@@ -242,7 +240,14 @@ namespace PinionCore.Remote.Soul
             PinionCore.Remote.Packages.RequestPackage pkg;
             while (_ExternalRequests.TryDequeue(out pkg))
             {
-                _ExternalRequest(pkg);
+                try {
+                    _ExternalRequest(pkg);
+                }
+                catch (Exception e)
+                {
+                    throw new Exception($"User _ExternalRequest error {e.ToString()}. pkgCode:{pkg.Code}");
+                }
+                
             }
         }
     }

@@ -92,11 +92,20 @@ namespace PinionCore.Remote
 
         void Exchangeable<ServerToClientOpCode, ClientToServerOpCode>.Request(ServerToClientOpCode code, Memorys.Buffer args)
         {
-            foreach (ClientExchangeable exchangeable in ClientExchangeables)
+            try
             {
-                exchangeable.Request(code, args);
+                foreach (ClientExchangeable exchangeable in ClientExchangeables)
+                {
+                    exchangeable.Request(code, args);
+                }
+                _GhostsResponser.OnResponse(code, args);
             }
-            _GhostsResponser.OnResponse(code, args);
+            catch (Exception e)
+            {
+
+                PinionCore.Utility.Log.Instance.WriteInfoImmediate($"GhostProviderQueryer Request error {e.ToString()} code:{code} ");
+            }
+            
         }
 
 

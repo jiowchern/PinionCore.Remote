@@ -98,6 +98,7 @@ namespace PinionCore.Remote.Tests
         }
 
 
+
         PinionCore.Remote.GhostResponseHandler _GhostResponseHandler;
         ISerializable _Serializable;
         //GhostIA _GhostIA;
@@ -108,7 +109,8 @@ namespace PinionCore.Remote.Tests
         {
             var ghostIA = new GhostIA();
             ISerializable serializable = new PinionCore.Remote.Tests.Serializer().Serializable;
-            var map = new MemberMap(typeof(IA).GetMethods(), typeof(IA).GetEvents(), typeof(IA).GetProperties(), new System.Tuple<System.Type, System.Func<PinionCore.Remote.IProvider>>[] { });
+            int id = 0;
+            var map = new MemberMap(typeof(IA).GetMethods(), typeof(IA).GetEvents().ToDictionary(e=> ++id), typeof(IA).GetProperties(), new System.Tuple<System.Type, System.Func<PinionCore.Remote.IProvider>>[] { });
 
             _Serializable = serializable;
             _GhostResponseHandler = new GhostResponseHandler(new System.WeakReference<IGhost>(ghostIA), map, serializable);

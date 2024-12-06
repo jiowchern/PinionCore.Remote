@@ -21,11 +21,12 @@ namespace PinionCore.Remote
             public void SetReturnValue(long returnTarget, byte[] returnValue)
             {
                 IValue value = _ReturnValueQueue.PopReturnValue(returnTarget);
-                if (value != null)
+                if (value == null)
                 {
-                    var returnInstance = _Serializer.Deserialize(value.GetObjectType(), returnValue.AsBuffer());
-                    value.SetValue(returnInstance);
+                    throw new Exception("SetReturnValue return value not found");
                 }
+                var returnInstance = _Serializer.Deserialize(value.GetObjectType(), returnValue.AsBuffer());
+                value.SetValue(returnInstance);
             }
 
             public void ErrorReturnValue(long returnTarget, string method, string message)

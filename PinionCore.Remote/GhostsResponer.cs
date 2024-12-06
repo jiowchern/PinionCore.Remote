@@ -34,8 +34,7 @@ namespace PinionCore.Remote
             public void OnResponse(ServerToClientOpCode code, PinionCore.Memorys.Buffer args)
             {
                 _GhostHandler.UpdateAutoRelease();
-                if(code != ServerToClientOpCode.Ping)
-                    PinionCore.Utility.Log.Instance.WriteInfoImmediate("OnResponse: " + code);   
+               
                 switch (code)
                 {
                     case ServerToClientOpCode.Ping:
@@ -125,6 +124,7 @@ namespace PinionCore.Remote
                 }
                 else
                 {
+
                     VersionCodeErrorEvent?.Invoke(_Protocol.VersionCode, data.VersionCode);
                 }
             }

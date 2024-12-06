@@ -38,7 +38,13 @@ namespace PinionCore.Remote.Soul
 
             foreach (Advanceable user in _UserProvider.Users.Values)
             {
-                user.Advance();
+                try {
+                    user.Advance();
+                }
+                catch (Exception e)
+                {
+                    PinionCore.Utility.Log.Instance.WriteInfo($"Advance Error: {e.ToString()}");
+                }
             }
 
         }

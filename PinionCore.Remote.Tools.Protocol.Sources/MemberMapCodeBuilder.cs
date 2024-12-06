@@ -26,15 +26,15 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
             MethodInfosCode = string.Join(",", methods);
 
 
-            var eventSyntaxs = from interfaceSyntax in _interfaces
+            /*var eventSyntaxs = from interfaceSyntax in _interfaces
                               from eventSyntax in interfaceSyntax.DescendantNodes().OfType<EventFieldDeclarationSyntax>()
                               select new { eventSyntax, interfaceSyntax };
-            IEnumerable<string> events = eventSyntaxs.OrderBy(e => memberIdProvider.GetId(e.eventSyntax)).Select(e => _BuildCode(e.interfaceSyntax,e.eventSyntax));
+            IEnumerable<string> events = eventSyntaxs.OrderBy(e => memberIdProvider.GetId(e.eventSyntax)).Select(e => _BuildCode(e.interfaceSyntax,e.eventSyntax));*/
 
-            /*IEnumerable<string> events =
+            IEnumerable<string> events =
                          from interfaceSyntax in _interfaces
                          from eventSyntax in interfaceSyntax.DescendantNodes().OfType<EventFieldDeclarationSyntax>()
-                         select _BuildCode(interfaceSyntax, eventSyntax);*/
+                         select _BuildCode(interfaceSyntax, eventSyntax , memberIdProvider.GetId(eventSyntax));
 
             EventInfosCode = string.Join(",", events);
 
@@ -68,12 +68,12 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
             return $@"typeof({typeName}).GetProperty(""{eventName}"")";
         }
 
-        private string _BuildCode(InterfaceDeclarationSyntax interface_syntax, EventFieldDeclarationSyntax event_syntax)
+        private string _BuildCode(InterfaceDeclarationSyntax interface_syntax, EventFieldDeclarationSyntax event_syntax , int id)
         {
 
             var typeName = interface_syntax.GetNamePath();
             var eventName = event_syntax.Declaration.Variables[0].ToFullString();
-            return $@"typeof({typeName}).GetEvent(""{eventName}"")";
+            return $@"{{{id},typeof({typeName}).GetEvent(""{eventName}"")}}";
 
         }
 

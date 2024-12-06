@@ -19,11 +19,12 @@ namespace PinionCore.Remote
         public readonly IReadOnlyBilateralMap<int, PropertyInfo> Propertys;
 
 
-        public MemberMap(IEnumerable<MethodInfo> methods, IEnumerable<EventInfo> events, IEnumerable<PropertyInfo> propertys, IEnumerable<System.Tuple<System.Type, System.Func<PinionCore.Remote.IProvider>>> interfaces)
+        public MemberMap(IEnumerable<MethodInfo> methods, System.Collections.Generic.Dictionary<int, EventInfo> events, IEnumerable<PropertyInfo> propertys, IEnumerable<System.Tuple<System.Type, System.Func<PinionCore.Remote.IProvider>>> interfaces)
         {
+            //_Events = new Dictionary<int, EventInfo> { { 0, typeof(MemberMap).GetEvent("") } };
             _Providers = new Dictionary<Type, Func<IProvider>>();
             _Methods = new BilateralMap<int, MethodInfo>();
-            _Events = new Dictionary<int, EventInfo>();
+            _Events = events;
             _Propertys = new BilateralMap<int, PropertyInfo>();
             _Interfaces = new BilateralMap<int, Type>();
 
@@ -35,15 +36,7 @@ namespace PinionCore.Remote
                 _Methods.Add(++id, method);
             }
 
-            id = 0;
-            foreach (EventInfo eventInfo in events)
-            {
-                ++id;
-                
-                _Events.Add(id, eventInfo);
-                PinionCore.Utility.Log.Instance.WriteInfoImmediate($"add event {eventInfo.Name}:{id} count:{_Events.Count()}");
-                
-            }
+           
 
             id = 0;
             foreach (PropertyInfo propertyInfo in propertys)

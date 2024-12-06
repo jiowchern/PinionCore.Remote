@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using NSubstitute;
 using NUnit.Framework;
 using PinionCore.Memorys;
@@ -33,7 +34,7 @@ namespace PinionCore.Remote.Standalone.Test
 
             System.Func<IProvider> gpiaProviderProvider = () => new TProvider<IGpiA>();
             var typeProviderProvider = new System.Tuple<System.Type, System.Func<IProvider>>[] { new System.Tuple<System.Type, System.Func<IProvider>>(typeof(IGpiA), gpiaProviderProvider) };
-            protocol.GetMemberMap().Returns(new MemberMap(new System.Reflection.MethodInfo[0], new System.Reflection.EventInfo[0], new System.Reflection.PropertyInfo[0], typeProviderProvider));
+            protocol.GetMemberMap().Returns(new MemberMap(new System.Reflection.MethodInfo[0], new Dictionary<int, System.Reflection.EventInfo> { }, new System.Reflection.PropertyInfo[0], typeProviderProvider));
             return protocol;
         }
     }

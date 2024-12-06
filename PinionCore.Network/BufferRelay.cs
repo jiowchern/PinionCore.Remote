@@ -34,6 +34,8 @@ namespace PinionCore.Network
         readonly System.Collections.Generic.Queue<Waiter> _Waiters;
         private readonly System.Collections.Generic.Queue<BufferSegment> _Segments;
 
+
+        
         public BufferRelay()
         {
             _Waiters = new Queue<Waiter>();
@@ -60,7 +62,13 @@ namespace PinionCore.Network
             _ProcessWaiters(_Waiters, _Segments);
             return waiter.SyncWait;
         }
-
+        public bool HasPendingSegments()
+        {
+            lock (_Segments)
+            {
+                return _Segments.Count > 0;
+            }
+        }
         private bool _ProcessWaiters(Queue<Waiter> waiters, Queue<BufferSegment> buffers)
         {
             lock (waiters)
