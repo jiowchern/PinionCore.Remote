@@ -32,8 +32,7 @@ namespace PinionCore.Remote.Ghost
             _GhostProvider = new GhostProviderQueryer(protocol, serializable, internal_serializable, _GhostsOwner);
             _GhostSerializerUpdater = () => { };
             _GhostSerializerStop = () => { };
-
-            Singleton<Log>.Instance.WriteInfo("Agent Launch.");            
+            
             _ExceptionEvent += (e) => { };
         }
 

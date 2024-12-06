@@ -18,15 +18,14 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
 
         public System.Collections.Generic.IEnumerable<InterfaceDeclarationSyntax> GetInterfaces(string name)
         {
-
-
-
             System.Collections.Generic.IEnumerable<InterfaceDeclarationSyntax> ids = from i in Tree.GetRoot().DescendantNodes().OfType<InterfaceDeclarationSyntax>()
                                                                                      where i.Identifier.ToString() == name
                                                                                      select i;
             ;
-
             return ids;
         }
+
+
+
     }
 }

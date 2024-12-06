@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 
 
@@ -9,6 +8,8 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
 
     using System.Linq;
     using PinionCore.Remote.Tools.Protocol.Sources.Extensions;
+    
+    using Microsoft.CodeAnalysis.CSharp.Syntax;
 
     class MemberMapCodeBuilder
     {
@@ -17,24 +18,18 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
         public readonly string EventInfosCode;
         public readonly string PropertyInfosCode;
         public readonly string InterfacesCode;
+
         public MemberMapCodeBuilder(IEnumerable<InterfaceDeclarationSyntax> _interfaces, MemberIdProvider memberIdProvider)
         {
             IEnumerable<string> methods = from interfaceSyntax in _interfaces
                                           from methodSyntax in interfaceSyntax.DescendantNodes().OfType<MethodDeclarationSyntax>()
                                           select _BuildCode(interfaceSyntax, methodSyntax);
 
-            MethodInfosCode = string.Join(",", methods);
-
-
-            /*var eventSyntaxs = from interfaceSyntax in _interfaces
-                              from eventSyntax in interfaceSyntax.DescendantNodes().OfType<EventFieldDeclarationSyntax>()
-                              select new { eventSyntax, interfaceSyntax };
-            IEnumerable<string> events = eventSyntaxs.OrderBy(e => memberIdProvider.GetId(e.eventSyntax)).Select(e => _BuildCode(e.interfaceSyntax,e.eventSyntax));*/
+            MethodInfosCode = string.Join(",", methods);          
 
             IEnumerable<string> events =
-                         from interfaceSyntax in _interfaces
-                         from eventSyntax in interfaceSyntax.DescendantNodes().OfType<EventFieldDeclarationSyntax>()
-                         select _BuildCode(interfaceSyntax, eventSyntax , memberIdProvider.GetId(eventSyntax));
+                         from a in GetEvent<EventFieldDeclarationSyntax>(_interfaces)                         
+                         select _BuildCode(a.Item1, a.Item2, memberIdProvider.GetId(a.Item2));
 
             EventInfosCode = string.Join(",", events);
 
@@ -52,7 +47,13 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
 
             InterfacesCode = string.Join(",", interfaces);
         }
-
+        public IEnumerable<System.Tuple<InterfaceDeclarationSyntax , T >> GetEvent<T>(IEnumerable<InterfaceDeclarationSyntax> interfaces)
+        {
+            return 
+                         from interfaceSyntax in interfaces
+                         from eventSyntax in interfaceSyntax.DescendantNodes().OfType<T>()
+                         select new System.Tuple<InterfaceDeclarationSyntax, T> ( interfaceSyntax , eventSyntax  );
+        }
         private string _BuildCode(InterfaceDeclarationSyntax interface_syntax)
         {
             var typeName = interface_syntax.GetNamePath();

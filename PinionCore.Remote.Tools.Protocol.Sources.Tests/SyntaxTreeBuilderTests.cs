@@ -4,9 +4,7 @@ using Microsoft.CodeAnalysis.Text;
 
 namespace PinionCore.Remote.Tools.Protocol.Sources.Tests
 {
-
     using NUnit.Framework;
-
     public class SyntaxTreeBuilderTests
     {
         [Test]
@@ -22,4 +20,5 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.Tests
 
 
     }
+    
 }

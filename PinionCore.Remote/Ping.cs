@@ -41,7 +41,8 @@ namespace PinionCore.Remote
 
         internal void Update()
         {
-            _Trigger = false;            
+            _Trigger = false;
+            _Seconds = _TimeCounter.Second;
         }
     }
 }
