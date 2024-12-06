@@ -70,16 +70,6 @@ namespace PinionCore.Remote.Soul
         void _Launch()
         {
 
-            _ReadTask = _StartRead();
-            /*System.Threading.Tasks.Task.Run(() => ).ContinueWith(t =>
-            {
-                if (t.Exception != null)
-                {
-                    PinionCore.Utility.Log.Instance.WriteInfo(t.Exception.ToString());
-                    ErrorEvent();
-                }
-            });*/
-
             var pkg = new PinionCore.Remote.Packages.PackageProtocolSubmit();
             pkg.VersionCode = _Protocol.VersionCode;
 
@@ -92,20 +82,10 @@ namespace PinionCore.Remote.Soul
         private async Task _StartRead()
         {
 
-            List<Memorys.Buffer> buffers = await _Reader.Read().ContinueWith(t =>
-            {
-                System.Collections.Generic.List<PinionCore.Memorys.Buffer> result = t.Result;
-                t.Exception?.Handle(e =>
-                {
-                    PinionCore.Utility.Log.Instance.WriteInfo($"User _StartRead error {e.ToString()}.");
-                    result = new System.Collections.Generic.List<PinionCore.Memorys.Buffer>();
-                    return true;
-                });
-                return result;
-            });
+            List<Memorys.Buffer> buffers = await _Reader.Read();
             if (buffers.Count == 0)
             {
-                PinionCore.Utility.Log.Instance.WriteInfo("User _StartRead buffers.Count == 0.");
+                PinionCore.Utility.Log.Instance.WriteInfo($"User _StartRead read 0 buffer.");
                 ErrorEvent();
                 return;
             }
@@ -119,8 +99,6 @@ namespace PinionCore.Remote.Soul
                 ErrorEvent();
                 return;
             }
-
-           // await System.Threading.Tasks.Task.Delay(0).ContinueWith(t => _StartRead());
         }
 
         private void _ReadDone(List<PinionCore.Memorys.Buffer> buffers)
