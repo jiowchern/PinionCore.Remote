@@ -39,6 +39,8 @@ namespace PinionCore.Remote.Soul
 
 
         private readonly IInternalSerializable _InternalSerializer;
+        private Task _ReadTask;
+
         public event System.Action ErrorEvent;
         public IBinder Binder
         {
@@ -62,19 +64,21 @@ namespace PinionCore.Remote.Soul
             _SoulProvider = new SoulProvider(this, this, protocol, serializable, _InternalSerializer);
             _ResponseQueue = this;
 
+            _ReadTask = Task.CompletedTask;
         }
 
         void _Launch()
         {
 
-            System.Threading.Tasks.Task.Run(() => _StartRead()).ContinueWith(t =>
+            _ReadTask = _StartRead();
+            /*System.Threading.Tasks.Task.Run(() => ).ContinueWith(t =>
             {
                 if (t.Exception != null)
                 {
                     PinionCore.Utility.Log.Instance.WriteInfo(t.Exception.ToString());
                     ErrorEvent();
                 }
-            });
+            });*/
 
             var pkg = new PinionCore.Remote.Packages.PackageProtocolSubmit();
             pkg.VersionCode = _Protocol.VersionCode;
@@ -83,7 +87,7 @@ namespace PinionCore.Remote.Soul
             _ResponseQueue.Push(ServerToClientOpCode.ProtocolSubmit, buf);
         }
 
-
+        
 
         private async Task _StartRead()
         {
@@ -116,7 +120,7 @@ namespace PinionCore.Remote.Soul
                 return;
             }
 
-            await System.Threading.Tasks.Task.Delay(0).ContinueWith(t => _StartRead());
+           // await System.Threading.Tasks.Task.Delay(0).ContinueWith(t => _StartRead());
         }
 
         private void _ReadDone(List<PinionCore.Memorys.Buffer> buffers)
@@ -237,6 +241,10 @@ namespace PinionCore.Remote.Soul
 
         void Advanceable.Advance()
         {
+            if (_ReadTask.IsCompleted)
+            {
+                _ReadTask = _StartRead();
+            }
             PinionCore.Remote.Packages.RequestPackage pkg;
             while (_ExternalRequests.TryDequeue(out pkg))
             {
