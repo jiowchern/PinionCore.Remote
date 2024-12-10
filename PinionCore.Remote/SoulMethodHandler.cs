@@ -126,6 +126,7 @@ namespace PinionCore.Remote
         private void _ReturnSoulValue(long returnId, IValue returnValue)
         {
             // 需要引用到 BindHandler，這裡假設有一個方法可以完成這個功能
+            throw new NotImplementedException();
             // _bindHandler.Bind(returnValue.GetObject(), returnValue.GetObjectType(), true, returnId);
         }
 

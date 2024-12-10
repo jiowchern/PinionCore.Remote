@@ -58,7 +58,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
             IProtocol protocol = ProtocolProviderCase3.CreateCase3();
             NUnit.Framework.Assert.IsNotNull(protocol);
         }
-        //[Test, Timeout(Timeout)]
+        [Test, Timeout(Timeout)]
         public void NotifierSupplyAndUnsupplyTest()
         {
             var multipleNotices = new MultipleNotices.MultipleNotices();
@@ -81,9 +81,9 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
                                            from n in mn.Numbers1.Base.SupplyEvent()
                                            select n.Value.Value;
 
-            IObservable<int> supplyn2Obs = from mn in env.Queryable.QueryNotifier<IMultipleNotices>().SupplyEvent()
+            IObservable<INumber> supplyn2Obs = from mn in env.Queryable.QueryNotifier<IMultipleNotices>().SupplyEvent()
                                            from n in mn.Numbers2.Base.SupplyEvent()
-                                           select n.Value.Value;
+                                           select n;
 
             IObservable<int> unsupplyn1Obs = from mn in env.Queryable.QueryNotifier<IMultipleNotices>().SupplyEvent()
                                              from n in mn.Numbers1.Base.UnsupplyEvent()
@@ -96,7 +96,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
 
 
             System.Collections.Generic.IList<int> num1s = supplyn1Obs.Buffer(4).FirstAsync().Wait();
-            System.Collections.Generic.IList<int> num2s = supplyn2Obs.Buffer(2).FirstAsync().Wait();
+            System.Collections.Generic.IList<INumber> num2s = supplyn2Obs.Buffer(2).FirstAsync().Wait();
 
 
 
@@ -104,8 +104,8 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
             NUnit.Framework.Assert.AreEqual(2, num1s[1]);
             NUnit.Framework.Assert.AreEqual(2, num1s[2]);
             NUnit.Framework.Assert.AreEqual(3, num1s[3]);
-            NUnit.Framework.Assert.AreEqual(2, num2s[0]);
-            NUnit.Framework.Assert.AreEqual(3, num2s[1]);
+            NUnit.Framework.Assert.AreEqual(2, num2s[0].Value.Value);
+            NUnit.Framework.Assert.AreEqual(3, num2s[1].Value.Value);
 
             var removeNum1s = new System.Collections.Generic.List<int>();
             unsupplyn1Obs.Subscribe(removeNum1s.Add);
@@ -355,7 +355,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
         }
 
         //[Test , Timeout(1000*60)]
-        public async Task MethodReturnTypeTest()
+        public void MethodReturnTypeTest()
         {
 
             var tester = new MethodTester();
@@ -365,12 +365,12 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
                                                  from v1 in gpi.GetValueSelf().RemoteValue()
                                                  select v1;
             System.Console.WriteLine("methodObs.FirstAsync().Wait()");
-            IMethodable method = await methodObs.FirstAsync();
+            IMethodable method = methodObs.FirstAsync().GetAwaiter().GetResult();
 
             IObservable<int> valueObs = from v1 in method.GetValue1().RemoteValue()
                                         select v1;
             System.Console.WriteLine("valueObs.FirstAsync().Wait()");
-            var value = await valueObs.FirstAsync();
+            var value = valueObs.FirstAsync().GetAwaiter().GetResult();
 
             method = null;
 

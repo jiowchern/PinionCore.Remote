@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using PinionCore.Memorys;
 using PinionCore.Remote;
@@ -11,6 +12,9 @@ namespace PinionCore.Network
     {
         private readonly IStreamable _Stream;
         private readonly PinionCore.Memorys.IPool _Pool;
+        private  int _activeCount = 0;
+
+        int _Count;
         public _PackageReader(IStreamable stream, PinionCore.Memorys.IPool pool)
         {
             _Stream = stream;
@@ -18,10 +22,19 @@ namespace PinionCore.Network
         }
         public async Task<List<PinionCore.Memorys.Buffer>> Read()
         {
+            
+            int currentCount = Interlocked.Increment(ref _activeCount);
+            if(currentCount > 1)
+            {
+                System.Console.WriteLine($"read_thread > 1 \n {System.Environment.StackTrace}");
+            }
+            //System.Console.WriteLine($"read threads {currentCount}");
+            System.Threading.Interlocked.Increment(ref _Count);
             var headByte = new byte[1];
             var headBuffer = new System.Collections.Generic.List<byte>();
             do
             {
+               System.Console.WriteLine($"read_head cnt:{_Count}");
                 var readed = await _Stream.Receive(headByte, 0, 1);
                 if (readed == 0)
                     return new List<PinionCore.Memorys.Buffer>();
@@ -33,6 +46,7 @@ namespace PinionCore.Network
             int offset = 0;
             while (offset < bodySize)
             {
+                System.Console.WriteLine($"read_body cnt:{_Count} offset:{offset}");
                 var readed = await _Stream.Receive(body, offset, bodySize - offset);
                 if (readed == 0)
                     return new List<PinionCore.Memorys.Buffer>();
@@ -43,6 +57,9 @@ namespace PinionCore.Network
             {
                 buffer[i] = body[i];
             }
+            //System.Threading.Interlocked.Decrement(ref _Count);
+            Interlocked.Decrement(ref _activeCount);
+
             return new List<PinionCore.Memorys.Buffer> { buffer };
 
 

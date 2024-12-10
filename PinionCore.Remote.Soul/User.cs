@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using PinionCore.Memorys;
 
@@ -36,10 +37,9 @@ namespace PinionCore.Remote.Soul
         private readonly System.Collections.Concurrent.ConcurrentQueue<PinionCore.Remote.Packages.RequestPackage> _ExternalRequests;
 
         private readonly IResponseQueue _ResponseQueue;
-
-
+        
         private readonly IInternalSerializable _InternalSerializer;
-        private Task _ReadTask;
+        private TaskAwaiter<List<Memorys.Buffer>> _ReadTask;
 
         public event System.Action ErrorEvent;
         public IBinder Binder
@@ -64,12 +64,13 @@ namespace PinionCore.Remote.Soul
             _SoulProvider = new SoulProvider(this, this, protocol, serializable, _InternalSerializer);
             _ResponseQueue = this;
 
-            _ReadTask = Task.CompletedTask;
+
+            
         }
 
         void _Launch()
         {
-
+            _ReadTask = _Reader.Read().GetAwaiter();
             var pkg = new PinionCore.Remote.Packages.PackageProtocolSubmit();
             pkg.VersionCode = _Protocol.VersionCode;
 
@@ -79,27 +80,6 @@ namespace PinionCore.Remote.Soul
 
         
 
-        private async Task _StartRead()
-        {
-
-            List<Memorys.Buffer> buffers = await _Reader.Read();
-            if (buffers.Count == 0)
-            {
-                PinionCore.Utility.Log.Instance.WriteInfo($"User _StartRead read 0 buffer.");
-                ErrorEvent();
-                return;
-            }
-            try
-            {
-                _ReadDone(buffers);
-            }
-            catch (Exception e)
-            {
-                PinionCore.Utility.Log.Instance.WriteInfo($"User _StartRead error {e.ToString()}.");
-                ErrorEvent();
-                return;
-            }
-        }
 
         private void _ReadDone(List<PinionCore.Memorys.Buffer> buffers)
         {
@@ -221,7 +201,10 @@ namespace PinionCore.Remote.Soul
         {
             if (_ReadTask.IsCompleted)
             {
-                _ReadTask = _StartRead();
+
+                var buffers = _ReadTask.GetResult();
+                _ReadDone(buffers);
+                _ReadTask = _Reader.Read().GetAwaiter();
             }
             PinionCore.Remote.Packages.RequestPackage pkg;
             while (_ExternalRequests.TryDequeue(out pkg))

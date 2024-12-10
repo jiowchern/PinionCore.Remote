@@ -1,5 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Security.Cryptography;
+using PinionCore.Extensions;
 using PinionCore.Remote;
 namespace PinionCore.Network
 {
@@ -33,13 +36,16 @@ namespace PinionCore.Network
         }
         readonly System.Collections.Generic.Queue<Waiter> _Waiters;
         private readonly System.Collections.Generic.Queue<BufferSegment> _Segments;
-
-
+   
         
         public BufferRelay()
         {
+            
+            
             _Waiters = new Queue<Waiter>();
             _Segments = new System.Collections.Generic.Queue<BufferSegment>();
+
+
         }
 
         public IWaitableValue<int> Push(byte[] buffer, int offset, int count)
@@ -48,14 +54,7 @@ namespace PinionCore.Network
             {
                 _Segments.Enqueue(new BufferSegment(buffer, offset, count));
             }
-            var result = _ProcessWaiters(_Waiters, _Segments);
-            if (result != null)
-            {
-                System.Threading.Tasks.Task.Run(() => {
-                    result.Item1.SyncWait.Value.SetValue(result.Item2);
-                });
-            }
-                
+            _Digestion();
             return new NoWaitValue<int>(count);
         }
 
@@ -64,15 +63,10 @@ namespace PinionCore.Network
             var waiter = new Waiter() { SyncWait = new NoWaitValue<int>(), Buffer = new ArraySegment<byte>(buffer, offset, count) };
             lock (_Waiters)
             {
+
                 _Waiters.Enqueue(waiter);
             }
-            var result = _ProcessWaiters(_Waiters, _Segments);
-            if(result != null && result.Item1 == waiter)
-            {
-                
-                return result.Item2.ToWaitableValue();
-            }
-                
+            _Digestion();
             return waiter.SyncWait;
         }
         public bool HasPendingSegments()
@@ -80,6 +74,17 @@ namespace PinionCore.Network
             lock (_Segments)
             {
                 return _Segments.Count > 0;
+            }
+        }
+
+        void _Digestion()
+        {
+            var waiter = _ProcessWaiters(_Waiters, _Segments);
+            if (waiter != null)
+            {
+                
+                
+                waiter.Item1.SyncWait.Value.SetValue(waiter.Item2);
             }
         }
         private Tuple<Waiter,int> _ProcessWaiters(Queue<Waiter> waiters, Queue<BufferSegment> buffers)
@@ -101,6 +106,7 @@ namespace PinionCore.Network
 
 
         }
+        
 
         private int _ProcessQueue(System.Collections.Generic.Queue<BufferSegment> queue, byte[] buffer, int offset, int count)
         {
@@ -120,7 +126,7 @@ namespace PinionCore.Network
 
                 if (segment.Length == 0)
                 {
-                    // 从队列中移除已消费的缓冲区并归还到池中
+                    // 从队列中移除已消费的缓冲区并归还到池中                    
                     queue.Dequeue();
                     //_BufferPool.Return(segment.Buffer);
                 }

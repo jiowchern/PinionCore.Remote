@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using PinionCore.Memorys;
 using PinionCore.Network;
@@ -17,7 +18,7 @@ namespace PinionCore.Remote.Ghost
 
 
         private readonly System.Collections.Concurrent.ConcurrentBag<System.Exception> _Exceptions;
-        private Task<List<Memorys.Buffer>> _ReadTask;
+        private TaskAwaiter<List<Memorys.Buffer>> _ReadTask;
 
         public event System.Action<System.Exception> ErrorEvent;
         public GhostSerializer(PinionCore.Network.PackageReader reader, PackageSender sender, IInternalSerializable serializable)
@@ -67,7 +68,7 @@ namespace PinionCore.Remote.Ghost
         {
             PinionCore.Utility.Log.Instance.WriteInfoImmediate("Agent online enter.");
             //Singleton<Log>.Instance.WriteInfo("Agent online enter.");
-            _ReadTask = _Reader.Read();
+            _ReadTask = _Reader.Read().GetAwaiter();
         }
 
         public void Stop()
@@ -93,12 +94,8 @@ namespace PinionCore.Remote.Ghost
 
             if(_ReadTask.IsCompleted)
             {
-                if(_ReadTask.Result != null)
-                {
-                    _ReadDone(_ReadTask.Result);
-                }
-                
-                _ReadTask = _Reader.Read();
+                _ReadDone(_ReadTask.GetResult());
+                _ReadTask = _Reader.Read().GetAwaiter();
             }
             _Process();
         }

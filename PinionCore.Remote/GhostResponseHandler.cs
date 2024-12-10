@@ -34,8 +34,6 @@ namespace PinionCore.Remote
         }
         public void UpdateSetProperty(int property, byte[] payload)
         {
-
-
             MemberMap map = _MemberMap;
             PropertyInfo info = map.GetProperty(property);
             var value = _Serializer.Deserialize(info.DeclaringType, payload.AsBuffer());
@@ -52,7 +50,7 @@ namespace PinionCore.Remote
             }
 
             var filedValue = field.GetValue(instance);
-            var updateable = filedValue as IAccessable;
+            var updateable = filedValue as IAccessable;            
             updateable.Set(value);
         }
 

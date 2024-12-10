@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using System.Net;
 using PinionCore.Network.Tcp;
+using PinionCore.Network.Web;
 using PinionCore.Remote.Standalone;
 
 namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
@@ -20,10 +21,33 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
             IProtocol protocol = PinionCore.Remote.Protocol.ProtocolProvider.Create(typeof(T2).Assembly).Single();
             var ser = new PinionCore.Remote.Serializer(protocol.SerializeTypes);
             var internalSer = new PinionCore.Remote.InternalSerializer();
+            #region standalone
+            var service = PinionCore.Remote.Standalone.Provider.CreateService(entry, protocol, ser, Memorys.PoolProvider.Shared);
 
-            //var service = PinionCore.Remote.Standalone.Provider.CreateService(entry, protocol, ser, Memorys.PoolProvider.Shared);
-            //var agent = service.Create();
-            var port= PinionCore.Network.Tcp.Tools.GetAvailablePort();
+            
+            var agent = service.Create();
+            
+            var updateMessage = new ThreadUpdater(() => {
+                //stream.Receive.Digestion();
+                agent.HandleMessage();
+            });
+
+            var updatePacket = new ThreadUpdater(() => {
+                //stream.Send.Digestion();
+                agent.HandlePackets();
+            });
+            _Dispose = () =>
+            {
+                Entry.Dispose();
+                updateMessage.Stop();
+                updatePacket.Stop();
+                service.Destroy(agent);
+                service.Dispose();
+            };
+            #endregion
+            /*
+            #region tcp
+            var port = PinionCore.Network.Tcp.Tools.GetAvailablePort();
             var service = PinionCore.Remote.Server.Provider.CreateTcpService(entry, protocol);
             service.Listener.Bind(port);
             
@@ -33,7 +57,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
             if(peer == null)
                 throw new System.Exception("Connection failed");
 
-            Queryable = agent;
+            
             agent.Enable(peer);
             var updateMessage = new ThreadUpdater(() => {
                 agent.HandleMessage();
@@ -53,16 +77,9 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
                 service.Listener.Close();
                 client.Connector.Disconnect();
             };
-
-            /*_Dispose = () =>
-            {
-                Entry.Dispose();
-                updateMessage.Stop();
-                updatePacket.Stop();
-                service.Destroy(agent);
-                service.Dispose();
-            };*/
-
+            #endregion*/
+            
+            Queryable = agent;
             updatePacket.Start();
             updateMessage.Start();
         }

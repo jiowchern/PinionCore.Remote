@@ -6,9 +6,10 @@ namespace PinionCore.Network
     public class NoWaitValue<T> : IWaitableValue<T>, IAwaitable<T>
     {
         public readonly PinionCore.Remote.Value<T> Value;
-
+        int _InvokeCount;
         public NoWaitValue()
         {
+            _InvokeCount = 0;
             Value = new Remote.Value<T>();
         }
         public NoWaitValue(T val)
@@ -43,8 +44,22 @@ namespace PinionCore.Network
 
         void INotifyCompletion.OnCompleted(Action continuation)
         {
+            
+            void Handler(T v)
+            {
+                var count = System.Threading.Interlocked.Increment(ref _InvokeCount);
+                if (count > 1)
+                {
+                    System.Console.WriteLine($" INotifyCompletion.OnCompleted:{count}");
+                    return;
+                }
 
-            Value.OnValue +=(v)=> continuation?.Invoke();
+                Value.OnValue -= Handler;
+
+                continuation?.Invoke();
+                
+            }
+            Value.OnValue += Handler;
         }
     }
 }

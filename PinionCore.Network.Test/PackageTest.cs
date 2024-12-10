@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using PinionCore.Remote;
 using PinionCore.Serialization;
 
 
@@ -17,8 +18,15 @@ namespace PinionCore.Network.Tests
             var serializer = new PinionCore.Serialization.Serializer(new DescriberBuilder(typeof(int), typeof(string), typeof(char[]), typeof(byte), typeof(byte[]), typeof(byte[][]), typeof(char), typeof(Guid), typeof(TestStruct)).Describers, PinionCore.Memorys.PoolProvider.DirectShared);
 
             var sendStream = new Stream();
+            
             var readStream = new PinionCore.Network.ReverseStream(sendStream);
 
+            var tu = new ThreadUpdater(() =>
+            {
+                //sendStream.Receive.Digestion();
+               // sendStream.Send.Digestion();
+            });
+            tu.Start();
 
             var sender = new PinionCore.Network.PackageSender(sendStream, PinionCore.Memorys.PoolProvider.Shared);
             var testStruct = new TestStruct();
@@ -33,14 +41,14 @@ namespace PinionCore.Network.Tests
 
 
 
-            System.Collections.Generic.List<Memorys.Buffer> buffers = await reader.Read();
+            System.Collections.Generic.List<Memorys.Buffer> buffers = reader.Read().GetAwaiter().GetResult();
             Memorys.Buffer buffer = buffers.Single();
 
 
             var readStruct = (TestStruct)serializer.BufferToObject(buffer);
             NUnit.Framework.Assert.AreEqual(testStruct.A, readStruct.A);
 
-
+            tu.Stop();
         }
 
         [NUnit.Framework.Test]
