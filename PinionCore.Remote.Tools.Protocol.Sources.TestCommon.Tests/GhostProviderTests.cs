@@ -40,7 +40,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
                 package.ReturnType = false;
 
                 providerExchange.Request(ServerToClientOpCode.LoadSoul, iniers.Serialize(package));
-
+                provider.Update();
             }
 
             {
@@ -49,6 +49,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
                 package.EntityId = 1;
                 package.ReturnId = 0;
                 providerExchange.Request(ServerToClientOpCode.LoadSoulCompile, iniers.Serialize(package));
+                provider.Update();
             }
 
 
@@ -61,7 +62,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
                 package.EntityId = 2;
                 package.ReturnType = true;
                 providerExchange.Request(ServerToClientOpCode.LoadSoul, iniers.Serialize(package));
-
+                provider.Update();
             }
 
             {
@@ -70,6 +71,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
                 package.EntityId = 2;
                 package.ReturnId = 1;
                 providerExchange.Request(ServerToClientOpCode.LoadSoulCompile, iniers.Serialize(package));
+                provider.Update();
             }
 
             {
@@ -77,6 +79,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
                 package.EntityId = 1;
 
                 providerExchange.Request(ServerToClientOpCode.UnloadSoul, iniers.Serialize(package));
+                provider.Update();
             }
 
 
@@ -84,6 +87,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
 
             {
                 providerExchange.Request(ServerToClientOpCode.Ping, iniers.Serialize(new byte[0]));
+                provider.Update();
             }
 
 

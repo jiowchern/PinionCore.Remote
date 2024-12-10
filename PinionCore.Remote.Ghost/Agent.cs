@@ -16,8 +16,9 @@ namespace PinionCore.Remote.Ghost
         private readonly IPool _Pool;
         private readonly IInternalSerializable _InternalSerializer;
 
+        private System.Action _GhostProviderUpdater;
         private System.Action _GhostSerializerUpdater;
-        private System.Action _GhostSerializerStop;
+        private System.Action _Disables;
         private float _Ping
         {
             get { return _GhostProvider.Ping; }
@@ -31,15 +32,20 @@ namespace PinionCore.Remote.Ghost
 
             _GhostProvider = new GhostProviderQueryer(protocol, serializable, internal_serializable, _GhostsOwner);
             _GhostSerializerUpdater = () => { };
-            _GhostSerializerStop = () => { };
+            _GhostProviderUpdater = () => { };
+            _Disables = () => { };
             
             _ExceptionEvent += (e) => { };
         }
 
-        void IAgent.Update()
+        void IAgent.HandlePackets()
         {
             _GhostSerializerUpdater();
 
+        }
+        void IAgent.HandleMessage()
+        {
+            _GhostProviderUpdater();
         }
 
         public void Enable(IStreamable streamable)
@@ -53,15 +59,21 @@ namespace PinionCore.Remote.Ghost
             serverExchangeable.ResponseEvent += clientExchangeable.Request;
             clientExchangeable.ResponseEvent += serverExchangeable.Request;
 
-            _GhostSerializerStop =
+            _Disables =
             () =>
             {
+                _GhostProviderUpdater = () => { };
+                _GhostSerializerUpdater = () => { };
                 var senderDispose = sender as IDisposable;
                 senderDispose.Dispose();
                 ghostSerializer.ErrorEvent -= _ExceptionEvent;
                 ghostSerializer.Stop();
+                
                 serverExchangeable.ResponseEvent -= clientExchangeable.Request;
                 clientExchangeable.ResponseEvent -= serverExchangeable.Request;
+
+                _GhostsOwner.ClearProviders();
+                _GhostProvider.Stop();
             };
 
             _GhostProvider.Start();
@@ -69,18 +81,18 @@ namespace PinionCore.Remote.Ghost
 
 
             _GhostSerializerUpdater = ghostSerializer.Update;
+            _GhostProviderUpdater = _GhostProvider.Update;
+
 
 
         }
         public void Disable()
         {
+           
 
-            _GhostSerializerUpdater = () => { };
-
-            _GhostSerializerStop();
-            _GhostSerializerStop = () => { };
-            _GhostsOwner.ClearProviders();
-            _GhostProvider.Stop();
+            _Disables();
+            _Disables = () => { };
+           
         }
         INotifier<T> INotifierQueryable.QueryNotifier<T>()
         {

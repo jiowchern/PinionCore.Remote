@@ -12,7 +12,8 @@ namespace PinionCore.Remote.Ghost
         event Action<string, string> ErrorMethodEvent;
         event Action<System.Exception> ExceptionEvent;
 
-        void Update();
+        void HandlePackets();
+        void HandleMessage();
         void Enable(IStreamable streamable);
         void Disable();
     }

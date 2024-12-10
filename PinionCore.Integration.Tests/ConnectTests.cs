@@ -47,7 +47,8 @@ namespace PinionCore.Integration.Tests
 
             while (!peerBreak)
             {
-                client.Agent.Update();
+                client.Agent.HandleMessage();
+                client.Agent.HandlePackets();
             }
 
 
@@ -85,7 +86,8 @@ namespace PinionCore.Integration.Tests
             {
                 while (!stop)
                 {
-                    client.Agent.Update();
+                    client.Agent.HandlePackets();
+                    client.Agent.HandleMessage();
                 }
 
             });

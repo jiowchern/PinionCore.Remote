@@ -32,7 +32,8 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
 
         private void _Update()
         {
-            _Agent.Update();
+            _Agent.HandlePackets();
+            _Agent.HandleMessage();
         }
 
         public void Dispose()

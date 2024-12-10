@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using PinionCore.Remote.ProviderHelper;
 
 namespace PinionCore.Remote
@@ -11,8 +12,8 @@ namespace PinionCore.Remote
         private readonly GhostsHandler _GhostManager;
         private readonly GhostsResponer _GhostsResponser;
         private readonly ClientExchangeable[] ClientExchangeables;
+        readonly System.Collections.Concurrent.ConcurrentQueue<Tuple<ServerToClientOpCode , PinionCore.Memorys.Buffer>> _Tuples;
 
-        
         public float Ping => _PingHandler.PingTime;
 
         public event Action<string, string> ErrorMethodEvent
@@ -31,6 +32,7 @@ namespace PinionCore.Remote
             IInternalSerializable internalSerializer,
             GhostsOwner ghosts_owner)
         {
+            _Tuples = new System.Collections.Concurrent.ConcurrentQueue<Tuple<ServerToClientOpCode, Memorys.Buffer>>();
             _PingHandler = new PingHandler();
 
             _ReturnValueHandler = new GhostsReturnValueHandler(serializer);
@@ -75,7 +77,19 @@ namespace PinionCore.Remote
             }
 
         }
-
+        public void Update()
+        {
+            while (_Tuples.TryDequeue(out Tuple<ServerToClientOpCode, Memorys.Buffer> tuple))
+            {
+                var code = tuple.Item1;
+                var args = tuple.Item2;
+                foreach (ClientExchangeable exchangeable in ClientExchangeables)
+                {
+                    exchangeable.Request(code, args);
+                }
+                _GhostsResponser.OnResponse(code, args);                
+            }
+        }
         public void Stop()
         {
             foreach (ClientExchangeable exchangeable in ClientExchangeables)
@@ -94,11 +108,8 @@ namespace PinionCore.Remote
         {
             try
             {
-                foreach (ClientExchangeable exchangeable in ClientExchangeables)
-                {
-                    exchangeable.Request(code, args);
-                }
-                _GhostsResponser.OnResponse(code, args);
+                _Tuples.Enqueue(new Tuple<ServerToClientOpCode, Memorys.Buffer>(code, args));
+                
             }
             catch (Exception e)
             {

@@ -79,7 +79,8 @@ namespace PinionCore.Profiles.StandaloneAllFeature.Console
                     long sleepCount = 0;
                     while (enable)
                     {
-                        agent.Update();
+                        agent.HandlePackets();
+                        agent.HandleMessage();
                         var sw = Stopwatch.StartNew();
                         System.Threading.Tasks.Task.Delay(range).Wait();
                         sleepCount += sw.ElapsedTicks;
