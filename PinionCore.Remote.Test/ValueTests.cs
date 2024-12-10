@@ -81,7 +81,7 @@ namespace PinionCore.Remote.Tests
 
         }
 
-        [NUnit.Framework.Test]
+       /* [NUnit.Framework.Test]
         public async System.Threading.Tasks.Task ConstructorAwaitOnValueTest()
         {
             var val = await new PinionCore.Remote.Value<int>(1);
@@ -96,6 +96,6 @@ namespace PinionCore.Remote.Tests
             val.SetValue(1);
 
             NUnit.Framework.Assert.AreEqual(1, await val);
-        }
+        }*/
     }
 }

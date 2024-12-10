@@ -1,15 +1,17 @@
 ﻿using System.Linq;
+using System.Net;
+using PinionCore.Network.Tcp;
 using PinionCore.Remote.Standalone;
 
 namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
 {
     public class TestEnv<T, T2> where T : PinionCore.Remote.IEntry, System.IDisposable
     {
-        readonly ThreadUpdater _AgentUpdater;
-        readonly Service _Service;
-        readonly Ghost.IAgent _Agent;
+        
         public readonly INotifierQueryable Queryable;
         public readonly T Entry;
+
+        System.Action _Dispose;
 
         public TestEnv(T entry)
         {
@@ -19,30 +21,59 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
             var ser = new PinionCore.Remote.Serializer(protocol.SerializeTypes);
             var internalSer = new PinionCore.Remote.InternalSerializer();
 
-            _Service = PinionCore.Remote.Standalone.Provider.CreateService(entry, protocol, ser, Memorys.PoolProvider.Shared);
+            //var service = PinionCore.Remote.Standalone.Provider.CreateService(entry, protocol, ser, Memorys.PoolProvider.Shared);
+            //var agent = service.Create();
+            var port= PinionCore.Network.Tcp.Tools.GetAvailablePort();
+            var service = PinionCore.Remote.Server.Provider.CreateTcpService(entry, protocol);
+            service.Listener.Bind(port);
+            
+            var client = PinionCore.Remote.Client.Provider.CreateTcpAgent(protocol);
+            var agent = client.Agent;
+            var peer = client.Connector.Connect(new IPEndPoint(IPAddress.Loopback, port)).GetAwaiter().GetResult();
+            if(peer == null)
+                throw new System.Exception("Connection failed");
 
-            _Agent = _Service.Create();
+            Queryable = agent;
+            agent.Enable(peer);
+            var updateMessage = new ThreadUpdater(() => {
+                agent.HandleMessage();
+            });
 
-            Queryable = _Agent;
+            var updatePacket = new ThreadUpdater(() => {
+                agent.HandlePackets();
+            });
 
+            _Dispose = () =>
+            {
+                agent.Disable();
+                service.Service.Dispose();
+                Entry.Dispose();
+                updateMessage.Stop();
+                updatePacket.Stop();
+                service.Listener.Close();
+                client.Connector.Disconnect();
+            };
 
-            _AgentUpdater = new ThreadUpdater(_Update);
-            _AgentUpdater.Start();
+            /*_Dispose = () =>
+            {
+                Entry.Dispose();
+                updateMessage.Stop();
+                updatePacket.Stop();
+                service.Destroy(agent);
+                service.Dispose();
+            };*/
+
+            updatePacket.Start();
+            updateMessage.Start();
         }
 
-        private void _Update()
-        {
-            _Agent.HandlePackets();
-            _Agent.HandleMessage();
-        }
+
+
 
         public void Dispose()
         {
-
-            Entry.Dispose();
-            _AgentUpdater.Stop();
-            _Service.Destroy(_Agent);
-            _Service.Dispose();
+            _Dispose();
+            
 
         }
     }

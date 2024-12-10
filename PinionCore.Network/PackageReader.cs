@@ -2,10 +2,52 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using PinionCore.Memorys;
 using PinionCore.Remote;
 
 namespace PinionCore.Network
 {
+    public class _PackageReader
+    {
+        private readonly IStreamable _Stream;
+        private readonly PinionCore.Memorys.IPool _Pool;
+        public _PackageReader(IStreamable stream, PinionCore.Memorys.IPool pool)
+        {
+            _Stream = stream;
+            _Pool = pool;
+        }
+        public async Task<List<PinionCore.Memorys.Buffer>> Read()
+        {
+            var headByte = new byte[1];
+            var headBuffer = new System.Collections.Generic.List<byte>();
+            do
+            {
+                var readed = await _Stream.Receive(headByte, 0, 1);
+                if (readed == 0)
+                    return new List<PinionCore.Memorys.Buffer>();
+                headBuffer.Add(headByte[0]);
+            }while (headByte[0] > PinionCore.Serialization.Varint.Endian) ;
+
+            PinionCore.Serialization.Varint.BufferToNumber(headBuffer.ToArray(),0, out int bodySize);
+            var body = new byte[bodySize];
+            int offset = 0;
+            while (offset < bodySize)
+            {
+                var readed = await _Stream.Receive(body, offset, bodySize - offset);
+                if (readed == 0)
+                    return new List<PinionCore.Memorys.Buffer>();
+                offset += readed;
+            }
+            var buffer = _Pool.Alloc(bodySize);
+            for (var i = 0; i < bodySize; i++)
+            {
+                buffer[i] = body[i];
+            }
+            return new List<PinionCore.Memorys.Buffer> { buffer };
+
+
+        }
+    }
     public class PackageReader
     {
         private readonly IStreamable _Stream;

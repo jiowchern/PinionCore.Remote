@@ -48,7 +48,14 @@ namespace PinionCore.Network
             {
                 _Segments.Enqueue(new BufferSegment(buffer, offset, count));
             }
-            _ProcessWaiters(_Waiters, _Segments);
+            var result = _ProcessWaiters(_Waiters, _Segments);
+            if (result != null)
+            {
+                System.Threading.Tasks.Task.Run(() => {
+                    result.Item1.SyncWait.Value.SetValue(result.Item2);
+                });
+            }
+                
             return new NoWaitValue<int>(count);
         }
 
@@ -58,8 +65,14 @@ namespace PinionCore.Network
             lock (_Waiters)
             {
                 _Waiters.Enqueue(waiter);
-            }            
-            _ProcessWaiters(_Waiters, _Segments);
+            }
+            var result = _ProcessWaiters(_Waiters, _Segments);
+            if(result != null && result.Item1 == waiter)
+            {
+                
+                return result.Item2.ToWaitableValue();
+            }
+                
             return waiter.SyncWait;
         }
         public bool HasPendingSegments()
@@ -69,7 +82,7 @@ namespace PinionCore.Network
                 return _Segments.Count > 0;
             }
         }
-        private bool _ProcessWaiters(Queue<Waiter> waiters, Queue<BufferSegment> buffers)
+        private Tuple<Waiter,int> _ProcessWaiters(Queue<Waiter> waiters, Queue<BufferSegment> buffers)
         {
             lock (waiters)
             {
@@ -77,12 +90,12 @@ namespace PinionCore.Network
                 {
                     if (waiters.Count == 0 || buffers.Count == 0)
                     {
-                        return false;
+                        return null;
                     }
                     var waiter = waiters.Dequeue();
                     var count = _ProcessQueue(buffers, waiter.Buffer.Array, waiter.Buffer.Offset, waiter.Buffer.Count);
-                    waiter.SyncWait.Value.SetValue(count);
-                    return true;
+                    
+                    return new Tuple<Waiter, int>(waiter, count);
                 }
             }
 

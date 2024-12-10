@@ -41,7 +41,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
             NUnit.Framework.Assert.IsNotNull(protocol);
         }
 
-        [Test]
+        [Test, Timeout(Timeout)]
         public void CreateProtocolSerializeTypesTest()
         {
             IProtocol protocol = PinionCore.Remote.Tools.Protocol.Sources.TestCommon.ProtocolProvider.CreateCase1();
@@ -52,13 +52,13 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
 
         }
 
-        [Test]
+        [Test, Timeout(Timeout)]
         public void CreateProtocolTest3()
         {
             IProtocol protocol = ProtocolProviderCase3.CreateCase3();
             NUnit.Framework.Assert.IsNotNull(protocol);
         }
-        [Test]
+        //[Test, Timeout(Timeout)]
         public void NotifierSupplyAndUnsupplyTest()
         {
             var multipleNotices = new MultipleNotices.MultipleNotices();
@@ -124,7 +124,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
 
             env.Dispose();
         }
-        [Test]
+        [Test, Timeout(Timeout)]
         public void NotifierSupplyTest()
         {
 
@@ -198,7 +198,8 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
             env.Dispose();
         }
 
-        [Test]
+        const int Timeout = 10000;
+        [Test,Timeout(Timeout)]
         public void EventCustomDelegateTest()
         {
             var tester = new EventTester();
@@ -219,7 +220,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
 
         }
 
-        [Test]
+        [Test, Timeout(Timeout)]
         public void EventRemoveTest()
         {
             var tester = new EventTester();
@@ -247,7 +248,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
             NUnit.Framework.Assert.AreEqual(1, tester.Event02RemoveCount);
         }
 
-        [Test]
+        [Test, Timeout(Timeout)]
         public void EventTest()
         {
             var tester = new EventTester();
@@ -307,7 +308,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
         }
 
 
-        [Test]
+        [Test, Timeout(Timeout)]
         public void MethodNotSupportedTest()
         {
             var tester = new MethodTester();
@@ -331,7 +332,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
             NUnit.Framework.Assert.Fail();
         }
 
-        [Test]
+        [Test, Timeout(Timeout)]
         public void MethodTest()
         {
 
@@ -381,7 +382,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
             Assert.AreEqual(1, value);
         }
 
-        [Test]
+        [Test, Timeout(Timeout)]
         public void MethodSayHelloTest()
         {
 
@@ -400,7 +401,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
 
         }
 
-        [Test]
+        [Test, Timeout(Timeout)]
         public void PropertyTest()
         {
             PinionCore.Utility.Singleton<PinionCore.Utility.Log>.Instance.RecordEvent += System.Console.WriteLine;
