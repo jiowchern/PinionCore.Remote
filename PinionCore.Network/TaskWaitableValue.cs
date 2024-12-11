@@ -43,17 +43,5 @@ namespace PinionCore.Network
             _Task.GetAwaiter().OnCompleted(continuation);
         }
 
-        event Action<T> IWaitableValue<T>.ValueEvent
-        {
-            add
-            {
-                _Value.OnValue += value;
-            }
-
-            remove
-            {
-                _Value.OnValue -= value;
-            }
-        }
     }
 }

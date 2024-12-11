@@ -81,7 +81,7 @@ namespace PinionCore.Network
             {
 
 
-                waiter.Item1.SyncWait.Value.SetValue(waiter.Item2);
+                waiter.Item1.SyncWait.SetValue(waiter.Item2);
             }
         }
         private Tuple<Waiter, int> _ProcessWaiters(Queue<Waiter> waiters, Queue<BufferSegment> buffers)
