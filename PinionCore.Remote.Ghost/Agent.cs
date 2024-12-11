@@ -2,7 +2,6 @@
 using PinionCore.Memorys;
 using PinionCore.Network;
 using PinionCore.Remote.ProviderHelper;
-using PinionCore.Utility;
 
 
 
@@ -34,7 +33,7 @@ namespace PinionCore.Remote.Ghost
             _GhostSerializerUpdater = () => { };
             _GhostProviderUpdater = () => { };
             _Disables = () => { };
-            
+
             _ExceptionEvent += (e) => { };
         }
 
@@ -68,7 +67,7 @@ namespace PinionCore.Remote.Ghost
                 senderDispose.Dispose();
                 ghostSerializer.ErrorEvent -= _ExceptionEvent;
                 ghostSerializer.Stop();
-                
+
                 serverExchangeable.ResponseEvent -= clientExchangeable.Request;
                 clientExchangeable.ResponseEvent -= serverExchangeable.Request;
 
@@ -88,11 +87,11 @@ namespace PinionCore.Remote.Ghost
         }
         public void Disable()
         {
-           
+
 
             _Disables();
             _Disables = () => { };
-           
+
         }
         INotifier<T> INotifierQueryable.QueryNotifier<T>()
         {
@@ -104,7 +103,7 @@ namespace PinionCore.Remote.Ghost
             get { return _Ping; }
         }
 
-        
+
         event Action<byte[], byte[]> IAgent.VersionCodeErrorEvent
         {
             add { _GhostProvider.VersionCodeErrorEvent += value; }

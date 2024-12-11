@@ -4,7 +4,7 @@ using PinionCore.Network;
 namespace PinionCore.Remote.Ghost
 {
     public interface IAgent : INotifierQueryable
-    {        
+    {
 
         float Ping { get; }
 

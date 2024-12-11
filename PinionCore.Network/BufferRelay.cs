@@ -1,8 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Security.Cryptography;
-using PinionCore.Extensions;
 using PinionCore.Remote;
 namespace PinionCore.Network
 {
@@ -36,12 +33,12 @@ namespace PinionCore.Network
         }
         readonly System.Collections.Generic.Queue<Waiter> _Waiters;
         private readonly System.Collections.Generic.Queue<BufferSegment> _Segments;
-   
-        
+
+
         public BufferRelay()
         {
-            
-            
+
+
             _Waiters = new Queue<Waiter>();
             _Segments = new System.Collections.Generic.Queue<BufferSegment>();
 
@@ -79,15 +76,15 @@ namespace PinionCore.Network
 
         void _Digestion()
         {
-            var waiter = _ProcessWaiters(_Waiters, _Segments);
+            Tuple<Waiter, int> waiter = _ProcessWaiters(_Waiters, _Segments);
             if (waiter != null)
             {
-                
-                
+
+
                 waiter.Item1.SyncWait.Value.SetValue(waiter.Item2);
             }
         }
-        private Tuple<Waiter,int> _ProcessWaiters(Queue<Waiter> waiters, Queue<BufferSegment> buffers)
+        private Tuple<Waiter, int> _ProcessWaiters(Queue<Waiter> waiters, Queue<BufferSegment> buffers)
         {
             lock (waiters)
             {
@@ -97,16 +94,16 @@ namespace PinionCore.Network
                     {
                         return null;
                     }
-                    var waiter = waiters.Dequeue();
+                    Waiter waiter = waiters.Dequeue();
                     var count = _ProcessQueue(buffers, waiter.Buffer.Array, waiter.Buffer.Offset, waiter.Buffer.Count);
-                    
+
                     return new Tuple<Waiter, int>(waiter, count);
                 }
             }
 
 
         }
-        
+
 
         private int _ProcessQueue(System.Collections.Generic.Queue<BufferSegment> queue, byte[] buffer, int offset, int count)
         {

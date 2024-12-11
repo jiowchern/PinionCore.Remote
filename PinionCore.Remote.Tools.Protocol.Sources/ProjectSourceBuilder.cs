@@ -16,8 +16,8 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
         {
             Compilation compilation = references.Compilation;
 
-            var symbols = compilation.FindAllInterfaceSymbol(references.Tag);
-            var souls = symbols.Select(symbol => symbol.ToInferredInterface());
+            IEnumerable<INamedTypeSymbol> symbols = compilation.FindAllInterfaceSymbol(references.Tag);
+            IEnumerable<InterfaceDeclarationSyntax> souls = symbols.Select(symbol => symbol.ToInferredInterface());
 
 
             var memberIdProvider = new MemberIdProvider(souls);

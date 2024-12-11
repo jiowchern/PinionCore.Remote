@@ -80,7 +80,7 @@
         private string GetInterfaceName(SyntaxNode memberSyntax)
         {
             // 自下而上尋找最近的 InterfaceDeclarationSyntax
-            var interfaceDecl = memberSyntax.Ancestors().OfType<InterfaceDeclarationSyntax>().FirstOrDefault();
+            InterfaceDeclarationSyntax interfaceDecl = memberSyntax.Ancestors().OfType<InterfaceDeclarationSyntax>().FirstOrDefault();
             if (interfaceDecl != null)
             {
                 return interfaceDecl.Identifier.Text;
@@ -91,7 +91,7 @@
         private string GetNamespaceName(SyntaxNode memberSyntax)
         {
             // 自下而上尋找 NamespaceDeclarationSyntax 或 FileScopedNamespaceDeclarationSyntax
-            var namespaceDecl = memberSyntax.Ancestors().OfType<NamespaceDeclarationSyntax>().FirstOrDefault();
+            NamespaceDeclarationSyntax namespaceDecl = memberSyntax.Ancestors().OfType<NamespaceDeclarationSyntax>().FirstOrDefault();
             if (namespaceDecl != null)
             {
                 return namespaceDecl.Name.ToString();

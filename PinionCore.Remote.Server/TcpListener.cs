@@ -17,8 +17,8 @@ namespace PinionCore.Remote.Server.Tcp
         {
 
             _NotifiableCollection = new NotifiableCollection<IStreamable>();
-            
-            
+
+
 
             DataReceivedEvent += (size) => { };
             DataSentEvent += (size) => { };
@@ -64,8 +64,8 @@ namespace PinionCore.Remote.Server.Tcp
             _Listener.AcceptEvent -= _Join;
             _Listener = null;
             lock (_NotifiableCollection)
-            {                
-                _NotifiableCollection.Items.Clear();                
+            {
+                _NotifiableCollection.Items.Clear();
             }
         }
 
@@ -79,7 +79,7 @@ namespace PinionCore.Remote.Server.Tcp
                     peer.SendEvent -= _Send;
                     _NotifiableCollection.Items.Remove(peer);
                 }
-                    
+
             };
 
             lock (_NotifiableCollection)
@@ -88,7 +88,7 @@ namespace PinionCore.Remote.Server.Tcp
                 peer.ReceiveEvent += _Receive;
                 _NotifiableCollection.Items.Add(peer);
             }
-                
+
         }
 
         private void _Send(int bytes)

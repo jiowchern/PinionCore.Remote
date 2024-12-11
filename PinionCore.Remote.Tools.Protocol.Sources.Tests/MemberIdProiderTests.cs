@@ -4,9 +4,6 @@ using Microsoft.CodeAnalysis.Text;
 namespace PinionCore.Remote.Tools.Protocol.Sources.Tests
 {
     using System.Collections.Generic;
-    using System.ComponentModel.DataAnnotations;
-    using System.Security.Cryptography;
-    using System.Xml.Linq;
     using Microsoft.CodeAnalysis.CSharp;
     using Microsoft.CodeAnalysis.CSharp.Syntax;
     using NUnit.Framework;
@@ -134,17 +131,17 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon
 }
 
 ";
-            var tree = Microsoft.CodeAnalysis.CSharp.SyntaxFactory.ParseSyntaxTree(SourceText.From(source));
+            Microsoft.CodeAnalysis.SyntaxTree tree = Microsoft.CodeAnalysis.CSharp.SyntaxFactory.ParseSyntaxTree(SourceText.From(source));
 
-            var gpis = tree.GetRoot().DescendantNodes().OfType<Microsoft.CodeAnalysis.CSharp.Syntax.InterfaceDeclarationSyntax>().ToArray();            
-            
+            InterfaceDeclarationSyntax[] gpis = tree.GetRoot().DescendantNodes().OfType<Microsoft.CodeAnalysis.CSharp.Syntax.InterfaceDeclarationSyntax>().ToArray();
+
             var memberIdProvider = new MemberIdProvider(gpis);
 
 
-            var interfaceInheritors = gpis.Select(g => new InterfaceInheritor(g)).ToArray();
+            InterfaceInheritor[] interfaceInheritors = gpis.Select(g => new InterfaceInheritor(g)).ToArray();
 
             var classs = new System.Collections.Generic.List<ClassDeclarationSyntax>();
-            foreach (var interfaceInheritor in interfaceInheritors)
+            foreach (InterfaceInheritor interfaceInheritor in interfaceInheritors)
             {
                 ClassDeclarationSyntax type = SyntaxFactory.ClassDeclaration(interfaceInheritor.Base.Identifier.Text + "Impl");
                 type = interfaceInheritor.Inherite(type);
@@ -152,8 +149,8 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon
             }
 
             var eventIdCount = new Dictionary<int, int>();
-            var classEvents = classs.SelectMany(c => c.DescendantNodes().OfType<EventDeclarationSyntax>());
-            foreach (var classEvent in classEvents)
+            IEnumerable<EventDeclarationSyntax> classEvents = classs.SelectMany(c => c.DescendantNodes().OfType<EventDeclarationSyntax>());
+            foreach (EventDeclarationSyntax classEvent in classEvents)
             {
                 var id = memberIdProvider.GetId(classEvent);
                 if (!eventIdCount.ContainsKey(id))
@@ -163,8 +160,8 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon
             }
 
             var memberCodeBuilder = new MemberMapCodeBuilder(gpis, memberIdProvider);
-            var events = memberCodeBuilder.GetEvent<EventFieldDeclarationSyntax>(gpis);
-            foreach (var @event in events)
+            IEnumerable<System.Tuple<InterfaceDeclarationSyntax, EventFieldDeclarationSyntax>> events = memberCodeBuilder.GetEvent<EventFieldDeclarationSyntax>(gpis);
+            foreach (System.Tuple<InterfaceDeclarationSyntax, EventFieldDeclarationSyntax> @event in events)
             {
                 var id = memberIdProvider.GetId(@event.Item2);
                 eventIdCount[id]--;
@@ -172,11 +169,11 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon
             }
 
 
-            foreach( var idcount in eventIdCount)
+            foreach (KeyValuePair<int, int> idcount in eventIdCount)
             {
                 NUnit.Framework.Assert.AreEqual(0, idcount.Value);
             }
         }
     }
-    
+
 }

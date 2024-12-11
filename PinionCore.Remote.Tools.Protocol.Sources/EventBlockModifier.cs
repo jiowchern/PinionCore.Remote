@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Linq;
+﻿using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -13,12 +12,12 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.BlockModifiers
     {
         private readonly Compilation _Compilation;
         private readonly MemberIdProvider MemberIdProvider_;
-        
-        public EventSystemAction(Compilation compilation , MemberIdProvider memberIdProvider)
+
+        public EventSystemAction(Compilation compilation, MemberIdProvider memberIdProvider)
         {
             this._Compilation = compilation;
             MemberIdProvider_ = memberIdProvider;
-        
+
         }
 
         public BlockAndEvent Mod(System.Collections.Generic.IEnumerable<SyntaxNode> nodes)
@@ -71,8 +70,8 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.BlockModifiers
                 ghostEventHandlerMethod = "Remove";
             }
 
-            
-            
+
+
             var eventId = MemberIdProvider_.GetId(ed);
 
 

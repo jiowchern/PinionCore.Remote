@@ -24,10 +24,10 @@ namespace PinionCore.Network.Tcp
         {
             Bind(port, 10);
         }
-        public void Bind(int Port , int backlog)
+        public void Bind(int Port, int backlog)
         {
             _Socket.Bind(new IPEndPoint(IPAddress.Any, Port));
-            
+
             _Socket.Listen(backlog);
             _Socket.BeginAccept(_Accept, state: null);
         }

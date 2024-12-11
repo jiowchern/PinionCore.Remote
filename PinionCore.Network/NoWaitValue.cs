@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using PinionCore.Remote;
 namespace PinionCore.Network
@@ -47,7 +46,7 @@ namespace PinionCore.Network
 
         void INotifyCompletion.OnCompleted(Action continuation)
         {
-            
+
             void Handler(T v)
             {
                 _Invokeds.Enqueue(v);
@@ -56,14 +55,14 @@ namespace PinionCore.Network
                 if (count > 1)
                 {
                     PinionCore.Utility.Log.Instance.WriteInfo($" INotifyCompletion.OnCompleted:{count} ");
-                    
+
                     throw new InvalidOperationException("INotifyCompletion.OnCompleted");
                 }
 
                 Value.OnValue -= Handler;
 
                 continuation?.Invoke();
-                
+
             }
             Value.OnValue += Handler;
         }

@@ -12,11 +12,11 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
     {
         public static SyntaxModifier Create(Compilation com)
         {
-            var symbols = com.FindAllInterfaceSymbol();
+            System.Collections.Generic.IEnumerable<INamedTypeSymbol> symbols = com.FindAllInterfaceSymbol();
             var memberIdProvider = new MemberIdProvider(symbols.Select(symbol => symbol.ToInferredInterface()));
             return Create(com, memberIdProvider);
         }
-        public static SyntaxModifier Create(Compilation com , MemberIdProvider memberIdProvider)
+        public static SyntaxModifier Create(Compilation com, MemberIdProvider memberIdProvider)
         {
             return new SyntaxModifier(
                     new BlockModifiers.MethodVoid(com),
@@ -138,7 +138,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
 
 
             return new ModResult
-            {                
+            {
                 Type = type,
                 TypesOfSerialization = typesOfSerialization,
                 UnprocessedBlocks = unprocessedBlocks.ToArray()

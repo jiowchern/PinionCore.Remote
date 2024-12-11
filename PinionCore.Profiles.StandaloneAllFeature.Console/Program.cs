@@ -16,20 +16,21 @@ namespace PinionCore.Profiles.StandaloneAllFeature.Console
 
 
 
-            var set = PinionCore.Remote.Server.Provider.CreateTcpService( entry, protocol);
+            Remote.Server.TcpListenSet set = PinionCore.Remote.Server.Provider.CreateTcpService(entry, protocol);
             var port = PinionCore.Network.Tcp.Tools.GetAvailablePort();
             set.Listener.Bind(port);
 
-            ProcessAgents( range, ()=>{
-                var clientSet = PinionCore.Remote.Client.Provider.CreateTcpAgent(PinionCore.Profiles.StandaloneAllFeature.Protocols.ProtocolProvider.Create());
+            ProcessAgents(range, () =>
+            {
+                Remote.Client.TcpConnectSet clientSet = PinionCore.Remote.Client.Provider.CreateTcpAgent(PinionCore.Profiles.StandaloneAllFeature.Protocols.ProtocolProvider.Create());
 
-                var w = clientSet.Connector.Connect(new System.Net.IPEndPoint(System.Net.IPAddress.Loopback, port)).GetAwaiter();
-                var peer = w.GetResult();
+                System.Runtime.CompilerServices.TaskAwaiter<Network.Tcp.Peer> w = clientSet.Connector.Connect(new System.Net.IPEndPoint(System.Net.IPAddress.Loopback, port)).GetAwaiter();
+                Network.Tcp.Peer peer = w.GetResult();
                 clientSet.Agent.Enable(peer);
                 return clientSet.Agent;
             });
             set.Service.Dispose();
-            
+
 
 
             Remote.Standalone.Service service = PinionCore.Remote.Standalone.Provider.CreateService(entry, protocol);

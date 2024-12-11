@@ -1,5 +1,4 @@
 ﻿using System.Linq;
-using NUnit.Framework;
 
 namespace PinionCore.Network.Tests
 {
@@ -100,6 +99,6 @@ namespace PinionCore.Network.Tests
             NUnit.Framework.Assert.AreEqual(true, breakEvent);
         }
 
-        
+
     }
 }

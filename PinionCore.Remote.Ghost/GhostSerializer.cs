@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Threading.Tasks;
 using PinionCore.Memorys;
 using PinionCore.Network;
 using PinionCore.Utility;
@@ -23,7 +22,7 @@ namespace PinionCore.Remote.Ghost
         public event System.Action<System.Exception> ErrorEvent;
         public GhostSerializer(PinionCore.Network.PackageReader reader, PackageSender sender, IInternalSerializable serializable)
         {
-            
+
             _Exceptions = new System.Collections.Concurrent.ConcurrentBag<Exception>();
             _Reader = reader;
             _Sender = sender;
@@ -92,7 +91,7 @@ namespace PinionCore.Remote.Ghost
                 return;
             }
 
-            if(_ReadTask.IsCompleted)
+            if (_ReadTask.IsCompleted)
             {
                 _ReadDone(_ReadTask.GetResult());
                 _ReadTask = _Reader.Read().GetAwaiter();
@@ -110,7 +109,7 @@ namespace PinionCore.Remote.Ghost
             }
         }
 
-        
+
 
         private void _ReadDone(List<Memorys.Buffer> buffers)
         {

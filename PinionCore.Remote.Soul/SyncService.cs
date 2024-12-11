@@ -38,7 +38,8 @@ namespace PinionCore.Remote.Soul
 
             foreach (Advanceable user in _UserProvider.Users.Values)
             {
-                try {
+                try
+                {
                     user.Advance();
                 }
                 catch (Exception e)

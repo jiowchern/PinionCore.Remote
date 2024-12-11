@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Threading.Tasks;
 using PinionCore.Memorys;
 
 
@@ -37,7 +36,7 @@ namespace PinionCore.Remote.Soul
         private readonly System.Collections.Concurrent.ConcurrentQueue<PinionCore.Remote.Packages.RequestPackage> _ExternalRequests;
 
         private readonly IResponseQueue _ResponseQueue;
-        
+
         private readonly IInternalSerializable _InternalSerializer;
         private TaskAwaiter<List<Memorys.Buffer>> _ReadTask;
 
@@ -65,7 +64,7 @@ namespace PinionCore.Remote.Soul
             _ResponseQueue = this;
 
 
-            
+
         }
 
         void _Launch()
@@ -78,7 +77,7 @@ namespace PinionCore.Remote.Soul
             _ResponseQueue.Push(ServerToClientOpCode.ProtocolSubmit, buf);
         }
 
-        
+
 
 
         private void _ReadDone(List<PinionCore.Memorys.Buffer> buffers)
@@ -202,21 +201,22 @@ namespace PinionCore.Remote.Soul
             if (_ReadTask.IsCompleted)
             {
 
-                var buffers = _ReadTask.GetResult();
+                List<Memorys.Buffer> buffers = _ReadTask.GetResult();
                 _ReadDone(buffers);
                 _ReadTask = _Reader.Read().GetAwaiter();
             }
             PinionCore.Remote.Packages.RequestPackage pkg;
             while (_ExternalRequests.TryDequeue(out pkg))
             {
-                try {
+                try
+                {
                     _ExternalRequest(pkg);
                 }
                 catch (Exception e)
                 {
                     throw new Exception($"User _ExternalRequest error {e.ToString()}. pkgCode:{pkg.Code}");
                 }
-                
+
             }
         }
     }

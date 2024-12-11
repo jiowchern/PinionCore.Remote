@@ -1,5 +1,4 @@
-﻿using System;
-using PinionCore.Remote.Packages;
+﻿using PinionCore.Remote.Packages;
 
 namespace PinionCore.Remote
 {
@@ -34,7 +33,7 @@ namespace PinionCore.Remote
             public void OnResponse(ServerToClientOpCode code, PinionCore.Memorys.Buffer args)
             {
                 _GhostHandler.UpdateAutoRelease();
-               
+
                 switch (code)
                 {
                     case ServerToClientOpCode.Ping:
@@ -117,7 +116,7 @@ namespace PinionCore.Remote
 
             private void ProtocolSubmit(PackageProtocolSubmit data)
             {
-                
+
                 if (Comparison(_Protocol.VersionCode, data.VersionCode))
                 {
                     _PingHandler.HandlePingResponse();

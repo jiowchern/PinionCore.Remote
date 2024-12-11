@@ -38,14 +38,14 @@ namespace PinionCore.Remote
             {
                 throw new Exception($"AddEvent Soul not found entity_id:{entityId}");
             }
-                
+
 
             EventInfo eventInfo = _Protocol.GetMemberMap().GetEvent(eventId);
             if (eventInfo == null || !soul.Is(eventInfo.DeclaringType))
             {
                 throw new Exception($"AddEvent Event not found event_id:{eventId}");
             }
-                
+
 
             Delegate del = _BuildDelegate(eventId, soul.Id, handlerId, _InvokeEvent);
             var handler = new SoulProxyEventHandler(soul.ObjectInstance, del, eventInfo, handlerId);
@@ -80,10 +80,10 @@ namespace PinionCore.Remote
         private Delegate _BuildDelegate(int event_id, long entityId, long handlerId, InvokeEventCallabck invokeEvent)
         {
             MemberMap map = _Protocol.GetMemberMap();
-            var info = map.GetEvent(event_id);
+            EventInfo info = map.GetEvent(event_id);
             IEventProxyCreater eventCreator = _EventProvider.Find(info);
-            
-            
+
+
             return eventCreator.Create(entityId, event_id, handlerId, invokeEvent);
         }
     }

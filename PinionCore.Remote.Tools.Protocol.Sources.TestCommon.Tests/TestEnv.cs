@@ -1,18 +1,15 @@
 ﻿using System.Linq;
-using System.Net;
-using PinionCore.Network.Tcp;
-using PinionCore.Network.Web;
 using PinionCore.Remote.Standalone;
 
 namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
 {
     public class TestEnv<T, T2> where T : PinionCore.Remote.IEntry, System.IDisposable
     {
-        
+
         public readonly INotifierQueryable Queryable;
         public readonly T Entry;
 
-        System.Action _Dispose;
+        readonly System.Action _Dispose;
 
         public TestEnv(T entry)
         {
@@ -22,17 +19,19 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
             var ser = new PinionCore.Remote.Serializer(protocol.SerializeTypes);
             var internalSer = new PinionCore.Remote.InternalSerializer();
             #region standalone
-            var service = PinionCore.Remote.Standalone.Provider.CreateService(entry, protocol, ser, Memorys.PoolProvider.Shared);
+            Service service = PinionCore.Remote.Standalone.Provider.CreateService(entry, protocol, ser, Memorys.PoolProvider.Shared);
 
-            
-            var agent = service.Create();
-            
-            var updateMessage = new ThreadUpdater(() => {
+
+            Ghost.IAgent agent = service.Create();
+
+            var updateMessage = new ThreadUpdater(() =>
+            {
                 //stream.Receive.Digestion();
                 agent.HandleMessage();
             });
 
-            var updatePacket = new ThreadUpdater(() => {
+            var updatePacket = new ThreadUpdater(() =>
+            {
                 //stream.Send.Digestion();
                 agent.HandlePackets();
             });
@@ -78,7 +77,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
                 client.Connector.Disconnect();
             };
             #endregion*/
-            
+
             Queryable = agent;
             updatePacket.Start();
             updateMessage.Start();
@@ -90,7 +89,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
         public void Dispose()
         {
             _Dispose();
-            
+
 
         }
     }

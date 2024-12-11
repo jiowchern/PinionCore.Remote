@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 
 namespace PinionCore.Remote
 {
@@ -49,7 +48,7 @@ namespace PinionCore.Remote
             package.Entity = _Ghost;
             package.Event = event_id;
             package.Handler = handler;
-                        
+
             _ResponseEvent(ClientToServerOpCode.AddEvent, _InternalSerializable.Serialize(package));
 
         }

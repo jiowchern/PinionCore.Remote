@@ -1,6 +1,4 @@
-﻿using System.Runtime.Serialization;
-
-namespace PinionCore.Remote.Server
+﻿namespace PinionCore.Remote.Server
 {
 
 
@@ -41,7 +39,7 @@ namespace PinionCore.Remote.Server
             Soul.IService service = CreateService(entry, protocol, serializable, listener);
             return new WebListenSet(listener, service);
         }
-      
-       
+
+
     }
 }

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using PinionCore.Remote.ProviderHelper;
 
 namespace PinionCore.Remote
@@ -12,7 +11,7 @@ namespace PinionCore.Remote
         private readonly GhostsHandler _GhostManager;
         private readonly GhostsResponer _GhostsResponser;
         private readonly ClientExchangeable[] ClientExchangeables;
-        readonly System.Collections.Concurrent.ConcurrentQueue<Tuple<ServerToClientOpCode , PinionCore.Memorys.Buffer>> _Tuples;
+        readonly System.Collections.Concurrent.ConcurrentQueue<Tuple<ServerToClientOpCode, PinionCore.Memorys.Buffer>> _Tuples;
 
         public float Ping => _PingHandler.PingTime;
 
@@ -81,13 +80,13 @@ namespace PinionCore.Remote
         {
             while (_Tuples.TryDequeue(out Tuple<ServerToClientOpCode, Memorys.Buffer> tuple))
             {
-                var code = tuple.Item1;
-                var args = tuple.Item2;
+                ServerToClientOpCode code = tuple.Item1;
+                Memorys.Buffer args = tuple.Item2;
                 foreach (ClientExchangeable exchangeable in ClientExchangeables)
                 {
                     exchangeable.Request(code, args);
                 }
-                _GhostsResponser.OnResponse(code, args);                
+                _GhostsResponser.OnResponse(code, args);
             }
         }
         public void Stop()
@@ -109,14 +108,14 @@ namespace PinionCore.Remote
             try
             {
                 _Tuples.Enqueue(new Tuple<ServerToClientOpCode, Memorys.Buffer>(code, args));
-                
+
             }
             catch (Exception e)
             {
 
                 PinionCore.Utility.Log.Instance.WriteInfoImmediate($"GhostProviderQueryer Request error {e.ToString()} code:{code} ");
             }
-            
+
         }
 
 

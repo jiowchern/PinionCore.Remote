@@ -6,41 +6,41 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
     class MemberIdProvider
     {
 
-        public readonly InterfaceDeclarationSyntax[] Souls;        
-        readonly Dictionary<string, int> _MemberIds ;
-        public readonly IReadOnlyDictionary<string, int> MemberIds ;
+        public readonly InterfaceDeclarationSyntax[] Souls;
+        readonly Dictionary<string, int> _MemberIds;
+        public readonly IReadOnlyDictionary<string, int> MemberIds;
 
         public MemberIdProvider(IEnumerable<InterfaceDeclarationSyntax> souls)
         {
-         
-            
 
-            
+
+
+
             Souls = souls.ToArray();
 
             _MemberIds = new Dictionary<string, int>();
-            MemberIds = _MemberIds; 
+            MemberIds = _MemberIds;
 
 
             var nameProvider = new MembersNameProvider();
 
-            foreach (var member in from interfaceSyntax in souls
-                                   from methodSyntax in interfaceSyntax.DescendantNodes().OfType<EventFieldDeclarationSyntax>()
-                                   select methodSyntax)
+            foreach (EventFieldDeclarationSyntax member in from interfaceSyntax in souls
+                                                           from methodSyntax in interfaceSyntax.DescendantNodes().OfType<EventFieldDeclarationSyntax>()
+                                                           select methodSyntax)
             {
                 _MemberIds.Add(nameProvider.GetEventName(member), _MemberIds.Count + 1);
             }
 
-            foreach (var member in from interfaceSyntax in souls
-                                   from methodSyntax in interfaceSyntax.DescendantNodes().OfType<MethodDeclarationSyntax>()
-                                   select methodSyntax)
+            foreach (MethodDeclarationSyntax member in from interfaceSyntax in souls
+                                                       from methodSyntax in interfaceSyntax.DescendantNodes().OfType<MethodDeclarationSyntax>()
+                                                       select methodSyntax)
             {
                 _MemberIds.Add(nameProvider.GetMethodName(member), _MemberIds.Count + 1);
             }
 
-            foreach (var member in from interfaceSyntax in souls
-                                   from methodSyntax in interfaceSyntax.DescendantNodes().OfType<PropertyDeclarationSyntax>()
-                                   select methodSyntax)
+            foreach (PropertyDeclarationSyntax member in from interfaceSyntax in souls
+                                                         from methodSyntax in interfaceSyntax.DescendantNodes().OfType<PropertyDeclarationSyntax>()
+                                                         select methodSyntax)
             {
                 _MemberIds.Add(nameProvider.GetPropertyName(member), _MemberIds.Count + 1);
             }
@@ -63,12 +63,12 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
             {
                 return id;
             }
-            
+
 
             throw new System.Exception($"Member not found {member}");
         }
 
-    
+
 
 
 

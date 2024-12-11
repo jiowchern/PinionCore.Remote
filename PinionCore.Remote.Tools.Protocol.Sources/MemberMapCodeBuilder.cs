@@ -7,9 +7,8 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
 {
 
     using System.Linq;
-    using PinionCore.Remote.Tools.Protocol.Sources.Extensions;
-    
     using Microsoft.CodeAnalysis.CSharp.Syntax;
+    using PinionCore.Remote.Tools.Protocol.Sources.Extensions;
 
     class MemberMapCodeBuilder
     {
@@ -25,10 +24,10 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
                                           from methodSyntax in interfaceSyntax.DescendantNodes().OfType<MethodDeclarationSyntax>()
                                           select _BuildCode(interfaceSyntax, methodSyntax);
 
-            MethodInfosCode = string.Join(",", methods);          
+            MethodInfosCode = string.Join(",", methods);
 
             IEnumerable<string> events =
-                         from a in GetEvent<EventFieldDeclarationSyntax>(_interfaces)                         
+                         from a in GetEvent<EventFieldDeclarationSyntax>(_interfaces)
                          select _BuildCode(a.Item1, a.Item2, memberIdProvider.GetId(a.Item2));
 
             EventInfosCode = string.Join(",", events);
@@ -47,12 +46,12 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
 
             InterfacesCode = string.Join(",", interfaces);
         }
-        public IEnumerable<System.Tuple<InterfaceDeclarationSyntax , T >> GetEvent<T>(IEnumerable<InterfaceDeclarationSyntax> interfaces)
+        public IEnumerable<System.Tuple<InterfaceDeclarationSyntax, T>> GetEvent<T>(IEnumerable<InterfaceDeclarationSyntax> interfaces)
         {
-            return 
+            return
                          from interfaceSyntax in interfaces
                          from eventSyntax in interfaceSyntax.DescendantNodes().OfType<T>()
-                         select new System.Tuple<InterfaceDeclarationSyntax, T> ( interfaceSyntax , eventSyntax  );
+                         select new System.Tuple<InterfaceDeclarationSyntax, T>(interfaceSyntax, eventSyntax);
         }
         private string _BuildCode(InterfaceDeclarationSyntax interface_syntax)
         {
@@ -69,7 +68,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
             return $@"typeof({typeName}).GetProperty(""{eventName}"")";
         }
 
-        private string _BuildCode(InterfaceDeclarationSyntax interface_syntax, EventFieldDeclarationSyntax event_syntax , int id)
+        private string _BuildCode(InterfaceDeclarationSyntax interface_syntax, EventFieldDeclarationSyntax event_syntax, int id)
         {
 
             var typeName = interface_syntax.GetNamePath();

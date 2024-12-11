@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using PinionCore.Utility;
 
@@ -35,7 +34,7 @@ namespace PinionCore.Remote
                 _Methods.Add(++id, method);
             }
 
-           
+
 
             id = 0;
             foreach (PropertyInfo propertyInfo in propertys)
@@ -74,7 +73,7 @@ namespace PinionCore.Remote
 
         public int GetMethod(MethodInfo method_info)
         {
-            int id = 0;
+            var id = 0;
             _Methods.TryGetItem1(method_info, out id);
             return id;
         }
@@ -82,13 +81,13 @@ namespace PinionCore.Remote
         public EventInfo GetEvent(int id)
         {
             EventInfo info;
-            _Events.TryGetValue(id, out info);            
+            _Events.TryGetValue(id, out info);
             return info;
-        }        
+        }
 
         public int GetProperty(PropertyInfo info)
         {
-            int id = 0;
+            var id = 0;
             _Propertys.TryGetItem1(info, out id);
             return id;
         }

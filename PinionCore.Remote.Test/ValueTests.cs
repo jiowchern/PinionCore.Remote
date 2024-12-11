@@ -81,21 +81,21 @@ namespace PinionCore.Remote.Tests
 
         }
 
-       /* [NUnit.Framework.Test]
-        public async System.Threading.Tasks.Task ConstructorAwaitOnValueTest()
-        {
-            var val = await new PinionCore.Remote.Value<int>(1);
+        /* [NUnit.Framework.Test]
+         public async System.Threading.Tasks.Task ConstructorAwaitOnValueTest()
+         {
+             var val = await new PinionCore.Remote.Value<int>(1);
 
-            NUnit.Framework.Assert.AreEqual(1, val);
-        }
+             NUnit.Framework.Assert.AreEqual(1, val);
+         }
 
-        [NUnit.Framework.Test]
-        public async System.Threading.Tasks.Task SetAwaitOnValueTest()
-        {
-            var val = new PinionCore.Remote.Value<int>();
-            val.SetValue(1);
+         [NUnit.Framework.Test]
+         public async System.Threading.Tasks.Task SetAwaitOnValueTest()
+         {
+             var val = new PinionCore.Remote.Value<int>();
+             val.SetValue(1);
 
-            NUnit.Framework.Assert.AreEqual(1, await val);
-        }*/
+             NUnit.Framework.Assert.AreEqual(1, await val);
+         }*/
     }
 }

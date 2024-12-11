@@ -50,7 +50,7 @@ namespace PinionCore.Remote
             }
 
             var filedValue = field.GetValue(instance);
-            var updateable = filedValue as IAccessable;            
+            var updateable = filedValue as IAccessable;
             updateable.Set(value);
         }
 

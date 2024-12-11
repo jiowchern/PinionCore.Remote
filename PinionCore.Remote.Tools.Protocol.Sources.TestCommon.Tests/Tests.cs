@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Linq;
 using System.Reactive.Linq;
-using System.Threading.Tasks;
 using NUnit.Framework;
 using PinionCore.Remote.Reactive;
 using PinionCore.Remote.Tools.Protocol.Sources.TestCommon.MultipleNotices;
@@ -82,8 +81,8 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
                                            select n.Value.Value;
 
             IObservable<INumber> supplyn2Obs = from mn in env.Queryable.QueryNotifier<IMultipleNotices>().SupplyEvent()
-                                           from n in mn.Numbers2.Base.SupplyEvent()
-                                           select n;
+                                               from n in mn.Numbers2.Base.SupplyEvent()
+                                               select n;
 
             IObservable<int> unsupplyn1Obs = from mn in env.Queryable.QueryNotifier<IMultipleNotices>().SupplyEvent()
                                              from n in mn.Numbers1.Base.UnsupplyEvent()
@@ -199,7 +198,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
         }
 
         const int Timeout = 10000;
-        [Test,Timeout(Timeout)]
+        [Test, Timeout(Timeout)]
         public void EventCustomDelegateTest()
         {
             var tester = new EventTester();

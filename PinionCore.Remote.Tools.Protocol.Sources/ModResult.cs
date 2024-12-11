@@ -1,12 +1,11 @@
-﻿using System.Collections.Generic;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
+﻿using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace PinionCore.Remote.Tools.Protocol.Sources
 {
     public struct ModResult
     {
         public System.Collections.Generic.IEnumerable<TypeSyntax> TypesOfSerialization;
         public ClassDeclarationSyntax Type;
-        public Microsoft.CodeAnalysis.CSharp.Syntax.BlockSyntax[] UnprocessedBlocks;    
+        public Microsoft.CodeAnalysis.CSharp.Syntax.BlockSyntax[] UnprocessedBlocks;
 
         public System.Collections.Generic.IEnumerable<T> GetSyntaxs<T>() where T : Microsoft.CodeAnalysis.SyntaxNode
         {

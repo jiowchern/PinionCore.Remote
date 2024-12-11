@@ -12,6 +12,6 @@
         event System.Action Event1;
         event System.Action<int> Event2;
 
-        
+
     }
 }

@@ -18,13 +18,13 @@ namespace PinionCore.Network.Tests
             var serializer = new PinionCore.Serialization.Serializer(new DescriberBuilder(typeof(int), typeof(string), typeof(char[]), typeof(byte), typeof(byte[]), typeof(byte[][]), typeof(char), typeof(Guid), typeof(TestStruct)).Describers, PinionCore.Memorys.PoolProvider.DirectShared);
 
             var sendStream = new Stream();
-            
+
             var readStream = new PinionCore.Network.ReverseStream(sendStream);
 
             var tu = new ThreadUpdater(() =>
             {
                 //sendStream.Receive.Digestion();
-               // sendStream.Send.Digestion();
+                // sendStream.Send.Digestion();
             });
             tu.Start();
 

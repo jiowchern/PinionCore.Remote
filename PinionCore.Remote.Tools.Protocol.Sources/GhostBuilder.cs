@@ -13,12 +13,12 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
         public readonly IEnumerable<TypeSyntax> Types;
         public readonly IEnumerable<ClassDeclarationSyntax> Ghosts;
         public readonly IEnumerable<ClassDeclarationSyntax> EventProxys;
-        
+
         public readonly string Namespace;
         public readonly IEnumerable<ModResult> ClassAndTypess;
 
 
-        public GhostBuilder(SyntaxModifier modifier , IEnumerable<INamedTypeSymbol> symbols)
+        public GhostBuilder(SyntaxModifier modifier, IEnumerable<INamedTypeSymbol> symbols)
         {
 
 

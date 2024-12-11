@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
-using PinionCore.Memorys;
 using PinionCore.Remote;
 
 namespace PinionCore.Network
@@ -12,7 +10,7 @@ namespace PinionCore.Network
     {
         private readonly IStreamable _Stream;
         private readonly PinionCore.Memorys.IPool _Pool;
-        
+
 
         int _Count;
         public _PackageReader(IStreamable stream, PinionCore.Memorys.IPool pool)
@@ -22,39 +20,39 @@ namespace PinionCore.Network
         }
         public async Task<List<PinionCore.Memorys.Buffer>> Read()
         {
-            
-            
+
+
             //System.Console.WriteLine($"read threads {currentCount}");
             System.Threading.Interlocked.Increment(ref _Count);
             var headByte = new byte[1];
             var headBuffer = new System.Collections.Generic.List<byte>();
             do
             {
-               
+
                 var readed = await _Stream.Receive(headByte, 0, 1);
                 if (readed == 0)
                     return new List<PinionCore.Memorys.Buffer>();
                 headBuffer.Add(headByte[0]);
-            }while (headByte[0] > PinionCore.Serialization.Varint.Endian) ;
+            } while (headByte[0] > PinionCore.Serialization.Varint.Endian);
 
-            PinionCore.Serialization.Varint.BufferToNumber(headBuffer.ToArray(),0, out int bodySize);
+            PinionCore.Serialization.Varint.BufferToNumber(headBuffer.ToArray(), 0, out int bodySize);
             var body = new byte[bodySize];
-            int offset = 0;
+            var offset = 0;
             while (offset < bodySize)
             {
-             
+
                 var readed = await _Stream.Receive(body, offset, bodySize - offset);
                 if (readed == 0)
                     return new List<PinionCore.Memorys.Buffer>();
                 offset += readed;
             }
-            var buffer = _Pool.Alloc(bodySize);
+            Memorys.Buffer buffer = _Pool.Alloc(bodySize);
             for (var i = 0; i < bodySize; i++)
             {
                 buffer[i] = body[i];
             }
-            
-            
+
+
 
             return new List<PinionCore.Memorys.Buffer> { buffer };
 
@@ -90,7 +88,7 @@ namespace PinionCore.Network
             var packages = new List<Package>();
             Memorys.Buffer headBuffer = _Pool.Alloc(8);
             _CopyBuffer(unfin.Segment, headBuffer.Bytes, unfin.Segment.Count);
-            var headReadCount = await _ReadFromStream(headBuffer.Bytes.Array, offset: headBuffer.Bytes.Offset + unfin.Segment.Count, count: headBuffer.Bytes.Count - unfin.Segment.Count);            
+            var headReadCount = await _ReadFromStream(headBuffer.Bytes.Array, offset: headBuffer.Bytes.Offset + unfin.Segment.Count, count: headBuffer.Bytes.Count - unfin.Segment.Count);
             if (headReadCount == 0)
                 return new List<PinionCore.Memorys.Buffer>();
             headReadCount += unfin.Segment.Count;
@@ -119,7 +117,7 @@ namespace PinionCore.Network
                     while (bodyReadCount < remainingBodySize)
                     {
                         var readed = await _ReadFromStream(body.Bytes.Array, body.Bytes.Offset + readOffset + bodyReadCount, remainingBodySize - bodyReadCount);
-                        
+
                         if (readed == 0)
                             return new List<PinionCore.Memorys.Buffer>();
                         bodyReadCount += readed;
@@ -162,7 +160,7 @@ namespace PinionCore.Network
         private IWaitableValue<int> _ReadFromStream(byte[] buffer, int offset, int count)
         {
             return _Stream.Receive(buffer, offset, count);
-            
+
         }
     }
 }
