@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using PinionCore.Remote;
 namespace PinionCore.Network
@@ -6,9 +7,11 @@ namespace PinionCore.Network
     public class NoWaitValue<T> : IWaitableValue<T>, IAwaitable<T>
     {
         public readonly PinionCore.Remote.Value<T> Value;
+        public readonly System.Collections.Concurrent.ConcurrentQueue<T> _Invokeds;
         int _InvokeCount;
         public NoWaitValue()
         {
+            _Invokeds = new System.Collections.Concurrent.ConcurrentQueue<T>();
             _InvokeCount = 0;
             Value = new Remote.Value<T>();
         }
@@ -47,11 +50,14 @@ namespace PinionCore.Network
             
             void Handler(T v)
             {
+                _Invokeds.Enqueue(v);
+
                 var count = System.Threading.Interlocked.Increment(ref _InvokeCount);
                 if (count > 1)
                 {
-                    System.Console.WriteLine($" INotifyCompletion.OnCompleted:{count}");
-                    return;
+                    PinionCore.Utility.Log.Instance.WriteInfo($" INotifyCompletion.OnCompleted:{count} ");
+                    
+                    throw new InvalidOperationException("INotifyCompletion.OnCompleted");
                 }
 
                 Value.OnValue -= Handler;
