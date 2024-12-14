@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net6.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\PinionCore.Remote.Client\PinionCore.Remote.Client.csproj" />
+    <ProjectReference Include="..\PinionCore.Samples.HelloWorld.Protocols\PinionCore.Samples.HelloWorld.Protocols.csproj" />
+  </ItemGroup>
+
+</Project>
