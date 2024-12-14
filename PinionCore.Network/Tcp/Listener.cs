@@ -20,10 +20,7 @@ namespace PinionCore.Network.Tcp
             _Socket = new System.Net.Sockets.Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             _Socket.NoDelay = true;
         }
-        public void Bind(int port)
-        {
-            Bind(port, 10);
-        }
+        
         public void Bind(int Port, int backlog)
         {
             _Socket.Bind(new IPEndPoint(IPAddress.Any, Port));

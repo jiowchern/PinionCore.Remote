@@ -55,7 +55,7 @@ namespace PinionCore.Remote.Server.Tcp
         {
             _Listener = new Network.Tcp.Listener();
             _Listener.AcceptEvent += _Join;
-            _Listener.Bind(port);
+            _Listener.Bind(port, port);
         }
 
         public void Close()

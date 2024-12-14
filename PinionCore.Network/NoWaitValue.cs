@@ -3,7 +3,7 @@ using System.Runtime.CompilerServices;
 using PinionCore.Remote;
 namespace PinionCore.Network
 {
-    public class NoWaitValue<T> : PinionCore.Remote.Value<T> , IWaitableValue<T>
+    public class NoWaitValue<T> : PinionCore.Remote.Value<T> 
     {
         public NoWaitValue() : base()
         {

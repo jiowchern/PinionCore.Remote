@@ -1,4 +1,5 @@
 ﻿using System;
+using NUnit.Framework;
 using PinionCore.Network;
 using PinionCore.Remote.Ghost;
 
@@ -6,7 +7,7 @@ namespace PinionCore.Remote.Standalone.Test
 {
     public class SoulTest
     {
-        [NUnit.Framework.Test]
+        [NUnit.Framework.Test,Timeout(10000)]
         public void ServiceTest()
         {
             var serverPeerStream = new PinionCore.Remote.Standalone.Stream();

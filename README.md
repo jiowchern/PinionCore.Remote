@@ -337,7 +337,8 @@ namespace Client
 		{
 			while (!stop)
 			{
-				set.Agent.Update();
+				set.Agent.HandleMessages();
+				set.Agent.HandlePackets();
 			}
                 
 		});
@@ -401,7 +402,9 @@ namespace Standalone
 		{
 			while (!stop)
 			{
-				agent.Update();
+				agent.HandleMessages();
+				agent.HandlePackets();
+
 			}
                 
 		});		

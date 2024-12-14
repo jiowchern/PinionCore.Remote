@@ -11,7 +11,7 @@ namespace PinionCore.Network.Tests
 
             var lintener = new PinionCore.Network.Tcp.Listener();
             lintener.AcceptEvent += (peer) => { NUnit.Framework.Assert.IsNotNull(peer); };
-            lintener.Bind(port);
+            lintener.Bind(port,10);
             var connector = new PinionCore.Network.Tcp.Connector();
 
             Tcp.Peer peer = await connector.Connect(new System.Net.IPEndPoint(System.Net.IPAddress.Loopback, port));
@@ -73,7 +73,7 @@ namespace PinionCore.Network.Tests
 
                 serverPeers.Add(peer);
             };
-            lintener.Bind(port);
+            lintener.Bind(port,10);
             var connector = new PinionCore.Network.Tcp.Connector();
 
             Tcp.Peer peer = await connector.Connect(new System.Net.IPEndPoint(System.Net.IPAddress.Loopback, port));
