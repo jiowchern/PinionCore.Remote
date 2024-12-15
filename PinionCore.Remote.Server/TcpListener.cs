@@ -51,11 +51,11 @@ namespace PinionCore.Remote.Server.Tcp
             }
         }
 
-        public void Bind(int port)
+        public void Bind(int port, int backlog = 10)
         {
             _Listener = new Network.Tcp.Listener();
             _Listener.AcceptEvent += _Join;
-            _Listener.Bind(port, port);
+            _Listener.Bind(port, backlog);
         }
 
         public void Close()
