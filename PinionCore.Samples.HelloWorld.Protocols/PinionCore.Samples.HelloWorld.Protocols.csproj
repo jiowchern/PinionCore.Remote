@@ -3,11 +3,12 @@
     <TargetFramework>net6.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-	  <!-- <PinionCoreDocumentEmbedder Name="IncludeProtocols" > -->
+	  
   </PropertyGroup>
+	<!-- <Extract Name="IncludeProtocols" > -->
 	<ItemGroup>
 		<ProjectReference Include="..\PinionCore.Remote.Tools.Protocol.Sources\PinionCore.Remote.Tools.Protocol.Sources.csproj"  OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
 		<ProjectReference Include="..\PinionCore.Remote\PinionCore.Remote.csproj" />
 	</ItemGroup>
-	<!-- <PinionCoreDocumentEmbedder/> -->
+	<!-- </Extract> -->
 </Project>
