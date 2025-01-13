@@ -110,7 +110,7 @@ namespace PinionCore.Remote.Tests
             var ghostIA = new GhostIA();
             ISerializable serializable = new PinionCore.Remote.Tests.Serializer().Serializable;
             var id = 0;
-            var map = new MemberMap(typeof(IA).GetMethods(), typeof(IA).GetEvents().ToDictionary(e => ++id), typeof(IA).GetProperties(), new System.Tuple<System.Type, System.Func<PinionCore.Remote.IProvider>>[] { });
+            var map = new MemberMap(typeof(IA).GetMethods().ToDictionary(e => ++id), typeof(IA).GetEvents().ToDictionary(e => ++id), typeof(IA).GetProperties(), new System.Tuple<System.Type, System.Func<PinionCore.Remote.IProvider>>[] { });
 
             _Serializable = serializable;
             _GhostResponseHandler = new GhostResponseHandler(new System.WeakReference<IGhost>(ghostIA), map, serializable);
@@ -134,7 +134,7 @@ namespace PinionCore.Remote.Tests
             _IA.Event1 += (v) => value = v;
 
             var buffers = new byte[][] { _Serializable.Serialize(typeof(int), 10).ToArray() };
-            handler.InvokeEvent(1, 1, buffers);
+            handler.InvokeEvent(5, 1, buffers);
             NUnit.Framework.Assert.AreEqual(10, value);
         }
 

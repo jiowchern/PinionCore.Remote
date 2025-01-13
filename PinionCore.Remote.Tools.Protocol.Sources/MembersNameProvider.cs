@@ -5,12 +5,18 @@
     using Microsoft.CodeAnalysis;
     using Microsoft.CodeAnalysis.CSharp.Syntax;
 
+
+    
     class MembersNameProvider
     {
+        public MembersNameProvider()
+        {
+     
+        }
         public string GetEventName(EventFieldDeclarationSyntax eventSyntax)
         {
             var namespaceName = GetNamespaceName(eventSyntax);
-            var interfaceName = GetInterfaceName(eventSyntax);
+            var interfaceName = GetInterfaceName(eventSyntax ,(m)=> null);
 
             // EventField 可能宣告多個變數，通常只抓第一個即可
             var eventName = eventSyntax.Declaration.Variables.FirstOrDefault()?.Identifier.Text ?? "<unknownEvent>";
@@ -32,14 +38,13 @@
 
             // 否則以原本方法取得 namespace 和 interface
             var namespaceName = GetNamespaceName(eventSyntax);
-            var interfaceName = GetInterfaceName(eventSyntax);
+            var interfaceName = GetInterfaceName(eventSyntax, m=>m.ExplicitInterfaceSpecifier);
             return $"{namespaceName}.{interfaceName}.{eventName}";
         }
-
         public string GetPropertyName(PropertyDeclarationSyntax propertySyntax)
         {
             var namespaceName = GetNamespaceName(propertySyntax);
-            var interfaceName = GetInterfaceName(propertySyntax);
+            var interfaceName = GetInterfaceName(propertySyntax , m=>m.ExplicitInterfaceSpecifier);
 
             // PropertyDeclarationSyntax 的名稱在 Identifier
             var propertyName = propertySyntax.Identifier.Text;
@@ -50,7 +55,7 @@
         public string GetMethodName(MethodDeclarationSyntax methodSyntax)
         {
             var namespaceName = GetNamespaceName(methodSyntax);
-            var interfaceName = GetInterfaceName(methodSyntax);
+            var interfaceName = GetInterfaceName(methodSyntax,m=>m.ExplicitInterfaceSpecifier);
 
             var methodName = methodSyntax.Identifier.Text;
 
@@ -76,11 +81,17 @@
 
             return $"{namespaceName}.{interfaceName}.{methodName}{genericPart}{argsPart}";
         }
-
-        private string GetInterfaceName(SyntaxNode memberSyntax)
+        
+        private string GetInterfaceName<TSyntax>(TSyntax memberSyntax , System.Func<TSyntax , ExplicitInterfaceSpecifierSyntax> func) where TSyntax : MemberDeclarationSyntax
         {
+             var explicitInterfaceSpecifierSyntax = func(memberSyntax);
+            if (explicitInterfaceSpecifierSyntax != null)
+            {                
+                return GetQualifiedName(explicitInterfaceSpecifierSyntax.Name);
+            }
+            
             // 自下而上尋找最近的 InterfaceDeclarationSyntax
-            InterfaceDeclarationSyntax interfaceDecl = memberSyntax.Ancestors().OfType<InterfaceDeclarationSyntax>().FirstOrDefault();
+            var interfaceDecl = memberSyntax.Ancestors().OfType<InterfaceDeclarationSyntax>().FirstOrDefault();
             if (interfaceDecl != null)
             {
                 return interfaceDecl.Identifier.Text;
@@ -91,7 +102,7 @@
         private string GetNamespaceName(SyntaxNode memberSyntax)
         {
             // 自下而上尋找 NamespaceDeclarationSyntax 或 FileScopedNamespaceDeclarationSyntax
-            NamespaceDeclarationSyntax namespaceDecl = memberSyntax.Ancestors().OfType<NamespaceDeclarationSyntax>().FirstOrDefault();
+            var namespaceDecl = memberSyntax.Ancestors().OfType<NamespaceDeclarationSyntax>().FirstOrDefault();
             if (namespaceDecl != null)
             {
                 return namespaceDecl.Name.ToString();

@@ -48,12 +48,12 @@ namespace PinionCore.Remote
             }
         }
 
-        public void Run(MethodInfo info, object[] args, IValue return_value)
+        public void Run(int method_id, object[] args, IValue return_value)
         {
             MemberMap map = _Protocol.GetMemberMap();
             ISerializable serialize = _Serializable;
-            var method = map.GetMethod(info);
-            if (method == 0)
+            var info = map.GetMethod(method_id);
+            if (info == null)
             {
                 PinionCore.Utility.Log.Instance.WriteInfoImmediate($"method {info.Name} not found");
                 return;
@@ -63,7 +63,7 @@ namespace PinionCore.Remote
 
 
             package.EntityId = _Ghost;
-            package.MethodId = method;
+            package.MethodId = method_id;
 
             package.MethodParams = args.Zip(info.GetParameters(), (arg, par) => serialize.Serialize(par.ParameterType, arg).ToArray()).ToArray();
 

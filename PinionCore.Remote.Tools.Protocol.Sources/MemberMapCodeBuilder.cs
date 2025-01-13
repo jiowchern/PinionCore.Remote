@@ -20,17 +20,24 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
 
         public MemberMapCodeBuilder(IEnumerable<InterfaceDeclarationSyntax> _interfaces, MemberIdProvider memberIdProvider)
         {
-            IEnumerable<string> methods = from interfaceSyntax in _interfaces
-                                          from methodSyntax in interfaceSyntax.DescendantNodes().OfType<MethodDeclarationSyntax>()
-                                          select _BuildCode(interfaceSyntax, methodSyntax);
+            
+
+            IEnumerable<string> events =
+                         from a in GetMembers<EventFieldDeclarationSyntax>(_interfaces)
+                         select _BuildCode(a.Item1, a.Item2, memberIdProvider.GetIdWithSoul(a.Item2));
+
+            EventInfosCode = string.Join(",", events);
+
+            IEnumerable<string> methods = from a in GetMembers<MethodDeclarationSyntax>(_interfaces)
+                                          select _BuildCode(a.Item1, a.Item2, memberIdProvider.GetIdWithSoul(a.Item2));
 
             MethodInfosCode = string.Join(",", methods);
 
-            IEnumerable<string> events =
-                         from a in GetEvent<EventFieldDeclarationSyntax>(_interfaces)
-                         select _BuildCode(a.Item1, a.Item2, memberIdProvider.GetId(a.Item2));
+            /*IEnumerable<string> methods = from interfaceSyntax in _interfaces
+                                          from methodSyntax in interfaceSyntax.DescendantNodes().OfType<MethodDeclarationSyntax>()
+                                          select _BuildCode(interfaceSyntax, methodSyntax);
 
-            EventInfosCode = string.Join(",", events);
+            MethodInfosCode = string.Join(",", methods);*/
 
             IEnumerable<string> propertys = from interfaceSyntax in _interfaces
                                             from propertySyntax in interfaceSyntax.DescendantNodes().OfType<PropertyDeclarationSyntax>()
@@ -46,7 +53,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
 
             InterfacesCode = string.Join(",", interfaces);
         }
-        public IEnumerable<System.Tuple<InterfaceDeclarationSyntax, T>> GetEvent<T>(IEnumerable<InterfaceDeclarationSyntax> interfaces)
+        public IEnumerable<System.Tuple<InterfaceDeclarationSyntax, T>> GetMembers<T>(IEnumerable<InterfaceDeclarationSyntax> interfaces)
         {
             return
                          from interfaceSyntax in interfaces
@@ -78,7 +85,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
         }
 
 
-        private string _BuildCode(InterfaceDeclarationSyntax interface_syntax, MethodDeclarationSyntax method_syntax)
+        private string _BuildCode(InterfaceDeclarationSyntax interface_syntax, MethodDeclarationSyntax method_syntax,int id)
         {
 
             var typeName = interface_syntax.GetNamePath();
@@ -90,7 +97,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
             var typeAndParamTypes = string.Join(",", (new[] { typeName }).Concat(paramTypes));
             var instanceAndParamNames = string.Join(",", (new[] { "ins" }).Concat(paramNames));
             var paramNamesStr = string.Join(",", paramNames);
-            return $"new PinionCore.Utility.Reflection.TypeMethodCatcher((System.Linq.Expressions.Expression<System.Action<{typeAndParamTypes}>>)(({instanceAndParamNames}) => ins.{method_syntax.Identifier}({paramNamesStr}))).Method";
+            return $"{{{id},new PinionCore.Utility.Reflection.TypeMethodCatcher((System.Linq.Expressions.Expression<System.Action<{typeAndParamTypes}>>)(({instanceAndParamNames}) => ins.{method_syntax.Identifier}({paramNamesStr}))).Method}}";
 
         }
     }

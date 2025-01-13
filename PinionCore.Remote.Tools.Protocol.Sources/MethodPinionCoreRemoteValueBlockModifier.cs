@@ -9,10 +9,12 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.BlockModifiers
     internal class MethodPinionCoreRemoteValue
     {
         private readonly Compilation _Compilation;
+        private readonly MemberIdProvider _MemberIdProvider;
 
-        public MethodPinionCoreRemoteValue(Compilation compilation)
+        public MethodPinionCoreRemoteValue(Compilation compilation ,MemberIdProvider memberIdProvider )
         {
             this._Compilation = compilation;
+            _MemberIdProvider = memberIdProvider;
         }
 
         public BlockAndTypes Mod(System.Collections.Generic.IEnumerable<SyntaxNode> nodes)
@@ -52,15 +54,15 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.BlockModifiers
 
             if (gn.Identifier.ToString() != "Value")
                 return null;
+            var id = _MemberIdProvider.GetIdWithGhost(md);
 
             return new BlockAndTypes
             {
                 Block = SyntaxFactory.Block(SyntaxFactory.ParseStatement(
                                 $@"
 var returnValue = new {returnType}();
-var info = typeof({interfaceCode}).GetMethod(""{methodCode}"");
 
-this._CallMethodEvent(info , new object[] {{{methodCallParamsCode}}} , returnValue);                    
+this._CallMethodEvent({id}, new object[] {{{methodCallParamsCode}}} , returnValue);                    
 return returnValue;
                                             ")),
                 Types = (from p in md.ParameterList.Parameters select p.Type).Union(gn.TypeArgumentList.Arguments)

@@ -32,7 +32,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
                 foreach (SyntaxTree syntaxTree in sources)
                 {
 #if DEBUG
-                    // System.IO.File.WriteAllText(syntaxTree.FilePath, syntaxTree.GetText().ToString());
+                    //System.IO.File.WriteAllText(syntaxTree.FilePath, syntaxTree.GetText().ToString());
 #endif
                     context.AddSource(syntaxTree.FilePath, syntaxTree.GetText());
 

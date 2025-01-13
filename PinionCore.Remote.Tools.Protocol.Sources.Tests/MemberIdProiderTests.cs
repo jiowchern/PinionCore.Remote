@@ -11,7 +11,58 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.Tests
     public class MemberIdProiderTests
     {
         [Test]
-        public void Test()
+        public void Test2()
+        {
+            var soulSource = @"
+namespace PinionCore.Remote
+{
+    public interface ISoul
+    {
+        event System.Action<int> Event01;
+        PinionCore.Remote.Value<int> GetValue0(int _1, string _2, float _3, double _4, decimal _5, System.Guid _6);
+
+    }
+}
+
+    class CPinionCore_Remote_ISoul : PinionCore.Remote.ISoul
+    {
+       event System.Action<int> PinionCore.Remote.ISoul.Event01
+        {
+                add { throw new System.NotImplementedException(""Event add accessor not implemented.""); }
+                remove { throw new System.NotImplementedException(""Event remove accessor not implemented.""); }
+        }
+
+       PinionCore.Remote.Value<int> PinionCore.Remote.ISoul.GetValue0(int _1, string _2, float _3, double _4, decimal _5, System.Guid _6)
+        {
+            throw new System.NotImplementedException(""Method not implemented."");
+        }
+    }
+";
+
+     
+            Microsoft.CodeAnalysis.SyntaxTree tree = Microsoft.CodeAnalysis.CSharp.SyntaxFactory.ParseSyntaxTree(SourceText.From(soulSource));
+
+            var souls = tree.GetRoot().DescendantNodes().OfType<Microsoft.CodeAnalysis.CSharp.Syntax.InterfaceDeclarationSyntax>().ToArray();
+            var ghosts = tree.GetRoot().DescendantNodes().OfType<Microsoft.CodeAnalysis.CSharp.Syntax.ClassDeclarationSyntax>().ToArray();
+
+
+            var memberIdProvider = new MemberIdProvider(souls);
+
+            foreach(var ghost in ghosts)
+            {
+                var eventMember = ghost.DescendantNodes().OfType<EventDeclarationSyntax>();
+                var eventId = memberIdProvider.GetIdWithGhost(eventMember.First());
+
+                NUnit.Framework.Assert.Greater(eventId, 0);
+
+                var methodMember = ghost.DescendantNodes().OfType<MethodDeclarationSyntax>();
+                var methodId = memberIdProvider.GetIdWithGhost(methodMember.First());
+                NUnit.Framework.Assert.Greater(methodId, 0);
+            }
+
+        }
+        [Test]
+        public void Test1()
         {
             var source = @"
 namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon
@@ -152,7 +203,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon
             IEnumerable<EventDeclarationSyntax> classEvents = classs.SelectMany(c => c.DescendantNodes().OfType<EventDeclarationSyntax>());
             foreach (EventDeclarationSyntax classEvent in classEvents)
             {
-                var id = memberIdProvider.GetId(classEvent);
+                var id = memberIdProvider.GetIdWithGhost(classEvent);
                 if (!eventIdCount.ContainsKey(id))
                     eventIdCount[id] = 0;
                 eventIdCount[id]++;
@@ -160,10 +211,10 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon
             }
 
             var memberCodeBuilder = new MemberMapCodeBuilder(gpis, memberIdProvider);
-            IEnumerable<System.Tuple<InterfaceDeclarationSyntax, EventFieldDeclarationSyntax>> events = memberCodeBuilder.GetEvent<EventFieldDeclarationSyntax>(gpis);
+            IEnumerable<System.Tuple<InterfaceDeclarationSyntax, EventFieldDeclarationSyntax>> events = memberCodeBuilder.GetMembers<EventFieldDeclarationSyntax>(gpis);
             foreach (System.Tuple<InterfaceDeclarationSyntax, EventFieldDeclarationSyntax> @event in events)
             {
-                var id = memberIdProvider.GetId(@event.Item2);
+                var id = memberIdProvider.GetIdWithSoul(@event.Item2);
                 eventIdCount[id]--;
                 Assert.Greater(id, 0);
             }

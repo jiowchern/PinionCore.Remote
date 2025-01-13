@@ -19,8 +19,8 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
         public static SyntaxModifier Create(Compilation com, MemberIdProvider memberIdProvider)
         {
             return new SyntaxModifier(
-                    new BlockModifiers.MethodVoid(com),
-                    new BlockModifiers.MethodPinionCoreRemoteValue(com),
+                    new BlockModifiers.MethodVoid(com, memberIdProvider),
+                    new BlockModifiers.MethodPinionCoreRemoteValue(com, memberIdProvider),
                     new BlockModifiers.EventSystemAction(com, memberIdProvider),
                     new BlockModifiers.PropertyPinionCoreRemoteBlock(com),
                     new Modifiers.EventFieldDeclarationSyntax(),

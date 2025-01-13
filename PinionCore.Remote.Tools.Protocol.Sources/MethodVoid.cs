@@ -10,10 +10,12 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.BlockModifiers
     internal class MethodVoid
     {
         private readonly Compilation _Compilation;
+        private readonly MemberIdProvider _MemberIdProvider;
 
-        public MethodVoid(Compilation compilation)
+        public MethodVoid(Compilation compilation, MemberIdProvider memberIdProvider )
         {
             this._Compilation = compilation;
+            _MemberIdProvider = memberIdProvider;
         }
         public BlockAndTypes Mod(System.Collections.Generic.IEnumerable<SyntaxNode> nodes)
         {
@@ -49,11 +51,14 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.BlockModifiers
                 return null;
             }
 
+            var memberId = _MemberIdProvider.GetIdWithGhost(md);
+
+            // var info = typeof({interfaceCode}).GetMethod(""{methodCode}"");
+
             return new BlockAndTypes
             {
                 Block = SyntaxFactory.Block(SyntaxFactory.ParseStatement(
-$@"var info = typeof({interfaceCode}).GetMethod(""{methodCode}"");
-this._CallMethodEvent(info , new object[] {{{methodCallParamsCode}}} , null);", 0)),
+$@"this._CallMethodEvent({memberId}, new object[] {{{methodCallParamsCode}}} , null);", 0)),
                 Types = from p in md.ParameterList.Parameters select p.Type
             };
 

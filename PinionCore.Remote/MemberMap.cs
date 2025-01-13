@@ -9,7 +9,7 @@ namespace PinionCore.Remote
     public class MemberMap : IEqualityComparer<Type>, IEqualityComparer<PropertyInfo>, IEqualityComparer<EventInfo>, IEqualityComparer<MethodInfo>, IEqualityComparer<int>
     {
 
-        private readonly BilateralMap<int, MethodInfo> _Methods;
+        private readonly Dictionary<int, MethodInfo> _Methods;
         private readonly Dictionary<int, EventInfo> _Events;
         private readonly BilateralMap<int, PropertyInfo> _Propertys;
         private readonly BilateralMap<int, Type> _Interfaces;
@@ -18,25 +18,20 @@ namespace PinionCore.Remote
         public readonly IReadOnlyBilateralMap<int, PropertyInfo> Propertys;
 
 
-        public MemberMap(IEnumerable<MethodInfo> methods, System.Collections.Generic.Dictionary<int, EventInfo> events, IEnumerable<PropertyInfo> propertys, IEnumerable<System.Tuple<System.Type, System.Func<PinionCore.Remote.IProvider>>> interfaces)
+        public MemberMap(
+            System.Collections.Generic.Dictionary<int,MethodInfo> methods,
+            System.Collections.Generic.Dictionary<int, EventInfo> events,
+            IEnumerable<PropertyInfo> propertys,
+            IEnumerable<System.Tuple<System.Type, System.Func<PinionCore.Remote.IProvider>>> interfaces)
         {
             //_Events = new Dictionary<int, EventInfo> { { 0, typeof(MemberMap).GetEvent("") } };
             _Providers = new Dictionary<Type, Func<IProvider>>();
-            _Methods = new BilateralMap<int, MethodInfo>();
+            _Methods = methods;
             _Events = events;
             _Propertys = new BilateralMap<int, PropertyInfo>();
             _Interfaces = new BilateralMap<int, Type>();
 
-
             var id = 0;
-            foreach (MethodInfo method in methods)
-            {
-                _Methods.Add(++id, method);
-            }
-
-
-
-            id = 0;
             foreach (PropertyInfo propertyInfo in propertys)
             {
 
@@ -67,16 +62,11 @@ namespace PinionCore.Remote
         public MethodInfo GetMethod(int id)
         {
             MethodInfo method;
-            _Methods.TryGetItem2(id, out method);
+            _Methods.TryGetValue(id, out method);
             return method;
         }
 
-        public int GetMethod(MethodInfo method_info)
-        {
-            var id = 0;
-            _Methods.TryGetItem1(method_info, out id);
-            return id;
-        }
+      
 
         public EventInfo GetEvent(int id)
         {

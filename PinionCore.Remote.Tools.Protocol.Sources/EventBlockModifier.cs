@@ -11,12 +11,12 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.BlockModifiers
     internal class EventSystemAction
     {
         private readonly Compilation _Compilation;
-        private readonly MemberIdProvider MemberIdProvider_;
+        private readonly MemberIdProvider _MemberIdProvider;
 
         public EventSystemAction(Compilation compilation, MemberIdProvider memberIdProvider)
         {
             this._Compilation = compilation;
-            MemberIdProvider_ = memberIdProvider;
+            _MemberIdProvider = memberIdProvider;
 
         }
 
@@ -72,7 +72,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.BlockModifiers
 
 
 
-            var eventId = MemberIdProvider_.GetId(ed);
+            var eventId = _MemberIdProvider.GetIdWithGhost(ed);
 
 
             BlockSyntax newBlock = SyntaxFactory.Block(SyntaxFactory.ParseStatement(
