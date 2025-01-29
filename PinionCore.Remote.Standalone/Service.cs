@@ -64,16 +64,15 @@ namespace PinionCore.Remote.Standalone
             }
         }
 
-        public Ghost.IAgent Create()
+        public Ghost.IAgent Create(Stream stream)
         {
-            var stream = new Stream();
+            //var stream = new Stream();
             var agent = new PinionCore.Remote.Ghost.Agent(this.Protocol, this.Serializer, new PinionCore.Remote.InternalSerializer(), _Pool);
             agent.Enable(stream);
             var revStream = new ReverseStream(stream);
             _NotifiableCollection.Items.Add(revStream);
             _Streams.Add(agent, revStream);
             _Agents.Add(agent);
-
 
             return agent;
         }

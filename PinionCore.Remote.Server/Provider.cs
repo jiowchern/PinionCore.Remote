@@ -1,11 +1,7 @@
 ﻿namespace PinionCore.Remote.Server
 {
-
-
     public static class Provider
     {
-
-
         public static Soul.IService CreateService(IEntry entry, IProtocol protocol, Soul.IListenable listenable)
         {
             Memorys.Pool pool = PinionCore.Memorys.PoolProvider.Shared;
@@ -39,7 +35,5 @@
             Soul.IService service = CreateService(entry, protocol, serializable, listener);
             return new WebListenSet(listener, service);
         }
-
-
     }
 }

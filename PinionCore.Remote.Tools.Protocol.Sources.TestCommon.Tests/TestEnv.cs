@@ -22,7 +22,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
             Service service = PinionCore.Remote.Standalone.Provider.CreateService(entry, protocol, ser, Memorys.PoolProvider.Shared);
 
 
-            Ghost.IAgent agent = service.Create();
+            Ghost.IAgent agent = service.Create(new Stream());
 
             var updateMessage = new ThreadUpdater(() =>
             {

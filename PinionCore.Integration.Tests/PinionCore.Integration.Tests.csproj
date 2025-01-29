@@ -23,6 +23,7 @@
     <ProjectReference Include="..\PinionCore.Remote.Client\PinionCore.Remote.Client.csproj" />
     <ProjectReference Include="..\PinionCore.Remote.Reactive\PinionCore.Remote.Reactive.csproj" />
     <ProjectReference Include="..\PinionCore.Remote.Server\PinionCore.Remote.Server.csproj" />
+    <ProjectReference Include="..\PinionCore.Remote.Standalone\PinionCore.Remote.Standalone.csproj" />
     <ProjectReference Include="..\PinionCore.Remote.Tools.Protocol.Sources.TestCommon\PinionCore.Remote.Tools.Protocol.Sources.TestCommon.csproj" />
   </ItemGroup>
 

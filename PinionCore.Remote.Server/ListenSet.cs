@@ -1,7 +1,5 @@
 ﻿namespace PinionCore.Remote.Server
 {
-
-
     public class ListenSet<TListener, TService>
     {
         public ListenSet(TListener listener, TService service)
