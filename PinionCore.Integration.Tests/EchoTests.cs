@@ -12,9 +12,11 @@ namespace PinionCore.Integration.Tests
 {
     public class EchoTests
     {
-        [Test]
-        [NUnit.Framework.Timeout(1000)]
-        [NUnit.Framework.TestCase(100)]
+        [Test]        
+        [NUnit.Framework.TestCase(1)]
+        [NUnit.Framework.TestCase(2)]
+        [NUnit.Framework.TestCase(30)]
+        [NUnit.Framework.TestCase(400)]
         public async System.Threading.Tasks.Task IntervalTest(int agent_count)
         {
             var protocol = PinionCore.Remote.Tools.Protocol.Sources.TestCommon.ProtocolProvider.CreateCase1();
@@ -30,29 +32,46 @@ namespace PinionCore.Integration.Tests
 
             var agents = await agentsObs.ToList();
 
+
             var stopWatch = new System.Diagnostics.Stopwatch();
             stopWatch.Start();
-
             var intervalsObs = from agent in agents.ToObservable()
-                               let start = stopWatch.Elapsed
-                               from echo in agent.QueryNotifier<Echoable>().SupplyEvent()
-                               from value in echo.Echo(1).RemoteValue()
-                               select stopWatch.Elapsed - start;
-            var intervals = new System.Collections.Generic.List<TimeSpan>();
-            intervalsObs.Subscribe(intervals.Add);
+                               from echo in agent.QueryNotifier<Echoable>().SupplyEvent()//.Delay(TimeSpan.FromMilliseconds(new System.Random().Next(0, agent_count * 10)))
+                               from start in Observable.Start(() => stopWatch.Elapsed)//.Do(s => System.Console.WriteLine($"start:{s}"))
+                               from value in echo.Echo().RemoteValue()
+                               from end in Observable.Start(() => stopWatch.Elapsed)//.Do(e => System.Console.WriteLine($"end:{e}"))
+                               select end - start;
 
-            while (intervals.Count() < agent_count)
+            var intervals = new System.Collections.Concurrent.ConcurrentBag<TimeSpan>();
+
+            var updateTask = System.Threading.Tasks.Task.Run(() =>
             {
-                foreach (var agent in agents)
+                while (intervals.Count() < agent_count)
                 {
-                    agent.HandleMessage();
-                    agent.HandlePackets();
+                    foreach (var agent in agents)
+                    {
+                        agent.HandleMessage();
+                        agent.HandlePackets();
+                    }
+                    //await System.Threading.Tasks.Task.Delay(1);
                 }
-            }
+            });
+
+
+
+
+
+            intervalsObs.Subscribe(interval => intervals.Add(interval));
+
+
+            updateTask.Wait();
 
             var sumInterval = intervals.Sum(i => i.Ticks);
+            var maxInterval = intervals.Max(i => i.Ticks);
+            var minInterval = intervals.Min(i => i.Ticks);
             var avgInterval = sumInterval / agent_count;
-            System.Console.WriteLine(TimeSpan.FromTicks(avgInterval).TotalSeconds) ;
+            System.Console.WriteLine($"avg:{TimeSpan.FromTicks(avgInterval).TotalSeconds} min:{TimeSpan.FromTicks(minInterval).TotalSeconds} max:{TimeSpan.FromTicks(maxInterval).TotalSeconds} sum:{TimeSpan.FromTicks(sumInterval).TotalSeconds}") ;
+
 
         }
     }

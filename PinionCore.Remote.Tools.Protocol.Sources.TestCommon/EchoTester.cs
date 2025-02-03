@@ -2,9 +2,9 @@
 {
     public class EchoTester : Echoable
     {
-        public PinionCore.Remote.Value<int> Echo(int value)
-        {
-            return value;
+        public PinionCore.Remote.Value<int> Echo()
+        {            
+            return 0;
         }
     }
 }

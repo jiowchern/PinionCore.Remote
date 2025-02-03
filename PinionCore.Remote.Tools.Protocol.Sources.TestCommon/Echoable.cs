@@ -2,6 +2,6 @@
 {
     public interface Echoable
     {
-        PinionCore.Remote.Value<int> Echo(int value);
+        PinionCore.Remote.Value<int> Echo();
     }
 }
