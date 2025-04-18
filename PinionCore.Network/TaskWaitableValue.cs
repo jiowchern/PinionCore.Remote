@@ -9,14 +9,14 @@ using System.Threading.Tasks;
 namespace PinionCore.Network
 {
     using PinionCore.Remote;
-    public class TaskWaitableValue<T> : IWaitableValue<T>, IAwaitable<T>
+    public class TaskWaitableValue<T> : IAwaitableSource<T>, IAwaitable<T>
     {
         readonly PinionCore.Remote.Value<T> _Value;
         readonly System.Threading.Tasks.Task<T> _Task;
 
         bool IAwaitable<T>.IsCompleted => _Task.GetAwaiter().IsCompleted;
 
-        IAwaitable<T> IWaitableValue<T>.GetAwaiter()
+        IAwaitable<T> IAwaitableSource<T>.GetAwaiter()
         {
             return this;
         }

@@ -45,7 +45,7 @@ namespace PinionCore.Network.Tcp
             }
         }
 
-        IWaitableValue<int> IStreamable.Receive(byte[] readed_byte, int offset, int count)
+        IAwaitableSource<int> IStreamable.Receive(byte[] readed_byte, int offset, int count)
         {
             return _Receive.Transact(readed_byte, offset, count);
         }
@@ -62,7 +62,7 @@ namespace PinionCore.Network.Tcp
             _SocketErrorEvent(error);
             return size;
         }
-        IWaitableValue<int> IStreamable.Send(byte[] buffer, int offset, int buffer_length)
+        IAwaitableSource<int> IStreamable.Send(byte[] buffer, int offset, int buffer_length)
         {
             return _Send.Transact(buffer, offset, buffer_length);
 

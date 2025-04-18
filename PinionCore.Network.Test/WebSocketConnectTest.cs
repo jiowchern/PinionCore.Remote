@@ -28,7 +28,7 @@
             }
             IStreamable server = peer;
             var serverReceiveBuffer = new byte[5];
-            Remote.IWaitableValue<int> serverReceiveTask = server.Receive(serverReceiveBuffer, 0, 5);
+            Remote.IAwaitableSource<int> serverReceiveTask = server.Receive(serverReceiveBuffer, 0, 5);
             IStreamable client = connecter;
             var clientSendCount = await client.Send(new byte[] { 1, 2, 3, 4, 5 }, 0, 5);
 

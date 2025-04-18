@@ -11,25 +11,25 @@ namespace PinionCore.Network
             Receive = new BufferRelay();
         }
 
-        public IWaitableValue<int> Push(byte[] buffer, int offset, int count)
+        public IAwaitableSource<int> Push(byte[] buffer, int offset, int count)
         {
             return Receive.Push(buffer, offset, count);
         }
 
-        public IWaitableValue<int> Pop(byte[] buffer, int offset, int count)
+        public IAwaitableSource<int> Pop(byte[] buffer, int offset, int count)
         {
 
             return Send.Pop(buffer, offset, count);
         }
 
-        IWaitableValue<int> IStreamable.Send(byte[] buffer, int offset, int count)
+        IAwaitableSource<int> IStreamable.Send(byte[] buffer, int offset, int count)
         {
             return Send.Push(buffer, offset, count);
         }
 
 
 
-        IWaitableValue<int> IStreamable.Receive(byte[] buffer, int offset, int count)
+        IAwaitableSource<int> IStreamable.Receive(byte[] buffer, int offset, int count)
         {
 
             return Receive.Pop(buffer, offset, count);

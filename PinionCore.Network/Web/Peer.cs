@@ -24,7 +24,7 @@ namespace PinionCore.Network.Web
             _CancelSource.Cancel();
         }
 
-        IWaitableValue<int> IStreamable.Receive(byte[] buffer, int offset, int count)
+        IAwaitableSource<int> IStreamable.Receive(byte[] buffer, int offset, int count)
         {
             if (_Socket.State == WebSocketState.Aborted)
             {
@@ -54,7 +54,7 @@ namespace PinionCore.Network.Web
             }).ToWaitableValue();
         }
 
-        IWaitableValue<int> IStreamable.Send(byte[] buffer, int offset, int count)
+        IAwaitableSource<int> IStreamable.Send(byte[] buffer, int offset, int count)
         {
             if (_Socket.State == WebSocketState.Aborted)
             {
