@@ -21,7 +21,7 @@ Key features of PinionCore Remote include support for IL2CPP and AOT, making it 
 
 With its stand-alone mode, developers can simulate server-client interactions without a network connection, facilitating development and debugging. PinionCore Remote aims to streamline network communication in game development and other applications, enabling developers to focus more on implementing business logic rather than dealing with the complexities of network protocols.  
 
-If you want to know the details of the system architecture you can refer to DeepWiki --> [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/jiowchern/PinionCore.Remote)  
+If you want to know the details of the system architecture you can refer to DeepWiki --> [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/jiowchern/PinionCore.Remote) OpenDeepWiki[OpenDeepWiki](https://opendeep.wiki/jiowchern/PinionCore.Remote)
 
 
 <!-- * Remote Method Invocation
