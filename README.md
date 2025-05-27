@@ -5,7 +5,8 @@
 [![Maintainability](https://api.codeclimate.com/v1/badges/89c3a646f9daff42a38e/maintainability)](https://codeclimate.com/github/jiowchern/PinionCore.Remote/maintainability)
 [![Build](https://github.com/jiowchern/PinionCore.Remote/actions/workflows/dotnet-desktop.yml/badge.svg?branch=master)](https://github.com/jiowchern/PinionCore.Remote/actions/workflows/dotnet-desktop.yml)
 [![Coverage Status](https://coveralls.io/repos/github/jiowchern/PinionCore.Remote/badge.svg?branch=master)](https://coveralls.io/github/jiowchern/PinionCore.Remote?branch=master)
-![commit last date](https://img.shields.io/github/last-commit/jiowchern/PinionCore.Remote)    
+![commit last date](https://img.shields.io/github/last-commit/jiowchern/PinionCore.Remote) 
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/jiowchern/PinionCore.Remote)  
 <!-- [![Discord](https://img.shields.io/discord/101557008930451456.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](https://discord.gg/uDF8NTp) -->
 <!-- [![Build status](https://ci.appveyor.com/api/projects/status/fv1owwit4utddawv/branch/release?svg=true)](https://ci.appveyor.com/project/jiowchern/regulus-remote/branch/release) -->
 <!-- [![GitHub release](https://img.shields.io/github/release/jiowchern/regulus.svg?style=flat-square)](https://github.com/jiowchern/PinionCore/releases)![pre-release](https://img.shields.io/github/v/release/jiowchern/PinionCore?include_prereleases) -->
@@ -21,7 +22,7 @@ Key features of PinionCore Remote include support for IL2CPP and AOT, making it 
 
 With its stand-alone mode, developers can simulate server-client interactions without a network connection, facilitating development and debugging. PinionCore Remote aims to streamline network communication in game development and other applications, enabling developers to focus more on implementing business logic rather than dealing with the complexities of network protocols.  
 
-If you want to know the details of the system architecture you can refer to DeepWiki --> [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/jiowchern/PinionCore.Remote) OpenDeepWiki[OpenDeepWiki](https://opendeep.wiki/jiowchern/PinionCore.Remote)
+If you want to know the details of the system architecture you can refer to Ask --> [DeepWiki](https://deepwiki.com/jiowchern/PinionCore.Remote) Or [OpenDeepWiki](https://opendeep.wiki/jiowchern/PinionCore.Remote) 
 
 
 <!-- * Remote Method Invocation
