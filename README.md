@@ -96,7 +96,7 @@ namespace Protocol
 	}
 }
 ```
-2. Server implemente ```IGreeter```.
+2. Server implements ```IGreeter```.
 ```csharp
 namespace Server
 {	
@@ -385,7 +385,7 @@ Sample/Standalone>dotnet new console
 	<ProjectReference Include="..\Server\Server.csproj" />
 </ItemGroup>
 ```
-2.  Create standlone service
+2.  Create standalone service
 ```csharp
 namespace Standalone
 {	
