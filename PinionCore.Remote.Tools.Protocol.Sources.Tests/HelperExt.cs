@@ -23,8 +23,12 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.Tests
                 MetadataReference.CreateFromFile(typeof(System.Action<>).GetTypeInfo().Assembly.Location),
                 MetadataReference.CreateFromFile(typeof(System.Action<,,,,,,,,>).GetTypeInfo().Assembly.Location),
                 MetadataReference.CreateFromFile(Assembly.Load("netstandard, Version=2.0.0.0").Location),
-                MetadataReference.CreateFromFile(Assembly.Load("System.Collections, Version=4.1.2.0").Location),
-                MetadataReference.CreateFromFile(Assembly.Load("System.Linq.Expressions, Version=4.2.2.0").Location)
+                MetadataReference.CreateFromFile(Assembly.Load("System.Collections, Version=6.0.0.0").Location),
+                MetadataReference.CreateFromFile(Assembly.Load("System.Linq.Expressions, Version=6.0.0.0").Location),
+                // System.Runtime, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a
+                // System.Runtime, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a
+                MetadataReference.CreateFromFile(Assembly.Load("System.Runtime, Version=6.0.0.0").Location),
+                MetadataReference.CreateFromFile(typeof(object).GetTypeInfo().Assembly.Location),
             };
 
 
