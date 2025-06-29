@@ -1,8 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+	  <TargetFramework>net6.0</TargetFramework>
 
+	  <!-- 原本是 netcoreapp3.1，已升級為 net8.0 -->
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Threading.Tasks;
 using PinionCore.Remote;
 using PinionCore.Serialization;
 
@@ -155,6 +156,50 @@ namespace PinionCore.Network.Tests
             }
 
 
+        }
+        [NUnit.Framework.Test]
+        public async Task SendTest()
+        {
+            var stream = new PinionCore.Network.Stream();
+            var sender = new PinionCore.Network.PackageSender(stream, PinionCore.Memorys.PoolProvider.Shared);
+
+            var buffers = new System.Collections.Generic.List<PinionCore.Memorys.Buffer>();
+            for (var i = 0; i < 1000; i++)
+            {
+                var buffer = PinionCore.Memorys.PoolProvider.Shared.Alloc(100);
+                for (var j = 0; j < 100; j++)
+                {
+                    buffer.Bytes.Array[buffer.Bytes.Offset + j] = (byte)(j + i);
+                    
+                }
+                buffers.Add(buffer);
+                
+            }
+
+            foreach (var buffer in buffers)
+            {
+                sender.Push(buffer);
+            }
+            var reader = new PinionCore.Network.PackageReader(new PinionCore.Network.ReverseStream(stream), PinionCore.Memorys.PoolProvider.Shared);
+
+            var readed = 0;
+            while (readed < buffers.Count)
+            {
+                var readBuffers = await reader.Read();
+                if (readBuffers.Count == 0)
+                    break;
+                foreach (var readBuffer in readBuffers)
+                {
+                    NUnit.Framework.Assert.AreEqual(100, readBuffer.Bytes.Count);
+                    for (var i = 0; i < 100; i++)
+                    {
+                        NUnit.Framework.Assert.AreEqual((byte)(i + readed), readBuffer.Bytes.Array[readBuffer.Bytes.Offset + i]);
+                    }
+                    readed++;
+                }
+            }
+
+            NUnit.Framework.Assert.AreEqual(buffers.Count, readed);
         }
     }
 }

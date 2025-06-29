@@ -274,16 +274,17 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
                                               (h) => eventer.Event22 -= h)
                                           select n;
 
-            var vals = new System.Collections.Generic.List<int>();
-            event11Obs.Subscribe((unit) => vals.Add(1));
-            event12Obs.Subscribe((unit) => vals.Add(2));
-            event21Obs.Subscribe(vals.Add);
-            event22Obs.Subscribe(vals.Add);
+            var vals = new System.Collections.Concurrent.ConcurrentQueue<int>();
+
+            event11Obs.Subscribe((unit) => vals.Enqueue(1));
+            event12Obs.Subscribe((unit) => vals.Enqueue(2));
+            event21Obs.Subscribe(vals.Enqueue);
+            event22Obs.Subscribe(vals.Enqueue);
 
 
             System.Console.WriteLine("wait EventTest tester.LisCount ...");
             System.Threading.SpinWait.SpinUntil(() => tester.LisCount == 4, 5000);
-
+            
 
             tester.Invoke22(9);
             tester.Invoke21();
@@ -298,10 +299,11 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
 
             env.Dispose();
 
-            NUnit.Framework.Assert.AreEqual(9, vals[0]);
-            NUnit.Framework.Assert.AreEqual(2, vals[1]);
-            NUnit.Framework.Assert.AreEqual(1, vals[2]);
-            NUnit.Framework.Assert.AreEqual(8, vals[3]);
+            var valsArray = vals.ToArray();
+            var actualVals = new int[] { 9, 2, 1, 8 };
+            NUnit.Framework.Assert.IsTrue(valsArray.Length == 4, "vals.Count != 4");
+            NUnit.Framework.Assert.IsTrue(valsArray.Any(), "vals.Count != 4");
+            NUnit.Framework.Assert.IsTrue(valsArray.SequenceEqual(actualVals), "vals.Count != 4, actualVals != valsArray");
 
 
 

@@ -14,14 +14,16 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon
             {
 
                 _IEventabe2Event1 += value;
-                LisCount++;
+                System.Threading.Interlocked.Increment(ref LisCount);
+
             }
 
             remove
             {
 
                 _IEventabe2Event1 -= value;
-                LisCount--;
+                
+                System.Threading.Interlocked.Decrement(ref LisCount);
             }
         }
 
@@ -32,14 +34,14 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon
             {
 
                 _IEventabe1Event1 += value;
-                LisCount++;
+                System.Threading.Interlocked.Increment(ref LisCount);
             }
 
             remove
             {
 
                 _IEventabe1Event1 -= value;
-                LisCount--;
+                System.Threading.Interlocked.Decrement(ref LisCount);
             }
         }
 
@@ -50,14 +52,14 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon
             {
 
                 _IEventabe2Event2 += value;
-                LisCount++;
+                System.Threading.Interlocked.Increment(ref LisCount);
             }
 
             remove
             {
 
                 _IEventabe2Event2 -= value;
-                LisCount--;
+                System.Threading.Interlocked.Decrement(ref LisCount);
             }
         }
 
@@ -68,14 +70,14 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon
             {
 
                 _IEventabe1Event2 += value;
-                LisCount++;
+                System.Threading.Interlocked.Increment(ref LisCount);
             }
 
             remove
             {
 
                 _IEventabe1Event2 -= value;
-                LisCount--;
+                System.Threading.Interlocked.Decrement(ref LisCount);
             }
         }
 

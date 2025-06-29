@@ -41,20 +41,15 @@ namespace PinionCore.Network
 
         void IDisposable.Dispose()
         {
+            _Sending.Dispose();
         }
 
 
 
         private void _Push(Memorys.Buffer buffer)
         {
-            if (_Sending.IsCompleted || _Sending.IsFaulted || _Sending.IsCanceled)
-            {
-                _Sending = _SendBufferAsync(buffer);
-            }
-            else
-            {
-                _Sending = _Sending.ContinueWith(t => _SendBufferAsync(buffer)).Unwrap();
-            }
+
+            _Sending = _Sending.ContinueWith(t => _SendBufferAsync(buffer)).Unwrap();
         }
 
         private async Task<int> _SendBufferAsync(PinionCore.Memorys.Buffer buffer)
@@ -71,7 +66,10 @@ namespace PinionCore.Network
             return sendCount;
         }
 
+        public bool IsSending
+        {
+            get { return !_Sending.IsCompleted; }
 
-
+        }
     }
 }
