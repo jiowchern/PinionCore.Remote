@@ -5,66 +5,68 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace PinionCore.Remote.Tools.Protocol.Sources.BlockModifiers
 {
-
-
-    internal class MethodVoid
+    internal class MethodPinionCoreRemoteValue1
     {
         private readonly Compilation _Compilation;
         private readonly MemberIdProvider _MemberIdProvider;
 
-        public MethodVoid(Compilation compilation, MemberIdProvider memberIdProvider )
+        public MethodPinionCoreRemoteValue1(Compilation compilation ,MemberIdProvider memberIdProvider )
         {
             this._Compilation = compilation;
             _MemberIdProvider = memberIdProvider;
         }
+
         public BlockAndTypes Mod(System.Collections.Generic.IEnumerable<SyntaxNode> nodes)
         {
             var block = nodes.Skip(0).FirstOrDefault() as BlockSyntax;
             var md = nodes.Skip(1).FirstOrDefault() as MethodDeclarationSyntax;
             var cd = nodes.Skip(2).FirstOrDefault() as ClassDeclarationSyntax;
 
+
             if (Extensions.SyntaxExtensions.AnyNull(block, md, cd))
             {
                 return null;
             }
-
             if (!_Compilation.AllSerializable(md.ParameterList.Parameters.Select(p => p.Type)))
                 return null;
-
             if ((from p in md.ParameterList.Parameters
                  from m in p.Modifiers
                  where m.IsKind(SyntaxKind.OutKeyword)
                  select m).Any())
                 return null;
 
-            NameSyntax interfaceCode = md.ExplicitInterfaceSpecifier.Name;
+            var interfaceCode = md.ExplicitInterfaceSpecifier.Name.ToFullString();
             var methodCode = md.Identifier.ToFullString();
             var methodCallParamsCode = string.Join(",", from p in md.ParameterList.Parameters select p.Identifier.ToFullString());
             TypeSyntax returnType = md.ReturnType;
-            var pt = returnType as PredefinedTypeSyntax;
+            var qn = returnType as QualifiedNameSyntax;
 
-            if (pt == null)
+            if (qn == null)
                 return null;
 
-            if (!pt.Keyword.IsKind(Microsoft.CodeAnalysis.CSharp.SyntaxKind.VoidKeyword))
-            {
+            if (qn.Left.ToString() != "PinionCore.Remote")
                 return null;
-            }
 
-            var memberId = _MemberIdProvider.DisrbutionIdWithGhost(md);
+            var gn = qn.Right as GenericNameSyntax;
+            if (gn == null)
+                return null;
 
-            // var info = typeof({interfaceCode}).GetMethod(""{methodCode}"");
+            if (gn.Identifier.ToString() != "Value")
+                return null;
+            var id = _MemberIdProvider.DisrbutionIdWithGhost(md);
 
             return new BlockAndTypes
             {
                 Block = SyntaxFactory.Block(SyntaxFactory.ParseStatement(
-$@"this._CallMethodEvent({memberId}, new object[] {{{methodCallParamsCode}}} , null);", 0)),
-                Types = from p in md.ParameterList.Parameters select p.Type
+                                $@"
+var returnValue = new {returnType}();
+
+this._CallMethodEvent({id}, new object[] {{{methodCallParamsCode}}} , returnValue);                    
+return returnValue;
+                                            ")),
+                Types = (from p in md.ParameterList.Parameters select p.Type).Union(gn.TypeArgumentList.Arguments)
             };
 
-
-
         }
-
     }
 }

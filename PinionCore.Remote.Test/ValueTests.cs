@@ -50,9 +50,8 @@ namespace PinionCore.Remote.Tests
         [NUnit.Framework.Test , Timeout(1000)]
         public async System.Threading.Tasks.Task TestNoReturn()
         {
-            var val = new PinionCore.Remote.Value() ;
-            var ival = val as IValue;
-            ival.SetValue(null);
+            var val = new PinionCore.Remote.Value(false) ;
+            
             await val;
             
         }

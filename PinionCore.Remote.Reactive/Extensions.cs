@@ -12,12 +12,18 @@ namespace PinionCore.Remote.Reactive
             return Observable.Defer(() =>
             {
                 action();
+               
                 return Observable.Return(System.Reactive.Unit.Default);
             });
         }
         public static IObservable<TValue> RemoteValue<TValue>(this PinionCore.Remote.Value<TValue> ret)
         {
             return new OnceRemoteReturnValueEvent<TValue>(ret);
+        }
+
+        public static IObservable<Value> RemoteValue(this PinionCore.Remote.Value ret)
+        {
+            return new OnceRemoteReturnValueEvent(ret);
         }
 
         public static IObservable<TValue> PropertyChangeValue<TValue>(this PinionCore.Remote.Property<TValue> ret)

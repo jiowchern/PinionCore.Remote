@@ -30,7 +30,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.Tests
 
             _Sources = new ProjectSourceBuilder(new EssentialReference(compilation, null)).Sources;
         }
-
+        
 
 
         public async Task RunAsync(params DiagnosticResult[] diagnostic_results)

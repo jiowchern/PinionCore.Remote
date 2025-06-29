@@ -25,7 +25,7 @@ namespace PinionCore.Remote
             IResponseQueue queue,
             IProtocol protocol,
             ConcurrentDictionary<long, SoulProxy> souls,
-            Dictionary<long, IValue> waitValues,
+            
             ISerializable serializer,
             IInternalSerializable internalSerializable)
         {
@@ -33,7 +33,7 @@ namespace PinionCore.Remote
             _Queue = queue;
             _Protocol = protocol;
             _Souls = souls;
-            _WaitValues = waitValues;
+            _WaitValues = new Dictionary<long, IValue>();
             _Serializer = serializer;
             _InternalSerializable = internalSerializable;
 

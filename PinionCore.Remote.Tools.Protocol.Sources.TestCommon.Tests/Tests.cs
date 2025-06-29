@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Reactive.Linq;
+using System.Threading.Tasks;
 using NUnit.Framework;
 using PinionCore.Remote.Reactive;
 using PinionCore.Remote.Tools.Protocol.Sources.TestCommon.MultipleNotices;
@@ -342,6 +343,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
             var valuesObs = from gpi in env.Queryable.QueryNotifier<IMethodable>().SupplyEvent()
                             from v1 in gpi.GetValue1().RemoteValue()
                             from v2 in gpi.GetValue2().RemoteValue()
+                            
                             from v0 in gpi.GetValue0(0, "", 0, 0, 0, Guid.Empty).RemoteValue()
                             select new { v1, v2, v0 };
 
@@ -353,6 +355,25 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
             Assert.AreEqual(0, values.v0[0]);
         }
 
+
+        [Test, Timeout(Timeout)]
+        public async Task MethodTestRevalue0_1()
+        {
+            var tester = new MethodTester();
+
+            var env = new TestEnv<Entry<IMethodable>, IMethodable>(new Entry<IMethodable>(tester));
+            var gpiObs = from gpi in env.Queryable.QueryNotifier<IMethodable>().SupplyEvent()
+                            select gpi;
+
+            var m = gpiObs.FirstAsync().Wait();
+
+            var v = m.MethodNoValue();
+
+            v.GetAwaiter().GetResult();
+            env.Dispose();
+            
+        }
+        
         //[Test , Timeout(1000*60)]
         public void MethodReturnTypeTest()
         {

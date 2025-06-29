@@ -72,7 +72,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.BlockModifiers
 
 
 
-            var eventId = _MemberIdProvider.GetIdWithGhost(ed);
+            var eventId = _MemberIdProvider.DisrbutionIdWithGhost(ed);
 
 
             BlockSyntax newBlock = SyntaxFactory.Block(SyntaxFactory.ParseStatement(

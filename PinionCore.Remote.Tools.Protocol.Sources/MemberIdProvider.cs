@@ -106,7 +106,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
             throw new KeyNotFoundException($"Member ID not found for key: {key}");
             
         }
-        public int GetIdWithGhost(MemberDeclarationSyntax member)
+        public int DisrbutionIdWithGhost(MemberDeclarationSyntax member)
         {
             if (member is MethodDeclarationSyntax method)
             {

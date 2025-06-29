@@ -51,12 +51,12 @@ namespace PinionCore.Remote
             foreach(var ghost in ghosts)
             {
                 var eventMember = ghost.DescendantNodes().OfType<EventDeclarationSyntax>();
-                var eventId = memberIdProvider.GetIdWithGhost(eventMember.First());
+                var eventId = memberIdProvider.DisrbutionIdWithGhost(eventMember.First());
 
                 NUnit.Framework.Assert.Greater(eventId, 0);
 
                 var methodMember = ghost.DescendantNodes().OfType<MethodDeclarationSyntax>();
-                var methodId = memberIdProvider.GetIdWithGhost(methodMember.First());
+                var methodId = memberIdProvider.DisrbutionIdWithGhost(methodMember.First());
                 NUnit.Framework.Assert.Greater(methodId, 0);
             }
 
@@ -203,7 +203,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon
             IEnumerable<EventDeclarationSyntax> classEvents = classs.SelectMany(c => c.DescendantNodes().OfType<EventDeclarationSyntax>());
             foreach (EventDeclarationSyntax classEvent in classEvents)
             {
-                var id = memberIdProvider.GetIdWithGhost(classEvent);
+                var id = memberIdProvider.DisrbutionIdWithGhost(classEvent);
                 if (!eventIdCount.ContainsKey(id))
                     eventIdCount[id] = 0;
                 eventIdCount[id]++;

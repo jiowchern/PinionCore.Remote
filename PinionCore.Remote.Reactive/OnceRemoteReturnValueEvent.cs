@@ -3,6 +3,8 @@
 
 namespace PinionCore.Remote.Reactive
 {
+
+
     internal class OnceRemoteReturnValueEvent<T> : System.Reactive.ObservableBase<T>, IDisposable
     {
         private readonly Value<T> _Return;
@@ -26,6 +28,36 @@ namespace PinionCore.Remote.Reactive
         }
 
         protected override IDisposable SubscribeCore(IObserver<T> observer)
+        {
+            _Observer = observer;
+            _Return.OnValue += _OnValue;
+            return this;
+        }
+    }
+
+    internal class OnceRemoteReturnValueEvent : System.Reactive.ObservableBase<Value>, IDisposable
+    {
+        private readonly Value _Return;
+        IObserver<Value> _Observer;
+        public OnceRemoteReturnValueEvent(Value ret)
+        {
+            this._Return = ret;
+        }
+
+        private void _OnValue()
+        {
+            _Observer.OnNext(_Return);
+            _Observer.OnCompleted();
+        }
+
+
+        void IDisposable.Dispose()
+        {
+            _Return.OnValue -= _OnValue;
+
+        }
+
+        protected override IDisposable SubscribeCore(IObserver<Value> observer)
         {
             _Observer = observer;
             _Return.OnValue += _OnValue;
