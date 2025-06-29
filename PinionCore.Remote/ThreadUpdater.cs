@@ -16,31 +16,40 @@ namespace PinionCore.Remote
             _Updater = updater;
         }
 
-        void _Update(CancellationToken token)
+        void _Update(CancellationTokenSource source)
         {
             var regulator = new AutoPowerRegulator(new PowerRegulator());
 
-            while (!token.IsCancellationRequested)
+            while (!source.IsCancellationRequested)
             {
                 _Updater();
-                regulator.Operate();
+                regulator.Operate(source);
             }
 
         }
         public void Start()
         {
-
             _Cancel = new CancellationTokenSource();
 
-            _Task = System.Threading.Tasks.Task.Run(() => _Update(_Cancel.Token), _Cancel.Token);
-
-
+            _Task = System.Threading.Tasks.Task.Run(() => _Update(_Cancel));
         }
 
         public void Stop()
         {
             _Cancel.Cancel();
-            _Task.Wait();
+            try
+            {
+                _Task.Wait();
+            }
+            catch (System.AggregateException)
+            {
+
+                
+            }
+            catch(System.Threading.Tasks.TaskCanceledException)
+            {
+
+            }
             _Cancel.Dispose();
         }
     }

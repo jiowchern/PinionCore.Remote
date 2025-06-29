@@ -1,4 +1,6 @@
-﻿namespace PinionCore.Network.Tests
+﻿using System.Threading;
+
+namespace PinionCore.Network.Tests
 {
 
     public class WebSocketConnectTest
@@ -24,7 +26,7 @@
             Web.Peer peer;
             while (!peers.TryDequeue(out peer))
             {
-                ar.Operate();
+                ar.Operate(new CancellationTokenSource());
             }
             IStreamable server = peer;
             var serverReceiveBuffer = new byte[5];

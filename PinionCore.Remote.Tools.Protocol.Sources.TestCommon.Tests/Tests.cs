@@ -371,7 +371,9 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
 
             var v = m.MethodNoValue();
 
-            v.GetAwaiter().GetResult();
+            await v;
+
+            await System.Threading.Tasks.Task.Delay(100);
             env.Dispose();
             
         }

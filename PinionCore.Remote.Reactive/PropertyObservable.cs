@@ -40,6 +40,7 @@ namespace PinionCore.Remote.Reactive
         void IDisposable.Dispose()
         {
             _ThreadUpdater.Stop();
+
             if (_Observer != null)
                 _Observer.OnCompleted();
         }
