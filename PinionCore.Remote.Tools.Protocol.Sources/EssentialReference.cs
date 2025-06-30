@@ -9,7 +9,8 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
         public readonly INamedTypeSymbol PinionCoreRemoteProtocolCreaterAttribute;
         public readonly INamedTypeSymbol PinionCoreRemoteProperty;
         public readonly INamedTypeSymbol PinionCoreRemoteNotifier;
-        public readonly INamedTypeSymbol PinionCoreRemoteValue;
+        public readonly INamedTypeSymbol PinionCoreRemoteValue1;
+        public readonly INamedTypeSymbol PinionCoreRemoteValue0;
         public readonly INamedTypeSymbol[] SystemActions;
         public readonly Compilation Compilation;
 
@@ -24,7 +25,8 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
             PinionCoreRemoteProtocolCreaterAttribute = _GetType("PinionCore.Remote.Protocol.CreaterAttribute");
             PinionCoreRemoteProperty = _GetType("PinionCore.Remote.Property`1");
             PinionCoreRemoteNotifier = _GetType("PinionCore.Remote.Notifier`1");
-            PinionCoreRemoteValue = _GetType("PinionCore.Remote.Value`1");
+            PinionCoreRemoteValue1 = _GetType("PinionCore.Remote.Value`1");
+            PinionCoreRemoteValue0 = _GetType("PinionCore.Remote.Value");
 
 
             SystemActions = new[]

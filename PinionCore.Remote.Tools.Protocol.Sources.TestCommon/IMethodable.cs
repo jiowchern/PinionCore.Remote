@@ -7,5 +7,7 @@
         int NotSupported();
 
         PinionCore.Remote.Value<IMethodable> GetValueSelf();
+
+        PinionCore.Remote.Value MethodNoValue();
     }
 }

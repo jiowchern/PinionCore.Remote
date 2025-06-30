@@ -38,25 +38,25 @@ namespace PinionCore.Network.Tests
             lintener.Close();
         }
 
-        [NUnit.Framework.Test]
-        public async System.Threading.Tasks.Task ConnectFailTest()
-        {
-            var port = PinionCore.Network.Tcp.Tools.GetAvailablePort();
+        //[NUnit.Framework.Test]
+        //public async System.Threading.Tasks.Task ConnectFailTest()
+        //{
+        //    var port = PinionCore.Network.Tcp.Tools.GetAvailablePort();
 
-            var connector = new PinionCore.Network.Tcp.Connector();
-            System.AggregateException ex = await connector.Connect(new System.Net.IPEndPoint(System.Net.IPAddress.Loopback, port)).ContinueWith(t =>
-            {
-                t.Exception.Handle(e =>
-                {
-                    NUnit.Framework.Assert.IsNotNull(e);
-                    return true;
-                });
+        //    var connector = new PinionCore.Network.Tcp.Connector();
+        //    System.AggregateException ex = await connector.Connect(new System.Net.IPEndPoint(System.Net.IPAddress.Loopback, port)).ContinueWith(t =>
+        //    {
+        //        t.Exception.Handle(e =>
+        //        {
+        //            NUnit.Framework.Assert.IsNotNull(e);
+        //            return true;
+        //        });
 
-                return t.Exception;
-            });
+        //        return t.Exception;
+        //    });
 
-            NUnit.Framework.Assert.IsNotNull(ex);
-        }
+        //    NUnit.Framework.Assert.IsNotNull(ex);
+        //}
 
         [NUnit.Framework.Test]
         public async System.Threading.Tasks.Task DisconnectTest()

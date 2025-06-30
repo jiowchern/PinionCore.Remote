@@ -20,7 +20,8 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
         {
             return new SyntaxModifier(
                     new BlockModifiers.MethodVoid(com, memberIdProvider),
-                    new BlockModifiers.MethodPinionCoreRemoteValue(com, memberIdProvider),
+                    new BlockModifiers.MethodPinionCoreRemoteValue1(com, memberIdProvider),
+                    new BlockModifiers.MethodPinionCoreRemoteValue0(com, memberIdProvider),
                     new BlockModifiers.EventSystemAction(com, memberIdProvider),
                     new BlockModifiers.PropertyPinionCoreRemoteBlock(com),
                     new Modifiers.EventFieldDeclarationSyntax(),
@@ -28,7 +29,8 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
                 );
         }
         private readonly BlockModifiers.MethodVoid _MethodVoid;
-        private readonly BlockModifiers.MethodPinionCoreRemoteValue _MethodPinionCoreRemoteValue;
+        private readonly BlockModifiers.MethodPinionCoreRemoteValue1 _MethodPinionCoreRemoteValue1;
+        private readonly BlockModifiers.MethodPinionCoreRemoteValue0 _MethodPinionCoreRemoteValue0;
         private readonly BlockModifiers.EventSystemAction _EventSystemAction;
         private readonly BlockModifiers.PropertyPinionCoreRemoteBlock _PropertyPinionCoreRemoteBlock;
         private readonly Modifiers.EventFieldDeclarationSyntax _EventFieldDeclarationSyntax;
@@ -36,7 +38,8 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
 
         public SyntaxModifier(
             BlockModifiers.MethodVoid method_void,
-            BlockModifiers.MethodPinionCoreRemoteValue method_regulus_remote_value,
+            BlockModifiers.MethodPinionCoreRemoteValue1 method_regulus_remote_value1,
+            BlockModifiers.MethodPinionCoreRemoteValue0 method_regulus_remote_value0,
             BlockModifiers.EventSystemAction event_system_action,
             BlockModifiers.PropertyPinionCoreRemoteBlock property_regulus_remote_block,
             Modifiers.EventFieldDeclarationSyntax event_field_declaration_syntax,
@@ -44,7 +47,8 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
             )
         {
             _MethodVoid = method_void;
-            _MethodPinionCoreRemoteValue = method_regulus_remote_value;
+            _MethodPinionCoreRemoteValue1 = method_regulus_remote_value1;
+            _MethodPinionCoreRemoteValue0 = method_regulus_remote_value0;
             _EventSystemAction = event_system_action;
             _PropertyPinionCoreRemoteBlock = property_regulus_remote_block;
             _EventFieldDeclarationSyntax = event_field_declaration_syntax;
@@ -86,11 +90,18 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
                     continue;
                 }
 
-                BlockModifiers.BlockAndTypes mrrv = _MethodPinionCoreRemoteValue.Mod(nodes);
-                if (mrrv != null)
+                BlockModifiers.BlockAndTypes mrrv1 = _MethodPinionCoreRemoteValue1.Mod(nodes);
+                if (mrrv1 != null)
                 {
-                    typesOfSerialization.AddRange(mrrv.Types);
-                    replaceBlocks.Add(block, mrrv.Block);
+                    typesOfSerialization.AddRange(mrrv1.Types);
+                    replaceBlocks.Add(block, mrrv1.Block);
+                    continue;
+                }
+                BlockModifiers.BlockAndTypes mrrv0 = _MethodPinionCoreRemoteValue0.Mod(nodes);
+                if (mrrv0 != null)
+                {
+                    typesOfSerialization.AddRange(mrrv0.Types);
+                    replaceBlocks.Add(block, mrrv0.Block);
                     continue;
                 }
                 BlockModifiers.PropertyAndBlock prrb = _PropertyPinionCoreRemoteBlock.Mod(nodes);

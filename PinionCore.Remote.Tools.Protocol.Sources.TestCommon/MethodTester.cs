@@ -9,6 +9,11 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon
             return new int[] { _1 };
         }
 
+        Value IMethodable.MethodNoValue()
+        {
+            return new Value(false);
+        }
+
         Value<int> IMethodable1.GetValue1()
         {
             return 1;

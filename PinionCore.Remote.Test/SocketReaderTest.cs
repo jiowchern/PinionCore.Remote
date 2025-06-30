@@ -11,7 +11,7 @@ namespace PinionCore.Remote.Tests
             new int[] { 10 }
             );
 
-        IWaitableValue<int> IStreamable.Receive(byte[] buffer, int offset, int count)
+        IAwaitableSource<int> IStreamable.Receive(byte[] buffer, int offset, int count)
         {
             return System.Threading.Tasks.Task<int>.Run(() =>
             {
@@ -29,7 +29,7 @@ namespace PinionCore.Remote.Tests
 
         }
 
-        IWaitableValue<int> IStreamable.Send(byte[] buffer, int offset, int count)
+        IAwaitableSource<int> IStreamable.Send(byte[] buffer, int offset, int count)
         {
             throw new NotImplementedException();
         }

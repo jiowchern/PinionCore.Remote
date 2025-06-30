@@ -41,14 +41,15 @@ namespace PinionCore.Remote.Standalone.Test
     public class GhostTest
     {
         //[Test()]    
-        public void CommunicationDevicePushTestMutli()
+        public  void CommunicationDevicePushTestMutli()
         {
             System.Collections.Generic.IEnumerable<System.Threading.Tasks.Task> tasks = from _ in System.Linq.Enumerable.Range(0, 10000000)
                                                                                         select CommunicationDevicePushTest();
 
             System.Threading.Tasks.Task.WhenAll(tasks);
 
-
+            
+            
 
 
         }
@@ -81,17 +82,17 @@ namespace PinionCore.Remote.Standalone.Test
             var cd = new PinionCore.Remote.Standalone.Stream();
             var peer = cd as IStreamable;
 
-            IWaitableValue<int> result1 = peer.Send(sendBuf, 0, 4);
+            IAwaitableSource<int> result1 = peer.Send(sendBuf, 0, 4);
             var sendResult1 = await result1;
 
-            IWaitableValue<int> result2 = peer.Send(sendBuf, 4, 6);
+            IAwaitableSource<int> result2 = peer.Send(sendBuf, 4, 6);
             var sendResult2 = await result2;
 
 
-            IWaitableValue<int> streamTask1 = cd.Pop(recvBuf, 0, 3);
+            IAwaitableSource<int> streamTask1 = cd.Pop(recvBuf, 0, 3);
             var stream1 = await streamTask1;
 
-            IWaitableValue<int> streamTask2 = cd.Pop(recvBuf, stream1, recvBuf.Length - stream1);
+            IAwaitableSource<int> streamTask2 = cd.Pop(recvBuf, stream1, recvBuf.Length - stream1);
             var stream2 = await streamTask2;
 
             //var streamTask3 = cd.Pop(recvBuf, stream1 + stream2, recvBuf.Length - (stream1 + stream2));

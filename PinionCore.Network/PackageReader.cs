@@ -157,7 +157,7 @@ namespace PinionCore.Network
             Array.Copy(source.Array, source.Offset + sourceOffset, destination.Array, destination.Offset + destOffset, count);
         }
 
-        private IWaitableValue<int> _ReadFromStream(byte[] buffer, int offset, int count)
+        private IAwaitableSource<int> _ReadFromStream(byte[] buffer, int offset, int count)
         {
             return _Stream.Receive(buffer, offset, count);
 

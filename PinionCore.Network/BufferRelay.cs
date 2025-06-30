@@ -45,7 +45,7 @@ namespace PinionCore.Network
 
         }
 
-        public IWaitableValue<int> Push(byte[] buffer, int offset, int count)
+        public IAwaitableSource<int> Push(byte[] buffer, int offset, int count)
         {
             lock (_Segments)
             {
@@ -55,7 +55,7 @@ namespace PinionCore.Network
             return new NoWaitValue<int>(count);
         }
 
-        public IWaitableValue<int> Pop(byte[] buffer, int offset, int count)
+        public IAwaitableSource<int> Pop(byte[] buffer, int offset, int count)
         {
             var waiter = new Waiter() { SyncWait = new NoWaitValue<int>(), Buffer = new ArraySegment<byte>(buffer, offset, count) };
             lock (_Waiters)
@@ -133,12 +133,12 @@ namespace PinionCore.Network
             return totalRead;
         }
 
-        IWaitableValue<int> IStreamable.Receive(byte[] buffer, int offset, int count)
+        IAwaitableSource<int> IStreamable.Receive(byte[] buffer, int offset, int count)
         {
             return Pop(buffer, offset, count);
         }
 
-        IWaitableValue<int> IStreamable.Send(byte[] buffer, int offset, int count)
+        IAwaitableSource<int> IStreamable.Send(byte[] buffer, int offset, int count)
         {
             return Push(buffer, offset, count);
         }

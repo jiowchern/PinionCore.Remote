@@ -11,13 +11,13 @@ namespace PinionCore.Network
         }
 
 
-        IWaitableValue<int> IStreamable.Receive(byte[] buffer, int offset, int count)
+        IAwaitableSource<int> IStreamable.Receive(byte[] buffer, int offset, int count)
         {
             return _Peer.Pop(buffer, offset, count);
 
         }
 
-        IWaitableValue<int> IStreamable.Send(byte[] buffer, int offset, int count)
+        IAwaitableSource<int> IStreamable.Send(byte[] buffer, int offset, int count)
         {
             return _Peer.Push(buffer, offset, count);
         }

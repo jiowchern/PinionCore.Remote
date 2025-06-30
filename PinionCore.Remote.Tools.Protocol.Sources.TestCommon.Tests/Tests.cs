@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Reactive.Linq;
+using System.Threading.Tasks;
 using NUnit.Framework;
 using PinionCore.Remote.Reactive;
 using PinionCore.Remote.Tools.Protocol.Sources.TestCommon.MultipleNotices;
@@ -273,16 +274,17 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
                                               (h) => eventer.Event22 -= h)
                                           select n;
 
-            var vals = new System.Collections.Generic.List<int>();
-            event11Obs.Subscribe((unit) => vals.Add(1));
-            event12Obs.Subscribe((unit) => vals.Add(2));
-            event21Obs.Subscribe(vals.Add);
-            event22Obs.Subscribe(vals.Add);
+            var vals = new System.Collections.Concurrent.ConcurrentQueue<int>();
+
+            event11Obs.Subscribe((unit) => vals.Enqueue(1));
+            event12Obs.Subscribe((unit) => vals.Enqueue(2));
+            event21Obs.Subscribe(vals.Enqueue);
+            event22Obs.Subscribe(vals.Enqueue);
 
 
             System.Console.WriteLine("wait EventTest tester.LisCount ...");
             System.Threading.SpinWait.SpinUntil(() => tester.LisCount == 4, 5000);
-
+            
 
             tester.Invoke22(9);
             tester.Invoke21();
@@ -297,10 +299,11 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
 
             env.Dispose();
 
-            NUnit.Framework.Assert.AreEqual(9, vals[0]);
-            NUnit.Framework.Assert.AreEqual(2, vals[1]);
-            NUnit.Framework.Assert.AreEqual(1, vals[2]);
-            NUnit.Framework.Assert.AreEqual(8, vals[3]);
+            var valsArray = vals.ToArray();
+            var actualVals = new int[] { 9, 2, 1, 8 };
+            NUnit.Framework.Assert.IsTrue(valsArray.Length == 4, "vals.Count != 4");
+            NUnit.Framework.Assert.IsTrue(valsArray.Any(), "vals.Count != 4");
+            NUnit.Framework.Assert.IsTrue(valsArray.SequenceEqual(actualVals), "vals.Count != 4, actualVals != valsArray");
 
 
 
@@ -342,6 +345,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
             var valuesObs = from gpi in env.Queryable.QueryNotifier<IMethodable>().SupplyEvent()
                             from v1 in gpi.GetValue1().RemoteValue()
                             from v2 in gpi.GetValue2().RemoteValue()
+                            
                             from v0 in gpi.GetValue0(0, "", 0, 0, 0, Guid.Empty).RemoteValue()
                             select new { v1, v2, v0 };
 
@@ -353,6 +357,27 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
             Assert.AreEqual(0, values.v0[0]);
         }
 
+
+        [Test, Timeout(Timeout)]
+        public async Task MethodTestRevalue0_1()
+        {
+            var tester = new MethodTester();
+
+            var env = new TestEnv<Entry<IMethodable>, IMethodable>(new Entry<IMethodable>(tester));
+            var gpiObs = from gpi in env.Queryable.QueryNotifier<IMethodable>().SupplyEvent()
+                            select gpi;
+
+            var m = gpiObs.FirstAsync().Wait();
+
+            var v = m.MethodNoValue();
+
+            await v;
+
+            await System.Threading.Tasks.Task.Delay(100);
+            env.Dispose();
+            
+        }
+        
         //[Test , Timeout(1000*60)]
         public void MethodReturnTypeTest()
         {
