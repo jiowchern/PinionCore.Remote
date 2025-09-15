@@ -20,7 +20,7 @@ namespace PinionCore.Remote.Soul
         public void Update()
         {
 
-            while (_UserProvider.UserLifecycleEvents.TryTake(out UserProvider.UserLifecycleEvent userAction))
+            while (_UserProvider.UserLifecycleEvents.TryDequeue(out UserProvider.UserLifecycleEvent userAction))
             {
                 if (userAction.State == UserProvider.UserLifecycleState.Join)
                 {

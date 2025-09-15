@@ -30,14 +30,14 @@ namespace PinionCore.Remote.Soul
             public User User;
         }
 
-        public readonly System.Collections.Concurrent.ConcurrentBag<UserLifecycleEvent> UserLifecycleEvents;
+        public readonly System.Collections.Concurrent.ConcurrentQueue<UserLifecycleEvent> UserLifecycleEvents;
 
         public UserProvider(IProtocol protocol, ISerializable serializable, IListenable listenable, PinionCore.Remote.IInternalSerializable internal_serializable, PinionCore.Memorys.IPool pool)
         {
 
             _Pool = pool;
 
-            UserLifecycleEvents = new System.Collections.Concurrent.ConcurrentBag<UserLifecycleEvent>();
+            UserLifecycleEvents = new System.Collections.Concurrent.ConcurrentQueue<UserLifecycleEvent>();
             _Users = new System.Collections.Concurrent.ConcurrentDictionary<Network.IStreamable, User>();
             Users = _Users;
 
@@ -66,7 +66,7 @@ namespace PinionCore.Remote.Soul
             };
             user.Launch();
             System.Threading.SpinWait.SpinUntil(() => { return _Users.TryAdd(stream, user); });
-            UserLifecycleEvents.Add(new UserLifecycleEvent { State = UserLifecycleState.Join, User = user });
+            UserLifecycleEvents.Enqueue(new UserLifecycleEvent { State = UserLifecycleState.Join, User = user });
         }
 
         void _Leave(Network.IStreamable stream)
@@ -77,7 +77,7 @@ namespace PinionCore.Remote.Soul
             if (user != null)
             {
                 user.Shutdown();
-                UserLifecycleEvents.Add(new UserLifecycleEvent { State = UserLifecycleState.Leave, User = user });
+                UserLifecycleEvents.Enqueue(new UserLifecycleEvent { State = UserLifecycleState.Leave, User = user });
             }
         }
 
