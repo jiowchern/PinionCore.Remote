@@ -9,7 +9,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon
             return new int[] { _1 };
         }
 
-        Value IMethodable.MethodNoValue()
+        Value IMethodable.MethodNoValue(TestStruct a)
         {
             return new Value(false);
         }

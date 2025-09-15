@@ -369,7 +369,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
 
             var m = gpiObs.FirstAsync().Wait();
 
-            var v = m.MethodNoValue();
+            var v = m.MethodNoValue(new TestStruct() { A = 1, B = "test" });
 
             await v;
 
