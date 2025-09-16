@@ -6,7 +6,7 @@ namespace PinionCore.Remote.Gateway.Tests
 {
     public class GatewaySessionListenerTests
     {
-        private static void PushPkg(PinionCore.Network.PackageSender sender, PinionCore.Remote.Gateway.Services.Serializer serializer, PinionCore.Remote.Gateway.Services.ClientToServerPackage pkg)
+        private static void PushPkg(PinionCore.Network.PackageSender sender, PinionCore.Remote.Gateway.Sessions.Serializer serializer, PinionCore.Remote.Gateway.Sessions.ClientToServerPackage pkg)
         {
             var buf = serializer.Serialize(pkg);
             sender.Push(buf);
@@ -15,22 +15,23 @@ namespace PinionCore.Remote.Gateway.Tests
         [Test, Timeout(10000)]
         public void EnterEventTriggeredWhenClientJoins()
         {
+            var serializer = new PinionCore.Remote.Gateway.Sessions.Serializer(PinionCore.Memorys.PoolProvider.Shared);
             var stream = new PinionCore.Network.Stream();
             var reverseStream = new PinionCore.Network.ReverseStream(stream);
             var reverseSender = new PinionCore.Network.PackageSender(reverseStream, PinionCore.Memorys.PoolProvider.Shared);
 
             var reader = new PinionCore.Network.PackageReader(stream, PinionCore.Memorys.PoolProvider.Shared);
             var sender = new PinionCore.Network.PackageSender(stream, PinionCore.Memorys.PoolProvider.Shared);
-            var sessionListener = new PinionCore.Remote.Gateway.Services.GatewaySessionListener(reader, sender);
+            var sessionListener = new PinionCore.Remote.Gateway.Sessions.GatewaySessionListener(reader, sender, serializer);
             var listener = sessionListener as IListenable;
 
             bool enterFired = false;
             listener.StreamableEnterEvent += (s) => enterFired = true;
 
-            var serializer = new PinionCore.Remote.Gateway.Services.Serializer(PinionCore.Memorys.PoolProvider.Shared);
-            PushPkg(reverseSender, serializer, new PinionCore.Remote.Gateway.Services.ClientToServerPackage
+            
+            PushPkg(reverseSender, serializer, new PinionCore.Remote.Gateway.Sessions.ClientToServerPackage
             {
-                OpCode = PinionCore.Remote.Gateway.Services.OpCodeClientToServer.Join,
+                OpCode = PinionCore.Remote.Gateway.Sessions.OpCodeClientToServer.Join,
                 Id = 1,
                 Payload = new byte[0]
             });
@@ -44,13 +45,15 @@ namespace PinionCore.Remote.Gateway.Tests
         [Test, Timeout(10000)]
         public void LeaveEventTriggeredWhenClientLeaves()
         {
+            var serializer = new PinionCore.Remote.Gateway.Sessions.Serializer(PinionCore.Memorys.PoolProvider.Shared);
+
             var stream = new PinionCore.Network.Stream();
             var reverseStream = new PinionCore.Network.ReverseStream(stream);
             var reverseSender = new PinionCore.Network.PackageSender(reverseStream, PinionCore.Memorys.PoolProvider.Shared);
 
             var reader = new PinionCore.Network.PackageReader(stream, PinionCore.Memorys.PoolProvider.Shared);
             var sender = new PinionCore.Network.PackageSender(stream, PinionCore.Memorys.PoolProvider.Shared);
-            var sessionListener = new PinionCore.Remote.Gateway.Services.GatewaySessionListener(reader, sender);
+            var sessionListener = new PinionCore.Remote.Gateway.Sessions.GatewaySessionListener(reader, sender, serializer);
             var listener = sessionListener as IListenable;
 
             bool enterFired = false;
@@ -58,12 +61,12 @@ namespace PinionCore.Remote.Gateway.Tests
             listener.StreamableEnterEvent += (s) => enterFired = true;
             listener.StreamableLeaveEvent += (s) => leaveFired = true;
 
-            var serializer = new PinionCore.Remote.Gateway.Services.Serializer(PinionCore.Memorys.PoolProvider.Shared);
+            
 
             // Join first
-            PushPkg(reverseSender, serializer, new PinionCore.Remote.Gateway.Services.ClientToServerPackage
+            PushPkg(reverseSender, serializer, new PinionCore.Remote.Gateway.Sessions.ClientToServerPackage
             {
-                OpCode = PinionCore.Remote.Gateway.Services.OpCodeClientToServer.Join,
+                OpCode = PinionCore.Remote.Gateway.Sessions.OpCodeClientToServer.Join,
                 Id = 42,
                 Payload = new byte[0]
             });
@@ -71,9 +74,9 @@ namespace PinionCore.Remote.Gateway.Tests
                 sessionListener.HandlePackages();
 
             // Then leave
-            PushPkg(reverseSender, serializer, new PinionCore.Remote.Gateway.Services.ClientToServerPackage
+            PushPkg(reverseSender, serializer, new PinionCore.Remote.Gateway.Sessions.ClientToServerPackage
             {
-                OpCode = PinionCore.Remote.Gateway.Services.OpCodeClientToServer.Leave,
+                OpCode = PinionCore.Remote.Gateway.Sessions.OpCodeClientToServer.Leave,
                 Id = 42,
                 Payload = new byte[0]
             });
@@ -87,25 +90,27 @@ namespace PinionCore.Remote.Gateway.Tests
         [Test, Timeout(10000)]
         public void MessageDeliveredToSessionStream()
         {
+            var serializer = new PinionCore.Remote.Gateway.Sessions.Serializer(PinionCore.Memorys.PoolProvider.Shared);
+
             var stream = new PinionCore.Network.Stream();
             var reverseStream = new PinionCore.Network.ReverseStream(stream);
             var reverseSender = new PinionCore.Network.PackageSender(reverseStream, PinionCore.Memorys.PoolProvider.Shared);
 
             var reader = new PinionCore.Network.PackageReader(stream, PinionCore.Memorys.PoolProvider.Shared);
             var sender = new PinionCore.Network.PackageSender(stream, PinionCore.Memorys.PoolProvider.Shared);
-            var sessionListener = new PinionCore.Remote.Gateway.Services.GatewaySessionListener(reader, sender);
+            var sessionListener = new PinionCore.Remote.Gateway.Sessions.GatewaySessionListener(reader, sender,serializer);
             var listener = sessionListener as IListenable;
 
             PinionCore.Network.IStreamable session = null;
             listener.StreamableEnterEvent += (s) => session = s;
 
-            var gateSer = new PinionCore.Remote.Gateway.Services.Serializer(PinionCore.Memorys.PoolProvider.Shared);
+            var gateSer = new PinionCore.Remote.Gateway.Sessions.Serializer(PinionCore.Memorys.PoolProvider.Shared);
 
             // Join to create a session
             const uint id = 7;
-            PushPkg(reverseSender, gateSer, new PinionCore.Remote.Gateway.Services.ClientToServerPackage
+            PushPkg(reverseSender, gateSer, new PinionCore.Remote.Gateway.Sessions.ClientToServerPackage
             {
-                OpCode = PinionCore.Remote.Gateway.Services.OpCodeClientToServer.Join,
+                OpCode = PinionCore.Remote.Gateway.Sessions.OpCodeClientToServer.Join,
                 Id = id,
                 Payload = new byte[0]
             });
@@ -118,9 +123,9 @@ namespace PinionCore.Remote.Gateway.Tests
             var awaiter = session.Receive(receiveBuffer, 0, receiveBuffer.Length).GetAwaiter();
 
             // Send message payload
-            PushPkg(reverseSender, gateSer, new PinionCore.Remote.Gateway.Services.ClientToServerPackage
+            PushPkg(reverseSender, gateSer, new PinionCore.Remote.Gateway.Sessions.ClientToServerPackage
             {
-                OpCode = PinionCore.Remote.Gateway.Services.OpCodeClientToServer.Message,
+                OpCode = PinionCore.Remote.Gateway.Sessions.OpCodeClientToServer.Message,
                 Id = id,
                 Payload = payload
             });
@@ -149,15 +154,15 @@ namespace PinionCore.Remote.Gateway.Tests
             Assert.GreaterOrEqual(bufs.Count, 1);
             var rawSer = new PinionCore.Serialization.Serializer(new PinionCore.Serialization.DescriberBuilder(new System.Type[]
             {
-                typeof(PinionCore.Remote.Gateway.Services.ServerToClientPackage),
-                typeof(PinionCore.Remote.Gateway.Services.OpCodeServerToClient),
+                typeof(PinionCore.Remote.Gateway.Sessions.ServerToClientPackage),
+                typeof(PinionCore.Remote.Gateway.Sessions.OpCodeServerToClient),
                 typeof(uint),
                 typeof(byte[]),
                 typeof(byte)
             }).Describers, PinionCore.Memorys.PoolProvider.Shared);
             var pkgObj = ((PinionCore.Remote.Gateway.Serializer)gateSer).Deserialize(bufs[0]);
-            var serverPkg = (PinionCore.Remote.Gateway.Services.ServerToClientPackage)pkgObj;
-            Assert.AreEqual(PinionCore.Remote.Gateway.Services.OpCodeServerToClient.Message, serverPkg.OpCode);
+            var serverPkg = (PinionCore.Remote.Gateway.Sessions.ServerToClientPackage)pkgObj;
+            Assert.AreEqual(PinionCore.Remote.Gateway.Sessions.OpCodeServerToClient.Message, serverPkg.OpCode);
             Assert.AreEqual(id, serverPkg.Id);
             Assert.AreEqual(outgoing, serverPkg.Payload);
             Assert.IsTrue(sendAwaiter.IsCompleted);
@@ -167,25 +172,27 @@ namespace PinionCore.Remote.Gateway.Tests
         [Test, Timeout(10000)]
         public void Send_AfterJoin_ForwardedToClient()
         {
+            var serializer = new PinionCore.Remote.Gateway.Sessions.Serializer(PinionCore.Memorys.PoolProvider.Shared);
+
             var stream = new PinionCore.Network.Stream();
             var reverseStream = new PinionCore.Network.ReverseStream(stream);
             var reverseSender = new PinionCore.Network.PackageSender(reverseStream, PinionCore.Memorys.PoolProvider.Shared);
 
             var reader = new PinionCore.Network.PackageReader(stream, PinionCore.Memorys.PoolProvider.Shared);
             var sender = new PinionCore.Network.PackageSender(stream, PinionCore.Memorys.PoolProvider.Shared);
-            var sessionListener = new PinionCore.Remote.Gateway.Services.GatewaySessionListener(reader, sender);
+            var sessionListener = new PinionCore.Remote.Gateway.Sessions.GatewaySessionListener(reader, sender,serializer);
             var listener = sessionListener as IListenable;
 
             PinionCore.Network.IStreamable session = null;
             listener.StreamableEnterEvent += (s) => session = s;
 
-            var gateSer = new PinionCore.Remote.Gateway.Services.Serializer(PinionCore.Memorys.PoolProvider.Shared);
+            var gateSer = new PinionCore.Remote.Gateway.Sessions.Serializer(PinionCore.Memorys.PoolProvider.Shared);
 
             // Join first to create session
             const uint id = 88;
-            PushPkg(reverseSender, gateSer, new PinionCore.Remote.Gateway.Services.ClientToServerPackage
+            PushPkg(reverseSender, gateSer, new PinionCore.Remote.Gateway.Sessions.ClientToServerPackage
             {
-                OpCode = PinionCore.Remote.Gateway.Services.OpCodeClientToServer.Join,
+                OpCode = PinionCore.Remote.Gateway.Sessions.OpCodeClientToServer.Join,
                 Id = id,
                 Payload = new byte[0]
             });
@@ -207,9 +214,9 @@ namespace PinionCore.Remote.Gateway.Tests
             var bufs = readAwaiter.GetResult();
             Assert.GreaterOrEqual(bufs.Count, 1);
             var pkgObj = ((PinionCore.Remote.Gateway.Serializer)gateSer).Deserialize(bufs[0]);
-            var serverPkg = (PinionCore.Remote.Gateway.Services.ServerToClientPackage)pkgObj;
+            var serverPkg = (PinionCore.Remote.Gateway.Sessions.ServerToClientPackage)pkgObj;
 
-            Assert.AreEqual(PinionCore.Remote.Gateway.Services.OpCodeServerToClient.Message, serverPkg.OpCode);
+            Assert.AreEqual(PinionCore.Remote.Gateway.Sessions.OpCodeServerToClient.Message, serverPkg.OpCode);
             Assert.AreEqual(id, serverPkg.Id);
             Assert.AreEqual(outgoing, serverPkg.Payload);
             Assert.IsTrue(sendAwaiter.IsCompleted);

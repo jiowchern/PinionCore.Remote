@@ -1,7 +1,7 @@
 ﻿using System;
 using PinionCore.Network;
 
-namespace PinionCore.Remote.Gateway.Services
+namespace PinionCore.Remote.Gateway.Sessions
 {
 }
     

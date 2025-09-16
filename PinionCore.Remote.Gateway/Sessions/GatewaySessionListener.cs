@@ -3,27 +3,8 @@ using PinionCore.Memorys;
 using PinionCore.Network;
 using PinionCore.Remote.Soul;
 
-namespace PinionCore.Remote.Gateway.Services
+namespace PinionCore.Remote.Gateway.Sessions
 {
-    enum OpCodeClientToServer : byte
-    {
-        None = 0,
-        Join = 1,
-        Leave = 2,
-        Message = 3
-    }
-
-    enum OpCodeServerToClient : byte
-    {
-        None = 0,        
-        Message = 1
-    }
-    struct ClientToServerPackage
-    {
-        public OpCodeClientToServer OpCode;
-        public uint Id;
-        public byte[] Payload;
-    }
 
     struct ServerToClientPackage
     {
@@ -47,7 +28,7 @@ namespace PinionCore.Remote.Gateway.Services
         }
     }
 
-    public class GatewaySessionListener : System.IDisposable ,IListenable
+    class GatewaySessionListener : System.IDisposable ,IListenable
     {
         readonly PackageReader _Reader;
         readonly PackageSender _Sender;
@@ -106,14 +87,14 @@ namespace PinionCore.Remote.Gateway.Services
             }
         }
 
-        public GatewaySessionListener(PackageReader reader, PackageSender sender)
+        public GatewaySessionListener(PackageReader reader, PackageSender sender, Serializer serializer)
         {
             _Reader = reader;
             _Sender = sender;
 
             _NotifiableCollection = new PinionCore.Remote.NotifiableCollection<IStreamable>();
             _Sessions = new System.Collections.Generic.Dictionary<uint, SessionStream>();
-            _Serializer = new Serializer(PinionCore.Memorys.PoolProvider.Shared);
+            _Serializer = serializer;
 
             _Started = false;
         }
