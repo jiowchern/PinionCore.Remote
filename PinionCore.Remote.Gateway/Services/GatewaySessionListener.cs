@@ -36,7 +36,9 @@ namespace PinionCore.Remote.Gateway.Services
     {
         public Serializer(IPool pool) : base(pool, new Type[] {
             typeof(ClientToServerPackage),
+            typeof(ServerToClientPackage),
             typeof(OpCodeClientToServer),
+            typeof(OpCodeServerToClient),
             typeof(uint),
             typeof(byte[]),
             typeof(byte)
