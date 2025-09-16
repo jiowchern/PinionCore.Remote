@@ -63,12 +63,16 @@ namespace PinionCore.Remote.Gateway.Services
         {
             private readonly Network.BufferRelay _Incoming; // data coming from remote client
             private readonly uint _Id;
+            private readonly PackageSender _Sender;
+            private readonly Serializer _Serializer;
             public uint Id { get { return _Id; } }
 
-            public SessionStream(uint id)
+            public SessionStream(uint id, PackageSender sender, Serializer serializer)
             {
                 _Id = id;
                 _Incoming = new Network.BufferRelay();
+                _Sender = sender;
+                _Serializer = serializer;
             }
 
             public void PushIncoming(byte[] buffer, int offset, int count)
@@ -83,8 +87,21 @@ namespace PinionCore.Remote.Gateway.Services
 
             Remote.IAwaitableSource<int> IStreamable.Send(byte[] buffer, int offset, int count)
             {
-                // Outgoing path to client is not yet defined in tests.
-                // For now, acknowledge synchronously without forwarding.
+                if (count <= 0)
+                    return new Network.NoWaitValue<int>(0);
+
+                var payload = new byte[count];
+                Array.Copy(buffer, offset, payload, 0, count);
+
+                var pkg = new ServerToClientPackage
+                {
+                    OpCode = OpCodeServerToClient.Message,
+                    Id = _Id,
+                    Payload = payload
+                };
+                var seg = _Serializer.Serialize(pkg);
+                _Sender.Push(seg);
+
                 return new Network.NoWaitValue<int>(count);
             }
         }
@@ -139,7 +156,7 @@ namespace PinionCore.Remote.Gateway.Services
                     {
                         if (_Sessions.ContainsKey(pkg.Id) == false)
                         {
-                            var session = new SessionStream(pkg.Id);
+                            var session = new SessionStream(pkg.Id, _Sender, _Serializer);
                             _Sessions.Add(pkg.Id, session);
                             _NotifiableCollection.Items.Add(session);
                         }
