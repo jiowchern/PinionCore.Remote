@@ -10,6 +10,11 @@ using PinionCore.Extensions;
 
 namespace PinionCore.Remote.Gateway
 {
+
+    struct Package {
+        public uint Group;
+        public ArraySegment<byte> Payload;
+    }
     class SessionInfo
     {
         public GatewaySessionConnector Connector { get; set; }
@@ -18,23 +23,39 @@ namespace PinionCore.Remote.Gateway
 
     class User
     {
-        readonly IStreamable _Stream;
+        readonly PinionCore.Network.Stream _Server;
+        readonly IStreamable _Client;
         private readonly HashSet<SessionInfo> _Groups;
         private bool _started;
 
         public User(IStreamable streamable)
         {
-            _Stream = streamable;
+            _Server = new Stream();
+            _Client = streamable;
             _Groups = new HashSet<SessionInfo>();
             _started = false;
+
+            /*
+                todo: 連接 _Client 與 _Server 之間的訊息轉送
+
+                把 _Server 收到的消息用 struct PinionCore.Remote.Gateway.Package 包裝發送給 _Client
+                把 _Client 收到的消息是 struct PinionCore.Remote.Gateway.Package 解包後發送給 _Server
+                慮用 DataflowActor 來做這個轉送
+            */
         }
 
         public void AddGroup(SessionInfo group)
         {
             if (_Groups.Add(group) && _started)
             {
-                group.Connector.Join(_Stream);
+                _Join(group);
+
             }
+        }
+
+        private void _Join(SessionInfo group)
+        {                        
+            group.Connector.Join(_Server);
         }
 
         public bool HasGroup(uint group)
@@ -49,7 +70,7 @@ namespace PinionCore.Remote.Gateway
             {
                 if (_started)
                 {
-                    session.Connector.Leave(_Stream);
+                    session.Connector.Leave(_Server);
                 }
                 _Groups.Remove(session);
             }
@@ -61,7 +82,7 @@ namespace PinionCore.Remote.Gateway
             {
                 foreach (var session in _Groups)
                 {
-                    session.Connector.Leave(_Stream);
+                    session.Connector.Leave(_Client);
                 }
             }
             _Groups.Clear();
@@ -69,7 +90,7 @@ namespace PinionCore.Remote.Gateway
         }
         public bool Equals(IStreamable other)
         {
-            return _Stream == other;
+            return _Client == other;
         }
 
         internal void Start()
@@ -83,7 +104,7 @@ namespace PinionCore.Remote.Gateway
 
             foreach (var session in _Groups)
             {
-                session.Connector.Join(_Stream);
+                _Join(session);                
             }
         }
     }
