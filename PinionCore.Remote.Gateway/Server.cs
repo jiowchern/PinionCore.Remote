@@ -20,17 +20,21 @@ namespace PinionCore.Remote.Gateway
     {
         readonly IStreamable _Stream;
         private readonly HashSet<SessionInfo> _Groups;
+        private bool _started;
 
         public User(IStreamable streamable)
         {
             _Stream = streamable;
             _Groups = new HashSet<SessionInfo>();
+            _started = false;
         }
 
         public void AddGroup(SessionInfo group)
         {
-            _Groups.Add(group);
-            group.Connector.Join(_Stream);
+            if (_Groups.Add(group) && _started)
+            {
+                group.Connector.Join(_Stream);
+            }
         }
 
         public bool HasGroup(uint group)
@@ -43,18 +47,25 @@ namespace PinionCore.Remote.Gateway
             var session = _Groups.FirstOrDefault(g => g.Group == group);
             if (session != null)
             {
-                session.Connector.Leave(_Stream);
+                if (_started)
+                {
+                    session.Connector.Leave(_Stream);
+                }
                 _Groups.Remove(session);
             }
         }
 
         internal void Stop()
         {
-            foreach (var session in _Groups)
+            if (_started)
             {
-                session.Connector.Leave(_Stream);
+                foreach (var session in _Groups)
+                {
+                    session.Connector.Leave(_Stream);
+                }
             }
             _Groups.Clear();
+            _started = false;
         }
         public bool Equals(IStreamable other)
         {
@@ -63,6 +74,13 @@ namespace PinionCore.Remote.Gateway
 
         internal void Start()
         {
+            if (_started)
+            {
+                return;
+            }
+
+            _started = true;
+
             foreach (var session in _Groups)
             {
                 session.Connector.Join(_Stream);

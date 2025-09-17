@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
 using PinionCore.Memorys;
 using PinionCore.Network;
 
@@ -22,9 +23,9 @@ namespace PinionCore.Remote.Gateway.Sessions
             public IAwaitable<int> Awaiter;
         }
 
+        private static int _GlobalSessionId;
         private readonly Dictionary<IStreamable, Session> _Streams;
         private readonly Dictionary<uint, Session> _ById;
-        private uint _NextId;
 
         public GatewaySessionConnector(PackageReader reader, PackageSender sender , PinionCore.Remote.Gateway.Sessions.Serializer serializer)
         {
@@ -36,14 +37,13 @@ namespace PinionCore.Remote.Gateway.Sessions
             _Started = false;
             _Streams = new Dictionary<IStreamable, Session>();
             _ById = new Dictionary<uint, Session>();
-            _NextId = 1;
         }
 
         public uint Join(IStreamable stream)
         {
             var session = new Session
             {
-                Id = _NextId++,
+                Id = (uint)Interlocked.Increment(ref _GlobalSessionId),
                 Stream = stream,
                 Buffer = new byte[4096]
             };
