@@ -1,12 +1,10 @@
-﻿using NUnit.Framework;
+﻿using System;
+using NUnit.Framework;
 
 namespace PinionCore.Remote.Gateway.Tests
 {
     public class GatewaySessionConnectorTests
     {
-        public GatewaySessionConnectorTests()
-        {
-        }
         [Test, Timeout(10000)]
         public void Join_SendsJoinPackage()
         {
@@ -18,16 +16,15 @@ namespace PinionCore.Remote.Gateway.Tests
 
             var clientReader = new PinionCore.Network.PackageReader(reverseStream, PinionCore.Memorys.PoolProvider.Shared);
             var clientSender = new PinionCore.Network.PackageSender(reverseStream, PinionCore.Memorys.PoolProvider.Shared);
-            var connector = new PinionCore.Remote.Gateway.Sessions.GatewaySessionConnector(clientReader, clientSender, serializer);
+            using var connector = new PinionCore.Remote.Gateway.Sessions.GatewaySessionConnector(clientReader, clientSender, serializer);
 
             PinionCore.Network.IStreamable app = new PinionCore.Network.BufferRelay();
             var id = connector.Join(app);
 
-            var readAwaiter = serverReader.Read().GetAwaiter();
-            while (!readAwaiter.IsCompleted)
-                connector.HandlePackages();
+            var readTask = serverReader.Read();
+            Assert.IsTrue(readTask.Wait(TimeSpan.FromSeconds(1)), "Join package was not received.");
 
-            var bufs = readAwaiter.GetResult();
+            var bufs = readTask.Result;
             Assert.GreaterOrEqual(bufs.Count, 1);
 
             var ser = new PinionCore.Remote.Gateway.Sessions.Serializer(PinionCore.Memorys.PoolProvider.Shared);
@@ -42,6 +39,7 @@ namespace PinionCore.Remote.Gateway.Tests
                     break;
                 }
             }
+
             Assert.IsTrue(foundJoin);
         }
 
@@ -56,23 +54,21 @@ namespace PinionCore.Remote.Gateway.Tests
 
             var clientReader = new PinionCore.Network.PackageReader(reverseStream, PinionCore.Memorys.PoolProvider.Shared);
             var clientSender = new PinionCore.Network.PackageSender(reverseStream, PinionCore.Memorys.PoolProvider.Shared);
-            var connector = new PinionCore.Remote.Gateway.Sessions.GatewaySessionConnector(clientReader, clientSender, serializer);
+            using var connector = new PinionCore.Remote.Gateway.Sessions.GatewaySessionConnector(clientReader, clientSender, serializer);
 
             PinionCore.Network.IStreamable app = new PinionCore.Network.BufferRelay();
             var id = connector.Join(app);
 
-            // Drain join first
-            var drainAwait = serverReader.Read().GetAwaiter();
-            while (!drainAwait.IsCompleted)
-                connector.HandlePackages();
+            var joinTask = serverReader.Read();
+            Assert.IsTrue(joinTask.Wait(TimeSpan.FromSeconds(1)), "Join package was not received.");
+            _ = joinTask.Result;
 
             connector.Leave(app);
 
-            var readAwaiter = serverReader.Read().GetAwaiter();
-            while (!readAwaiter.IsCompleted)
-                connector.HandlePackages();
+            var readTask = serverReader.Read();
+            Assert.IsTrue(readTask.Wait(TimeSpan.FromSeconds(1)), "Leave package was not received.");
 
-            var bufs = readAwaiter.GetResult();
+            var bufs = readTask.Result;
             Assert.GreaterOrEqual(bufs.Count, 1);
 
             var ser = new PinionCore.Remote.Gateway.Sessions.Serializer(PinionCore.Memorys.PoolProvider.Shared);
@@ -87,6 +83,7 @@ namespace PinionCore.Remote.Gateway.Tests
                     break;
                 }
             }
+
             Assert.IsTrue(foundLeave);
         }
     }
