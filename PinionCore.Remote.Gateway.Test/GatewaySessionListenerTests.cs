@@ -29,6 +29,8 @@ namespace PinionCore.Remote.Gateway.Tests
             using var enterEvent = new ManualResetEventSlim(false);
             listener.StreamableEnterEvent += _ => enterEvent.Set();
 
+            sessionListener.Start();
+
             PushPkg(reverseSender, serializer, new PinionCore.Remote.Gateway.Sessions.ClientToServerPackage
             {
                 OpCode = PinionCore.Remote.Gateway.Sessions.OpCodeClientToServer.Join,
@@ -56,6 +58,8 @@ namespace PinionCore.Remote.Gateway.Tests
             using var leaveEvent = new ManualResetEventSlim(false);
             listener.StreamableEnterEvent += _ => enterEvent.Set();
             listener.StreamableLeaveEvent += _ => leaveEvent.Set();
+
+            sessionListener.Start();
 
             PushPkg(reverseSender, serializer, new PinionCore.Remote.Gateway.Sessions.ClientToServerPackage
             {
@@ -95,6 +99,8 @@ namespace PinionCore.Remote.Gateway.Tests
                 session = s;
                 sessionReady.Set();
             };
+
+            sessionListener.Start();
 
             var gateSerializer = new PinionCore.Remote.Gateway.Sessions.Serializer(PinionCore.Memorys.PoolProvider.Shared);
 
@@ -174,6 +180,8 @@ namespace PinionCore.Remote.Gateway.Tests
                 session = s;
                 sessionReady.Set();
             };
+
+            sessionListener.Start();
 
             var gateSerializer = new PinionCore.Remote.Gateway.Sessions.Serializer(PinionCore.Memorys.PoolProvider.Shared);
 

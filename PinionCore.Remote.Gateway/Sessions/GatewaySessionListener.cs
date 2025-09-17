@@ -41,24 +41,14 @@ namespace PinionCore.Remote.Gateway.Sessions
         private readonly PinionCore.Remote.NotifiableCollection<IStreamable> _notifiableCollection;
         private readonly Dictionary<uint, SessionStream> _sessions;
         private readonly Serializer _serializer;
-        private readonly DataflowActor<PackageEnvelope> _packageActor;
-        private readonly CancellationTokenSource _cancellationSource;
-        private readonly Task _processingTask;
+        
+        
+
+        private Task _readTask;
+        private bool _started;
         private bool _disposed;
 
-        private sealed class PackageEnvelope
-        {
-            public PackageEnvelope(ClientToServerPackage package)
-            {
-                Package = package;
-                Completion = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-            }
-
-            public ClientToServerPackage Package { get; }
-
-            public TaskCompletionSource<bool> Completion { get; }
-        }
-
+      
         private class SessionStream : IStreamable
         {
             private readonly Network.BufferRelay _incoming;
@@ -120,10 +110,48 @@ namespace PinionCore.Remote.Gateway.Sessions
             _serializer = serializer;
 
             _notifiableCollection = new PinionCore.Remote.NotifiableCollection<IStreamable>();
-            _sessions = new Dictionary<uint, SessionStream>();
-            _packageActor = new DataflowActor<PackageEnvelope>(HandlePackageAsync);
-            _cancellationSource = new CancellationTokenSource();
-            _processingTask = Task.Run(() => ProcessAsync(_cancellationSource.Token));
+            _sessions = new Dictionary<uint, SessionStream>();            
+            
+            _readTask = Task.CompletedTask;
+        }
+
+        public void Start()
+        {
+            ThrowIfDisposed();
+
+            if (_started)
+            {
+                return;
+            }
+
+            _started = true;
+            _readTask = _reader.Read().ContinueWith(_ReadDone);
+        }
+
+        private void _ReadDone(Task<List<Memorys.Buffer>> task)
+        {
+            if (task.IsFaulted)
+            {
+                // todo : 如果失敗代表連線中斷 需要釋放 this
+                return;
+            }
+            var buffers = task.Result;
+            if (buffers == null || buffers.Count == 0)
+            {
+                //todo : 如果為空代表連線中斷 需要釋放 this
+                return;
+            }
+            foreach (Memorys.Buffer buffer in buffers)
+            {
+                var pkg = (ClientToServerPackage)_serializer.Deserialize(buffer);
+
+                ProcessPackage(pkg);
+            }
+
+            if (!_disposed)
+            {
+                _readTask = _reader.Read().ContinueWith(_ReadDone);
+            }
         }
 
         event Action<IStreamable> IListenable.StreamableEnterEvent
@@ -138,69 +166,9 @@ namespace PinionCore.Remote.Gateway.Sessions
             remove { _notifiableCollection.Notifier.Unsupply -= value; }
         }
 
-        private async Task ProcessAsync(CancellationToken token)
-        {
-            try
-            {
-                while (!token.IsCancellationRequested)
-                {
-                    var buffers = await _reader.Read().ConfigureAwait(false);
-                    foreach (PinionCore.Memorys.Buffer buffer in buffers)
-                    {
-                        var pkg = (ClientToServerPackage)_serializer.Deserialize(buffer);
-
-                        var envelope = new PackageEnvelope(pkg);
-                        bool accepted;
-                        try
-                        {
-                            accepted = await _packageActor.SendAsync(envelope, token).ConfigureAwait(false);
-                        }
-                        catch (OperationCanceledException)
-                        {
-                            envelope.Completion.TrySetCanceled();
-                            throw;
-                        }
-
-                        if (!accepted)
-                        {
-                            envelope.Completion.TrySetCanceled();
-                            throw new InvalidOperationException("Package actor declined processing.");
-                        }
-
-                        await envelope.Completion.Task.ConfigureAwait(false);
-                    }
-                }
-            }
-            catch (OperationCanceledException)
-            {
-            }
-        }
-
-        private Task HandlePackageAsync(PackageEnvelope envelope, CancellationToken token)
-        {
-            if (envelope == null)
-            {
-                throw new ArgumentNullException(nameof(envelope));
-            }
-
-            try
-            {
-                token.ThrowIfCancellationRequested();
-                ProcessPackage(envelope.Package);
-                envelope.Completion.TrySetResult(true);
-                return Task.CompletedTask;
-            }
-            catch (OperationCanceledException)
-            {
-                envelope.Completion.TrySetCanceled();
-                throw;
-            }
-            catch (Exception ex)
-            {
-                envelope.Completion.TrySetException(ex);
-                throw;
-            }
-        }
+        
+       
+      
 
         private void ProcessPackage(ClientToServerPackage pkg)
         {
@@ -235,6 +203,14 @@ namespace PinionCore.Remote.Gateway.Sessions
             }
         }
 
+        private void ThrowIfDisposed()
+        {
+            if (_disposed)
+            {
+                throw new ObjectDisposedException(nameof(GatewaySessionListener));
+            }
+        }
+
         public void Dispose()
         {
             if (_disposed)
@@ -244,18 +220,18 @@ namespace PinionCore.Remote.Gateway.Sessions
 
             _disposed = true;
 
-            _cancellationSource.Cancel();
+            
             try
             {
-                _processingTask.Wait(TimeSpan.FromSeconds(1));
+                _readTask?.Wait(TimeSpan.FromSeconds(1));
             }
             catch (AggregateException ex)
             {
                 ex.Handle(e => e is OperationCanceledException);
             }
 
-            _packageActor.Dispose();
-            _cancellationSource.Dispose();
+            
+            
             _sessions.Clear();
         }
     }

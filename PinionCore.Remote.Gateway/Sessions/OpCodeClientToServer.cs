@@ -34,6 +34,7 @@ namespace PinionCore.Remote.Gateway.Sessions
             _Serializer = serializer;
             _Listener = new GatewaySessionListener(reader, sender, serializer);
             Listenable = _Listener;
+            _Listener.Start();
 
             _Disposes = () =>
             {
@@ -47,7 +48,7 @@ namespace PinionCore.Remote.Gateway.Sessions
             var stream = new PinionCore.Network.ReverseStream(_Stream);
             var reader = new PinionCore.Network.PackageReader(stream, _Pool);
             var sender = new PinionCore.Network.PackageSender(stream, _Pool);
-            var connector = new GatewaySessionConnector(reader,sender, _Serializer);
+            var connector = new GatewaySessionConnector(reader,sender, _Serializer);            
             return connector;
         }
 
