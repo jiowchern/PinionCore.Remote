@@ -4,7 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using PinionCore.Memorys;
 using PinionCore.Network;
-using PinionCore.Remote.Actors;
+using Buffer = PinionCore.Memorys.Buffer;
 
 namespace PinionCore.Remote.Gateway.Sessions
 {
@@ -17,9 +17,10 @@ namespace PinionCore.Remote.Gateway.Sessions
         private readonly Serializer _serializer;
         private readonly Dictionary<IStreamable, Session> _streams;
         private readonly Dictionary<uint, Session> _sessionsById;
-        private readonly DataflowActor<ConnectorMessage> _messageActor;
         private readonly CancellationTokenSource _cancellationSource;
-        private readonly Task _processingTask;
+        private readonly SemaphoreSlim _mutex;
+        private Task _readTask;
+        private bool _started;
         private bool _disposed;
 
         private sealed class Session
@@ -39,58 +40,6 @@ namespace PinionCore.Remote.Gateway.Sessions
             public Task PumpTask { get; set; }
         }
 
-        private abstract class ConnectorMessage
-        {
-            protected ConnectorMessage()
-            {
-                Completion = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-            }
-
-            public TaskCompletionSource<bool> Completion { get; }
-        }
-
-        private sealed class JoinMessage : ConnectorMessage
-        {
-            public JoinMessage(IStreamable stream)
-            {
-                Stream = stream ?? throw new ArgumentNullException(nameof(stream));
-                SessionCompletion = new TaskCompletionSource<uint>(TaskCreationOptions.RunContinuationsAsynchronously);
-            }
-
-            public IStreamable Stream { get; }
-            public TaskCompletionSource<uint> SessionCompletion { get; }
-        }
-
-        private sealed class LeaveMessage : ConnectorMessage
-        {
-            public LeaveMessage(IStreamable stream)
-            {
-                Stream = stream ?? throw new ArgumentNullException(nameof(stream));
-            }
-
-            public IStreamable Stream { get; }
-        }
-
-        private sealed class ClientPackageMessage : ConnectorMessage
-        {
-            public ClientPackageMessage(ClientToServerPackage package)
-            {
-                Package = package;
-            }
-
-            public ClientToServerPackage Package { get; }
-        }
-
-        private sealed class ServerPackageMessage : ConnectorMessage
-        {
-            public ServerPackageMessage(ServerToClientPackage package)
-            {
-                Package = package;
-            }
-
-            public ServerToClientPackage Package { get; }
-        }
-
         public GatewaySessionConnector(PackageReader reader, PackageSender sender, Serializer serializer)
         {
             _reader = reader ?? throw new ArgumentNullException(nameof(reader));
@@ -100,98 +49,60 @@ namespace PinionCore.Remote.Gateway.Sessions
             _streams = new Dictionary<IStreamable, Session>();
             _sessionsById = new Dictionary<uint, Session>();
             _cancellationSource = new CancellationTokenSource();
-            _messageActor = new DataflowActor<ConnectorMessage>(HandleMessageAsync, new ActorOptions
-            {
-                DisposeTimeout = TimeSpan.FromSeconds(1)
-            });
+            _mutex = new SemaphoreSlim(1, 1);
 
-            _processingTask = Task.Run(() => ProcessIncomingPackagesAsync(_cancellationSource.Token));
+            _readTask = Task.CompletedTask;
+        }
+
+        public void Start()
+        {
+            ThrowIfDisposed();
+
+            if (_started)
+            {
+                return;
+            }
+
+            _started = true;
+            _readTask = _reader.Read().ContinueWith(_ReadDone);
         }
 
         public uint Join(IStreamable stream)
         {
             ThrowIfDisposed();
 
-            var message = new JoinMessage(stream);
-            SendMessage(message);
-
-            return message.SessionCompletion.Task.GetAwaiter().GetResult();
+            return JoinAsync(stream, _cancellationSource.Token).GetAwaiter().GetResult();
         }
 
         public void Leave(IStreamable stream)
         {
             ThrowIfDisposed();
 
-            var message = new LeaveMessage(stream);
-            SendMessage(message);
+            LeaveAsync(stream, _cancellationSource.Token).GetAwaiter().GetResult();
         }
 
-        private void SendMessage(ConnectorMessage message)
+        private async Task<uint> JoinAsync(IStreamable stream, CancellationToken token)
         {
-            bool accepted;
-            try
+            if (stream == null)
             {
-                accepted = _messageActor.SendAsync(message, _cancellationSource.Token).GetAwaiter().GetResult();
-            }
-            catch (OperationCanceledException)
-            {
-                message.Completion.TrySetCanceled();
-                throw;
+                throw new ArgumentNullException(nameof(stream));
             }
 
-            if (!accepted)
-            {
-                message.Completion.TrySetCanceled();
-                throw new InvalidOperationException("Connector actor declined processing.");
-            }
-
-            message.Completion.Task.GetAwaiter().GetResult();
-        }
-
-        private async Task HandleMessageAsync(ConnectorMessage message, CancellationToken token)
-        {
-            if (message == null)
-            {
-                throw new ArgumentNullException(nameof(message));
-            }
-
-            switch (message)
-            {
-                case JoinMessage joinMessage:
-                    await HandleJoinAsync(joinMessage, token).ConfigureAwait(false);
-                    break;
-                case LeaveMessage leaveMessage:
-                    HandleLeave(leaveMessage, token);
-                    break;
-                case ClientPackageMessage clientPackage:
-                    HandleClientPackage(clientPackage, token);
-                    break;
-                case ServerPackageMessage serverPackage:
-                    HandleServerPackage(serverPackage, token);
-                    break;
-                default:
-                    throw new InvalidOperationException($"Unsupported connector message type {message.GetType().FullName}.");
-            }
-        }
-
-        private Task HandleJoinAsync(JoinMessage message, CancellationToken token)
-        {
+            await _mutex.WaitAsync(token).ConfigureAwait(false);
             try
             {
                 token.ThrowIfCancellationRequested();
 
-                if (_streams.TryGetValue(message.Stream, out var existing))
+                if (_streams.TryGetValue(stream, out var existing))
                 {
-                    message.SessionCompletion.TrySetResult(existing.Id);
-                    message.Completion.TrySetResult(true);
-                    return Task.CompletedTask;
+                    return existing.Id;
                 }
 
                 var id = (uint)Interlocked.Increment(ref _GlobalSessionId);
                 var sessionCancellation = CancellationTokenSource.CreateLinkedTokenSource(_cancellationSource.Token);
-                var session = new Session(id, message.Stream, sessionCancellation);
+                var session = new Session(id, stream, sessionCancellation);
 
-                _streams.Add(message.Stream, session);
+                _streams.Add(stream, session);
                 _sessionsById.Add(id, session);
 
                 var joinPackage = new ClientToServerPackage
@@ -206,31 +117,32 @@ namespace PinionCore.Remote.Gateway.Sessions
 
                 session.PumpTask = PumpSessionAsync(session, sessionCancellation.Token);
 
-                message.SessionCompletion.TrySetResult(id);
-                message.Completion.TrySetResult(true);
-                return Task.CompletedTask;
+                return id;
             }
-            catch (Exception ex)
+            finally
             {
-                message.SessionCompletion.TrySetException(ex);
-                message.Completion.TrySetException(ex);
-                throw;
+                _mutex.Release();
             }
         }
 
-        private void HandleLeave(LeaveMessage message, CancellationToken token)
+        private async Task LeaveAsync(IStreamable stream, CancellationToken token)
         {
+            if (stream == null)
+            {
+                throw new ArgumentNullException(nameof(stream));
+            }
+
+            await _mutex.WaitAsync(token).ConfigureAwait(false);
             try
             {
                 token.ThrowIfCancellationRequested();
 
-                if (!_streams.TryGetValue(message.Stream, out var session))
+                if (!_streams.TryGetValue(stream, out var session))
                 {
-                    message.Completion.TrySetResult(true);
                     return;
                 }
 
-                _streams.Remove(message.Stream);
+                _streams.Remove(stream);
                 _sessionsById.Remove(session.Id);
 
                 session.Cancellation.Cancel();
@@ -244,91 +156,66 @@ namespace PinionCore.Remote.Gateway.Sessions
 
                 var buffer = _serializer.Serialize(leavePackage);
                 _sender.Push(buffer);
-
-                message.Completion.TrySetResult(true);
             }
-            catch (Exception ex)
+            finally
             {
-                message.Completion.TrySetException(ex);
-                throw;
+                _mutex.Release();
             }
         }
 
-        private void HandleClientPackage(ClientPackageMessage message, CancellationToken token)
+        private void _ReadDone(Task<List<Buffer>> task)
         {
+            if (task == null)
+            {
+                throw new ArgumentNullException(nameof(task));
+            }
+
+            if (task.IsFaulted)
+            {
+                var exception = task.Exception ?? new AggregateException(new InvalidOperationException("Reader faulted."));
+                return;
+            }
+
+            if (task.IsCanceled || _disposed)
+            {
+                return;
+            }
+
+            var buffers = task.Result;
+            if (buffers == null || buffers.Count == 0)
+            {
+                return;
+            }
+
+            foreach (var buffer in buffers)
+            {
+                var package = (ServerToClientPackage)_serializer.Deserialize(buffer);
+                if (package.OpCode == OpCodeServerToClient.Message &&
+                _sessionsById.TryGetValue(package.Id, out var session))
+                {
+                    var payload = package.Payload ?? Array.Empty<byte>();
+                    _ = session.Stream.Send(payload, 0, payload.Length);
+                }
+            }
+
+            _readTask = _reader.Read().ContinueWith(_ReadDone);
+
+        }
+
+
+        private async Task HandleClientPackageAsync(ClientToServerPackage package, CancellationToken token)
+        {
+            await _mutex.WaitAsync(token).ConfigureAwait(false);
             try
             {
                 token.ThrowIfCancellationRequested();
 
-                var buffer = _serializer.Serialize(message.Package);
+                var buffer = _serializer.Serialize(package);
                 _sender.Push(buffer);
-
-                message.Completion.TrySetResult(true);
             }
-            catch (Exception ex)
+            finally
             {
-                message.Completion.TrySetException(ex);
-                throw;
-            }
-        }
-
-        private void HandleServerPackage(ServerPackageMessage message, CancellationToken token)
-        {
-            try
-            {
-                token.ThrowIfCancellationRequested();
-
-                if (message.Package.OpCode == OpCodeServerToClient.Message &&
-                    _sessionsById.TryGetValue(message.Package.Id, out var session))
-                {
-                    var payload = message.Package.Payload ?? Array.Empty<byte>();
-                    session.Stream.Send(payload, 0, payload.Length);
-                }
-
-                message.Completion.TrySetResult(true);
-            }
-            catch (Exception ex)
-            {
-                message.Completion.TrySetException(ex);
-                throw;
-            }
-        }
-
-        private async Task ProcessIncomingPackagesAsync(CancellationToken token)
-        {
-            try
-            {
-                while (!token.IsCancellationRequested)
-                {
-                    var buffers = await _reader.Read().ConfigureAwait(false);
-                    foreach (PinionCore.Memorys.Buffer buffer in buffers)
-                    {
-                        var package = (ServerToClientPackage)_serializer.Deserialize(buffer);
-                        var message = new ServerPackageMessage(package);
-                        bool accepted;
-
-                        try
-                        {
-                            accepted = await _messageActor.SendAsync(message, token).ConfigureAwait(false);
-                        }
-                        catch (OperationCanceledException)
-                        {
-                            message.Completion.TrySetCanceled();
-                            throw;
-                        }
-
-                        if (!accepted)
-                        {
-                            message.Completion.TrySetCanceled();
-                            throw new InvalidOperationException("Connector actor declined processing.");
-                        }
-
-                        await message.Completion.Task.ConfigureAwait(false);
-                    }
-                }
-            }
-            catch (OperationCanceledException)
-            {
+                _mutex.Release();
             }
         }
 
@@ -356,33 +243,15 @@ namespace PinionCore.Remote.Gateway.Sessions
                         Payload = payload
                     };
 
-                    var message = new ClientPackageMessage(package);
-                    bool accepted;
-                    try
-                    {
-                        accepted = await _messageActor.SendAsync(message, token).ConfigureAwait(false);
-                    }
-                    catch (OperationCanceledException)
-                    {
-                        message.Completion.TrySetCanceled();
-                        throw;
-                    }
-
-                    if (!accepted)
-                    {
-                        message.Completion.TrySetCanceled();
-                        throw new InvalidOperationException("Connector actor declined processing.");
-                    }
-
-                    await message.Completion.Task.ConfigureAwait(false);
+                    await HandleClientPackageAsync(package, token).ConfigureAwait(false);
                 }
             }
             catch (OperationCanceledException)
             {
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _messageActor.Fault(ex);
+                _cancellationSource.Cancel();
             }
         }
 
@@ -407,7 +276,7 @@ namespace PinionCore.Remote.Gateway.Sessions
 
             try
             {
-                _processingTask?.Wait(TimeSpan.FromSeconds(1));
+                _readTask?.Wait(TimeSpan.FromSeconds(1));
             }
             catch (AggregateException ex)
             {
@@ -433,9 +302,8 @@ namespace PinionCore.Remote.Gateway.Sessions
                 session.Cancellation.Dispose();
             }
 
-            _messageActor.Cancel();
-            _messageActor.Dispose();
             _cancellationSource.Dispose();
+            _mutex.Dispose();
             _streams.Clear();
             _sessionsById.Clear();
         }

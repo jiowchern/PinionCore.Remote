@@ -28,11 +28,13 @@ namespace PinionCore.Remote.Gateway.Tests
             var sender = new PinionCore.Network.PackageSender(stream, PinionCore.Memorys.PoolProvider.Shared);
             
             var listener = new PinionCore.Remote.Gateway.Sessions.GatewaySessionListener(reader, sender, serializer);
+            listener.Start();
 
             var reverseStream = new PinionCore.Network.ReverseStream(stream);
             var reverseReader = new PinionCore.Network.PackageReader(reverseStream, PinionCore.Memorys.PoolProvider.Shared);
             var reverseSender = new PinionCore.Network.PackageSender(reverseStream, PinionCore.Memorys.PoolProvider.Shared);
             var connector = new PinionCore.Remote.Gateway.Sessions.GatewaySessionConnector(reverseReader, reverseSender, serializer);
+            connector.Start();
 
             try
             {

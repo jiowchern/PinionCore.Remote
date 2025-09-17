@@ -17,6 +17,7 @@ namespace PinionCore.Remote.Gateway.Tests
             var clientReader = new PinionCore.Network.PackageReader(reverseStream, PinionCore.Memorys.PoolProvider.Shared);
             var clientSender = new PinionCore.Network.PackageSender(reverseStream, PinionCore.Memorys.PoolProvider.Shared);
             using var connector = new PinionCore.Remote.Gateway.Sessions.GatewaySessionConnector(clientReader, clientSender, serializer);
+            connector.Start();
 
             PinionCore.Network.IStreamable app = new PinionCore.Network.BufferRelay();
             var id = connector.Join(app);
@@ -55,6 +56,7 @@ namespace PinionCore.Remote.Gateway.Tests
             var clientReader = new PinionCore.Network.PackageReader(reverseStream, PinionCore.Memorys.PoolProvider.Shared);
             var clientSender = new PinionCore.Network.PackageSender(reverseStream, PinionCore.Memorys.PoolProvider.Shared);
             using var connector = new PinionCore.Remote.Gateway.Sessions.GatewaySessionConnector(clientReader, clientSender, serializer);
+            connector.Start();
 
             PinionCore.Network.IStreamable app = new PinionCore.Network.BufferRelay();
             var id = connector.Join(app);
