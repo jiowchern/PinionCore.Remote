@@ -1,11 +1,15 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+
 using PinionCore.Memorys;
 using PinionCore.Network;
+using PinionCore.Remote.Actors;
 using PinionCore.Remote.Soul;
 
 namespace PinionCore.Remote.Gateway.Sessions
 {
-
     struct ServerToClientPackage
     {
         public OpCodeServerToClient OpCode;
@@ -15,61 +19,82 @@ namespace PinionCore.Remote.Gateway.Sessions
 
     class Serializer : PinionCore.Remote.Gateway.Serializer
     {
-        public Serializer(IPool pool) : base(pool, new Type[] {
-            typeof(ClientToServerPackage),
-            typeof(ServerToClientPackage),
-            typeof(OpCodeClientToServer),
-            typeof(OpCodeServerToClient),
-            typeof(uint),
-            typeof(byte[]),
-            typeof(byte)
-        })
+        public Serializer(IPool pool)
+            : base(pool, new Type[]
+            {
+                typeof(ClientToServerPackage),
+                typeof(ServerToClientPackage),
+                typeof(OpCodeClientToServer),
+                typeof(OpCodeServerToClient),
+                typeof(uint),
+                typeof(byte[]),
+                typeof(byte)
+            })
         {
         }
     }
 
-    class GatewaySessionListener : System.IDisposable ,IListenable
+    class GatewaySessionListener : IDisposable, IListenable
     {
-        readonly PackageReader _Reader;
-        readonly PackageSender _Sender;
+        private readonly PackageReader _reader;
+        private readonly PackageSender _sender;
+        private readonly PinionCore.Remote.NotifiableCollection<IStreamable> _notifiableCollection;
+        private readonly Dictionary<uint, SessionStream> _sessions;
+        private readonly Serializer _serializer;
+        private readonly DataflowActor<PackageEnvelope> _packageActor;
+        private readonly CancellationTokenSource _cancellationSource;
+        private readonly Task _processingTask;
+        private bool _disposed;
 
-        readonly PinionCore.Remote.NotifiableCollection<IStreamable> _NotifiableCollection;
-        readonly System.Collections.Generic.Dictionary<uint, SessionStream> _Sessions;
-        readonly Serializer _Serializer;
+        private sealed class PackageEnvelope
+        {
+            public PackageEnvelope(ClientToServerPackage package)
+            {
+                Package = package;
+                Completion = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            }
 
-        private System.Runtime.CompilerServices.TaskAwaiter<System.Collections.Generic.List<PinionCore.Memorys.Buffer>> _ReadTask;
-        private bool _Started;
+            public ClientToServerPackage Package { get; }
+
+            public TaskCompletionSource<bool> Completion { get; }
+        }
 
         private class SessionStream : IStreamable
         {
-            private readonly Network.BufferRelay _Incoming; // data coming from remote client
-            private readonly uint _Id;
-            private readonly PackageSender _Sender;
-            private readonly Serializer _Serializer;
-            public uint Id { get { return _Id; } }
+            private readonly Network.BufferRelay _incoming;
+            private readonly uint _id;
+            private readonly PackageSender _sender;
+            private readonly Serializer _serializer;
+
+            public uint Id
+            {
+                get { return _id; }
+            }
 
             public SessionStream(uint id, PackageSender sender, Serializer serializer)
             {
-                _Id = id;
-                _Incoming = new Network.BufferRelay();
-                _Sender = sender;
-                _Serializer = serializer;
+                _id = id;
+                _incoming = new Network.BufferRelay();
+                _sender = sender;
+                _serializer = serializer;
             }
 
             public void PushIncoming(byte[] buffer, int offset, int count)
             {
-                _Incoming.Push(buffer, offset, count);
+                _incoming.Push(buffer, offset, count);
             }
 
             Remote.IAwaitableSource<int> IStreamable.Receive(byte[] buffer, int offset, int count)
             {
-                return _Incoming.Pop(buffer, offset, count);
+                return _incoming.Pop(buffer, offset, count);
             }
 
             Remote.IAwaitableSource<int> IStreamable.Send(byte[] buffer, int offset, int count)
             {
                 if (count <= 0)
+                {
                     return new Network.NoWaitValue<int>(0);
+                }
 
                 var payload = new byte[count];
                 Array.Copy(buffer, offset, payload, 0, count);
@@ -77,11 +102,12 @@ namespace PinionCore.Remote.Gateway.Sessions
                 var pkg = new ServerToClientPackage
                 {
                     OpCode = OpCodeServerToClient.Message,
-                    Id = _Id,
+                    Id = _id,
                     Payload = payload
                 };
-                var seg = _Serializer.Serialize(pkg);
-                _Sender.Push(seg);
+
+                var segment = _serializer.Serialize(pkg);
+                _sender.Push(segment);
 
                 return new Network.NoWaitValue<int>(count);
             }
@@ -89,91 +115,148 @@ namespace PinionCore.Remote.Gateway.Sessions
 
         public GatewaySessionListener(PackageReader reader, PackageSender sender, Serializer serializer)
         {
-            _Reader = reader;
-            _Sender = sender;
+            _reader = reader;
+            _sender = sender;
+            _serializer = serializer;
 
-            _NotifiableCollection = new PinionCore.Remote.NotifiableCollection<IStreamable>();
-            _Sessions = new System.Collections.Generic.Dictionary<uint, SessionStream>();
-            _Serializer = serializer;
-
-            _Started = false;
+            _notifiableCollection = new PinionCore.Remote.NotifiableCollection<IStreamable>();
+            _sessions = new Dictionary<uint, SessionStream>();
+            _packageActor = new DataflowActor<PackageEnvelope>(HandlePackageAsync);
+            _cancellationSource = new CancellationTokenSource();
+            _processingTask = Task.Run(() => ProcessAsync(_cancellationSource.Token));
         }
 
         event Action<IStreamable> IListenable.StreamableEnterEvent
         {
-            add { _NotifiableCollection.Notifier.Supply += value; }
-            remove { _NotifiableCollection.Notifier.Supply -= value; }
+            add { _notifiableCollection.Notifier.Supply += value; }
+            remove { _notifiableCollection.Notifier.Supply -= value; }
         }
 
         event Action<IStreamable> IListenable.StreamableLeaveEvent
         {
-            add { _NotifiableCollection.Notifier.Unsupply += value; }
-            remove { _NotifiableCollection.Notifier.Unsupply -= value; }
+            add { _notifiableCollection.Notifier.Unsupply += value; }
+            remove { _notifiableCollection.Notifier.Unsupply -= value; }
         }
 
-        private void _StartRead()
+        private async Task ProcessAsync(CancellationToken token)
         {
-            _ReadTask = _Reader.Read().GetAwaiter();
-            _Started = true;
-        }
-
-        internal void HandlePackages()
-        {
-            if (_Started == false)
+            try
             {
-                _StartRead();
-            }
-
-            if (_ReadTask.IsCompleted)
-            {
-                System.Collections.Generic.List<PinionCore.Memorys.Buffer> buffers = _ReadTask.GetResult();
-
-                foreach (PinionCore.Memorys.Buffer buffer in buffers)
+                while (!token.IsCancellationRequested)
                 {
-                    var obj = _Serializer.Deserialize(buffer);
-                    var pkg = (ClientToServerPackage)obj;
+                    var buffers = await _reader.Read().ConfigureAwait(false);
+                    foreach (PinionCore.Memorys.Buffer buffer in buffers)
+                    {
+                        var pkg = (ClientToServerPackage)_serializer.Deserialize(buffer);
 
-                    if (pkg.OpCode == OpCodeClientToServer.Join)
-                    {
-                        if (_Sessions.ContainsKey(pkg.Id) == false)
+                        var envelope = new PackageEnvelope(pkg);
+                        bool accepted;
+                        try
                         {
-                            var session = new SessionStream(pkg.Id, _Sender, _Serializer);
-                            _Sessions.Add(pkg.Id, session);
-                            _NotifiableCollection.Items.Add(session);
+                            accepted = await _packageActor.SendAsync(envelope, token).ConfigureAwait(false);
                         }
-                    }
-                    else if (pkg.OpCode == OpCodeClientToServer.Message)
-                    {
-                        SessionStream session;
-                        if (_Sessions.TryGetValue(pkg.Id, out session))
+                        catch (OperationCanceledException)
                         {
-                            if (pkg.Payload != null && pkg.Payload.Length > 0)
-                            {
-                                session.PushIncoming(pkg.Payload, 0, pkg.Payload.Length);
-                            }
+                            envelope.Completion.TrySetCanceled();
+                            throw;
                         }
-                    }
-                    else if (pkg.OpCode == OpCodeClientToServer.Leave)
-                    {
-                        SessionStream session;
-                        if (_Sessions.TryGetValue(pkg.Id, out session))
+
+                        if (!accepted)
                         {
-                            _NotifiableCollection.Items.Remove(session);
-                            _Sessions.Remove(pkg.Id);
+                            envelope.Completion.TrySetCanceled();
+                            throw new InvalidOperationException("Package actor declined processing.");
                         }
+
+                        await envelope.Completion.Task.ConfigureAwait(false);
                     }
                 }
-
-                _ReadTask = _Reader.Read().GetAwaiter();
+            }
+            catch (OperationCanceledException)
+            {
             }
         }
 
-        void System.IDisposable.Dispose()
+        private Task HandlePackageAsync(PackageEnvelope envelope, CancellationToken token)
         {
-            // No unmanaged resources; clear state
-            _Sessions.Clear();
+            if (envelope == null)
+            {
+                throw new ArgumentNullException(nameof(envelope));
+            }
+
+            try
+            {
+                token.ThrowIfCancellationRequested();
+                ProcessPackage(envelope.Package);
+                envelope.Completion.TrySetResult(true);
+                return Task.CompletedTask;
+            }
+            catch (OperationCanceledException)
+            {
+                envelope.Completion.TrySetCanceled();
+                throw;
+            }
+            catch (Exception ex)
+            {
+                envelope.Completion.TrySetException(ex);
+                throw;
+            }
         }
 
+        private void ProcessPackage(ClientToServerPackage pkg)
+        {
+            switch (pkg.OpCode)
+            {
+                case OpCodeClientToServer.Join:
+                    if (_sessions.ContainsKey(pkg.Id) == false)
+                    {
+                        var newSession = new SessionStream(pkg.Id, _sender, _serializer);
+                        _sessions.Add(pkg.Id, newSession);
+                        _notifiableCollection.Items.Add(newSession);
+                    }
+                    break;
+
+                case OpCodeClientToServer.Message:
+                    if (_sessions.TryGetValue(pkg.Id, out var session))
+                    {
+                        if (pkg.Payload != null && pkg.Payload.Length > 0)
+                        {
+                            session.PushIncoming(pkg.Payload, 0, pkg.Payload.Length);
+                        }
+                    }
+                    break;
+
+                case OpCodeClientToServer.Leave:
+                    if (_sessions.TryGetValue(pkg.Id, out var existing))
+                    {
+                        _notifiableCollection.Items.Remove(existing);
+                        _sessions.Remove(pkg.Id);
+                    }
+                    break;
+            }
+        }
+
+        public void Dispose()
+        {
+            if (_disposed)
+            {
+                return;
+            }
+
+            _disposed = true;
+
+            _cancellationSource.Cancel();
+            try
+            {
+                _processingTask.Wait(TimeSpan.FromSeconds(1));
+            }
+            catch (AggregateException ex)
+            {
+                ex.Handle(e => e is OperationCanceledException);
+            }
+
+            _packageActor.Dispose();
+            _cancellationSource.Dispose();
+            _sessions.Clear();
+        }
     }
-    
 }

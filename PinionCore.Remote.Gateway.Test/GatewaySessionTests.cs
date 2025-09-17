@@ -27,12 +27,12 @@ namespace PinionCore.Remote.Gateway.Tests
             var reader = new PinionCore.Network.PackageReader(stream, PinionCore.Memorys.PoolProvider.Shared);
             var sender = new PinionCore.Network.PackageSender(stream, PinionCore.Memorys.PoolProvider.Shared);
             
-            var listener = new PinionCore.Remote.Gateway.Sessions.GatewaySessionListener(reader, sender, serializer);
+            using var listener = new PinionCore.Remote.Gateway.Sessions.GatewaySessionListener(reader, sender, serializer);
 
             var reverseStream = new PinionCore.Network.ReverseStream(stream);
             var reverseReader = new PinionCore.Network.PackageReader(reverseStream, PinionCore.Memorys.PoolProvider.Shared);
             var reverseSender = new PinionCore.Network.PackageSender(reverseStream, PinionCore.Memorys.PoolProvider.Shared);
-            var connector = new PinionCore.Remote.Gateway.Sessions.GatewaySessionConnector(reverseReader, reverseSender, serializer);
+            using var connector = new PinionCore.Remote.Gateway.Sessions.GatewaySessionConnector(reverseReader, reverseSender, serializer);
 
             var client1Stream = new PinionCore.Network.Stream();
             var client1Reader = new PinionCore.Network.PackageReader(client1Stream, PinionCore.Memorys.PoolProvider.Shared);
@@ -64,7 +64,6 @@ namespace PinionCore.Remote.Gateway.Tests
             var waiter = client1Reader.Read().GetAwaiter();
             while (!waiter.IsCompleted)
             {
-                listener.HandlePackages();
                 connector.HandlePackages();
                 await Task.Delay(10);
             }

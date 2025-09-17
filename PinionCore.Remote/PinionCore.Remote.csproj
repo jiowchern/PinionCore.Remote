@@ -15,5 +15,9 @@
     <ProjectReference Include="..\PinionCore.Serialization\PinionCore.Serialization.csproj" />
     <ProjectReference Include="..\PinionCore.Utility\PinionCore.Utility\PinionCore.Utility.csproj" />
   </ItemGroup>
+  
+  <ItemGroup>
+    <PackageReference Include="System.Threading.Tasks.Dataflow" Version="6.0.0" />
+  </ItemGroup>
 
 </Project>
