@@ -1,4 +1,4 @@
-﻿namespace PinionCore.Remote.Gateway
+﻿namespace PinionCore.Remote.Gateway.Frontends
 {
     public struct Package
     {

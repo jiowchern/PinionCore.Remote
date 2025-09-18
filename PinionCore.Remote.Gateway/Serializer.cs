@@ -11,14 +11,7 @@ namespace PinionCore.Remote.Gateway
         readonly IPool _Pool;
         public Serializer(IPool pool ,IEnumerable<Type> essentialTypes)
         {
-            _Pool = pool;
-            /*var essentialTypes = new System.Type[]
-            {
-                typeof(Package),
-                typeof(uint),
-                typeof(byte[]),
-                typeof(byte)
-            };*/
+            _Pool = pool;            
             _Serializer = new PinionCore.Serialization.Serializer(new PinionCore.Serialization.DescriberBuilder(essentialTypes.ToArray()).Describers , pool);
         }
 

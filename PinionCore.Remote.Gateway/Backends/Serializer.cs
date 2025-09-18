@@ -2,7 +2,7 @@
 
 using PinionCore.Memorys;
 
-namespace PinionCore.Remote.Gateway.Sessions
+namespace PinionCore.Remote.Gateway.Backends
 {
     class Serializer : PinionCore.Remote.Gateway.Serializer
     {

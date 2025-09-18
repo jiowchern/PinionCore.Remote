@@ -1,10 +1,10 @@
 ﻿using PinionCore.Network;
 using PinionCore.Remote.Ghost;
 
-namespace PinionCore.Remote.Gateway
+namespace PinionCore.Remote.Gateway.Frontends
 {
 
-    public class Client
+    public class FrontClient
     {
 
         public void Launch(IStreamable streamable)

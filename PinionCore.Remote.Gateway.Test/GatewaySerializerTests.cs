@@ -1,4 +1,5 @@
 ﻿using NUnit.Framework;
+using PinionCore.Remote.Gateway.Frontends;
 
 namespace PinionCore.Remote.Gateway.Tests
 {
@@ -17,7 +18,7 @@ namespace PinionCore.Remote.Gateway.Tests
             });
 
 
-            var package = new PinionCore.Remote.Gateway.Package()
+            var package = new PinionCore.Remote.Gateway.Frontends.Package()
             {
                 ServiceId = 42,
                 Payload = new byte[] { 1, 2, 3, 4, 5 }

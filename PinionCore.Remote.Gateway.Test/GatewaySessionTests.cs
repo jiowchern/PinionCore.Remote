@@ -21,19 +21,19 @@ namespace PinionCore.Remote.Gateway.Tests
         [Test, Timeout(10000)]
         public async System.Threading.Tasks.Task GatewaySessionReverseTransmissionTest()
         {
-            var serializer = new Sessions.Serializer(PinionCore.Memorys.PoolProvider.Shared);
+            var serializer = new Backends.Serializer(PinionCore.Memorys.PoolProvider.Shared);
 
             var stream = new PinionCore.Network.Stream();
             var reader = new PinionCore.Network.PackageReader(stream, PinionCore.Memorys.PoolProvider.Shared);
             var sender = new PinionCore.Network.PackageSender(stream, PinionCore.Memorys.PoolProvider.Shared);
             
-            var listener = new PinionCore.Remote.Gateway.Sessions.GatewaySessionListener(reader, sender, serializer);
+            var listener = new PinionCore.Remote.Gateway.Backends.BackendServer(reader, sender, serializer);
             listener.Start();
 
             var reverseStream = new PinionCore.Network.ReverseStream(stream);
             var reverseReader = new PinionCore.Network.PackageReader(reverseStream, PinionCore.Memorys.PoolProvider.Shared);
             var reverseSender = new PinionCore.Network.PackageSender(reverseStream, PinionCore.Memorys.PoolProvider.Shared);
-            var connector = new PinionCore.Remote.Gateway.Sessions.GatewaySessionConnector(reverseReader, reverseSender, serializer);
+            var connector = new PinionCore.Remote.Gateway.Backends.BackendClient(reverseReader, reverseSender, serializer);
             connector.Start();
 
             try

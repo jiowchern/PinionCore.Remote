@@ -3,7 +3,7 @@ using PinionCore.Memorys;
 using PinionCore.Network;
 using PinionCore.Remote.Soul;
 
-namespace PinionCore.Remote.Gateway.Sessions
+namespace PinionCore.Remote.Gateway.Backends
 {
     enum OpCodeClientToServer : byte
     {
@@ -16,7 +16,7 @@ namespace PinionCore.Remote.Gateway.Sessions
 
     class SessionChannel
     {
-        readonly GatewaySessionListener _Listener;
+        readonly BackendServer _Listener;
         public readonly IListenable Listenable;
 
         readonly System.Action _Disposes;
@@ -32,7 +32,7 @@ namespace PinionCore.Remote.Gateway.Sessions
             _Pool = pool;
             _Stream = stream;
             _Serializer = serializer;
-            _Listener = new GatewaySessionListener(reader, sender, serializer);
+            _Listener = new BackendServer(reader, sender, serializer);
             Listenable = _Listener;
             _Listener.Start();
 
@@ -43,12 +43,12 @@ namespace PinionCore.Remote.Gateway.Sessions
             };
         }
 
-        public GatewaySessionConnector SpawnConnector(IStreamable streamable)
+        public BackendClient SpawnConnector(IStreamable streamable)
         {
             var stream = new PinionCore.Network.ReverseStream(_Stream);
             var reader = new PinionCore.Network.PackageReader(stream, _Pool);
             var sender = new PinionCore.Network.PackageSender(stream, _Pool);
-            var connector = new GatewaySessionConnector(reader, sender, _Serializer, _Pool);
+            var connector = new BackendClient(reader, sender, _Serializer, _Pool);
             connector.Start();
             return connector;
         }

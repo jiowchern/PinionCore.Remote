@@ -7,13 +7,13 @@ using PinionCore.Extensions;
 using PinionCore.Memorys;
 using PinionCore.Network;
 using PinionCore.Remote.Actors;
-using PinionCore.Remote.Gateway.Sessions;
+using PinionCore.Remote.Gateway.Backends;
 
-namespace PinionCore.Remote.Gateway
+namespace PinionCore.Remote.Gateway.Frontends
 {
     class SessionInfo
     {
-        public GatewaySessionConnector Connector { get; set; }
+        public BackendClient Connector { get; set; }
         public uint Group { get; set; }
     }
 
@@ -296,7 +296,7 @@ namespace PinionCore.Remote.Gateway
                         Payload = payload
                     };
 
-                    bool accepted = await _serverToClientActor.SendAsync(package, token).ConfigureAwait(false);
+                    var accepted = await _serverToClientActor.SendAsync(package, token).ConfigureAwait(false);
                     if (!accepted)
                     {
                         throw new InvalidOperationException("Server forwarding actor declined processing.");
@@ -330,7 +330,7 @@ namespace PinionCore.Remote.Gateway
                         var deserialized = _serializer.Deserialize(buffer);
                         if (deserialized is Package package)
                         {
-                            bool accepted = await _clientToServerActor.SendAsync(package, token).ConfigureAwait(false);
+                            var accepted = await _clientToServerActor.SendAsync(package, token).ConfigureAwait(false);
                             if (!accepted)
                             {
                                 throw new InvalidOperationException("Client forwarding actor declined processing.");
@@ -419,25 +419,25 @@ namespace PinionCore.Remote.Gateway
         }
     }
 
-    class Server : IDisposable
+    class FrontServer : IDisposable
     {
         readonly List<SessionInfo> _Sessions;
         readonly List<User> _Users;
 
-        public Server()
+        public FrontServer()
         {
             _Sessions = new List<SessionInfo>();
             _Users = new List<User>();
         }
 
-        internal void Register(uint group, GatewaySessionConnector connector)
+        internal void Register(uint group, BackendClient connector)
         {
             var info = new SessionInfo { Group = group, Connector = connector };
             _Sessions.Add(info);
 
             _NotifyUsersAdd(info);
         }
-        internal void Unregister(GatewaySessionConnector connector)
+        internal void Unregister(BackendClient connector)
         {
             var session = _Sessions.FirstOrDefault(s => s.Connector == connector);
             if (session != null)

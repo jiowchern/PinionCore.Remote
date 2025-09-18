@@ -8,7 +8,7 @@ namespace PinionCore.Remote.Gateway.Tests
         [Test, Timeout(10000)]
         public void Join_SendsJoinPackage()
         {
-            var serializer = new PinionCore.Remote.Gateway.Sessions.Serializer(PinionCore.Memorys.PoolProvider.Shared);
+            var serializer = new PinionCore.Remote.Gateway.Backends.Serializer(PinionCore.Memorys.PoolProvider.Shared);
             var stream = new PinionCore.Network.Stream();
             var reverseStream = new PinionCore.Network.ReverseStream(stream);
 
@@ -16,7 +16,7 @@ namespace PinionCore.Remote.Gateway.Tests
 
             var clientReader = new PinionCore.Network.PackageReader(reverseStream, PinionCore.Memorys.PoolProvider.Shared);
             var clientSender = new PinionCore.Network.PackageSender(reverseStream, PinionCore.Memorys.PoolProvider.Shared);
-            using var connector = new PinionCore.Remote.Gateway.Sessions.GatewaySessionConnector(clientReader, clientSender, serializer);
+            using var connector = new PinionCore.Remote.Gateway.Backends.BackendClient(clientReader, clientSender, serializer);
             connector.Start();
 
             PinionCore.Network.IStreamable app = new PinionCore.Network.BufferRelay();
@@ -28,13 +28,13 @@ namespace PinionCore.Remote.Gateway.Tests
             var bufs = readTask.Result;
             Assert.GreaterOrEqual(bufs.Count, 1);
 
-            var ser = new PinionCore.Remote.Gateway.Sessions.Serializer(PinionCore.Memorys.PoolProvider.Shared);
+            var ser = new PinionCore.Remote.Gateway.Backends.Serializer(PinionCore.Memorys.PoolProvider.Shared);
             bool foundJoin = false;
             foreach (var b in bufs)
             {
                 var obj = ser.Deserialize(b);
-                var pkg = (PinionCore.Remote.Gateway.Sessions.ClientToServerPackage)obj;
-                if (pkg.OpCode == PinionCore.Remote.Gateway.Sessions.OpCodeClientToServer.Join && pkg.Id == id)
+                var pkg = (PinionCore.Remote.Gateway.Backends.ClientToServerPackage)obj;
+                if (pkg.OpCode == PinionCore.Remote.Gateway.Backends.OpCodeClientToServer.Join && pkg.Id == id)
                 {
                     foundJoin = true;
                     break;
@@ -47,7 +47,7 @@ namespace PinionCore.Remote.Gateway.Tests
         [Test, Timeout(10000)]
         public void Leave_SendsLeavePackage()
         {
-            var serializer = new PinionCore.Remote.Gateway.Sessions.Serializer(PinionCore.Memorys.PoolProvider.Shared);
+            var serializer = new PinionCore.Remote.Gateway.Backends.Serializer(PinionCore.Memorys.PoolProvider.Shared);
             var stream = new PinionCore.Network.Stream();
             var reverseStream = new PinionCore.Network.ReverseStream(stream);
 
@@ -55,7 +55,7 @@ namespace PinionCore.Remote.Gateway.Tests
 
             var clientReader = new PinionCore.Network.PackageReader(reverseStream, PinionCore.Memorys.PoolProvider.Shared);
             var clientSender = new PinionCore.Network.PackageSender(reverseStream, PinionCore.Memorys.PoolProvider.Shared);
-            using var connector = new PinionCore.Remote.Gateway.Sessions.GatewaySessionConnector(clientReader, clientSender, serializer);
+            using var connector = new PinionCore.Remote.Gateway.Backends.BackendClient(clientReader, clientSender, serializer);
             connector.Start();
 
             PinionCore.Network.IStreamable app = new PinionCore.Network.BufferRelay();
@@ -73,13 +73,13 @@ namespace PinionCore.Remote.Gateway.Tests
             var bufs = readTask.Result;
             Assert.GreaterOrEqual(bufs.Count, 1);
 
-            var ser = new PinionCore.Remote.Gateway.Sessions.Serializer(PinionCore.Memorys.PoolProvider.Shared);
+            var ser = new PinionCore.Remote.Gateway.Backends.Serializer(PinionCore.Memorys.PoolProvider.Shared);
             bool foundLeave = false;
             foreach (var b in bufs)
             {
                 var obj = ser.Deserialize(b);
-                var pkg = (PinionCore.Remote.Gateway.Sessions.ClientToServerPackage)obj;
-                if (pkg.OpCode == PinionCore.Remote.Gateway.Sessions.OpCodeClientToServer.Leave && pkg.Id == id)
+                var pkg = (PinionCore.Remote.Gateway.Backends.ClientToServerPackage)obj;
+                if (pkg.OpCode == PinionCore.Remote.Gateway.Backends.OpCodeClientToServer.Leave && pkg.Id == id)
                 {
                     foundLeave = true;
                     break;

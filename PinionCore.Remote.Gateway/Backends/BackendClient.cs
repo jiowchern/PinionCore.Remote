@@ -7,9 +7,9 @@ using PinionCore.Network;
 using PinionCore.Remote.Actors;
 using Buffer = PinionCore.Memorys.Buffer;
 
-namespace PinionCore.Remote.Gateway.Sessions
+namespace PinionCore.Remote.Gateway.Backends
 {
-    class GatewaySessionConnector : IDisposable
+    class BackendClient : IDisposable
     {
         interface ActorCommand
         {
@@ -93,12 +93,12 @@ namespace PinionCore.Remote.Gateway.Sessions
         private bool _started;
         private bool _disposed;
 
-        public GatewaySessionConnector(PackageReader reader, PackageSender sender, Serializer serializer)
+        public BackendClient(PackageReader reader, PackageSender sender, Serializer serializer)
             : this(reader, sender, serializer, PinionCore.Memorys.PoolProvider.Shared)
         {
         }
 
-        public GatewaySessionConnector(PackageReader reader, PackageSender sender, Serializer serializer, IPool pool)
+        public BackendClient(PackageReader reader, PackageSender sender, Serializer serializer, IPool pool)
         {
             _serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
             _pool = pool ?? throw new ArgumentNullException(nameof(pool));
@@ -330,7 +330,7 @@ namespace PinionCore.Remote.Gateway.Sessions
         {
             if (_disposed)
             {
-                throw new ObjectDisposedException(nameof(GatewaySessionConnector));
+                throw new ObjectDisposedException(nameof(BackendClient));
             }
         }
 

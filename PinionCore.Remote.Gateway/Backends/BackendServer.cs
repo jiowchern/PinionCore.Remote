@@ -6,18 +6,12 @@ using PinionCore.Network;
 using PinionCore.Remote.Actors;
 using PinionCore.Remote.Soul;
 
-namespace PinionCore.Remote.Gateway.Sessions
+namespace PinionCore.Remote.Gateway.Backends
 {
-    struct ServerToClientPackage
-    {
-        public OpCodeServerToClient OpCode;
-        public uint Id;
-        public byte[] Payload;
-    }
 
-    class GatewaySessionListener : IDisposable, IListenable
+    class BackendServer : IDisposable, IListenable
     {
-        private class SessionStream : IStreamable
+        private class Session : IStreamable
         {
             private readonly Network.BufferRelay _incoming;
             private readonly uint _id;
@@ -29,7 +23,7 @@ namespace PinionCore.Remote.Gateway.Sessions
                 get { return _id; }
             }
 
-            public SessionStream(uint id, PackageSender sender, Serializer serializer)
+            public Session(uint id, PackageSender sender, Serializer serializer)
             {
                 _id = id;
                 _incoming = new Network.BufferRelay();
@@ -94,12 +88,12 @@ namespace PinionCore.Remote.Gateway.Sessions
 
         readonly DataflowActor<ActorCommand> DataflowActor_;
         private readonly PinionCore.Remote.NotifiableCollection<IStreamable> _notifiableCollection;
-        private readonly Dictionary<uint, SessionStream> _sessions;
+        private readonly Dictionary<uint, Session> _sessions;
         private readonly Serializer _serializer;
         private bool _started;
         private bool _disposed;
 
-        public GatewaySessionListener(PackageReader reader, PackageSender sender, Serializer serializer)
+        public BackendServer(PackageReader reader, PackageSender sender, Serializer serializer)
         {
             DataflowActor_ = new DataflowActor<ActorCommand>(_Handle);
             _Channel = new Channel(reader, sender);
@@ -107,7 +101,7 @@ namespace PinionCore.Remote.Gateway.Sessions
             _serializer = serializer;
 
             _notifiableCollection = new PinionCore.Remote.NotifiableCollection<IStreamable>();
-            _sessions = new Dictionary<uint, SessionStream>();            
+            _sessions = new Dictionary<uint, Session>();            
         }
 
         private void _Handle(ActorCommand command)
@@ -117,7 +111,7 @@ namespace PinionCore.Remote.Gateway.Sessions
                 case JoinCommand join:
                     if (_sessions.ContainsKey(join.Id) == false)
                     {
-                        var newSession = new SessionStream(join.Id, _Channel.Sender, _serializer);
+                        var newSession = new Session(join.Id, _Channel.Sender, _serializer);
                         _sessions.Add(join.Id, newSession);
                         _notifiableCollection.Items.Add(newSession);
                     }
@@ -198,7 +192,7 @@ namespace PinionCore.Remote.Gateway.Sessions
         {
             if (_disposed)
             {
-                throw new ObjectDisposedException(nameof(GatewaySessionListener));
+                throw new ObjectDisposedException(nameof(BackendServer));
             }
         }
 

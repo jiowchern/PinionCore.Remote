@@ -1,4 +1,4 @@
-﻿namespace PinionCore.Remote.Gateway.Sessions
+﻿namespace PinionCore.Remote.Gateway.Backends
 {
     struct ClientToServerPackage
     {

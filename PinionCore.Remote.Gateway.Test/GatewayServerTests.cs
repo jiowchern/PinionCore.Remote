@@ -6,7 +6,7 @@ using System.Threading;
 using NUnit.Framework;
 using PinionCore.Memorys;
 using PinionCore.Network;
-using PinionCore.Remote.Gateway.Sessions;
+using PinionCore.Remote.Gateway.Backends;
 
 namespace PinionCore.Remote.Gateway.Tests
 {
@@ -20,7 +20,7 @@ namespace PinionCore.Remote.Gateway.Tests
             var pool = PoolProvider.Shared;
             RunWithChannel(pool, channel =>
             {
-                var server = new PinionCore.Remote.Gateway.Server();
+                var server = new PinionCore.Remote.Gateway.Frontends.FrontServer();
                 var connector = channel.SpawnConnector(new Stream());
                 try
                 {
@@ -51,9 +51,9 @@ namespace PinionCore.Remote.Gateway.Tests
             var pool = PoolProvider.Shared;
             RunWithChannel(pool, channel =>
             {
-                var server = new PinionCore.Remote.Gateway.Server();
+                var server = new PinionCore.Remote.Gateway.Frontends.FrontServer();
                 var firstConnector = channel.SpawnConnector(new Stream());
-                GatewaySessionConnector secondConnector = null;
+                BackendClient secondConnector = null;
                 try
                 {
                     server.Register(1, firstConnector);
@@ -88,7 +88,7 @@ namespace PinionCore.Remote.Gateway.Tests
             var pool = PoolProvider.Shared;
             RunWithChannel(pool, channel =>
             {
-                var server = new PinionCore.Remote.Gateway.Server();
+                var server = new PinionCore.Remote.Gateway.Frontends.FrontServer();
                 var connector = channel.SpawnConnector(new Stream());
                 try
                 {
@@ -124,7 +124,7 @@ namespace PinionCore.Remote.Gateway.Tests
             var pool = PoolProvider.Shared;
             RunWithChannel(pool, channel =>
             {
-                var server = new PinionCore.Remote.Gateway.Server();
+                var server = new PinionCore.Remote.Gateway.Frontends.FrontServer();
                 var connector = channel.SpawnConnector(new Stream());
                 try
                 {
@@ -154,7 +154,7 @@ namespace PinionCore.Remote.Gateway.Tests
             });
         }
 
-        private static bool PumpUntil(IEnumerable<GatewaySessionConnector> connectors, Func<bool> predicate, TimeSpan timeout)
+        private static bool PumpUntil(IEnumerable<BackendClient> connectors, Func<bool> predicate, TimeSpan timeout)
         {
             var stopwatch = Stopwatch.StartNew();
             var spin = new SpinWait();
@@ -172,7 +172,7 @@ namespace PinionCore.Remote.Gateway.Tests
             return true;
         }
 
-        private static void PumpConnectors(IEnumerable<GatewaySessionConnector> connectors, TimeSpan duration)
+        private static void PumpConnectors(IEnumerable<BackendClient> connectors, TimeSpan duration)
         {
             Thread.Sleep(duration);
         }
