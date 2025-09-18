@@ -26,6 +26,7 @@ namespace PinionCore.Remote.Soul
         }
 
         private readonly ConcurrentQueue<Pending> _Pending;
+        
 
         public SyncService(IEntry entry, IProtocol protocol, ISerializable serializable, IInternalSerializable internal_serializable, PinionCore.Memorys.IPool pool, UserProvider user_provider)
         {
@@ -40,23 +41,30 @@ namespace PinionCore.Remote.Soul
 
             _Users = new ConcurrentDictionary<Network.IStreamable, User>();
             _Pending = new ConcurrentQueue<Pending>();
+            
 
             _UserProvider.JoinEvent += _OnJoin;
             _UserProvider.LeaveEvent += _OnLeave;
         }
 
+        public event System.Action UsersStateChangedEvent;
+
         private void _OnJoin(Network.IStreamable stream, PinionCore.Network.PackageReader reader, PinionCore.Network.PackageSender sender)
         {
             _Pending.Enqueue(new Pending { IsJoin = true, Stream = stream, Reader = reader, Sender = sender });
+         
         }
 
         private void _OnLeave(Network.IStreamable stream)
         {
             _Pending.Enqueue(new Pending { IsJoin = false, Stream = stream, Reader = null, Sender = null });
+         
         }
 
         public void Update()
         {
+            _Entry.Update();
+
             // Drain and process all pending join/leave on this thread
             while (_Pending.TryDequeue(out Pending ev))
             {
@@ -91,9 +99,9 @@ namespace PinionCore.Remote.Soul
                         _Entry.UnregisterClientBinder(user.Binder);
                     }
                 }
+                UsersStateChangedEvent?.Invoke();
             }
-
-            _Entry.Update();
+            
 
             foreach (Advanceable user in _Users.Values)
             {
@@ -114,6 +122,8 @@ namespace PinionCore.Remote.Soul
             _UserProvider.JoinEvent -= _OnJoin;
             _UserProvider.LeaveEvent -= _OnLeave;
             _UserProviderDisposable.Dispose();
+            
         }
     }
 }
+
