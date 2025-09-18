@@ -48,7 +48,7 @@ namespace PinionCore.Remote.Gateway.Sessions
             var stream = new PinionCore.Network.ReverseStream(_Stream);
             var reader = new PinionCore.Network.PackageReader(stream, _Pool);
             var sender = new PinionCore.Network.PackageSender(stream, _Pool);
-            var connector = new GatewaySessionConnector(reader, sender, _Serializer);
+            var connector = new GatewaySessionConnector(reader, sender, _Serializer, _Pool);
             connector.Start();
             return connector;
         }
