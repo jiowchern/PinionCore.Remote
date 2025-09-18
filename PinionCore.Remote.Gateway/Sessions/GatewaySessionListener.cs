@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-
-using PinionCore.Memorys;
 using PinionCore.Network;
 using PinionCore.Remote.Actors;
 using PinionCore.Remote.Soul;
@@ -17,38 +15,8 @@ namespace PinionCore.Remote.Gateway.Sessions
         public byte[] Payload;
     }
 
-    class Serializer : PinionCore.Remote.Gateway.Serializer
-    {
-        public Serializer(IPool pool)
-            : base(pool, new Type[]
-            {
-                typeof(ClientToServerPackage),
-                typeof(ServerToClientPackage),
-                typeof(OpCodeClientToServer),
-                typeof(OpCodeServerToClient),
-                typeof(uint),
-                typeof(byte[]),
-                typeof(byte)
-            })
-        {
-        }
-    }
-
     class GatewaySessionListener : IDisposable, IListenable
     {
-        private readonly PackageReader _reader;
-        private readonly PackageSender _sender;
-        private readonly PinionCore.Remote.NotifiableCollection<IStreamable> _notifiableCollection;
-        private readonly Dictionary<uint, SessionStream> _sessions;
-        private readonly Serializer _serializer;
-        
-        
-
-        private Task _readTask;
-        private bool _started;
-        private bool _disposed;
-
-      
         private class SessionStream : IStreamable
         {
             private readonly Network.BufferRelay _incoming;
@@ -102,17 +70,75 @@ namespace PinionCore.Remote.Gateway.Sessions
                 return new Network.NoWaitValue<int>(count);
             }
         }
+        readonly Channel _Channel;
+        interface ActorCommand
+        {
+            
+        }
+
+        struct JoinCommand : ActorCommand
+        {
+            public uint Id;            
+        }
+
+        struct LeaveCommand : ActorCommand
+        {
+            public uint Id;
+        }
+
+        struct MessageCommand : ActorCommand
+        {
+            public uint Id;
+            public byte[] Payload;
+        }
+
+        readonly DataflowActor<ActorCommand> DataflowActor_;
+        private readonly PinionCore.Remote.NotifiableCollection<IStreamable> _notifiableCollection;
+        private readonly Dictionary<uint, SessionStream> _sessions;
+        private readonly Serializer _serializer;
+        private bool _started;
+        private bool _disposed;
 
         public GatewaySessionListener(PackageReader reader, PackageSender sender, Serializer serializer)
         {
-            _reader = reader;
-            _sender = sender;
+            DataflowActor_ = new DataflowActor<ActorCommand>(_Handle);
+            _Channel = new Channel(reader, sender);
+            
             _serializer = serializer;
 
             _notifiableCollection = new PinionCore.Remote.NotifiableCollection<IStreamable>();
             _sessions = new Dictionary<uint, SessionStream>();            
-            
-            _readTask = Task.CompletedTask;
+        }
+
+        private void _Handle(ActorCommand command)
+        {
+            switch (command)
+            {
+                case JoinCommand join:
+                    if (_sessions.ContainsKey(join.Id) == false)
+                    {
+                        var newSession = new SessionStream(join.Id, _Channel.Sender, _serializer);
+                        _sessions.Add(join.Id, newSession);
+                        _notifiableCollection.Items.Add(newSession);
+                    }
+                    break;
+                case LeaveCommand leave:
+                    if (_sessions.TryGetValue(leave.Id, out var existing))
+                    {
+                        _notifiableCollection.Items.Remove(existing);
+                        _sessions.Remove(leave.Id);
+                    }
+                    break;
+                case MessageCommand message:
+                    if (_sessions.TryGetValue(message.Id, out var session))
+                    {
+                        if (message.Payload != null && message.Payload.Length > 0)
+                        {
+                            session.PushIncoming(message.Payload, 0, message.Payload.Length);
+                        }
+                    }
+                    break;
+            }
         }
 
         public void Start()
@@ -123,35 +149,37 @@ namespace PinionCore.Remote.Gateway.Sessions
             {
                 return;
             }
+            _Channel.OnDataReceived += _ReadDone;
+            _Channel.OnDisconnected += Dispose;
+            _Channel.Start();
 
             _started = true;
-            _readTask = _reader.Read().ContinueWith(_ReadDone);
+            
         }
 
-        private void _ReadDone(Task<List<Memorys.Buffer>> task)
+        private List<Memorys.Buffer> _ReadDone(List<Memorys.Buffer> buffers)
         {
-            if (task.IsFaulted)
-            {
-                // todo : 如果失敗代表連線中斷 需要釋放 this
-                return;
-            }
-            var buffers = task.Result;
-            if (buffers == null || buffers.Count == 0)
-            {
-                //todo : 如果為空代表連線中斷 需要釋放 this
-                return;
-            }
+           
             foreach (Memorys.Buffer buffer in buffers)
             {
                 var pkg = (ClientToServerPackage)_serializer.Deserialize(buffer);
 
-                ProcessPackage(pkg);
+                switch (pkg.OpCode)
+                {
+                    case OpCodeClientToServer.Join:
+                        DataflowActor_.Post(new JoinCommand { Id = pkg.Id });
+                        break;
+                    case OpCodeClientToServer.Leave:
+                        DataflowActor_.Post(new LeaveCommand { Id = pkg.Id });
+                        break;
+                    case OpCodeClientToServer.Message:
+                        DataflowActor_.Post(new MessageCommand { Id = pkg.Id, Payload = pkg.Payload });
+                        break;
+                }
+
             }
 
-            if (!_disposed)
-            {
-                _readTask = _reader.Read().ContinueWith(_ReadDone);
-            }
+            return new List<Memorys.Buffer>();
         }
 
         event Action<IStreamable> IListenable.StreamableEnterEvent
@@ -164,43 +192,6 @@ namespace PinionCore.Remote.Gateway.Sessions
         {
             add { _notifiableCollection.Notifier.Unsupply += value; }
             remove { _notifiableCollection.Notifier.Unsupply -= value; }
-        }
-
-        
-       
-      
-
-        private void ProcessPackage(ClientToServerPackage pkg)
-        {
-            switch (pkg.OpCode)
-            {
-                case OpCodeClientToServer.Join:
-                    if (_sessions.ContainsKey(pkg.Id) == false)
-                    {
-                        var newSession = new SessionStream(pkg.Id, _sender, _serializer);
-                        _sessions.Add(pkg.Id, newSession);
-                        _notifiableCollection.Items.Add(newSession);
-                    }
-                    break;
-
-                case OpCodeClientToServer.Message:
-                    if (_sessions.TryGetValue(pkg.Id, out var session))
-                    {
-                        if (pkg.Payload != null && pkg.Payload.Length > 0)
-                        {
-                            session.PushIncoming(pkg.Payload, 0, pkg.Payload.Length);
-                        }
-                    }
-                    break;
-
-                case OpCodeClientToServer.Leave:
-                    if (_sessions.TryGetValue(pkg.Id, out var existing))
-                    {
-                        _notifiableCollection.Items.Remove(existing);
-                        _sessions.Remove(pkg.Id);
-                    }
-                    break;
-            }
         }
 
         private void ThrowIfDisposed()
@@ -220,18 +211,8 @@ namespace PinionCore.Remote.Gateway.Sessions
 
             _disposed = true;
 
-            
-            try
-            {
-                _readTask?.Wait(TimeSpan.FromSeconds(1));
-            }
-            catch (AggregateException ex)
-            {
-                ex.Handle(e => e is OperationCanceledException);
-            }
-
-            
-            
+            DataflowActor_.Complete();
+            DataflowActor_.Dispose();
             _sessions.Clear();
         }
     }

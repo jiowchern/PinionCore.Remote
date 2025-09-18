@@ -3,7 +3,7 @@ using PinionCore.Remote.Ghost;
 
 namespace PinionCore.Remote.Gateway
 {
-    
+
     public class Client
     {
 

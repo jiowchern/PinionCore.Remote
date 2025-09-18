@@ -11,20 +11,6 @@ namespace PinionCore.Remote.Gateway.Sessions
 {
     class GatewaySessionConnector : IDisposable
     {
-        private static int _GlobalSessionId;
-
-        private readonly PackageReader _reader;
-        private readonly PackageSender _sender;
-        private readonly Serializer _serializer;
-        private readonly IPool _pool;
-        private readonly Dictionary<IStreamable, Session> _streams;
-        private readonly Dictionary<uint, Session> _sessionsById;
-        private readonly CancellationTokenSource _cancellationSource;
-        private readonly SemaphoreSlim _mutex;
-        private Task _readTask;
-        private bool _started;
-        private bool _disposed;
-
         private sealed class Session : IDisposable
         {
             private bool _disposed;
@@ -60,7 +46,7 @@ namespace PinionCore.Remote.Gateway.Sessions
             public PackageReader Reader { get; }
             public Task ReadTask;
             public PackageSender Sender { get; }
-            public CancellationTokenSource Cancellation { get; }            
+            public CancellationTokenSource Cancellation { get; }
 
             public void Dispose()
             {
@@ -73,8 +59,23 @@ namespace PinionCore.Remote.Gateway.Sessions
                 Cancellation.Dispose();
             }
 
-            
+
         }
+        private static int _GlobalSessionId;
+
+        private readonly PackageReader _reader;
+        private readonly PackageSender _sender;
+        private readonly Serializer _serializer;
+        private readonly IPool _pool;
+        private readonly Dictionary<IStreamable, Session> _streams;
+        private readonly Dictionary<uint, Session> _sessionsById;
+        private readonly CancellationTokenSource _cancellationSource;
+        private readonly SemaphoreSlim _mutex;
+        private Task _readTask;
+        private bool _started;
+        private bool _disposed;
+
+        
 
         public GatewaySessionConnector(PackageReader reader, PackageSender sender, Serializer serializer)
             : this(reader, sender, serializer, PinionCore.Memorys.PoolProvider.Shared)
