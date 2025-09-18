@@ -1,40 +1,101 @@
-# Repository Guidelines
+﻿# AGENTS.md
 
-## 專案結構與模組組織
-- 解決方案：`PinionCore.sln`（根目錄）。
-- 核心程式庫：`PinionCore.Remote*`、`PinionCore.Network`、`PinionCore.Serialization`、`PinionCore.Utility`。
-- 測試：`*.Test`、`*.Tests`（如：`PinionCore.Remote.Test`、`PinionCore.Integration.Tests`）。
-- 範例：`PinionCore.Samples.*`（HelloWorld 客戶端/伺服器/協議）。
-- 工具與產生器：`PinionCore.Remote.Tools.Protocol.Sources*`。
-- 文件：`document/`。
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## 建置、測試與開發指令
-- 還原套件：`dotnet restore PinionCore.sln`。
-- 建置（Debug/Release）：`dotnet build PinionCore.sln -c Debug` | `-c Release`。
-- 測試含覆蓋率：`dotnet test PinionCore.sln -c Debug /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura`。
-- 程式碼格式化（依 `.editorconfig`）：`dotnet format`（PR 前建議執行）。
+## 專案概述
 
-## 程式風格與命名規範
-- 編碼/行尾：UTF-8 BOM、CRLF；修剪行尾空白；結尾保留換行。
-- 縮排：4 空白；大括號換行（`csharp_new_line_before_open_brace = all`）。
-- Using 排序：`System.*` 置前。
-- `var` 使用：偏好內建型別與可推斷型別。
-- 命名：
-  - 公開欄位：PascalCase。
-  - 私有欄位：camelCase 並加結尾底線（例如：`_exampleField`）。
-  - 事件：PascalCase 並加 `Event` 後綴。
+PinionCore Remote 是一個 C# 伺服器-客戶端通訊框架，支援 Unity 與 .NET Standard 2.0+ 環境。透過介面進行物件導向的遠端通訊，降低協議維護成本。
 
-## 測試指引
-- 框架：NUnit（`NUnit`、`NUnit3TestAdapter`）+ `Microsoft.NET.Test.Sdk`；模擬：`NSubstitute`；覆蓋率：`coverlet.msbuild`。
-- 位置：與被測專案同層之 `*.Test`/`*.Tests` 專案。
-- 命名：檔名 `ClassNameTests.cs`；方法 `MethodName_State_Expected()` 或 `Should_DoThing_When_State()`。
-- 要求：新功能與修復需附測試；維持或提升覆蓋率。
+## 常用指令
 
-## Commit 與 Pull Request 準則
-- Commit：祈使句、簡潔；可加範圍前綴（例：`Remote.Server: Fix binder race`）。
-- PR：清楚描述、連結議題（`#123`）、提供測試證據/截圖、標註破壞性變更。
-- CI 前置：於本機通過 `dotnet build` 與 `dotnet test`。
+### 建置專案
+```bash
+dotnet restore
+dotnet build --configuration Release --no-restore
+```
 
-## 代理（Agent）注意事項
-- 變更需遵循本檔與 `.editorconfig`；保持修改最小化且聚焦。
-- 僅觸及必要專案；如變更行為，請同步更新文件與測試。
+### 執行測試
+```bash
+dotnet test /p:CollectCoverage=true /p:CoverletOutput=../CoverageResults/ /p:MergeWith="../CoverageResults/coverage.json" /p:CoverletOutputFormat="lcov%2cjson" -m:1
+```
+
+### 打包 NuGet 套件
+```bash
+dotnet pack --configuration Release --output ./nupkgs
+```
+
+### 執行單一專案測試
+```bash
+dotnet test [項目路徑].csproj
+```
+
+## 核心架構
+
+### 專案結構
+- **PinionCore.Remote**: 核心框架，定義基本介面與抽象
+- **PinionCore.Remote.Server**: 伺服器端實作，包含 TCP 服務與連線管理
+- **PinionCore.Remote.Client**: 客戶端實作，包含代理與連線器
+- **PinionCore.Remote.Soul**: 伺服器端物件綁定管理
+- **PinionCore.Remote.Ghost**: 客戶端遠端物件代理
+- **PinionCore.Remote.Standalone**: 單機模式，無需網路的模擬環境
+- **PinionCore.Network**: 底層網路抽象，定義 IStreamable 等介面
+- **PinionCore.Serialization**: 序列化框架，處理資料轉換
+- **PinionCore.Remote.Tools.Protocol.Sources**: 程式碼產生器，自動生成 IProtocol
+
+### 關鍵設計模式
+
+#### 1. 介面導向通訊
+- 伺服器實作介面，客戶端透過相同介面呼叫
+- 支援方法（Value<T>）、事件、屬性、Notifier
+- 透過 IBinder 綁定伺服器物件，IAgent 查詢客戶端物件
+
+#### 2. Protocol 生成機制
+```csharp
+[PinionCore.Remote.Protocol.Creater]
+static partial void _Create(ref PinionCore.Remote.IProtocol protocol);
+```
+- 使用 Source Generator 自動產生通訊協議
+- 必須定義在 static partial void 方法上
+- 透過 ProtocolCreater.Create() 取得 IProtocol 實例
+
+#### 3. 連線抽象化
+- IStreamable: 客戶端資料流抽象
+- IListenable: 伺服器端監聽器抽象
+- 預設提供 TCP 實作，可自訂其他連線方式
+
+#### 4. 序列化可擴展性
+- ISerializable 介面允許自訂序列化
+- 預設支援基礎型別與陣列
+- IProtocol.SerializeTypes 提供需序列化的型別清單
+
+## 開發流程
+
+### 新增通訊介面
+1. 在 Protocol 專案定義介面
+2. 使用 PinionCore.Remote.Value<T> 作為非同步方法回傳型別
+3. 重新建置以觸發程式碼產生
+
+### 伺服器端實作
+1. 實作 IEntry 介面作為進入點
+2. 在 RegisterClientBinder 中使用 binder.Bind<T> 綁定物件
+3. 透過 Provider.CreateTcpService 建立服務
+
+### 客戶端實作
+1. 透過 Provider.CreateTcpAgent 建立代理
+2. 使用 agent.QueryNotifier<T>().Supply/Unsupply 監聽物件
+3. 定期呼叫 HandleMessages() 與 HandlePackets()
+
+### 測試方式
+- 使用 Standalone 模式進行無網路測試
+- 整合測試位於 PinionCore.Integration.Tests
+- 單元測試依功能模組分布在各 *.Test 專案
+
+## 範例專案參考
+- PinionCore.Samples.HelloWorld.*: 基本客戶端-伺服器範例
+- PinionCore.Remote/Sample: 更多使用情境範例
+
+## 重要提醒
+- 修改 Protocol 介面後需重新建置所有相依專案
+- Unity WebGL 需自行實作 WebSocket 客戶端
+- IL2CPP 與 AOT 環境下序列化型別需預先註冊
+- Standalone 模式適合開發階段除錯，生產環境應使用網路模式
