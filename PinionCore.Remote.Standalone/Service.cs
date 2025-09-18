@@ -29,7 +29,8 @@ namespace PinionCore.Remote.Standalone
             _NotifiableCollection = new NotifiableCollection<IStreamable>();
             Protocol = protocol;
             Serializer = serializable;
-            var service = new PinionCore.Remote.Soul.AsyncService(new SyncService(entry, new UserProvider(protocol, serializable, this, internal_serializable, _Pool)));
+            var userProvider = new UserProvider(this, _Pool);
+            var service = new PinionCore.Remote.Soul.AsyncService(new SyncService(entry, protocol, serializable, internal_serializable, _Pool, userProvider));
             _Service = service;
 
             _Agents = new List<Ghost.IAgent>();

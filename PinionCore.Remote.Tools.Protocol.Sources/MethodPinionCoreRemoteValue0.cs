@@ -63,7 +63,7 @@ var returnValue = new PinionCore.Remote.Value(true);
 this._CallMethodEvent({id}, new object[] {{{methodCallParamsCode}}} , returnValue);                    
 return returnValue;
                                             ")),
-                Types = new TypeSyntax[0]
+                Types = from p in md.ParameterList.Parameters select p.Type
             };
 
         }

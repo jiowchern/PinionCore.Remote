@@ -1,6 +1,4 @@
-﻿using System.Linq;
-
-namespace PinionCore.Network.Tests
+﻿namespace PinionCore.Network.Tests
 {
     public class ConnectTest
     {
@@ -22,7 +20,6 @@ namespace PinionCore.Network.Tests
             {
                 // disconnect test
                 await connector.Disconnect(true);
-
 
                 // reconnect test
                 peer = await connector.Connect(new System.Net.IPEndPoint(System.Net.IPAddress.Loopback, port));
@@ -64,19 +61,26 @@ namespace PinionCore.Network.Tests
             var port = PinionCore.Network.Tcp.Tools.GetAvailablePort();
 
             var lintener = new PinionCore.Network.Tcp.Listener();
-            var serverPeers = new System.Collections.Generic.List<PinionCore.Network.Tcp.Peer>();
-
             var breakEvent = false;
+            var acceptTcs = new System.Threading.Tasks.TaskCompletionSource<PinionCore.Network.Tcp.Peer>(System.Threading.Tasks.TaskCreationOptions.RunContinuationsAsynchronously);
+            var breakEventTcs = new System.Threading.Tasks.TaskCompletionSource<bool>(System.Threading.Tasks.TaskCreationOptions.RunContinuationsAsynchronously);
+
             lintener.AcceptEvent += (peer) =>
             {
-                peer.BreakEvent += () => { breakEvent = true; };
+                peer.BreakEvent += () =>
+                {
+                    breakEvent = true;
+                    breakEventTcs.TrySetResult(true);
+                };
 
-                serverPeers.Add(peer);
+                acceptTcs.TrySetResult(peer);
             };
             lintener.Bind(port,10);
             var connector = new PinionCore.Network.Tcp.Connector();
 
-            Tcp.Peer peer = await connector.Connect(new System.Net.IPEndPoint(System.Net.IPAddress.Loopback, port));
+            PinionCore.Network.Tcp.Peer peer = await connector.Connect(new System.Net.IPEndPoint(System.Net.IPAddress.Loopback, port));
+
+            var serverPeer = await acceptTcs.Task.WaitAsync(System.TimeSpan.FromSeconds(1));
 
             {
                 IStreamable streamable = peer;
@@ -84,21 +88,20 @@ namespace PinionCore.Network.Tests
                 var count = await streamable.Send(buffer, 0, buffer.Length);
             }
 
-
             await connector.Disconnect(false);
+
             {
-                IStreamable streamable = serverPeers.Single();
+                IStreamable streamable = serverPeer;
                 var buffer = new byte[1024];
                 var count = await streamable.Receive(buffer, 0, buffer.Length);
                 var count2 = await streamable.Receive(buffer, 0, buffer.Length);
             }
 
+            await breakEventTcs.Task.WaitAsync(System.TimeSpan.FromSeconds(1));
 
             lintener.Close();
 
             NUnit.Framework.Assert.AreEqual(true, breakEvent);
         }
-
-
     }
 }

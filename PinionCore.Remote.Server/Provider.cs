@@ -5,14 +5,15 @@
         public static Soul.IService CreateService(IEntry entry, IProtocol protocol, Soul.IListenable listenable)
         {
             Memorys.Pool pool = PinionCore.Memorys.PoolProvider.Shared;
-            return new Soul.AsyncService(new Soul.SyncService(entry, new Soul.UserProvider(protocol, new PinionCore.Remote.Serializer(protocol.SerializeTypes), listenable, new PinionCore.Remote.InternalSerializer(), pool)));
+            var userProvider = new Soul.UserProvider(listenable, pool);
+            return new Soul.AsyncService(new Soul.SyncService(entry, protocol, new PinionCore.Remote.Serializer(protocol.SerializeTypes), new PinionCore.Remote.InternalSerializer(), pool, userProvider));
         }
 
         public static Soul.IService CreateService(IEntry entry, IProtocol protocol, ISerializable serializable, Soul.IListenable listenable)
         {
             Memorys.Pool pool = PinionCore.Memorys.PoolProvider.Shared;
-
-            return new Soul.AsyncService(new Soul.SyncService(entry, new Soul.UserProvider(protocol, serializable, listenable, new PinionCore.Remote.InternalSerializer(), pool)));
+            var userProvider = new Soul.UserProvider(listenable, pool);
+            return new Soul.AsyncService(new Soul.SyncService(entry, protocol, serializable, new PinionCore.Remote.InternalSerializer(), pool, userProvider));
         }
 
         public static TcpListenSet CreateTcpService(IEntry entry, IProtocol protocol)

@@ -47,7 +47,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
             IProtocol protocol = PinionCore.Remote.Tools.Protocol.Sources.TestCommon.ProtocolProvider.CreateCase1();
             NUnit.Framework.Assert.IsTrue(protocol.SerializeTypes.Any(t => t == typeof(int)));
 
-            NUnit.Framework.Assert.AreEqual(13, protocol.SerializeTypes.Length);
+            NUnit.Framework.Assert.AreEqual(14, protocol.SerializeTypes.Length);
 
 
         }
@@ -369,7 +369,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
 
             var m = gpiObs.FirstAsync().Wait();
 
-            var v = m.MethodNoValue();
+            var v = m.MethodNoValue(new TestStruct() { A = 1, B = "test" });
 
             await v;
 

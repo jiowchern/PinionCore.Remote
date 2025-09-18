@@ -23,7 +23,8 @@ namespace PinionCore.Remote.Standalone.Test
             IProtocol protocol = ProtocolHelper.CreateProtocol();
             var internalSer = new PinionCore.Remote.InternalSerializer();
             Memorys.Pool pool = PinionCore.Memorys.PoolProvider.Shared;
-            Soul.IService service = new PinionCore.Remote.Soul.AsyncService(new Soul.SyncService(entry, new Soul.UserProvider(protocol, serializer, listenable, internalSer, pool)));
+            var userProvider = new Soul.UserProvider(listenable, pool);
+            Soul.IService service = new PinionCore.Remote.Soul.AsyncService(new Soul.SyncService(entry, protocol, serializer, internalSer, pool, userProvider));
 
 
             var ghostAgent = new PinionCore.Remote.Ghost.Agent(protocol, serializer, internalSer, pool);

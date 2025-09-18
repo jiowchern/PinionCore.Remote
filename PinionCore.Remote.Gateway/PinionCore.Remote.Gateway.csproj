@@ -1,0 +1,14 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>    
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\PinionCore.Network\PinionCore.Network.csproj" />
+    <ProjectReference Include="..\PinionCore.Remote.Ghost\PinionCore.Remote.Ghost.csproj" />
+    <ProjectReference Include="..\PinionCore.Remote.Soul\PinionCore.Remote.Soul.csproj" />
+    <ProjectReference Include="..\PinionCore.Remote\PinionCore.Remote.csproj" />
+  </ItemGroup>
+
+</Project>

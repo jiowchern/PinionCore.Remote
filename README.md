@@ -13,7 +13,7 @@
 <!-- [![Gitter](https://badges.gitter.im/JoinChat.svg)](https://gitter.im/PinionCore-Library) -->
 
 <!-- ![NuGet Downloads](https://img.shields.io/nuget/dt/PinionCore.Remote) -->
-
+[中文說明（繁體）](README-tc.md)
 
 ## Introduction
 PinionCore Remote is a powerful and flexible server-client communication framework developed in C#. Designed to work seamlessly with the Unity game engine and any other .NET Standard 2.0 compliant environments, it simplifies network communication by enabling servers and clients to interact through interfaces. This object-oriented approach reduces the maintenance cost of protocols and enhances code readability and maintainability.  
