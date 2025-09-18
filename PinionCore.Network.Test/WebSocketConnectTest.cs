@@ -21,7 +21,7 @@ namespace PinionCore.Network.Tests
 
             NUnit.Framework.Assert.True(connectResult);
 
-            var ar = new PinionCore.Utility.AutoPowerRegulator(new Utility.PowerRegulator());
+            var ar = new PinionCore.Utility.AutoPowerRegulator(new Utility.PowerRegulator(10));
 
             Web.Peer peer;
             while (!peers.TryDequeue(out peer))

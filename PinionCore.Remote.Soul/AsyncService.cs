@@ -6,42 +6,97 @@ namespace PinionCore.Remote.Soul
 {
     public class AsyncService : Soul.IService
     {
-
-
-
         readonly SyncService _SyncService;
         readonly IDisposable _Disposed;
 
-        readonly System.Threading.Tasks.Task _ThreadUpdater;
+        readonly Task _ThreadUpdater;
         readonly CancellationTokenSource Cancellation_;
+        readonly SemaphoreSlim _UpdateSignal;
+        readonly TimeSpan _MaxWaitInterval = TimeSpan.FromMilliseconds(5);
 
         public AsyncService(SyncService syncService)
         {
+            if (syncService == null)
+            {
+                throw new ArgumentNullException(nameof(syncService));
+            }
+
             _SyncService = syncService;
             _Disposed = _SyncService;
 
             Cancellation_ = new CancellationTokenSource();
-            _ThreadUpdater = Task.Factory.StartNew(() => _Update(), TaskCreationOptions.LongRunning);
+            _UpdateSignal = new SemaphoreSlim(0);
+
+            _SyncService.UsersStateChangedEvent += _RequestUpdate;
+            _RequestUpdate();
+
+            _ThreadUpdater = Task.Factory.StartNew(() => _Update(), Cancellation_.Token, TaskCreationOptions.LongRunning, TaskScheduler.Default);
         }
 
         private void _Update()
         {
-            var ar = new PinionCore.Utility.AutoPowerRegulator(new PinionCore.Utility.PowerRegulator());
-            while (!Cancellation_.IsCancellationRequested)
+            try
             {
-                _SyncService.Update();
-                ar.Operate(new CancellationTokenSource());
+                while (true)
+                {
+                    var token = Cancellation_.Token;
+                    token.ThrowIfCancellationRequested();
+
+                    try
+                    {
+                        _UpdateSignal.Wait(_MaxWaitInterval, token);
+                        while (_UpdateSignal.Wait(0))
+                        {
+                        }
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        break;
+                    }
+
+                    _SyncService.Update();
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                // graceful shutdown
+            }
+        }
+
+        void _RequestUpdate()
+        {
+            if (Cancellation_.IsCancellationRequested)
+            {
+                return;
+            }
+
+            try
+            {
+                _UpdateSignal.Release();
+            }
+            catch (ObjectDisposedException)
+            {
+                // shutting down, ignore
             }
         }
 
         void IDisposable.Dispose()
         {
             Cancellation_.Cancel();
-            _ThreadUpdater.Wait();
-            _Disposed.Dispose();
-            Cancellation_.Dispose();
-        }
+            _RequestUpdate();
 
+            try
+            {
+                _ThreadUpdater.Wait();
+            }
+            finally
+            {
+                _SyncService.UsersStateChangedEvent -= _RequestUpdate;
+                _UpdateSignal.Dispose();
+                _Disposed.Dispose();
+                Cancellation_.Dispose();
+            }
+        }
     }
 }
 

@@ -18,7 +18,7 @@ namespace PinionCore.Remote
 
         void _Update(CancellationTokenSource source)
         {
-            var regulator = new AutoPowerRegulator(new PowerRegulator());
+            var regulator = new AutoPowerRegulator(new PowerRegulator(10));
 
             while (!source.IsCancellationRequested)
             {
