@@ -58,12 +58,12 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
             IProtocol protocol = ProtocolProviderCase3.CreateCase3();
             NUnit.Framework.Assert.IsNotNull(protocol);
         }
-        [Test, Timeout(Timeout)]
+        [Test]
         public void NotifierSupplyAndUnsupplyTest()
         {
             var multipleNotices = new MultipleNotices.MultipleNotices();
 
-            var env = new TestEnv<Entry<IMultipleNotices>, IMultipleNotices>(new Entry<IMultipleNotices>(multipleNotices));
+            var env = new TestEnv<Entry<IMultipleNotices>, IMultipleNotices>(new Entry<IMultipleNotices>(multipleNotices), TimeSpan.FromSeconds(Timeout));
 
             var n1 = new PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Number(1);
             var n2 = new PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Number(2);
@@ -124,14 +124,14 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
 
             env.Dispose();
         }
-        [Test, Timeout(Timeout)]
+        [Test]
         public void NotifierSupplyTest()
         {
 
 
             var multipleNotices = new MultipleNotices.MultipleNotices();
 
-            var env = new TestEnv<Entry<IMultipleNotices>, IMultipleNotices>(new Entry<IMultipleNotices>(multipleNotices));
+            var env = new TestEnv<Entry<IMultipleNotices>, IMultipleNotices>(new Entry<IMultipleNotices>(multipleNotices), TimeSpan.FromSeconds(Timeout));
 
             var n1 = new PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Number(1);
 
@@ -199,13 +199,13 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
         }
 
         const int Timeout = 10000;
-        [Test, Timeout(Timeout)]
+        [Test]
         public void EventCustomDelegateTest()
         {
             var tester = new EventTester();
 
 
-            var env = new TestEnv<Entry<IEventabe>, IEventabe>(new Entry<IEventabe>(tester));
+            var env = new TestEnv<Entry<IEventabe>, IEventabe>(new Entry<IEventabe>(tester), TimeSpan.FromSeconds(Timeout));
 
             IObservable<IEventabe> eventerObs = from e in env.Queryable.QueryNotifier<IEventabe>().SupplyEvent()
                                                 select e;
@@ -220,13 +220,13 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
 
         }
 
-        [Test, Timeout(Timeout)]
+        [Test]
         public void EventRemoveTest()
         {
             var tester = new EventTester();
 
 
-            var env = new TestEnv<Entry<IEventabe>, IEventabe>(new Entry<IEventabe>(tester));
+            var env = new TestEnv<Entry<IEventabe>, IEventabe>(new Entry<IEventabe>(tester), TimeSpan.FromSeconds(Timeout));
 
             IObservable<IEventabe> eventerObs = from e in env.Queryable.QueryNotifier<IEventabe>().SupplyEvent()
                                                 select e;
@@ -248,13 +248,13 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
             NUnit.Framework.Assert.AreEqual(1, tester.Event02RemoveCount);
         }
 
-        [Test, Timeout(Timeout)]
+        [Test]
         public void EventTest()
         {
             var tester = new EventTester();
 
 
-            var env = new TestEnv<Entry<IEventabe>, IEventabe>(new Entry<IEventabe>(tester));
+            var env = new TestEnv<Entry<IEventabe>, IEventabe>(new Entry<IEventabe>(tester), TimeSpan.FromSeconds(Timeout));
 
 
 
@@ -310,12 +310,12 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
         }
 
 
-        [Test, Timeout(Timeout)]
+        [Test]
         public void MethodNotSupportedTest()
         {
             var tester = new MethodTester();
 
-            var env = new TestEnv<Entry<IMethodable>, IMethodable>(new Entry<IMethodable>(tester));
+            var env = new TestEnv<Entry<IMethodable>, IMethodable>(new Entry<IMethodable>(tester), TimeSpan.FromSeconds(Timeout));
             IObservable<IMethodable> gpiObs = from g in env.Queryable.QueryNotifier<IMethodable>().SupplyEvent()
                                               select g;
 
@@ -334,14 +334,14 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
             NUnit.Framework.Assert.Fail();
         }
 
-        [Test, Timeout(Timeout)]
+        [Test]
         public void MethodTest()
         {
 
 
             var tester = new MethodTester();
 
-            var env = new TestEnv<Entry<IMethodable>, IMethodable>(new Entry<IMethodable>(tester));
+            var env = new TestEnv<Entry<IMethodable>, IMethodable>(new Entry<IMethodable>(tester), TimeSpan.FromSeconds(Timeout));
             var valuesObs = from gpi in env.Queryable.QueryNotifier<IMethodable>().SupplyEvent()
                             from v1 in gpi.GetValue1().RemoteValue()
                             from v2 in gpi.GetValue2().RemoteValue()
@@ -358,12 +358,12 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
         }
 
 
-        [Test, Timeout(Timeout)]
+        [Test]
         public async Task MethodTestRevalue0_1()
         {
             var tester = new MethodTester();
 
-            var env = new TestEnv<Entry<IMethodable>, IMethodable>(new Entry<IMethodable>(tester));
+            var env = new TestEnv<Entry<IMethodable>, IMethodable>(new Entry<IMethodable>(tester), TimeSpan.FromSeconds(Timeout));
             var gpiObs = from gpi in env.Queryable.QueryNotifier<IMethodable>().SupplyEvent()
                             select gpi;
 
@@ -384,7 +384,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
 
             var tester = new MethodTester();
 
-            var env = new TestEnv<Entry<IMethodable>, IMethodable>(new Entry<IMethodable>(tester));
+            var env = new TestEnv<Entry<IMethodable>, IMethodable>(new Entry<IMethodable>(tester), TimeSpan.FromSeconds(Timeout));
             IObservable<IMethodable> methodObs = from gpi in env.Queryable.QueryNotifier<IMethodable>().SupplyEvent()
                                                  from v1 in gpi.GetValueSelf().RemoteValue()
                                                  select v1;
@@ -406,14 +406,14 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
             Assert.AreEqual(1, value);
         }
 
-        [Test, Timeout(Timeout)]
+        [Test]
         public void MethodSayHelloTest()
         {
 
 
             var tester = new MethodTester();
 
-            var env = new TestEnv<Entry<IMethodable>, IMethodable>(new Entry<IMethodable>(tester));
+            var env = new TestEnv<Entry<IMethodable>, IMethodable>(new Entry<IMethodable>(tester), TimeSpan.FromSeconds(Timeout));
             IObservable<HelloReply> valuesObs = from gpi in env.Queryable.QueryNotifier<IMethodable>().SupplyEvent()
                                                 from response in gpi.SayHello(new HelloRequest() { Name = "jc" }).RemoteValue()
                                                 select response;
@@ -425,12 +425,12 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
 
         }
 
-        [Test, Timeout(Timeout)]
+        [Test]
         public void PropertyTest()
         {
             PinionCore.Utility.Singleton<PinionCore.Utility.Log>.Instance.RecordEvent += System.Console.WriteLine;
             var tester = new PropertyTester();
-            var env = new TestEnv<Entry<IPropertyable>, IPropertyable>(new Entry<IPropertyable>(tester));
+            var env = new TestEnv<Entry<IPropertyable>, IPropertyable>(new Entry<IPropertyable>(tester), TimeSpan.FromSeconds(Timeout));
 
             IObservable<IPropertyable> gpiObs = from g in env.Queryable.QueryNotifier<IPropertyable>().SupplyEvent()
                                                 select g;
