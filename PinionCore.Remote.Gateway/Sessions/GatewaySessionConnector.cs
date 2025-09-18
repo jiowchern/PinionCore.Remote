@@ -4,28 +4,55 @@ using System.Threading;
 using System.Threading.Tasks;
 using PinionCore.Memorys;
 using PinionCore.Network;
-using static System.Collections.Specialized.BitVector32;
+using PinionCore.Remote.Actors;
 using Buffer = PinionCore.Memorys.Buffer;
 
 namespace PinionCore.Remote.Gateway.Sessions
 {
     class GatewaySessionConnector : IDisposable
     {
+        interface ActorCommand
+        {
+        }
+
+        struct JoinCommand : ActorCommand
+        {
+            public IStreamable Stream;
+            public TaskCompletionSource<uint> CompletionSource;
+        }
+
+        struct LeaveCommand : ActorCommand
+        {
+            public IStreamable Stream;
+            public TaskCompletionSource<bool> CompletionSource;
+        }
+
+        struct IncomingDataCommand : ActorCommand
+        {
+            public uint SessionId;
+            public List<Buffer> Buffers;
+        }
+
+        struct OutgoingDataCommand : ActorCommand
+        {
+            public uint SessionId;
+            public byte[] Payload;
+        }
+
         private sealed class Session : IDisposable
         {
             private bool _disposed;
-            private Task<List<Buffer>> _readTesk;
 
-            public Session(uint id, IStreamable stream, CancellationTokenSource cancellation, IPool pool)
+            public Session(uint id, IStreamable stream, Channel channel, IPool pool)
             {
                 if (stream == null)
                 {
                     throw new ArgumentNullException(nameof(stream));
                 }
 
-                if (cancellation == null)
+                if (channel == null)
                 {
-                    throw new ArgumentNullException(nameof(cancellation));
+                    throw new ArgumentNullException(nameof(channel));
                 }
 
                 if (pool == null)
@@ -35,18 +62,14 @@ namespace PinionCore.Remote.Gateway.Sessions
 
                 Id = id;
                 Stream = stream;
-                Cancellation = cancellation;
-                Reader = new PackageReader(stream, pool);
-                Sender = new PackageSender(stream, pool);
-                ReadTask = Task.CompletedTask;
+                Channel = channel;
+                Pool = pool;
             }
 
             public uint Id { get; }
             public IStreamable Stream { get; }
-            public PackageReader Reader { get; }
-            public Task ReadTask;
-            public PackageSender Sender { get; }
-            public CancellationTokenSource Cancellation { get; }
+            public Channel Channel { get; }
+            public IPool Pool { get; }
 
             public void Dispose()
             {
@@ -56,26 +79,19 @@ namespace PinionCore.Remote.Gateway.Sessions
                 }
 
                 _disposed = true;
-                Cancellation.Dispose();
+                Channel.Dispose();
             }
-
-
         }
         private static int _GlobalSessionId;
 
-        private readonly PackageReader _reader;
-        private readonly PackageSender _sender;
+        readonly Channel _Channel;
+        readonly DataflowActor<ActorCommand> _DataflowActor;
         private readonly Serializer _serializer;
         private readonly IPool _pool;
         private readonly Dictionary<IStreamable, Session> _streams;
         private readonly Dictionary<uint, Session> _sessionsById;
-        private readonly CancellationTokenSource _cancellationSource;
-        private readonly SemaphoreSlim _mutex;
-        private Task _readTask;
         private bool _started;
         private bool _disposed;
-
-        
 
         public GatewaySessionConnector(PackageReader reader, PackageSender sender, Serializer serializer)
             : this(reader, sender, serializer, PinionCore.Memorys.PoolProvider.Shared)
@@ -84,17 +100,33 @@ namespace PinionCore.Remote.Gateway.Sessions
 
         public GatewaySessionConnector(PackageReader reader, PackageSender sender, Serializer serializer, IPool pool)
         {
-            _reader = reader ?? throw new ArgumentNullException(nameof(reader));
-            _sender = sender ?? throw new ArgumentNullException(nameof(sender));
             _serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
             _pool = pool ?? throw new ArgumentNullException(nameof(pool));
 
+            _DataflowActor = new DataflowActor<ActorCommand>(_Handle);
+            _Channel = new Channel(reader, sender);
+
             _streams = new Dictionary<IStreamable, Session>();
             _sessionsById = new Dictionary<uint, Session>();
-            _cancellationSource = new CancellationTokenSource();
-            _mutex = new SemaphoreSlim(1, 1);
+        }
 
-            _readTask = Task.CompletedTask;
+        private void _Handle(ActorCommand command)
+        {
+            switch (command)
+            {
+                case JoinCommand join:
+                    _HandleJoin(join);
+                    break;
+                case LeaveCommand leave:
+                    _HandleLeave(leave);
+                    break;
+                case IncomingDataCommand incoming:
+                    _HandleIncomingData(incoming);
+                    break;
+                case OutgoingDataCommand outgoing:
+                    _HandleOutgoingData(outgoing);
+                    break;
+            }
         }
 
         public void Start()
@@ -106,46 +138,64 @@ namespace PinionCore.Remote.Gateway.Sessions
                 return;
             }
 
+            _Channel.OnDataReceived += _ReadDone;
+            _Channel.OnDisconnected += Dispose;
+            _Channel.Start();
+
             _started = true;
-            _readTask = _reader.Read().ContinueWith(_ReadDone);
         }
 
         public uint Join(IStreamable stream)
         {
             ThrowIfDisposed();
 
-            return JoinAsync(stream, _cancellationSource.Token).GetAwaiter().GetResult();
+            var tcs = new TaskCompletionSource<uint>();
+            var command = new JoinCommand { Stream = stream, CompletionSource = tcs };
+
+            if (!_DataflowActor.Post(command))
+            {
+                throw new InvalidOperationException("Failed to post join command");
+            }
+
+            return tcs.Task.GetAwaiter().GetResult();
         }
 
         public void Leave(IStreamable stream)
         {
             ThrowIfDisposed();
 
-            LeaveAsync(stream, _cancellationSource.Token).GetAwaiter().GetResult();
-        }
+            var tcs = new TaskCompletionSource<bool>();
+            var command = new LeaveCommand { Stream = stream, CompletionSource = tcs };
 
-        private async Task<uint> JoinAsync(IStreamable stream, CancellationToken token)
-        {
-            if (stream == null)
+            if (!_DataflowActor.Post(command))
             {
-                throw new ArgumentNullException(nameof(stream));
+                throw new InvalidOperationException("Failed to post leave command");
             }
 
-            await _mutex.WaitAsync(token).ConfigureAwait(false);
+            tcs.Task.GetAwaiter().GetResult();
+        }
+
+        private void _HandleJoin(JoinCommand command)
+        {
             try
             {
-                token.ThrowIfCancellationRequested();
-
-                if (_streams.TryGetValue(stream, out var existing))
+                if (command.Stream == null)
                 {
-                    return existing.Id;
+                    command.CompletionSource.SetException(new ArgumentNullException(nameof(command.Stream)));
+                    return;
+                }
+
+                if (_streams.TryGetValue(command.Stream, out var existing))
+                {
+                    command.CompletionSource.SetResult(existing.Id);
+                    return;
                 }
 
                 var id = (uint)Interlocked.Increment(ref _GlobalSessionId);
-                var sessionCancellation = CancellationTokenSource.CreateLinkedTokenSource(_cancellationSource.Token);
-                var session = new Session(id, stream, sessionCancellation, _pool);
+                var sessionChannel = new Channel(new PackageReader(command.Stream, _pool), new PackageSender(command.Stream, _pool));
+                var session = new Session(id, command.Stream, sessionChannel, _pool);
 
-                _streams.Add(stream, session);
+                _streams.Add(command.Stream, session);
                 _sessionsById.Add(id, session);
 
                 var joinPackage = new ClientToServerPackage
@@ -156,32 +206,67 @@ namespace PinionCore.Remote.Gateway.Sessions
                 };
 
                 var buffer = _serializer.Serialize(joinPackage);
-                _sender.Push(buffer);
+                _Channel.Sender.Push(buffer);
 
+                sessionChannel.OnDataReceived += (buffers) => {
+                    _DataflowActor.Post(new IncomingDataCommand { SessionId = id, Buffers = buffers });
+                    return new List<Buffer>();
+                };
+                sessionChannel.OnDisconnected += () => {
+                    _DataflowActor.Post(new LeaveCommand { Stream = command.Stream, CompletionSource = new TaskCompletionSource<bool>() });
+                };
+                sessionChannel.Start();
 
-
-                _StartReading(session);
-
-                return id;
+                command.CompletionSource.SetResult(id);
             }
-            finally
+            catch (Exception ex)
             {
-                _mutex.Release();
+                command.CompletionSource.SetException(ex);
             }
         }
 
-        private void _StartReading(Session session)
+        private void _HandleLeave(LeaveCommand command)
         {
-            session.ReadTask = session.Reader.Read().ContinueWith((t)=> { _ReadSessionDone(t, session); });
+            try
+            {
+                if (command.Stream == null)
+                {
+                    command.CompletionSource.SetException(new ArgumentNullException(nameof(command.Stream)));
+                    return;
+                }
+
+                if (!_streams.TryGetValue(command.Stream, out var session))
+                {
+                    command.CompletionSource.SetResult(true);
+                    return;
+                }
+
+                _streams.Remove(command.Stream);
+                _sessionsById.Remove(session.Id);
+
+                var leavePackage = new ClientToServerPackage
+                {
+                    OpCode = OpCodeClientToServer.Leave,
+                    Id = session.Id,
+                    Payload = Array.Empty<byte>()
+                };
+
+                var buffer = _serializer.Serialize(leavePackage);
+                _Channel.Sender.Push(buffer);
+
+                session.Dispose();
+                command.CompletionSource.SetResult(true);
+            }
+            catch (Exception ex)
+            {
+                command.CompletionSource.SetException(ex);
+            }
         }
 
-        private void _ReadSessionDone(Task<List<Buffer>> task, Session session)
+        private void _HandleIncomingData(IncomingDataCommand command)
         {
-            var buffers = task.Result;
-            foreach (var buffer in buffers)
+            foreach (var buffer in command.Buffers)
             {
-                
-
                 var segment = buffer.Bytes;
                 var count = segment.Count;
                 if (count <= 0 || segment.Array == null)
@@ -197,126 +282,48 @@ namespace PinionCore.Remote.Gateway.Sessions
                 var package = new ClientToServerPackage
                 {
                     OpCode = OpCodeClientToServer.Message,
-                    Id = session.Id,
+                    Id = command.SessionId,
                     Payload = payload
                 };
 
-                
-                _sender.Push(_serializer.Serialize(package));
+                _Channel.Sender.Push(_serializer.Serialize(package));
             }
-
-            _StartReading(session);
         }
 
-        private async Task LeaveAsync(IStreamable stream, CancellationToken token)
+        private void _HandleOutgoingData(OutgoingDataCommand command)
         {
-            if (stream == null)
+            if (_sessionsById.TryGetValue(command.SessionId, out var session))
             {
-                throw new ArgumentNullException(nameof(stream));
-            }
-
-            Session session = null;
-
-            await _mutex.WaitAsync(token).ConfigureAwait(false);
-            try
-            {
-                token.ThrowIfCancellationRequested();
-
-                if (!_streams.TryGetValue(stream, out session))
+                var payload = command.Payload;
+                if (payload == null || payload.Length == 0)
                 {
                     return;
                 }
 
-                _streams.Remove(stream);
-                _sessionsById.Remove(session.Id);
-
-                session.Cancellation.Cancel();
-
-                var leavePackage = new ClientToServerPackage
+                var headerLength = PinionCore.Serialization.Varint.BufferToNumber(payload, 0, out int bodyLength);
+                if (headerLength <= 0 || bodyLength <= 0 || payload.Length < headerLength + bodyLength)
                 {
-                    OpCode = OpCodeClientToServer.Leave,
-                    Id = session.Id,
-                    Payload = Array.Empty<byte>()
-                };
+                    return;
+                }
 
-                var buffer = _serializer.Serialize(leavePackage);
-                _sender.Push(buffer);
-            }
-            finally
-            {
-                _mutex.Release();
-            }
-
-            if (session != null)
-            {
-                await CleanupSessionAsync(session).ConfigureAwait(false);
+                var outbound = _pool.Alloc(bodyLength);
+                Array.Copy(payload, headerLength, outbound.Bytes.Array, outbound.Bytes.Offset, bodyLength);
+                session.Channel.Sender.Push(outbound);
             }
         }
 
-        private void _ReadDone(Task<List<Buffer>> task)
+        private List<Buffer> _ReadDone(List<Buffer> buffers)
         {
-            if (task == null)
-            {
-                throw new ArgumentNullException(nameof(task));
-            }
-
-            if (task.IsFaulted)
-            {
-                return;
-            }
-
-            if (task.IsCanceled || _disposed)
-            {
-                return;
-            }
-
-            var buffers = task.Result;
-            if (buffers == null || buffers.Count == 0)
-            {
-                return;
-            }
-
             foreach (var buffer in buffers)
             {
                 var package = (ServerToClientPackage)_serializer.Deserialize(buffer);
-                if (package.OpCode == OpCodeServerToClient.Message &&
-                    _sessionsById.TryGetValue(package.Id, out var session))
+                if (package.OpCode == OpCodeServerToClient.Message)
                 {
-                    var payload = package.Payload;
-                    if (payload == null || payload.Length == 0)
-                    {
-                        continue;
-                    }
-
-                    var headerLength = PinionCore.Serialization.Varint.BufferToNumber(payload, 0, out int bodyLength);
-                    if (headerLength <= 0 || bodyLength <= 0 || payload.Length < headerLength + bodyLength)
-                    {
-                        continue;
-                    }
-
-                    var outbound = _pool.Alloc(bodyLength);
-                    Array.Copy(payload, headerLength, outbound.Bytes.Array, outbound.Bytes.Offset, bodyLength);
-                    session.Sender.Push(outbound);
+                    _DataflowActor.Post(new OutgoingDataCommand { SessionId = package.Id, Payload = package.Payload });
                 }
             }
 
-            _readTask = _reader.Read().ContinueWith(_ReadDone);
-        }
-
-        
-
-        
-
-        private async Task CleanupSessionAsync(Session session)
-        {
-            if (session == null)
-            {
-                return;
-            }
-
-            
-
-            session.Dispose();
+            return new List<Buffer>();
         }
 
         private void ThrowIfDisposed()
@@ -336,29 +343,15 @@ namespace PinionCore.Remote.Gateway.Sessions
 
             _disposed = true;
 
-            _cancellationSource.Cancel();
-
-            try
-            {
-                _readTask?.Wait(TimeSpan.FromSeconds(1));
-            }
-            catch (AggregateException ex)
-            {
-                ex.Handle(e => e is OperationCanceledException);
-            }
+            _DataflowActor.Complete();
+            _DataflowActor.Dispose();
+            _Channel.Dispose();
 
             foreach (var session in _streams.Values)
             {
-                session.Cancellation.Cancel();
+                session.Dispose();
             }
 
-            foreach (var session in _streams.Values)
-            {
-                CleanupSessionAsync(session).GetAwaiter().GetResult();
-            }
-
-            _cancellationSource.Dispose();
-            _mutex.Dispose();
             _streams.Clear();
             _sessionsById.Clear();
         }
