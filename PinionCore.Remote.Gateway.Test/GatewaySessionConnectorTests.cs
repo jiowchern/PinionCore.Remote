@@ -28,11 +28,11 @@ namespace PinionCore.Remote.Gateway.Tests
             var bufs = readTask.Result;
             Assert.GreaterOrEqual(bufs.Count, 1);
 
-            var ser = new PinionCore.Remote.Gateway.Backends.Serializer(PinionCore.Memorys.PoolProvider.Shared);
+            var messageSerializer = new PinionCore.Remote.Gateway.Backends.Serializer(PinionCore.Memorys.PoolProvider.Shared);
             bool foundJoin = false;
             foreach (var b in bufs)
             {
-                var obj = ser.Deserialize(b);
+                var obj = messageSerializer.Deserialize(b);
                 var pkg = (PinionCore.Remote.Gateway.Backends.ClientToServerPackage)obj;
                 if (pkg.OpCode == PinionCore.Remote.Gateway.Backends.OpCodeClientToServer.Join && pkg.Id == id)
                 {
@@ -73,11 +73,11 @@ namespace PinionCore.Remote.Gateway.Tests
             var bufs = readTask.Result;
             Assert.GreaterOrEqual(bufs.Count, 1);
 
-            var ser = new PinionCore.Remote.Gateway.Backends.Serializer(PinionCore.Memorys.PoolProvider.Shared);
+            var messageSerializer = new PinionCore.Remote.Gateway.Backends.Serializer(PinionCore.Memorys.PoolProvider.Shared);
             bool foundLeave = false;
             foreach (var b in bufs)
             {
-                var obj = ser.Deserialize(b);
+                var obj = messageSerializer.Deserialize(b);
                 var pkg = (PinionCore.Remote.Gateway.Backends.ClientToServerPackage)obj;
                 if (pkg.OpCode == PinionCore.Remote.Gateway.Backends.OpCodeClientToServer.Leave && pkg.Id == id)
                 {

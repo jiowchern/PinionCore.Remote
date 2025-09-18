@@ -210,11 +210,11 @@ namespace Protocol
 	}
 }
 ```
-3. Add ```ProtocolCreater.cs```.
+3. Add ```ProtocolCreator.cs```.
 ```csharp
 namespace Protocol
 {
-    public static partial class ProtocolCreater
+    public static partial class ProtocolCreator
     {
         public static PinionCore.Remote.IProtocol Create()
         {
@@ -226,7 +226,7 @@ namespace Protocol
         /*
 			Create a partial method as follows.
         */
-        [PinionCore.Remote.Protocol.Creater]
+        [PinionCore.Remote.Protocol.Creator]
         static partial void _Create(ref PinionCore.Remote.IProtocol protocol);
     }
 }
@@ -292,8 +292,8 @@ namespace Server
 {	
 	static void Main(string[] args)
 	{		
-		// Get IProtocol with ProtocolCreater
-		var protocol = Protocol.ProtocolCreater.Create();
+		// Get IProtocol with ProtocolCreator
+		var protocol = Protocol.ProtocolCreator.Create();
 		
 		// Create Service
 		var entry = new Entry();		
@@ -329,8 +329,8 @@ namespace Client
 {	
 	static async Task Main(string[] args)
 	{		
-		// Get IProtocol with ProtocolCreater
-		var protocol = Protocol.ProtocolCreater.Create();
+		// Get IProtocol with ProtocolCreator
+		var protocol = Protocol.ProtocolCreator.Create();
 				
 		var set = PinionCore.Remote.Client.Provider.CreateTcpAgent(protocol);
 		
@@ -391,8 +391,8 @@ namespace Standalone
 {	
 	static void Main(string[] args)
 	{		
-		// Get IProtocol with ProtocolCreater
-		var protocol = Protocol.ProtocolCreater.Create();
+		// Get IProtocol with ProtocolCreator
+		var protocol = Protocol.ProtocolCreator.Create();
 		
 		// Create service
 		var entry = new Entry();
@@ -438,7 +438,7 @@ If you want to customize the connection system you can do so in the following wa
 #### Client
 Create a connection use ```CreateAgent``` and implement the interface ```IStreamable```.
 ```csharp
-var protocol = Protocol.ProtocolCreater.Create();
+var protocol = Protocol.ProtocolCreator.Create();
 IStreamable stream = null ;// todo: Implementation Interface IStreamable
 var service = PinionCore.Remote.Client.CreateAgent(protocol , stream) ;
 ```
@@ -473,7 +473,7 @@ namespace PinionCore.Network
 
 Create a service use ```CreateService``` and implement the interface ```IListenable```.
 ```csharp
-var protocol = Protocol.ProtocolCreater.Create();
+var protocol = Protocol.ProtocolCreator.Create();
 var entry = new Entry();
 IListenable listener = null; // todo: Implementation Interface IListenable
 var service = PinionCore.Remote.Server.CreateService(entry , protocol , listener) ;
@@ -506,7 +506,7 @@ namespace PinionCore.Remote
 ```
 and bring it to the server ```CreateTcpService```.
 ```csharp
-var protocol = Protocol.ProtocolCreater.Create();
+var protocol = Protocol.ProtocolCreator.Create();
 var entry = new Entry();
 ISerializable yourSerializer = null; 
 var service = PinionCore.Remote.Server.CreateTcpService(entry , protocol , yourSerializer) ;
@@ -514,7 +514,7 @@ var service = PinionCore.Remote.Server.CreateTcpService(entry , protocol , yourS
 
 and bring it to the client ```CreateTcpAgent```.
 ```csharp
-var protocol = Protocol.ProtocolCreater.Create();
+var protocol = Protocol.ProtocolCreator.Create();
 ISerializable yourSerializer = null ;
 var service = PinionCore.Remote.Client.CreateTcpAgent(protocol , yourSerializer) ;
 ```  

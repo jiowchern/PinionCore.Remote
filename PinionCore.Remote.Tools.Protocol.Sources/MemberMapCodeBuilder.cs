@@ -39,11 +39,11 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
 
             MethodInfosCode = string.Join(",", methods);*/
 
-            IEnumerable<string> propertys = from interfaceSyntax in _interfaces
-                                            from propertySyntax in interfaceSyntax.DescendantNodes().OfType<PropertyDeclarationSyntax>()
-                                            select _BuildCode(interfaceSyntax, propertySyntax);
+            IEnumerable<string> properties = from interfaceSyntax in _interfaces
+                                             from propertySyntax in interfaceSyntax.DescendantNodes().OfType<PropertyDeclarationSyntax>()
+                                             select _BuildCode(interfaceSyntax, propertySyntax);
 
-            PropertyInfosCode = string.Join(",", propertys);
+            PropertyInfosCode = string.Join(",", properties);
 
 
             IEnumerable<string> interfaces =

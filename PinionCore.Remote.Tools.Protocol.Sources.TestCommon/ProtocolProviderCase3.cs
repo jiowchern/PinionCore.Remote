@@ -9,6 +9,6 @@ public static partial class ProtocolProviderCase3
         return protocol;
     }
 
-    [PinionCore.Remote.Protocol.Creater]
+    [PinionCore.Remote.Protocol.Creator]
     static partial void _CreateCase3(ref IProtocol protocol);
 }

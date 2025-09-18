@@ -22,7 +22,7 @@ namespace PinionCore.Remote.Client
         }
 
 
-        public void Regist(Type type, object instance)
+        public void Register(Type type, object instance)
         {
 
             foreach (MethodInfo method in type.GetMethods())
@@ -42,7 +42,7 @@ namespace PinionCore.Remote.Client
 
 
 
-        public void Unregist(object instance)
+        public void Unregister(object instance)
         {
             AgentCommand[] removes = _Invokers.Where(i => i.Target == instance).ToArray();
             foreach (AgentCommand invoker in removes)

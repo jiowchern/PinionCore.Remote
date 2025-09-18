@@ -32,7 +32,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
                             continue;
 
                         var name = info.Symbol.ContainingType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-                        if (name != "global::PinionCore.Remote.Protocol.CreaterAttribute")
+                        if (name != "global::PinionCore.Remote.Protocol.CreatorAttribute")
                         {
                             continue;
                         }

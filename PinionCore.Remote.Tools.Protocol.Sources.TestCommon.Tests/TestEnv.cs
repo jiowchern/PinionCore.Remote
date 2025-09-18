@@ -24,10 +24,9 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
             _CounterPackage = Stopwatch.StartNew();
             Entry = entry;
             IProtocol protocol = PinionCore.Remote.Protocol.ProtocolProvider.Create(typeof(T2).Assembly).Single();
-            var ser = new PinionCore.Remote.Serializer(protocol.SerializeTypes);
-            var internalSer = new PinionCore.Remote.InternalSerializer();
+            var serializer = new PinionCore.Remote.Serializer(protocol.SerializeTypes);
             #region standalone
-            Service service = PinionCore.Remote.Standalone.Provider.CreateService(entry, protocol, ser, Memorys.PoolProvider.Shared);
+            Service service = PinionCore.Remote.Standalone.Provider.CreateService(entry, protocol, serializer, Memorys.PoolProvider.Shared);
 
 
             Ghost.IAgent agent = service.Create(new Stream());

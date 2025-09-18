@@ -38,10 +38,10 @@ namespace PinionCore.Network.Tcp
         }
 
 
-        public IAwaitableSource<int> Transact(byte[] readed_byte, int offset, int count)
+        public IAwaitableSource<int> Transact(byte[] buffer, int offset, int count)
         {
             SocketError error;
-            IAsyncResult ar = _StartHandler(readed_byte, offset, count, SocketFlags.None, out error, _StartDone, null);
+            IAsyncResult ar = _StartHandler(buffer, offset, count, SocketFlags.None, out error, _StartDone, null);
 
             if (error != SocketError.Success && error != SocketError.IOPending)
             {

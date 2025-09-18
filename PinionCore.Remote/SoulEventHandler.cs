@@ -81,7 +81,7 @@ namespace PinionCore.Remote
         {
             MemberMap map = _Protocol.GetMemberMap();
             EventInfo info = map.GetEvent(event_id);
-            IEventProxyCreater eventCreator = _EventProvider.Find(info);
+            IEventProxyCreator eventCreator = _EventProvider.Find(info);
 
 
             return eventCreator.Create(entityId, event_id, handlerId, invokeEvent);

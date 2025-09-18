@@ -40,16 +40,16 @@ namespace PinionCore.Network
             if (headReadCount == 0)
                 return new List<PinionCore.Memorys.Buffer>();
             headReadCount += unfin.Segment.Count;
-            var readedSeg = new ArraySegment<byte>(headBuffer.Bytes.Array, headBuffer.Bytes.Offset, headReadCount);
+            var readSegment = new ArraySegment<byte>(headBuffer.Bytes.Array, headBuffer.Bytes.Offset, headReadCount);
             var varintPackagesLen = 0;
-            Serialization.Varint.Package[] varintPackages = PinionCore.Serialization.Varint.FindPackages(readedSeg).ToArray();
+            Serialization.Varint.Package[] varintPackages = PinionCore.Serialization.Varint.FindPackages(readSegment).ToArray();
             foreach (Serialization.Varint.Package pkg in varintPackages)
             {
                 varintPackagesLen += pkg.Head.Count + pkg.Body.Count;
                 packages.Add(new Package { Buffer = headBuffer, Segment = pkg.Body });
             }
 
-            var remaining = new ArraySegment<byte>(readedSeg.Array, readedSeg.Offset + varintPackagesLen, readedSeg.Count - varintPackagesLen);
+            var remaining = new ArraySegment<byte>(readSegment.Array, readSegment.Offset + varintPackagesLen, readSegment.Count - varintPackagesLen);
 
             ArraySegment<byte> remainingHeadVarint = PinionCore.Serialization.Varint.FindVarint(ref remaining);
             if (remainingHeadVarint.Count > 0)
@@ -64,11 +64,11 @@ namespace PinionCore.Network
                     var bodyReadCount = 0;
                     while (bodyReadCount < remainingBodySize)
                     {
-                        var readed = await _ReadFromStream(body.Bytes.Array, body.Bytes.Offset + readOffset + bodyReadCount, remainingBodySize - bodyReadCount);
+                        var bytesRead = await _ReadFromStream(body.Bytes.Array, body.Bytes.Offset + readOffset + bodyReadCount, remainingBodySize - bodyReadCount);
 
-                        if (readed == 0)
+                        if (bytesRead == 0)
                             return new List<PinionCore.Memorys.Buffer>();
-                        bodyReadCount += readed;
+                        bodyReadCount += bytesRead;
                     }
                 }
                 packages.Add(new Package { Buffer = body, Segment = new ArraySegment<byte>(body.Bytes.Array, body.Bytes.Offset, bodySize) });

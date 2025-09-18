@@ -28,10 +28,10 @@ namespace PinionCore.Remote.Client
             _Users.Add(user);
             foreach (Tuple<Type, object> g in user.Ghosts)
             {
-                _Register.Regist(g.Item1, g.Item2);
+                _Register.Register(g.Item1, g.Item2);
             }
-            rectifier.SupplyEvent += _Register.Regist;
-            rectifier.UnsupplyEvent += (type, obj) => { _Register.Unregist(obj); };
+            rectifier.SupplyEvent += _Register.Register;
+            rectifier.UnsupplyEvent += (type, obj) => { _Register.Unregister(obj); };
 
             return user.Id;
         }
@@ -42,7 +42,7 @@ namespace PinionCore.Remote.Client
                 return;
             foreach (Tuple<Type, object> g in user.Ghosts)
             {
-                _Register.Unregist(g.Item2);
+                _Register.Unregister(g.Item2);
             }
             _Users.RemoveAll(u => u.Id == id);
             user.Dispose();

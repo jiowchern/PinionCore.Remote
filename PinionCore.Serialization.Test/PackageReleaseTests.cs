@@ -16,14 +16,14 @@ namespace PinionCore.Remote.Tests
             var id = Guid.NewGuid();
             var package1 = new TestPackageData();
 
-            var ser = new PinionCore.Serialization.Serializer(new DescriberBuilder(typeof(Guid), typeof(TestPackageData)).Describers);
+            var serializer = new PinionCore.Serialization.Serializer(new DescriberBuilder(typeof(Guid), typeof(TestPackageData)).Describers);
             package1.Id = id;
 
 
-            Memorys.Buffer buffer = ser.ObjectToBuffer(package1);
+            Memorys.Buffer buffer = serializer.ObjectToBuffer(package1);
 
 
-            var package2 = ser.BufferToObject(buffer) as TestPackageData;
+            var package2 = serializer.BufferToObject(buffer) as TestPackageData;
 
             NUnit.Framework.Assert.AreEqual(id, package2.Id);
         }
@@ -36,21 +36,21 @@ namespace PinionCore.Remote.Tests
             var p2 = "234";
             var p3 = Guid.NewGuid();
             var package1 = new TestPackageBuffer();
-            var ser = new PinionCore.Serialization.Serializer(new DescriberBuilder(typeof(int), typeof(string), typeof(char[]), typeof(byte), typeof(byte[]), typeof(byte[][]), typeof(char), typeof(Guid), typeof(TestPackageBuffer)).Describers);
+            var serializer = new PinionCore.Serialization.Serializer(new DescriberBuilder(typeof(int), typeof(string), typeof(char[]), typeof(byte), typeof(byte[]), typeof(byte[][]), typeof(char), typeof(Guid), typeof(TestPackageBuffer)).Describers);
 
 
-            package1.Datas = new[] { ser.ObjectToBuffer(p1).ToArray(), ser.ObjectToBuffer(p2).ToArray(), ser.ObjectToBuffer(p3).ToArray() };
+            package1.Data = new[] { serializer.ObjectToBuffer(p1).ToArray(), serializer.ObjectToBuffer(p2).ToArray(), serializer.ObjectToBuffer(p3).ToArray() };
 
-            //byte[] buffer = package1.ToBuffer(ser);
-            Memorys.Buffer buffer = ser.ObjectToBuffer(package1);
+            //byte[] buffer = package1.ToBuffer(serializer);
+            Memorys.Buffer buffer = serializer.ObjectToBuffer(package1);
 
-            //TestPackageBuffer package2 = buffer.ToPackageData<TestPackageBuffer>(ser);
-            var package2 = ser.BufferToObject(buffer) as TestPackageBuffer;
+            //TestPackageBuffer package2 = buffer.ToPackageData<TestPackageBuffer>(serializer);
+            var package2 = serializer.BufferToObject(buffer) as TestPackageBuffer;
 
 
-            NUnit.Framework.Assert.AreEqual(p1, ser.BufferToObject(package2.Datas[0].AsBuffer()));
-            NUnit.Framework.Assert.AreEqual(p2, ser.BufferToObject(package2.Datas[1].AsBuffer()));
-            NUnit.Framework.Assert.AreEqual(p3, ser.BufferToObject(package2.Datas[2].AsBuffer()));
+            NUnit.Framework.Assert.AreEqual(p1, serializer.BufferToObject(package2.Data[0].AsBuffer()));
+            NUnit.Framework.Assert.AreEqual(p2, serializer.BufferToObject(package2.Data[1].AsBuffer()));
+            NUnit.Framework.Assert.AreEqual(p3, serializer.BufferToObject(package2.Data[2].AsBuffer()));
         }
 
 
@@ -80,13 +80,13 @@ namespace PinionCore.Remote.Tests
                             typeof(PinionCore.Remote.Packages.PackageUnloadSoul),
                             typeof(PinionCore.Remote.Packages.PackageCallMethod),
                             typeof(PinionCore.Remote.Packages.PackageRelease));
-            var ser = new PinionCore.Serialization.Serializer(builder.Describers);
+            var serializer = new PinionCore.Serialization.Serializer(builder.Describers);
             var response = new PinionCore.Remote.Packages.RequestPackage();
             response.Code = ClientToServerOpCode.Ping;
             response.Data = new byte[] { 0, 1, 2, 3, 4, 5 };
 
-            Memorys.Buffer bufferResponse = ser.ObjectToBuffer(response);
-            var result = (PinionCore.Remote.Packages.RequestPackage)ser.BufferToObject(bufferResponse);
+            Memorys.Buffer bufferResponse = serializer.ObjectToBuffer(response);
+            var result = (PinionCore.Remote.Packages.RequestPackage)serializer.BufferToObject(bufferResponse);
             NUnit.Framework.Assert.AreEqual(ClientToServerOpCode.Ping, result.Code);
             NUnit.Framework.Assert.AreEqual(3, result.Data[3]);
         }
@@ -104,17 +104,17 @@ namespace PinionCore.Remote.Tests
 
             var package1 = new TestPackageBuffer();
 
-            var ser = new PinionCore.Serialization.Serializer(new DescriberBuilder(typeof(int), typeof(string), typeof(char[]), typeof(byte), typeof(byte[]), typeof(byte[][]), typeof(char), typeof(Guid), typeof(TestPackageBuffer)).Describers);
+            var serializer = new PinionCore.Serialization.Serializer(new DescriberBuilder(typeof(int), typeof(string), typeof(char[]), typeof(byte), typeof(byte[]), typeof(byte[][]), typeof(char), typeof(Guid), typeof(TestPackageBuffer)).Describers);
 
-            package1.Datas = new byte[0][];
+            package1.Data = new byte[0][];
 
-            //byte[] buffer = package1.ToBuffer(ser);
-            Memorys.Buffer buffer = ser.ObjectToBuffer(package1);
+            //byte[] buffer = package1.ToBuffer(serializer);
+            Memorys.Buffer buffer = serializer.ObjectToBuffer(package1);
 
-            var package2 = ser.BufferToObject(buffer) as TestPackageBuffer;
+            var package2 = serializer.BufferToObject(buffer) as TestPackageBuffer;
 
 
-            NUnit.Framework.Assert.AreEqual(0, package2.Datas.Length);
+            NUnit.Framework.Assert.AreEqual(0, package2.Data.Length);
 
         }
     }
@@ -132,10 +132,10 @@ namespace PinionCore.Remote.Tests
 
         public TestPackageBuffer()
         {
-            Datas = new byte[0][];
+            Data = new byte[0][];
         }
 
-        public byte[][] Datas;
+        public byte[][] Data;
     }
 
 

@@ -157,7 +157,7 @@ namespace PinionCore.Serialization
 
         }
 
-        int ITypeDescriber.ToObject(PinionCore.Memorys.Buffer buffer, int begin, out object instnace)
+        int ITypeDescriber.ToObject(PinionCore.Memorys.Buffer buffer, int begin, out object instance)
         {
             try
             {
@@ -165,7 +165,7 @@ namespace PinionCore.Serialization
                 ulong count;
                 offset += Varint.BufferToNumber(buffer, offset, out count);
                 var array = Activator.CreateInstance(_Type, (int)count) as IList;
-                instnace = array;
+                instance = array;
 
                 ulong validCount;
                 offset += Varint.BufferToNumber(buffer, offset, out validCount);

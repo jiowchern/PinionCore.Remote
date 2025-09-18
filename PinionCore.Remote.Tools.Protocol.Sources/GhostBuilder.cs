@@ -71,7 +71,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
                     type = builder.Inherite(type);
                 }
 
-                eventProxys.AddRange(type.DescendantNodes().OfType<EventDeclarationSyntax>().Select(e => e.CreatePinionCoreRemoteIEventProxyCreater()));
+                eventProxys.AddRange(type.DescendantNodes().OfType<EventDeclarationSyntax>().Select(e => e.CreatePinionCoreRemoteIEventProxyCreator()));
 
                 ModResult modResult = modifier.Mod(type);
                 classAndTypess.Add(modResult);

@@ -7,7 +7,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
 
     public static class EventDeclarationSyntaxExtensions
     {
-        public static ClassDeclarationSyntax CreatePinionCoreRemoteIEventProxyCreater(this EventDeclarationSyntax eds)
+        public static ClassDeclarationSyntax CreatePinionCoreRemoteIEventProxyCreator(this EventDeclarationSyntax eds)
         {
 
             var een = eds.ExplicitInterfaceSpecifier.Name.ToString().Replace('.', '_');
@@ -20,7 +20,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
                                 IdentifierName("PinionCore"),
                                 IdentifierName("Remote")
                             ),
-                            IdentifierName("IEventProxyCreater")
+                            IdentifierName("IEventProxyCreator")
                         );
 
             ParameterListSyntax paramList = SyntaxFactory.ParameterList();
@@ -50,7 +50,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
 
             var source = $@"
             
-            class {className} : PinionCore.Remote.IEventProxyCreater
+            class {className} : PinionCore.Remote.IEventProxyCreator
                 {{
             
                     System.Type _Type;
@@ -62,19 +62,19 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
                         _Type = typeof({typeName});                   
                     
                     }}
-                    System.Delegate PinionCore.Remote.IEventProxyCreater.Create(long soul_id,int event_id,long handler_id, PinionCore.Remote.InvokeEventCallabck invoke_Event)
+                    System.Delegate PinionCore.Remote.IEventProxyCreator.Create(long soul_id,int event_id,long handler_id, PinionCore.Remote.InvokeEventCallabck invoke_Event)
                     {{                
                         var closure = new PinionCore.Remote.GenericEventClosure(soul_id , event_id ,handler_id, invoke_Event);                
                         return new System.Action{typesExpression}(({paramExpression}) => closure.Run(new object[]{{{paramExpression}}}));
                     }}
                 
             
-                    System.Type PinionCore.Remote.IEventProxyCreater.GetType()
+                    System.Type PinionCore.Remote.IEventProxyCreator.GetType()
                     {{
                         return _Type;
                     }}            
             
-                    string PinionCore.Remote.IEventProxyCreater.GetName()
+                    string PinionCore.Remote.IEventProxyCreator.GetName()
                     {{
                         return _Name;
                     }}            

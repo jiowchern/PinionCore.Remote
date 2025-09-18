@@ -58,7 +58,7 @@ namespace PinionCore.Serialization
             return offset - begin + bufferLength;
         }
 
-        int ITypeDescriber.ToObject(PinionCore.Memorys.Buffer buffer, int begin, out object instnace)
+        int ITypeDescriber.ToObject(PinionCore.Memorys.Buffer buffer, int begin, out object instance)
         {
             var offset = begin;
             var bufferLen = 0;
@@ -70,7 +70,7 @@ namespace PinionCore.Serialization
             ArraySegment<byte> bytes = buffer.Bytes;
             Buffer.BlockCopy(bytes.Array, bytes.Offset + offset, dst, 0, bufferLen);
 
-            instnace = dst;
+            instance = dst;
             return offset - begin + bufferLen;
         }
 

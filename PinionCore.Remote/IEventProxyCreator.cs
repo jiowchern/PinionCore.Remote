@@ -2,7 +2,7 @@
 
 namespace PinionCore.Remote
 {
-    public interface IEventProxyCreater
+    public interface IEventProxyCreator
     {
 
 

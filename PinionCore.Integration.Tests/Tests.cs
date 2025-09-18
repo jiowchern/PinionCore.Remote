@@ -123,8 +123,8 @@ namespace PinionCore.Integration.Tests
 
             var test = new CType(1);
 
-            agentCommandRegister.Regist(typeof(IType), test);
-            agentCommandRegister.Unregist(test);
+            agentCommandRegister.Register(typeof(IType), test);
+            agentCommandRegister.Unregister(test);
 
             Assert.AreEqual(2, regCount);
             Assert.AreEqual(2, unregCount);

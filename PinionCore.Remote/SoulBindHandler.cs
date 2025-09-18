@@ -63,7 +63,7 @@ namespace PinionCore.Remote
             _LoadSoul(newSoul.InterfaceId, newSoul.Id, returnType);
             _LoadProperty(newSoul);
             _LoadSoulCompile(newSoul.InterfaceId, newSoul.Id, returnId);
-            newSoul.Initial(_Protocol.GetMemberMap().Propertys.Item1s);
+            newSoul.Initial(_Protocol.GetMemberMap().Properties.Item1s);
             return newSoul;
         }
 
@@ -121,10 +121,10 @@ namespace PinionCore.Remote
                 if (typeof(IDirtyable).IsAssignableFrom(property.PropertyType))
                 {
                     var value = property.GetValue(soul.ObjectInstance);
-                    var accessable = value as IAccessable;
-                    _LoadProperty(soul.Id, id, accessable.Get());
-                }
+                    var accessible = value as IAccessable;
+                    _LoadProperty(soul.Id, id, accessible.Get());
             }
+        }
         }
 
         private void _LoadProperty(long id, int propertyId, object value)

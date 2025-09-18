@@ -11,6 +11,6 @@ namespace PinionCore.Serialization
 
         int GetByteCount(object instance);
         int ToBuffer(object instance, PinionCore.Memorys.Buffer buffer, int begin);
-        int ToObject(PinionCore.Memorys.Buffer buffer, int begin, out object instnace);
+        int ToObject(PinionCore.Memorys.Buffer buffer, int begin, out object instance);
     }
 }

@@ -45,9 +45,9 @@ namespace PinionCore.Network.Tcp
             }
         }
 
-        IAwaitableSource<int> IStreamable.Receive(byte[] readed_byte, int offset, int count)
+        IAwaitableSource<int> IStreamable.Receive(byte[] buffer, int offset, int count)
         {
-            return _Receive.Transact(readed_byte, offset, count);
+            return _Receive.Transact(buffer, offset, count);
         }
         private int _EndReceive(IAsyncResult arg)
         {

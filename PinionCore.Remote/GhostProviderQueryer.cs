@@ -9,7 +9,7 @@ namespace PinionCore.Remote
         private readonly GhostsReturnValueHandler _ReturnValueHandler;
         private readonly GhostsOwner _GhostsOwner;
         private readonly GhostsHandler _GhostManager;
-        private readonly GhostsResponer _GhostsResponser;
+        private readonly GhostsResponder _GhostsResponder;
         private readonly ClientExchangeable[] ClientExchangeables;
         readonly System.Collections.Concurrent.ConcurrentQueue<Tuple<ServerToClientOpCode, PinionCore.Memorys.Buffer>> _Tuples;
 
@@ -22,8 +22,8 @@ namespace PinionCore.Remote
         }
         public event Action<byte[], byte[]> VersionCodeErrorEvent
         {
-            add { _GhostsResponser.VersionCodeErrorEvent += value; }
-            remove { _GhostsResponser.VersionCodeErrorEvent -= value; }
+            add { _GhostsResponder.VersionCodeErrorEvent += value; }
+            remove { _GhostsResponder.VersionCodeErrorEvent -= value; }
         }
         public GhostProviderQueryer(
             IProtocol protocol,
@@ -38,7 +38,7 @@ namespace PinionCore.Remote
             _GhostsOwner = ghosts_owner;
             _GhostManager = new GhostsHandler(protocol, serializer, internalSerializer, _GhostsOwner, _ReturnValueHandler);
 
-            _GhostsResponser = new GhostsResponer(internalSerializer, _GhostManager, _ReturnValueHandler, _PingHandler, _GhostsOwner, protocol);
+            _GhostsResponder = new GhostsResponder(internalSerializer, _GhostManager, _ReturnValueHandler, _PingHandler, _GhostsOwner, protocol);
 
             ClientExchangeables = new ClientExchangeable[]
             {
@@ -86,8 +86,8 @@ namespace PinionCore.Remote
                 {
                     exchangeable.Request(code, args);
                 }
-                _GhostsResponser.OnResponse(code, args);
-            }
+                _GhostsResponder.OnResponse(code, args);
+        }
         }
         public void Stop()
         {

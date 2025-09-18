@@ -9,7 +9,7 @@ public interface IFoo
 ```
 The server implements the property.  
 ```csharp
-namesapce Server
+namespace Server
 {
     class Foo : IFoo
     {

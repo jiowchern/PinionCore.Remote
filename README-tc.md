@@ -160,12 +160,12 @@ namespace Protocol
 }
 ```
 
-3) 新增 `ProtocolCreater.cs` 以產生 `IProtocol`
+3) 新增 `ProtocolCreator.cs` 以產生 `IProtocol`
 
 ```csharp
 namespace Protocol
 {
-	public static partial class ProtocolCreater
+	public static partial class ProtocolCreator
 	{
 		public static PinionCore.Remote.IProtocol Create()
 		{
@@ -174,13 +174,13 @@ namespace Protocol
 			return protocol;
 		}
 
-		[PinionCore.Remote.Protocol.Creater]
+		[PinionCore.Remote.Protocol.Creator]
 		static partial void _Create(ref PinionCore.Remote.IProtocol protocol);
 	}
 }
 ```
 
-注意：被標記為 `PinionCore.Remote.Protocol.Creater` 的方法需為 `static partial void Method(ref PinionCore.Remote.IProtocol)`，否則無法編譯通過。
+注意：被標記為 `PinionCore.Remote.Protocol.Creator` 的方法需為 `static partial void Method(ref PinionCore.Remote.IProtocol)`，否則無法編譯通過。
 
 ### Server 專案
 
@@ -244,7 +244,7 @@ namespace Server
 {
 	static void Main(string[] args)
 	{
-		var protocol = Protocol.ProtocolCreater.Create();
+		var protocol = Protocol.ProtocolCreator.Create();
 		var entry = new Entry();
 		var set = PinionCore.Remote.Server.Provider.CreateTcpService(entry, protocol);
 		int yourPort = 0;
@@ -279,7 +279,7 @@ namespace Client
 {
 	static async Task Main(string[] args)
 	{
-		var protocol = Protocol.ProtocolCreater.Create();
+		var protocol = Protocol.ProtocolCreator.Create();
 		var set = PinionCore.Remote.Client.Provider.CreateTcpAgent(protocol);
 
 		bool stop = false;
@@ -319,7 +319,7 @@ namespace Client
 無需網路即可模擬 Server/Client：
 
 ```csharp
-var protocol = Protocol.ProtocolCreater.Create();
+var protocol = Protocol.ProtocolCreator.Create();
 var entry = new Entry();
 var service = PinionCore.Remote.Standalone.Provider.CreateService(entry , protocol);
 var agent = service.Create();
@@ -332,7 +332,7 @@ var agent = service.Create();
 客戶端以 `CreateAgent(protocol, IStreamable)` 建立，並自行實作 `IStreamable`：
 
 ```csharp
-var protocol = Protocol.ProtocolCreater.Create();
+var protocol = Protocol.ProtocolCreator.Create();
 IStreamable stream = null; // 自行實作 IStreamable
 var service = PinionCore.Remote.Client.CreateAgent(protocol, stream);
 ```
