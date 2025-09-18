@@ -32,8 +32,8 @@ namespace PinionCore.Remote.Standalone.Test
             IAgent agent = ghostAgent;
             IGpiA ghostGpia = null;
 
-            NSubstitute.Core.Events.DelegateEventWrapper<Action<IStreamable>> wapper = NSubstitute.Raise.Event<System.Action<IStreamable>>(serverStream);
-            listenable.StreamableEnterEvent += wapper;
+            NSubstitute.Core.Events.DelegateEventWrapper<Action<IStreamable>> wrapper = NSubstitute.Raise.Event<System.Action<IStreamable>>(serverStream);
+            listenable.StreamableEnterEvent += wrapper;
 
 
             agent.QueryNotifier<IGpiA>().Supply += gpi => ghostGpia = gpi;
@@ -45,7 +45,7 @@ namespace PinionCore.Remote.Standalone.Test
             }
             ghostAgent.Disable();
             agent.Disable();
-            listenable.StreamableLeaveEvent -= wapper;
+            listenable.StreamableLeaveEvent -= wrapper;
 
             IDisposable disposable = service;
             disposable.Dispose();

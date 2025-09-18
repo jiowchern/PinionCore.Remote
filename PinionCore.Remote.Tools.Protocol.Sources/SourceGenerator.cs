@@ -23,7 +23,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
 
                 System.Collections.Generic.IEnumerable<SyntaxTree> sources = psb.Sources;
 
-                foreach (Diagnostic item in logger.Unsupports(psb.ClassAndTypess))
+                foreach (Diagnostic item in logger.UnsupportedMembers(psb.ClassAndTypess))
                 {
                     context.ReportDiagnostic(item);
                 }

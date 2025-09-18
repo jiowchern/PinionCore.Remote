@@ -62,7 +62,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
 
             type = _ModifyMethodParameters(type, methods);
 
-            var propertys = new System.Collections.Generic.HashSet<PropertyDeclarationSyntax>(SyntaxNodeComparer.Default);
+            var properties = new System.Collections.Generic.HashSet<PropertyDeclarationSyntax>(SyntaxNodeComparer.Default);
             var events = new System.Collections.Generic.HashSet<EventDeclarationSyntax>(SyntaxNodeComparer.Default);
             var typesOfSerialization = new System.Collections.Generic.HashSet<TypeSyntax>(SyntaxNodeComparer.Default);
 
@@ -107,7 +107,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
                 BlockModifiers.PropertyAndBlock prrb = _PropertyPinionCoreRemoteBlock.Mod(nodes);
                 if (prrb != null)
                 {
-                    propertys.Add(prrb.Property);
+                    properties.Add(prrb.Property);
                     replaceBlocks.Add(block, prrb.Block);
                     continue;
                 }
@@ -132,7 +132,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
                 typesOfSerialization.AddRange(efds.Types);
             }
 
-            System.Collections.Generic.HashSet<PropertyDeclarationSyntax> propertyDeclarationSyntaxes = propertys;
+            System.Collections.Generic.HashSet<PropertyDeclarationSyntax> propertyDeclarationSyntaxes = properties;
 
             foreach (PropertyDeclarationSyntax pds in propertyDeclarationSyntaxes)
             {

@@ -40,7 +40,7 @@ public class {protocolName} : PinionCore.Remote.IProtocol
        
         _InterfaceProvider = new PinionCore.Remote.InterfaceProvider(new Dictionary<Type, Type> (){{ {interface_provider_code_builder.Code}}});
    
-        _EventProvider = new PinionCore.Remote.EventProvider( new IEventProxyCreater[]{{ {event_provider_code_builder.Code} }});        
+        _EventProvider = new PinionCore.Remote.EventProvider( new IEventProxyCreator[]{{ {event_provider_code_builder.Code} }});        
         _SerializeTypes = new System.Type[] {{{serCode}}};
         _MemberMap = new PinionCore.Remote.MemberMap(
             new System.Collections.Generic.Dictionary<int,System.Reflection.MethodInfo> {{{membermap_code_builder.MethodInfosCode}}} ,

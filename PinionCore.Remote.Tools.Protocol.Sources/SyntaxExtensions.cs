@@ -129,10 +129,10 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.Extensions
 
             SeparatedSyntaxList<VariableDeclaratorSyntax> vars = default;
             vars = vars.Add(SyntaxFactory.VariableDeclarator(SyntaxFactory.Identifier(event_symbol.Name)));
-            VariableDeclarationSyntax varibable = SyntaxFactory.VariableDeclaration(type, vars);
+            VariableDeclarationSyntax variable = SyntaxFactory.VariableDeclaration(type, vars);
 
 
-            EventFieldDeclarationSyntax member = SyntaxFactory.EventFieldDeclaration(varibable);
+            EventFieldDeclarationSyntax member = SyntaxFactory.EventFieldDeclaration(variable);
 
             return member;
 

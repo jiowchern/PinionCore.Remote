@@ -49,13 +49,13 @@ namespace PinionCore.Serialization
             return Varint.NumberToBuffer(bytes.Array, bytes.Offset + begin, Convert.ToUInt64(instance));
         }
 
-        int ITypeDescriber.ToObject(PinionCore.Memorys.Buffer buffer, int begin, out object instnace)
+        int ITypeDescriber.ToObject(PinionCore.Memorys.Buffer buffer, int begin, out object instance)
         {
             ulong value;
-            var readed = Varint.BufferToNumber(buffer, begin, out value);
+            var bytesRead = Varint.BufferToNumber(buffer, begin, out value);
 
-            instnace = Enum.ToObject(_Type, value);
-            return readed;
+            instance = Enum.ToObject(_Type, value);
+            return bytesRead;
         }
 
 

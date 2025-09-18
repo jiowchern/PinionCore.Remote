@@ -89,7 +89,7 @@ namespace PinionCore.Serialization
                     throw new SystemException(string.Format("BufferToObject {0}:{1}", id, describer.Type.FullName), ex);
                 else
                 {
-                    throw new SystemException(string.Format("BufferToObject {0}:unkown", id), ex);
+                    throw new SystemException(string.Format("BufferToObject {0}:unknown", id), ex);
                 }
             }
 

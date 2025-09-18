@@ -1,6 +1,6 @@
 ﻿namespace PinionCore.Samples.HelloWorld.Protocols
 {
-    public static partial class ProtocolCreater
+    public static partial class ProtocolCreator
     {
         public static PinionCore.Remote.IProtocol Create()
         {
@@ -9,7 +9,7 @@
             return p;
         }
 
-        [PinionCore.Remote.Protocol.Creater]
+        [PinionCore.Remote.Protocol.Creator]
         static partial void _Create(ref PinionCore.Remote.IProtocol p);
     }
 }

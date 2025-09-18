@@ -51,12 +51,12 @@ dotnet test [項目路徑].csproj
 
 #### 2. Protocol 生成機制
 ```csharp
-[PinionCore.Remote.Protocol.Creater]
+[PinionCore.Remote.Protocol.Creator]
 static partial void _Create(ref PinionCore.Remote.IProtocol protocol);
 ```
 - 使用 Source Generator 自動產生通訊協議
 - 必須定義在 static partial void 方法上
-- 透過 ProtocolCreater.Create() 取得 IProtocol 實例
+- 透過 ProtocolCreator.Create() 取得 IProtocol 實例
 
 #### 3. 連線抽象化
 - IStreamable: 客戶端資料流抽象

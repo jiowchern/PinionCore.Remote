@@ -11,31 +11,31 @@ namespace PinionCore.Remote
 
         private readonly Dictionary<int, MethodInfo> _Methods;
         private readonly Dictionary<int, EventInfo> _Events;
-        private readonly BilateralMap<int, PropertyInfo> _Propertys;
+        private readonly BilateralMap<int, PropertyInfo> _Properties;
         private readonly BilateralMap<int, Type> _Interfaces;
         private readonly Dictionary<Type, Func<IProvider>> _Providers;
 
-        public readonly IReadOnlyBilateralMap<int, PropertyInfo> Propertys;
+        public readonly IReadOnlyBilateralMap<int, PropertyInfo> Properties;
 
 
         public MemberMap(
             System.Collections.Generic.Dictionary<int,MethodInfo> methods,
             System.Collections.Generic.Dictionary<int, EventInfo> events,
-            IEnumerable<PropertyInfo> propertys,
+            IEnumerable<PropertyInfo> properties,
             IEnumerable<System.Tuple<System.Type, System.Func<PinionCore.Remote.IProvider>>> interfaces)
         {
             //_Events = new Dictionary<int, EventInfo> { { 0, typeof(MemberMap).GetEvent("") } };
             _Providers = new Dictionary<Type, Func<IProvider>>();
             _Methods = methods;
             _Events = events;
-            _Propertys = new BilateralMap<int, PropertyInfo>();
+            _Properties = new BilateralMap<int, PropertyInfo>();
             _Interfaces = new BilateralMap<int, Type>();
 
             var id = 0;
-            foreach (PropertyInfo propertyInfo in propertys)
+            foreach (PropertyInfo propertyInfo in properties)
             {
 
-                _Propertys.Add(++id, propertyInfo);
+                _Properties.Add(++id, propertyInfo);
             }
 
             id = 0;
@@ -46,7 +46,7 @@ namespace PinionCore.Remote
             }
 
 
-            Propertys = _Propertys;
+            Properties = _Properties;
         }
 
         public IProvider CreateProvider(Type type)
@@ -78,14 +78,14 @@ namespace PinionCore.Remote
         public int GetProperty(PropertyInfo info)
         {
             var id = 0;
-            _Propertys.TryGetItem1(info, out id);
+            _Properties.TryGetItem1(info, out id);
             return id;
         }
 
         public PropertyInfo GetProperty(int id)
         {
             PropertyInfo info;
-            _Propertys.TryGetItem2(id, out info);
+            _Properties.TryGetItem2(id, out info);
             return info;
         }
 

@@ -9,7 +9,7 @@
             return protocol;
         }
 
-        [Remote.Protocol.Creater]
+        [Remote.Protocol.Creator]
         static partial void _CreateCase1(ref PinionCore.Remote.IProtocol protocol);
 
 
@@ -20,7 +20,7 @@
             return protocol;
         }
 
-        [Remote.Protocol.Creater]
+        [Remote.Protocol.Creator]
         static partial void _CreateCase2(ref IProtocol protocol);
     }
 }

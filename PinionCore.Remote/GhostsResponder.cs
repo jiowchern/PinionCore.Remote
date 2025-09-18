@@ -1,10 +1,10 @@
-﻿using PinionCore.Remote.Packages;
+using PinionCore.Remote.Packages;
 
 namespace PinionCore.Remote
 {
     namespace ProviderHelper
     {
-        public class GhostsResponer
+        public class GhostsResponder
         {
             private readonly IInternalSerializable _InternalSerializer;
             private readonly GhostsHandler _GhostHandler;
@@ -13,7 +13,7 @@ namespace PinionCore.Remote
             private readonly GhostsOwner _ProviderManager;
             private readonly IProtocol _Protocol;
 
-            public GhostsResponer(
+            public GhostsResponder(
                 IInternalSerializable internalSerializer,
                 GhostsHandler ghost_handler,
                 GhostsReturnValueHandler returnValueHandler,

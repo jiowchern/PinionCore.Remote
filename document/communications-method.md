@@ -9,7 +9,7 @@ public interface IFoo
 ```
 The server implements the method.  
 ```csharp
-namesapce Server
+namespace Server
 {
     class Foo : IFoo
     {
@@ -22,7 +22,7 @@ namesapce Server
 ```
 You can accept the return value on the client side by the following methods.  
 ```csharp
-namesapce Client
+namespace Client
 {
     class Bar 
     {

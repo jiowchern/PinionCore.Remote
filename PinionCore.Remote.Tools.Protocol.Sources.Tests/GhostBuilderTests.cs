@@ -412,17 +412,17 @@ namespace NS1
 
             ModResult cnt = builder.ClassAndTypess.First();
             MethodDeclarationSyntax[] methods = cnt.GetSyntaxs<MethodDeclarationSyntax>().ToArray();
-            IndexerDeclarationSyntax[] indexs = cnt.GetSyntaxs<IndexerDeclarationSyntax>().ToArray();
+            IndexerDeclarationSyntax[] indexes = cnt.GetSyntaxs<IndexerDeclarationSyntax>().ToArray();
             EventDeclarationSyntax[] events = cnt.GetSyntaxs<EventDeclarationSyntax>().ToArray();
-            PropertyDeclarationSyntax[] propertys = cnt.GetSyntaxs<PropertyDeclarationSyntax>().ToArray();
+            PropertyDeclarationSyntax[] properties = cnt.GetSyntaxs<PropertyDeclarationSyntax>().ToArray();
             NUnit.Framework.Assert.AreEqual(1, methods.Count());
-            NUnit.Framework.Assert.AreEqual(2, indexs.Count());
+            NUnit.Framework.Assert.AreEqual(2, indexes.Count());
             NUnit.Framework.Assert.AreEqual(2, events.Count());
-            NUnit.Framework.Assert.AreEqual(3, propertys.Count());
+            NUnit.Framework.Assert.AreEqual(3, properties.Count());
 
 
             var dialogProvider = new DialogProvider();
-            Diagnostic[] dialogs = dialogProvider.Unsupports(builder.ClassAndTypess).ToArray();
+            Diagnostic[] dialogs = dialogProvider.UnsupportedMembers(builder.ClassAndTypess).ToArray();
             NUnit.Framework.Assert.AreEqual(8, dialogs.Count());
         }
 
@@ -558,7 +558,7 @@ namespace NS1
             return protocol;
         }
 
-        [PinionCore.Remote.Protocol.Creater]
+        [PinionCore.Remote.Protocol.Creator]
         static partial void _CreateCase1(ref PinionCore.Remote.IProtocol protocol);    
 }
 ";

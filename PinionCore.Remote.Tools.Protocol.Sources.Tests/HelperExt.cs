@@ -15,7 +15,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.Tests
 
             IEnumerable<MetadataReference> references = new MetadataReference[]
             {
-                MetadataReference.CreateFromFile(typeof(PinionCore.Remote.Protocol.CreaterAttribute).GetTypeInfo().Assembly.Location),
+                MetadataReference.CreateFromFile(typeof(PinionCore.Remote.Protocol.CreatorAttribute).GetTypeInfo().Assembly.Location),
                 MetadataReference.CreateFromFile(typeof(PinionCore.Remote.Value<>).GetTypeInfo().Assembly.Location),
                 MetadataReference.CreateFromFile(typeof(PinionCore.Remote.Property<>).GetTypeInfo().Assembly.Location),
                 MetadataReference.CreateFromFile(typeof(PinionCore.Remote.Notifier<>).GetTypeInfo().Assembly.Location),
@@ -34,9 +34,9 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.Tests
 
             return CSharpCompilation.Create(assemblyName, trees, references, new CSharpCompilationOptions(outputKind: OutputKind.DynamicallyLinkedLibrary));
         }
-        public static CSharpCompilation Compilate(params SyntaxTree[] trees)
+        public static CSharpCompilation Compile(params SyntaxTree[] trees)
         {
-            return Compile(trees);
+            return Compile((IEnumerable<SyntaxTree>)trees);
         }
 
         public static CSharpCompilation Compilation(this SyntaxTree tree)
@@ -45,7 +45,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.Tests
 
             IEnumerable<MetadataReference> references = new MetadataReference[]
             {
-                MetadataReference.CreateFromFile(typeof(PinionCore.Remote.Protocol.CreaterAttribute).GetTypeInfo().Assembly.Location),
+                MetadataReference.CreateFromFile(typeof(PinionCore.Remote.Protocol.CreatorAttribute).GetTypeInfo().Assembly.Location),
                 MetadataReference.CreateFromFile(typeof(PinionCore.Remote.Value<>).GetTypeInfo().Assembly.Location),
                 MetadataReference.CreateFromFile(typeof(PinionCore.Remote.Property<>).GetTypeInfo().Assembly.Location),
                 MetadataReference.CreateFromFile(typeof(PinionCore.Remote.Notifier<>).GetTypeInfo().Assembly.Location),

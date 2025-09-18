@@ -44,13 +44,13 @@ namespace PinionCore.Serialization
             return offset - begin;
         }
 
-        int ITypeDescriber.ToObject(PinionCore.Memorys.Buffer buffer, int begin, out object instnace)
+        int ITypeDescriber.ToObject(PinionCore.Memorys.Buffer buffer, int begin, out object instance)
         {
             var offset = begin;
             object chars;
             offset += _CharArrayDescriber.ToObject(buffer, offset, out chars);
 
-            instnace = new string(chars as char[]);
+            instance = new string(chars as char[]);
 
             return offset - begin;
         }

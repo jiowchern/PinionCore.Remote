@@ -55,8 +55,8 @@ namespace PinionCore.Remote
             _Dispose = () =>
             {
 
-                _Unregist(_PropertyUpdaters);
-                _Unregist(_TypeObjectNotifiables);
+                _Unregister(_PropertyUpdaters);
+                _Unregister(_TypeObjectNotifiables);
 
                 lock (_EventHandlers)
                 {
@@ -81,14 +81,14 @@ namespace PinionCore.Remote
         public void Initial(IReadOnlyDictionary<PropertyInfo, int> property_ids)
         {
             _PropertyUpdaters.AddRange(_BuildProperty(ObjectInstance, ObjectType, property_ids));
-            _Regist(_PropertyUpdaters);
+            _Register(_PropertyUpdaters);
 
             _TypeObjectNotifiables.AddRange(_BuildNotifier(ObjectInstance, ObjectType, property_ids));
-            _Regist(_TypeObjectNotifiables);
+            _Register(_TypeObjectNotifiables);
         }
 
 
-        private IEnumerable<Tuple<int, PropertyInfo>> _GetPropertys(Type soul_type, System.Collections.Generic.IReadOnlyDictionary<PropertyInfo, int> property_ids)
+        private IEnumerable<Tuple<int, PropertyInfo>> _GetProperties(Type soul_type, System.Collections.Generic.IReadOnlyDictionary<PropertyInfo, int> property_ids)
         {
             return from p in PropertyInfos
                    select new Tuple<int, PropertyInfo>(property_ids[p], p);
@@ -96,7 +96,7 @@ namespace PinionCore.Remote
 
         private IEnumerable<NotifierUpdater> _BuildNotifier(object soul, Type soul_type, System.Collections.Generic.IReadOnlyDictionary<PropertyInfo, int> propertyIds)
         {
-            return from p in _GetPropertys(soul_type, propertyIds)
+            return from p in _GetProperties(soul_type, propertyIds)
                    let property = p.Item2
                    let id = p.Item1
                    where property.PropertyType.GetInterfaces().Any(t => t == typeof(ITypeObjectNotifiable))
@@ -105,7 +105,7 @@ namespace PinionCore.Remote
         }
         private IEnumerable<PropertyUpdater> _BuildProperty(object soul, Type soul_type, System.Collections.Generic.IReadOnlyDictionary<PropertyInfo, int> propertyIds)
         {
-            foreach (Tuple<int, PropertyInfo> item in _GetPropertys(soul_type, propertyIds))
+            foreach (Tuple<int, PropertyInfo> item in _GetProperties(soul_type, propertyIds))
             {
                 PropertyInfo property = item.Item2;
                 var id = item.Item1;
@@ -121,7 +121,7 @@ namespace PinionCore.Remote
 
 
 
-        private void _Regist(List<NotifierUpdater> updaters)
+        private void _Register(List<NotifierUpdater> updaters)
         {
             foreach (NotifierUpdater updater in updaters)
             {
@@ -130,7 +130,7 @@ namespace PinionCore.Remote
                 updater.Initial();
             }
         }
-        private void _Regist(List<PropertyUpdater> property_updaters)
+        private void _Register(List<PropertyUpdater> property_updaters)
         {
             foreach (PropertyUpdater updater in property_updaters)
             {
@@ -149,7 +149,7 @@ namespace PinionCore.Remote
             _Dispose();
         }
 
-        private void _Unregist(List<PropertyUpdater> property_updaters)
+        private void _Unregister(List<PropertyUpdater> property_updaters)
         {
             foreach (PropertyUpdater updater in property_updaters)
             {
@@ -158,11 +158,11 @@ namespace PinionCore.Remote
             }
         }
 
-        private void _Unregist(List<NotifierUpdater> updaters)
+        private void _Unregister(List<NotifierUpdater> updaters)
         {
             foreach (NotifierUpdater updater in updaters)
             {
-                updater.Finial();
+                updater.Final();
                 updater.SupplyEvent -= _SupplySoul;
                 updater.UnsupplyEvent -= _UnsupplySoul;
             }

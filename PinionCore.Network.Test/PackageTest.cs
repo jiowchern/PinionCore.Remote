@@ -182,8 +182,8 @@ namespace PinionCore.Network.Tests
             }
             var reader = new PinionCore.Network.PackageReader(new PinionCore.Network.ReverseStream(stream), PinionCore.Memorys.PoolProvider.Shared);
 
-            var readed = 0;
-            while (readed < buffers.Count)
+            var itemsRead = 0;
+            while (itemsRead < buffers.Count)
             {
                 var readBuffers = await reader.Read();
                 if (readBuffers.Count == 0)
@@ -193,13 +193,13 @@ namespace PinionCore.Network.Tests
                     NUnit.Framework.Assert.AreEqual(100, readBuffer.Bytes.Count);
                     for (var i = 0; i < 100; i++)
                     {
-                        NUnit.Framework.Assert.AreEqual((byte)(i + readed), readBuffer.Bytes.Array[readBuffer.Bytes.Offset + i]);
+                        NUnit.Framework.Assert.AreEqual((byte)(i + itemsRead), readBuffer.Bytes.Array[readBuffer.Bytes.Offset + i]);
                     }
-                    readed++;
+                    itemsRead++;
                 }
             }
 
-            NUnit.Framework.Assert.AreEqual(buffers.Count, readed);
+            NUnit.Framework.Assert.AreEqual(buffers.Count, itemsRead);
         }
     }
 }

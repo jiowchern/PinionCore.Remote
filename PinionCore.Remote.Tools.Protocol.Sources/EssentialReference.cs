@@ -6,7 +6,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
 {
     public class EssentialReference
     {
-        public readonly INamedTypeSymbol PinionCoreRemoteProtocolCreaterAttribute;
+        public readonly INamedTypeSymbol PinionCoreRemoteProtocolCreatorAttribute;
         public readonly INamedTypeSymbol PinionCoreRemoteProperty;
         public readonly INamedTypeSymbol PinionCoreRemoteNotifier;
         public readonly INamedTypeSymbol PinionCoreRemoteValue1;
@@ -22,7 +22,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
 
             this.Compilation = compilation;
 
-            PinionCoreRemoteProtocolCreaterAttribute = _GetType("PinionCore.Remote.Protocol.CreaterAttribute");
+            PinionCoreRemoteProtocolCreatorAttribute = _GetType("PinionCore.Remote.Protocol.CreatorAttribute");
             PinionCoreRemoteProperty = _GetType("PinionCore.Remote.Property`1");
             PinionCoreRemoteNotifier = _GetType("PinionCore.Remote.Notifier`1");
             PinionCoreRemoteValue1 = _GetType("PinionCore.Remote.Value`1");

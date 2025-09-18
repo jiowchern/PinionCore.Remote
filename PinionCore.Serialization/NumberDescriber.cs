@@ -73,7 +73,7 @@ namespace PinionCore.Serialization
         int ITypeDescriber.ToObject(PinionCore.Memorys.Buffer buffer, int begin, out object instance)
         {
             ulong value;
-            var readed = Varint.BufferToNumber(buffer, begin, out value);
+            var bytesRead = Varint.BufferToNumber(buffer, begin, out value);
 
             if (Type == typeof(byte))
             {
@@ -113,7 +113,7 @@ namespace PinionCore.Serialization
             }
 
 
-            return readed;
+            return bytesRead;
         }
 
 

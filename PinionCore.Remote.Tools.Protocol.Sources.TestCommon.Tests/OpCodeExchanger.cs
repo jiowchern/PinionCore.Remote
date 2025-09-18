@@ -9,17 +9,17 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
         {
             Requests = new System.Collections.Generic.Queue<Tuple<ClientToServerOpCode, byte[]>>();
         }
-        public Action<ServerToClientOpCode, PinionCore.Memorys.Buffer> Responser;
+        public Action<ServerToClientOpCode, PinionCore.Memorys.Buffer> Responder;
         event Action<ServerToClientOpCode, PinionCore.Memorys.Buffer> Exchangeable<ClientToServerOpCode, ServerToClientOpCode>.ResponseEvent
         {
             add
             {
-                Responser += value;
+                Responder += value;
             }
 
             remove
             {
-                Responser -= value;
+                Responder -= value;
             }
         }
 

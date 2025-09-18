@@ -34,9 +34,9 @@ namespace PinionCore.Serialization.Tests
         {
             var finder = new DescribersFinder(typeof(int), typeof(uint));
             var provider = new DescriberProvider(finder.KeyDescriber, finder);
-            var ser = new Serializer(provider);
-            Memorys.Buffer buf = ser.ObjectToBuffer(-1);
-            var val = (int)ser.BufferToObject(buf);
+            var serializer = new Serializer(provider);
+            Memorys.Buffer buf = serializer.ObjectToBuffer(-1);
+            var val = (int)serializer.BufferToObject(buf);
 
             Assert.AreEqual(-1, val);
         }
@@ -46,9 +46,9 @@ namespace PinionCore.Serialization.Tests
         {
             var finder = new DescribersFinder(typeof(long), typeof(uint));
             var provider = new DescriberProvider(finder.KeyDescriber, finder);
-            var ser = new Serializer(provider);
-            Memorys.Buffer buf = ser.ObjectToBuffer((long)-1);
-            var val = (long)ser.BufferToObject(buf);
+            var serializer = new Serializer(provider);
+            Memorys.Buffer buf = serializer.ObjectToBuffer((long)-1);
+            var val = (long)serializer.BufferToObject(buf);
 
             Assert.AreEqual(-1, val);
         }
@@ -159,11 +159,11 @@ namespace PinionCore.Serialization.Tests
 
 
 
-            var ser = new Serializer(provider);
+            var serializer = new Serializer(provider);
 
-            Memorys.Buffer buffer = ser.ObjectToBuffer(1UL);
+            Memorys.Buffer buffer = serializer.ObjectToBuffer(1UL);
 
-            var value = ser.BufferToObject(buffer);
+            var value = serializer.BufferToObject(buffer);
 
             NUnit.Framework.Assert.AreEqual(1UL, value);
         }
@@ -175,11 +175,11 @@ namespace PinionCore.Serialization.Tests
             var finder = new DescribersFinder(typeof(int), typeof(TestClassB));
             var provider = new DescriberProvider(finder.KeyDescriber, finder);
 
-            var ser = new Serializer(provider);
+            var serializer = new Serializer(provider);
             var testb = new TestClassB();
             testb.Data = 1234;
-            Memorys.Buffer buffer = ser.ObjectToBuffer(testb);
-            var value = ser.BufferToObject(buffer) as TestClassB;
+            Memorys.Buffer buffer = serializer.ObjectToBuffer(testb);
+            var value = serializer.BufferToObject(buffer) as TestClassB;
 
             NUnit.Framework.Assert.AreEqual(testb.Data, value.Data);
         }
@@ -194,7 +194,7 @@ namespace PinionCore.Serialization.Tests
             var provider = new DescriberProvider(finder.KeyDescriber, finder);
 
 
-            var ser = new Serializer(provider);
+            var serializer = new Serializer(provider);
             TestClassB[] testbs = new[]
             {
                 null,
@@ -210,8 +210,8 @@ namespace PinionCore.Serialization.Tests
                 null,
             };
 
-            Memorys.Buffer buffer = ser.ObjectToBuffer(testbs);
-            var value = ser.BufferToObject(buffer) as TestClassB[];
+            Memorys.Buffer buffer = serializer.ObjectToBuffer(testbs);
+            var value = serializer.BufferToObject(buffer) as TestClassB[];
 
             NUnit.Framework.Assert.AreEqual(null, value[0]);
             NUnit.Framework.Assert.AreEqual(1, value[1].Data);
@@ -229,22 +229,22 @@ namespace PinionCore.Serialization.Tests
             var provider = new DescriberProvider(finder.KeyDescriber, finder);
 
 
-            var ser = new Serializer(provider);
+            var serializer = new Serializer(provider);
 
-            Memorys.Buffer byteBuffer = ser.ObjectToBuffer((byte)128);
-            var byteValue = (byte)ser.BufferToObject(byteBuffer);
+            Memorys.Buffer byteBuffer = serializer.ObjectToBuffer((byte)128);
+            var byteValue = (byte)serializer.BufferToObject(byteBuffer);
 
-            Memorys.Buffer shortBuffer = ser.ObjectToBuffer((short)16387);
-            var shortValue = (short)ser.BufferToObject(shortBuffer);
+            Memorys.Buffer shortBuffer = serializer.ObjectToBuffer((short)16387);
+            var shortValue = (short)serializer.BufferToObject(shortBuffer);
 
-            Memorys.Buffer intBuffer = ser.ObjectToBuffer(65535);
-            var intValue = (int)ser.BufferToObject(intBuffer);
+            Memorys.Buffer intBuffer = serializer.ObjectToBuffer(65535);
+            var intValue = (int)serializer.BufferToObject(intBuffer);
 
-            Memorys.Buffer longBuffer = ser.ObjectToBuffer((long)65535000);
-            var longValue = (long)ser.BufferToObject(longBuffer);
+            Memorys.Buffer longBuffer = serializer.ObjectToBuffer((long)65535000);
+            var longValue = (long)serializer.BufferToObject(longBuffer);
 
-            Memorys.Buffer enumBuffer = ser.ObjectToBuffer(TEST1.C);
-            var enumValue = (TEST1)ser.BufferToObject(enumBuffer);
+            Memorys.Buffer enumBuffer = serializer.ObjectToBuffer(TEST1.C);
+            var enumValue = (TEST1)serializer.BufferToObject(enumBuffer);
 
             NUnit.Framework.Assert.AreEqual((byte)128, byteValue);
             NUnit.Framework.Assert.AreEqual((short)16387, shortValue);
@@ -262,7 +262,7 @@ namespace PinionCore.Serialization.Tests
             var provider = new DescriberProvider(finder.KeyDescriber, finder);
 
 
-            var ser = new Serializer(provider);
+            var serializer = new Serializer(provider);
 
             var ints = new[]
             {
@@ -276,8 +276,8 @@ namespace PinionCore.Serialization.Tests
                 323,
                 78
             };
-            Memorys.Buffer buffer = ser.ObjectToBuffer(ints);
-            var value = (int[])ser.BufferToObject(buffer);
+            Memorys.Buffer buffer = serializer.ObjectToBuffer(ints);
+            var value = (int[])serializer.BufferToObject(buffer);
 
 
             NUnit.Framework.Assert.AreEqual(46, value[1]);
@@ -292,7 +292,7 @@ namespace PinionCore.Serialization.Tests
             var provider = new DescriberProvider(finder);
 
 
-            var ser = new Serializer(provider);
+            var serializer = new Serializer(provider);
 
             var ints = new[]
             {
@@ -306,8 +306,8 @@ namespace PinionCore.Serialization.Tests
                 323f,
                 78f
             };
-            Memorys.Buffer buffer = ser.ObjectToBuffer(ints);
-            var value = (float[])ser.BufferToObject(buffer);
+            Memorys.Buffer buffer = serializer.ObjectToBuffer(ints);
+            var value = (float[])serializer.BufferToObject(buffer);
 
 
             NUnit.Framework.Assert.AreEqual(46f, value[1]);
@@ -321,10 +321,10 @@ namespace PinionCore.Serialization.Tests
             var finder = new DescribersFinder(typeof(float));
             var provider = new DescriberProvider(finder);
 
-            var ser = new Serializer(provider);
+            var serializer = new Serializer(provider);
 
-            Memorys.Buffer buffer = ser.ObjectToBuffer(123.43f);
-            var value = (float)ser.BufferToObject(buffer);
+            Memorys.Buffer buffer = serializer.ObjectToBuffer(123.43f);
+            var value = (float)serializer.BufferToObject(buffer);
 
             NUnit.Framework.Assert.AreEqual(123.43f, value);
         }
@@ -337,10 +337,10 @@ namespace PinionCore.Serialization.Tests
             var provider = new DescriberProvider(finder);
 
 
-            var ser = new Serializer(provider);
+            var serializer = new Serializer(provider);
 
-            Memorys.Buffer buffer = ser.ObjectToBuffer(new byte[] { 1, 2, 3, 4, 5, 6 });
-            var value = (byte[])ser.BufferToObject(buffer);
+            Memorys.Buffer buffer = serializer.ObjectToBuffer(new byte[] { 1, 2, 3, 4, 5, 6 });
+            var value = (byte[])serializer.BufferToObject(buffer);
 
             NUnit.Framework.Assert.AreEqual(1, value[0]);
             NUnit.Framework.Assert.AreEqual(2, value[1]);
@@ -355,10 +355,10 @@ namespace PinionCore.Serialization.Tests
             var finder = new DescribersFinder(typeof(char[]));
             var provider = new DescriberProvider(finder);
 
-            var ser = new Serializer(provider);
+            var serializer = new Serializer(provider);
 
-            Memorys.Buffer buffer = ser.ObjectToBuffer(new char[] { '1', '2', 'a', 'b', 'c', 't' });
-            var value = (char[])ser.BufferToObject(buffer);
+            Memorys.Buffer buffer = serializer.ObjectToBuffer(new char[] { '1', '2', 'a', 'b', 'c', 't' });
+            var value = (char[])serializer.BufferToObject(buffer);
 
             NUnit.Framework.Assert.AreEqual('1', value[0]);
             NUnit.Framework.Assert.AreEqual('2', value[1]);
@@ -376,10 +376,10 @@ namespace PinionCore.Serialization.Tests
             var finder = new DescribersFinder(typeof(char[]));
             var provider = new DescriberProvider(finder);
 
-            var ser = new Serializer(provider);
+            var serializer = new Serializer(provider);
             var str = "asdfgh";
-            Memorys.Buffer buffer = ser.ObjectToBuffer(str.ToCharArray());
-            var value = (char[])ser.BufferToObject(buffer);
+            Memorys.Buffer buffer = serializer.ObjectToBuffer(str.ToCharArray());
+            var value = (char[])serializer.BufferToObject(buffer);
 
             NUnit.Framework.Assert.AreEqual('a', value[0]);
             NUnit.Framework.Assert.AreEqual('s', value[1]);
@@ -398,11 +398,11 @@ namespace PinionCore.Serialization.Tests
             var finder = new DescribersFinder(typeof(Guid), typeof(Guid[]));
             var provider = new DescriberProvider(finder);
 
-            var ser = new Serializer(provider);
+            var serializer = new Serializer(provider);
 
             var id = Guid.NewGuid();
-            Memorys.Buffer buffer = ser.ObjectToBuffer(id);
-            var value = (Guid)ser.BufferToObject(buffer);
+            Memorys.Buffer buffer = serializer.ObjectToBuffer(id);
+            var value = (Guid)serializer.BufferToObject(buffer);
 
             NUnit.Framework.Assert.AreEqual(id, value);
         }
@@ -417,7 +417,7 @@ namespace PinionCore.Serialization.Tests
 
 
 
-            var ser = new Serializer(provider);
+            var serializer = new Serializer(provider);
 
             var cs = new TestClassC[]
             {
@@ -427,8 +427,8 @@ namespace PinionCore.Serialization.Tests
             };
 
 
-            Memorys.Buffer buffer = ser.ObjectToBuffer(cs);
-            var value = ser.BufferToObject(buffer) as TestClassC[];
+            Memorys.Buffer buffer = serializer.ObjectToBuffer(cs);
+            var value = serializer.BufferToObject(buffer) as TestClassC[];
 
 
             NUnit.Framework.Assert.AreEqual(cs[0], value[0]);
@@ -444,10 +444,10 @@ namespace PinionCore.Serialization.Tests
             var finder = new DescribersFinder(typeof(TestClassC), typeof(TestClassC[]));
             var provider = new DescriberProvider(finder);
 
-            var ser = new Serializer(provider);
+            var serializer = new Serializer(provider);
 
-            Memorys.Buffer buffer = ser.ObjectToBuffer(null);
-            var value = ser.BufferToObject(buffer) as TestClassC[];
+            Memorys.Buffer buffer = serializer.ObjectToBuffer(null);
+            var value = serializer.BufferToObject(buffer) as TestClassC[];
 
 
             NUnit.Framework.Assert.AreEqual(null, value);
@@ -480,10 +480,10 @@ namespace PinionCore.Serialization.Tests
                 0
             };
 
-            var ser = new Serializer(provider);
+            var serializer = new Serializer(provider);
 
-            Memorys.Buffer buffer = ser.ObjectToBuffer(bytes);
-            var result = ser.BufferToObject(buffer) as byte[];
+            Memorys.Buffer buffer = serializer.ObjectToBuffer(bytes);
+            var result = serializer.BufferToObject(buffer) as byte[];
 
             NUnit.Framework.Assert.AreEqual(bytes[3], result[3]);
             NUnit.Framework.Assert.AreEqual(bytes[1], result[1]);
@@ -517,10 +517,10 @@ namespace PinionCore.Serialization.Tests
 
 
 
-            var ser = new Serializer(provider);
+            var serializer = new Serializer(provider);
 
-            Memorys.Buffer buffer = ser.ObjectToBuffer(bytes);
-            var result = ser.BufferToObject(buffer) as byte[];
+            Memorys.Buffer buffer = serializer.ObjectToBuffer(bytes);
+            var result = serializer.BufferToObject(buffer) as byte[];
 
             NUnit.Framework.Assert.AreEqual(bytes[3], result[3]);
             NUnit.Framework.Assert.AreEqual(bytes[1], result[1]);
@@ -537,12 +537,12 @@ namespace PinionCore.Serialization.Tests
 
 
 
-            var ser = new Serializer(provider);
+            var serializer = new Serializer(provider);
 
 
             var str = "fliwjfo3f3fnmsdlgmnlgrkmbr'nhmlredhgnedra'lngh";
-            Memorys.Buffer buffer = ser.ObjectToBuffer(str);
-            var value = ser.BufferToObject(buffer) as string;
+            Memorys.Buffer buffer = serializer.ObjectToBuffer(str);
+            var value = serializer.BufferToObject(buffer) as string;
 
             NUnit.Framework.Assert.AreEqual(str, value);
         }
@@ -556,12 +556,12 @@ namespace PinionCore.Serialization.Tests
             var provider = new DescriberProvider(finder);
 
 
-            var ser = new Serializer(provider);
+            var serializer = new Serializer(provider);
 
 
             var str = new char[] { 'd', 'a' };
-            Memorys.Buffer buffer = ser.ObjectToBuffer(str);
-            var value = ser.BufferToObject(buffer) as char[];
+            Memorys.Buffer buffer = serializer.ObjectToBuffer(str);
+            var value = serializer.BufferToObject(buffer) as char[];
 
             NUnit.Framework.Assert.AreEqual(str[0], value[0]);
             NUnit.Framework.Assert.AreEqual(str[1], value[1]);
@@ -572,11 +572,11 @@ namespace PinionCore.Serialization.Tests
         public void TestSerializerVector2()
         {
 
-            var ser = new Serializer(new DescriberBuilder(typeof(PinionCore.Utility.Vector2), typeof(float)).Describers);
+            var serializer = new Serializer(new DescriberBuilder(typeof(PinionCore.Utility.Vector2), typeof(float)).Describers);
             var v = new PinionCore.Utility.Vector2(99, 22);
 
-            Memorys.Buffer array = ser.ObjectToBuffer(v);
-            var v2 = (PinionCore.Utility.Vector2)ser.BufferToObject(array);
+            Memorys.Buffer array = serializer.ObjectToBuffer(v);
+            var v2 = (PinionCore.Utility.Vector2)serializer.BufferToObject(array);
 
             NUnit.Framework.Assert.AreEqual(99, v2.X);
             NUnit.Framework.Assert.AreEqual(22, v2.Y);
@@ -588,11 +588,11 @@ namespace PinionCore.Serialization.Tests
         {
             Type[] types = new[] { typeof(int), typeof(int[]), typeof(float), typeof(string), typeof(char), typeof(char[]) };
 
-            var ser = new Serializer(new DescriberBuilder(types).Describers);
+            var serializer = new Serializer(new DescriberBuilder(types).Describers);
 
-            Memorys.Buffer intZeroBuffer = ser.ObjectToBuffer("123");
+            Memorys.Buffer intZeroBuffer = serializer.ObjectToBuffer("123");
 
-            var intZero = ser.BufferToObject(intZeroBuffer);
+            var intZero = serializer.BufferToObject(intZeroBuffer);
 
 
             Assert.AreEqual("123", intZero);
@@ -603,13 +603,13 @@ namespace PinionCore.Serialization.Tests
         {
             Type[] types = new[] { typeof(PinionCore.Remote.Packages.ResponsePackage), typeof(Remote.ServerToClientOpCode), typeof(byte), typeof(byte[]) };
 
-            var ser = new Serializer(new DescriberBuilder(types).Describers);
+            var serializer = new Serializer(new DescriberBuilder(types).Describers);
             var pkg = new PinionCore.Remote.Packages.ResponsePackage();
             pkg.Code = Remote.ServerToClientOpCode.SetProperty;
             pkg.Data = new byte[1] { 255 };
-            Memorys.Buffer buffer = ser.ObjectToBuffer(pkg);
+            Memorys.Buffer buffer = serializer.ObjectToBuffer(pkg);
 
-            var dPkg = (PinionCore.Remote.Packages.ResponsePackage)ser.BufferToObject(buffer);
+            var dPkg = (PinionCore.Remote.Packages.ResponsePackage)serializer.BufferToObject(buffer);
 
 
             Assert.AreEqual(Remote.ServerToClientOpCode.SetProperty, dPkg.Code);

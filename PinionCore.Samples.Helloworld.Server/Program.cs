@@ -6,7 +6,7 @@
         {
             int port = int.Parse(args[0]);
 
-            var protocol = PinionCore.Samples.HelloWorld.Protocols.ProtocolCreater.Create();
+            var protocol = PinionCore.Samples.HelloWorld.Protocols.ProtocolCreator.Create();
 
             var entry = new Entry();
 

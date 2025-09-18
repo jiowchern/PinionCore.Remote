@@ -16,7 +16,7 @@ namespace PinionCore.Samples.HelloWorld.Client
             var ip = IPAddress.Parse(args[0]);
             var port = int.Parse(args[1]);
             var protocolAsm = typeof(IGreeter).Assembly;
-            var protocol = PinionCore.Samples.HelloWorld.Protocols.ProtocolCreater.Create();
+            var protocol = PinionCore.Samples.HelloWorld.Protocols.ProtocolCreator.Create();
             var set = PinionCore.Remote.Client.Provider.CreateTcpAgent(protocol);
             var tcp = set.Connector;
             var agent = set.Agent;

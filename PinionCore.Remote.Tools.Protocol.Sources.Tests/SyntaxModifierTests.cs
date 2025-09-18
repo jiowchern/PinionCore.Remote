@@ -491,7 +491,7 @@ interface IA {
         }
 
         [Test]
-        public void CreatePinionCoreRemoteIEventProxyCreater()
+        public void CreatePinionCoreRemoteIEventProxyCreator()
         {
             var source = @"
 
@@ -505,13 +505,13 @@ class CIA : NS1.IA {
 ";
             SyntaxTree tree = Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(source);
             EventDeclarationSyntax efd = tree.GetRoot().DescendantNodes().OfType<EventDeclarationSyntax>().Single();
-            ClassDeclarationSyntax cefd = efd.CreatePinionCoreRemoteIEventProxyCreater();
+            ClassDeclarationSyntax cefd = efd.CreatePinionCoreRemoteIEventProxyCreator();
             NUnit.Framework.Assert.AreEqual("CNS1_IA_Event1", cefd.Identifier.ValueText);
 
         }
 
         [Test]
-        public void CreatePinionCoreRemoteIEventProxyCreaterNoTypes()
+        public void CreatePinionCoreRemoteIEventProxyCreatorNoTypes()
         {
             var source = @"
 class CIA : NS1.IA {
@@ -524,7 +524,7 @@ class CIA : NS1.IA {
 ";
             SyntaxTree tree = Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(source);
             EventDeclarationSyntax efd = tree.GetRoot().DescendantNodes().OfType<EventDeclarationSyntax>().Single();
-            ClassDeclarationSyntax cefd = efd.CreatePinionCoreRemoteIEventProxyCreater();
+            ClassDeclarationSyntax cefd = efd.CreatePinionCoreRemoteIEventProxyCreator();
             NUnit.Framework.Assert.AreEqual("CNS1_IA_Event1", cefd.Identifier.ValueText);
 
         }

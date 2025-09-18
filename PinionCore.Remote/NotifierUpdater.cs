@@ -25,7 +25,7 @@ namespace PinionCore.Remote
             _Notifiable.UnsupplyEvent += _Destroy;
         }
 
-        internal void Finial()
+        internal void Final()
         {
             _Notifiable.SupplyEvent -= _Create;
             _Notifiable.UnsupplyEvent -= _Destroy;

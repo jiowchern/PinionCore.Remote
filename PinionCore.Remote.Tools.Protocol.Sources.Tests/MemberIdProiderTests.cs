@@ -191,16 +191,16 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon
 
             InterfaceInheritor[] interfaceInheritors = gpis.Select(g => new InterfaceInheritor(g)).ToArray();
 
-            var classs = new System.Collections.Generic.List<ClassDeclarationSyntax>();
+            var classes = new System.Collections.Generic.List<ClassDeclarationSyntax>();
             foreach (InterfaceInheritor interfaceInheritor in interfaceInheritors)
             {
                 ClassDeclarationSyntax type = SyntaxFactory.ClassDeclaration(interfaceInheritor.Base.Identifier.Text + "Impl");
                 type = interfaceInheritor.Inherite(type);
-                classs.Add(type);
+                classes.Add(type);
             }
 
             var eventIdCount = new Dictionary<int, int>();
-            IEnumerable<EventDeclarationSyntax> classEvents = classs.SelectMany(c => c.DescendantNodes().OfType<EventDeclarationSyntax>());
+            IEnumerable<EventDeclarationSyntax> classEvents = classes.SelectMany(c => c.DescendantNodes().OfType<EventDeclarationSyntax>());
             foreach (EventDeclarationSyntax classEvent in classEvents)
             {
                 var id = memberIdProvider.DisrbutionIdWithGhost(classEvent);

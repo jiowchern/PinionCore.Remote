@@ -9,23 +9,23 @@ namespace PinionCore.Remote
 {
     public class EventProvider
     {
-        private readonly IEventProxyCreater[] _ProxyCreaters;
+        private readonly IEventProxyCreator[] _ProxyCreators;
 
-        public EventProvider(IEnumerable<IEventProxyCreater> closures)
+        public EventProvider(IEnumerable<IEventProxyCreator> closures)
         {
-            _ProxyCreaters = closures.ToArray();
+            _ProxyCreators = closures.ToArray();
         }
 
 
-        private IEventProxyCreater _Find(EventInfo info)
+        private IEventProxyCreator _Find(EventInfo info)
         {
-            return (from closure in _ProxyCreaters
+            return (from closure in _ProxyCreators
                     where closure.GetType() == info.DeclaringType && closure.GetName() == info.Name
                     select closure).FirstOrDefault();
         }
 
 
-        public IEventProxyCreater Find(EventInfo info)
+        public IEventProxyCreator Find(EventInfo info)
         {
             return _Find(info);
 

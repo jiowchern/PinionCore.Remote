@@ -86,7 +86,7 @@ namespace PinionCore.Serialization
             return readCount;
         }
 
-        int ITypeDescriber.ToObject(PinionCore.Memorys.Buffer buffer, int begin, out object instnace)
+        int ITypeDescriber.ToObject(PinionCore.Memorys.Buffer buffer, int begin, out object instance)
         {
 
             try
@@ -98,7 +98,7 @@ namespace PinionCore.Serialization
 
                 Marshal.Copy(bytes.Array, bytes.Offset + begin, ptr, size);
 
-                instnace = Marshal.PtrToStructure(ptr, _Type);
+                instance = Marshal.PtrToStructure(ptr, _Type);
                 Marshal.FreeHGlobal(ptr);
                 return size;
             }
