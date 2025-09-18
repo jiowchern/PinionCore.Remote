@@ -1,5 +1,8 @@
-﻿using System.Linq;
+﻿using System;
+using System.Diagnostics;
+using System.Linq;
 using PinionCore.Remote.Standalone;
+using PinionCore.Utility;
 
 namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
 {
@@ -10,10 +13,15 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
         public readonly T Entry;
 
         readonly System.Action _Dispose;
+        readonly Stopwatch _CounterMessage;
+        readonly Stopwatch _CounterPackage;
+        TimeSpan _NowMessage;
+        TimeSpan _NowPackage;
 
-        public TestEnv(T entry)
+        public TestEnv(T entry, TimeSpan expiry)
         {
-
+            _CounterMessage = Stopwatch.StartNew();
+            _CounterPackage = Stopwatch.StartNew();
             Entry = entry;
             IProtocol protocol = PinionCore.Remote.Protocol.ProtocolProvider.Create(typeof(T2).Assembly).Single();
             var ser = new PinionCore.Remote.Serializer(protocol.SerializeTypes);
@@ -28,12 +36,24 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
             {
                 //stream.Receive.Digestion();
                 agent.HandleMessage();
+                _NowMessage += _CounterMessage.Elapsed;
+                _CounterMessage.Restart();
+                if (_NowMessage > expiry)
+                {
+                    throw new TimeoutException("Message processing timed out");
+                }
             });
 
             var updatePacket = new ThreadUpdater(() =>
             {
                 //stream.Send.Digestion();
                 agent.HandlePackets();
+                _NowPackage += _CounterPackage.Elapsed;
+                _CounterPackage.Restart();
+                if (_NowPackage > expiry)
+                {
+                    throw new TimeoutException("Package processing timed out");
+                }
             });
             _Dispose = () =>
             {
@@ -44,47 +64,10 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
                 service.Dispose();
             };
             #endregion
-            /*
-            #region tcp
-            var port = PinionCore.Network.Tcp.Tools.GetAvailablePort();
-            var service = PinionCore.Remote.Server.Provider.CreateTcpService(entry, protocol);
-            service.Listener.Bind(port);
-            
-            var client = PinionCore.Remote.Client.Provider.CreateTcpAgent(protocol);
-            var agent = client.Agent;
-            var peer = client.Connector.Connect(new IPEndPoint(IPAddress.Loopback, port)).GetAwaiter().GetResult();
-            if(peer == null)
-                throw new System.Exception("Connection failed");
-
-            
-            agent.Enable(peer);
-            var updateMessage = new ThreadUpdater(() => {
-                agent.HandleMessage();
-            });
-
-            var updatePacket = new ThreadUpdater(() => {
-                agent.HandlePackets();
-            });
-
-            _Dispose = () =>
-            {
-                agent.Disable();
-                service.Service.Dispose();
-                Entry.Dispose();
-                updateMessage.Stop();
-                updatePacket.Stop();
-                service.Listener.Close();
-                client.Connector.Disconnect();
-            };
-            #endregion*/
-
             Queryable = agent;
             updatePacket.Start();
             updateMessage.Start();
         }
-
-
-
 
         public void Dispose()
         {
