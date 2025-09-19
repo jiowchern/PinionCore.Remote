@@ -31,47 +31,44 @@ namespace PinionCore.Remote.Gateway
         {
             public readonly IStreamable UserStream;
             readonly Stream _Stream;
-            readonly PackageReader _Reader;
-            private readonly PackageSender _Sender;
+            readonly Channel _Channel;
             private uint _UserId;
             private Task _ReadTask;
             bool _Disposed;
             public User(uint userId , IPool pool)
             {
                 _Stream = new Stream();
-                _Reader = new PackageReader(_Stream, pool);
-                _Sender = new PackageSender(_Stream, pool);
+                _Channel = new Channel(new PackageReader(_Stream, pool), new PackageSender(_Stream, pool));
+                _Channel.OnDataReceived += _ReadDone;
                 UserStream = _Stream;
                 _UserId = userId;
                 _ReadTask = Task.CompletedTask;
+                
             }
 
             public void Start()
             {
-                _StartRead();
+                
+                _Channel.Start();
             }
 
-            private void _StartRead()
-            {
-                _ReadTask = _Reader.Read().ContinueWith(_ReadDone);
-            }
-
-            private void _ReadDone(Task<List<Memorys.Buffer>> task)
+            List<Memorys.Buffer> _ReadDone(List<Memorys.Buffer> buffers)
             {
                 if (_Disposed)
-                    return;
-                OnDataReceived.Invoke(_UserId, task.Result);
-                _StartRead();
+                    return new List<Memorys.Buffer>();
+                OnDataReceived.Invoke(_UserId, buffers);
+                return new List<Memorys.Buffer>();
             }
 
             public event System.Action<uint, List<Memorys.Buffer>> OnDataReceived;
             internal void FromGatewayPush(Memorys.Buffer buffer)
             {
-                _Sender.Push(buffer);
+                _Channel.Sender.Push(buffer);
             }
 
             public void Dispose()
             {
+                _Channel.OnDataReceived -= _ReadDone;
                 _Disposed = true;
             }
         }
