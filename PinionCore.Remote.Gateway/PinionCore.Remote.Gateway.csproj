@@ -9,6 +9,7 @@
     <ProjectReference Include="..\PinionCore.Remote.Ghost\PinionCore.Remote.Ghost.csproj" />
     <ProjectReference Include="..\PinionCore.Remote.Soul\PinionCore.Remote.Soul.csproj" />
     <ProjectReference Include="..\PinionCore.Remote\PinionCore.Remote.csproj" />
+    <ProjectReference Include="..\PinionCore.Serialization\PinionCore.Serialization.csproj" />
   </ItemGroup>
 
 </Project>

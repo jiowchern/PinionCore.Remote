@@ -5,6 +5,7 @@ using PinionCore.Memorys;
 
 namespace PinionCore.Remote.Gateway
 {
+
     public class Serializer
     {
         readonly PinionCore.Serialization.Serializer _Serializer;
