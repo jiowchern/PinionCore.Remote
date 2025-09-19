@@ -7,24 +7,6 @@ using PinionCore.Remote.Soul;
 
 namespace PinionCore.Remote.Gateway
 {
-
-    class ServiceRegistrySerializer : Serializer
-    {
-        public ServiceRegistrySerializer(IPool pool) : base(pool, new Type[] {
-            typeof(ServiceRegistryPackage),
-            typeof(OpCodeFromServiceRegistry),
-            typeof(SessionListenerPackage),
-            typeof(OpCodeFromSessionListener),
-            typeof(byte[]),
-            typeof(uint),
-            typeof(byte)
-        })
-        {
-        }
-    }
-
-
-
     public class SessionListener : PinionCore.Remote.Soul.IListenable , IDisposable
     {
         class User : IDisposable
@@ -38,13 +20,15 @@ namespace PinionCore.Remote.Gateway
             public User(uint userId , IPool pool)
             {
                 _Stream = new Stream();
+                UserStream = new ReverseStream(_Stream);
                 _Channel = new Channel(new PackageReader(_Stream, pool), new PackageSender(_Stream, pool));
                 _Channel.OnDataReceived += _ReadDone;
-                UserStream = _Stream;
                 _UserId = userId;
                 _ReadTask = Task.CompletedTask;
                 
             }
+
+            
 
             public void Start()
             {
@@ -187,3 +171,4 @@ namespace PinionCore.Remote.Gateway
         }
     }
 }
+
