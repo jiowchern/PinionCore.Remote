@@ -1,122 +1,93 @@
 ﻿using System;
+using System.IO;
 using System.Linq;
-using System.Threading;
+using System.Reactive.Linq;
+using NUnit;
 using NUnit.Framework;
-using PinionCore.Memorys;
-using PinionCore.Remote.Gateway;
+using NUnit.Framework.Internal.Execution;
+using PinionCore.Network;
+using PinionCore.Remote.Gateway.GatewayUserListeners;
+using PinionCore.Remote.Gateway.Protocols;
+using PinionCore.Remote.Ghost;
+using PinionCore.Remote.Reactive;
 using PinionCore.Remote.Soul;
+using PinionCore.Remote.Tools.Protocol.Sources.TestCommon;
+
 
 namespace PinionCore.Remote.Gateway.Tests
 {
-    /// <summary>
-    /// GatewayUserListener 功能測試
-    /// </summary>
     public class GatewayUserListenerTests
     {
-        [Test, Timeout(10000)]
+        [NUnit.Framework.Test,Timeout(10000)]
         public async System.Threading.Tasks.Task Test()
         {
-            // 創建基礎流（注意：GatewayUserListener 和 網關讀寫器使用相反的流）
-            var stream = new PinionCore.Network.Stream();
-            var gatewayStream = new PinionCore.Network.ReverseStream(stream);
-            var gatewayReader = new PinionCore.Network.PackageReader(gatewayStream, PoolProvider.Shared);
-            var gatewayWriter = new PinionCore.Network.PackageSender(gatewayStream, PoolProvider.Shared);
+            var pool = PinionCore.Memorys.PoolProvider.Shared;
+            var gameEntry = new GameEntry();
+            var listener = new PinionCore.Remote.Gateway.GatewayUserListeners.GatewayUserListener();
+            var userEntry = new PinionCore.Remote.Gateway.GatewayUserListeners.Entry(listener);
+            var gameProtocol = PinionCore.Remote.Tools.Protocol.Sources.TestCommon.ProtocolProvider.CreateCase1();
+            var userProtocol = PinionCore.Remote.Gateway.Protocols.ProtocolProvider.Create();
+            
 
-            var serializer = GatewayTestHelper.CreateSerializer();
+            var userService = PinionCore.Remote.Standalone.Provider.CreateService(userEntry, userProtocol);
+            var gameService = PinionCore.Remote.Gateway.GatewayUserListeners.GameService.Create(gameEntry , listener);
 
-            // 創建 GatewayUserListener 和相關組件（GatewayUserListener 使用原始流）
-            var sessionListener = new GatewayUserListener(stream, PoolProvider.Shared, serializer);
-            var userProvider = new UserProvider(sessionListener, PoolProvider.Shared);
-
-            // 創建事件等待器
-            using var eventWaiters = new GatewayTestHelper.EventWaiters();
-
-            // 設置用戶提供者事件處理
-            userProvider.LeaveEvent += (_) => {
-                Console.WriteLine("LeaveEvent triggered");
-                eventWaiters.LeaveEvent.Set();
-            };
-
-            userProvider.JoinEvent += (_,_,_) => {
-                Console.WriteLine("JoinEvent triggered");
-                eventWaiters.JoinEvent.Set();
-            };
-
-            // 創建可監聽訂閱者並設置消息反轉處理
-            var listenableSubscriber = new ListenableSubscriber(sessionListener, PoolProvider.Shared);
-            listenableSubscriber.MessageEvent += (stream, buffers, sender) =>
-            {
-                Console.WriteLine($"ListenableSubscriber.MessageEvent: 收到 {buffers.Count()} 個緩衝區");
-
-                // 反轉緩衝區數據並發送回去
-                foreach(var buffer in buffers)
+            var userAgent = userService.Create();
+            var userUpdateTaskEnable = true;
+            var userUpdateTask = System.Threading.Tasks.Task.Run( ()=> {
+                while (userUpdateTaskEnable)
                 {
-                    Console.WriteLine($"原始緩衝區: [{string.Join(", ", buffer.Bytes.ToArray())}]");
+                    System.Threading.Thread.Sleep(1);
+                    
+                    userAgent.HandleMessage();
+                    userAgent.HandlePackets();
+                }                
+            });
+            var userObs = from gpi in userAgent.QueryNotifier<IGatewayUserListener>().SupplyEvent()
+                          from joinId in gpi.Join().RemoteValue()
+                          from user_ in gpi.UserNotifier.Base.SupplyEvent()
+                          where user_.Id == joinId
+                          select user_;
+            var users = new System.Collections.Generic.List<IUser>();
+            var user = await userObs.FirstAsync();
+            
+            var gameAgent = new PinionCore.Remote.Ghost.Agent(gameProtocol, new Remote.Serializer(gameProtocol.SerializeTypes), new PinionCore.Remote.InternalSerializer(), pool) as IAgent;
+            gameAgent.Enable(_ToStream(user));
+            var gameUpdateTaskEnable = true;
+            var gameUpdateTask = System.Threading.Tasks.Task.Run(() => {
+                while (gameUpdateTaskEnable)
+                {
+                    System.Threading.Thread.Sleep(1);
 
-                    // 反轉緩衝區數據
-                    var revertBuf = PoolProvider.Shared.Alloc(buffer.Bytes.Count);
-                    for(int i = 0; i < buffer.Bytes.Count; i++)
-                    {
-                        revertBuf[i] = buffer.Bytes[buffer.Bytes.Count - 1 - i];
-                    }
-                    Console.WriteLine($"反轉後緩衝區: [{string.Join(", ", revertBuf.Bytes.ToArray())}]");
-                    sender.Push(revertBuf);
-                    Console.WriteLine("緩衝區已發送回發送者");
+                    userAgent.HandleMessage();
+                    userAgent.HandlePackets();
                 }
-            };
+            });
 
-            // 設置斷線事件處理
-            sessionListener.OnDisconnected += () =>
-            {
-                Console.WriteLine("GatewayUserListener 斷線");
-            };
+            var gameObs = from gpi in gameAgent.QueryNotifier<IMethodable1>().SupplyEvent()
+                          from v1 in gpi.GetValue1().RemoteValue()                          
+                          select v1;
 
-            // 啟動 GatewayUserListener
-            Console.WriteLine("啟動 GatewayUserListener");
-            sessionListener.Start();
+            var gameGetValue = await gameObs.FirstAsync();
 
-            // 測試加入流程
-            Console.WriteLine("發送加入包");
-            var joinPackage = GatewayTestHelper.CreateServiceRegistryPackage(
-                OpCodeFromServiceRegistry.Join, 1);
-            GatewayTestHelper.SerializeAndSend(joinPackage, serializer, gatewayWriter);
+            userUpdateTaskEnable = false;
+            await userUpdateTask;
 
-            Console.WriteLine("等待加入事件");
-            GatewayTestHelper.WaitForEvent(eventWaiters.JoinEvent, description: "加入事件");
-            Console.WriteLine("成功收到加入事件");
+            gameUpdateTaskEnable = false;
+            await gameUpdateTask;
 
-            // 測試消息處理流程
-            Console.WriteLine("發送消息包");
-            var messagePackage = GatewayTestHelper.CreateServiceRegistryPackage(
-                OpCodeFromServiceRegistry.Message, 1,
-                new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 });
-            GatewayTestHelper.SerializeAndSend(messagePackage, serializer, gatewayWriter);
+            gameAgent.Disable();
+            gameService.Dispose();
+            userService.Destroy(userAgent);
+            userService.Dispose();
 
-            // 讀取並驗證回應
-            Console.WriteLine("讀取回應");
-            var responsePackage = await GatewayTestHelper.ReadAndDeserialize<SessionListenerPackage>(
-                gatewayReader, serializer);
 
-            Console.WriteLine($"回應 OpCode: {responsePackage.OpCode}, UserId: {responsePackage.UserId}, 負載長度: {responsePackage.Payload?.Length ?? 0}");
+            Assert.AreEqual(1, gameGetValue);
+        }
 
-            // 驗證回應內容
-            Assert.That(responsePackage.OpCode, Is.EqualTo(OpCodeFromSessionListener.Message),
-                "回應操作碼應為 Message");
-            Assert.That(responsePackage.UserId, Is.EqualTo(1), "回應用戶 ID 應為 1");
-            Assert.IsTrue(responsePackage.Payload.SequenceEqual(new byte[] { 9, 8, 7, 6, 5, 4, 3, 2, 1, 0 }),
-                "負載應為反轉後的數據");
-            Console.WriteLine("消息測試通過");
-
-            // 測試離開流程
-            Console.WriteLine("發送離開包");
-            var leavePackage = GatewayTestHelper.CreateServiceRegistryPackage(
-                OpCodeFromServiceRegistry.Leave, 1);
-            GatewayTestHelper.SerializeAndSend(leavePackage, serializer, gatewayWriter);
-
-            Console.WriteLine("等待離開事件");
-            GatewayTestHelper.WaitForEvent(eventWaiters.LeaveEvent, description: "離開事件");
-            Console.WriteLine("成功收到離開事件");
+        private IStreamable _ToStream(IUser user)
+        {
+            return new UserStreamAdapter(user);
         }
     }
 }
-

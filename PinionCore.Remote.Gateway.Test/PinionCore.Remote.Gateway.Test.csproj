@@ -19,6 +19,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\PinionCore.Remote.Gateway\PinionCore.Remote.Gateway.csproj" />
+    <ProjectReference Include="..\PinionCore.Remote.Reactive\PinionCore.Remote.Reactive.csproj" />
+    <ProjectReference Include="..\PinionCore.Remote.Tools.Protocol.Sources.TestCommon\PinionCore.Remote.Tools.Protocol.Sources.TestCommon.csproj" />
   </ItemGroup>
 
 </Project>

@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using PinionCore.Memorys;
 using PinionCore.Network;
 using PinionCore.Remote.Ghost;
@@ -64,18 +65,26 @@ namespace PinionCore.Remote.Standalone
                 _NotifiableCollection.Notifier.Unsupply -= value;
             }
         }
-
-        public Ghost.IAgent Create(Stream stream)
-        {
-            //var stream = new Stream();
+        
+        public Ghost.IAgent Create(IStreamable ghost,IStreamable soul)
+        {            
             var agent = new PinionCore.Remote.Ghost.Agent(this.Protocol, this.Serializer, new PinionCore.Remote.InternalSerializer(), _Pool);
-            agent.Enable(stream);
-            var revStream = new ReverseStream(stream);
-            _NotifiableCollection.Items.Add(revStream);
-            _Streams.Add(agent, revStream);
+            agent.Enable(ghost);
+
+            _NotifiableCollection.Items.Add(soul);
+            _Streams.Add(agent, soul);
             _Agents.Add(agent);
 
             return agent;
+        }
+        public Ghost.IAgent Create()
+        {
+            return Create(new Stream());
+        }
+        public Ghost.IAgent Create(Stream stream)
+        {
+            var agentStream = new ReverseStream(stream);
+            return Create(agentStream, stream);
         }
 
 
