@@ -47,7 +47,7 @@ namespace PinionCore.Remote.Gateway.GatewayUserListeners
 
             remove
             {
-                _StreamableEnterEvent = value;
+                _StreamableEnterEvent -= value;
             }
         }
 
@@ -74,6 +74,8 @@ namespace PinionCore.Remote.Gateway.GatewayUserListeners
                 throw new InvalidOperationException("Failed to add new user.");
             }
             _UserNotifier.Collection.Add(user);
+            UserStreamRegistry.Register(id, user);
+            _StreamableEnterEvent?.Invoke(user);
             return id;
         }
 
@@ -83,6 +85,11 @@ namespace PinionCore.Remote.Gateway.GatewayUserListeners
             if (_Users.TryRemove(user, out var u))
             {
                 _UserNotifier.Collection.Remove(u);
+                UserStreamRegistry.Unregister(user);
+                if (u is IStreamable streamable)
+                {
+                    _StreamableLeaveEvent?.Invoke(streamable);
+                }
                 code = ReturnCode.Success;
             }
             return code;

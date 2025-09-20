@@ -25,9 +25,9 @@ namespace PinionCore.Remote.Gateway.GatewayUserListeners
             _Dispose();
         }
 
-        public static IService Create(IEntry entry,GatewayUserListener listener)
+        public static IService Create(IEntry entry,IProtocol protocol,GatewayUserListener listener)
         {
-            var protocol = Protocols.ProtocolProvider.Create();
+            
 
             return Create(entry, listener, protocol);
         }

@@ -1,4 +1,6 @@
 using System;
+using System.Threading;
+using System.Threading.Tasks;
 using PinionCore.Network;
 using PinionCore.Remote.Gateway.Protocols;
 
@@ -9,14 +11,29 @@ namespace PinionCore.Remote.Gateway.GatewayUserListeners
         private readonly IUser _user;
         private readonly Stream _stream;
         private readonly IStreamable _streamView;
+        private readonly UserStreamRegistry.Bridge _bridge;
+        private readonly CancellationTokenSource _pumpCancellation;
+        private readonly Task _pumpTask;
         private bool _disposed;
 
         public UserStreamAdapter(IUser user)
         {
-            _user = user ?? throw new ArgumentNullException(nameof(user));
+            if (user == null)
+            {
+                throw new ArgumentNullException(nameof(user));
+            }
+
+            _user = user;
             _stream = new Stream();
             _streamView = _stream;
-            _user.ResponseEvent += _OnResponse;
+            var userId = user.Id.Value;
+            if (!UserStreamRegistry.TryGet(userId, out _bridge))
+            {
+                throw new InvalidOperationException(string.Format("Cannot locate user stream bridge for id {0}.", userId));
+            }
+
+            _pumpCancellation = new CancellationTokenSource();
+            _pumpTask = Task.Run(() => PumpAsync(_pumpCancellation.Token));
         }
 
         public IAwaitableSource<int> Receive(byte[] buffer, int offset, int count)
@@ -33,19 +50,31 @@ namespace PinionCore.Remote.Gateway.GatewayUserListeners
 
             var payload = new byte[count];
             Array.Copy(buffer, offset, payload, 0, count);
-
             _user.Request(payload);
             return count.ToWaitableValue();
         }
 
-        private void _OnResponse(byte[] payload)
+        private async Task PumpAsync(CancellationToken token)
         {
-            if (payload == null)
+            try
             {
-                return;
-            }
+                while (!token.IsCancellationRequested)
+                {
+                    var payload = await _bridge.DequeueAsync(token).ConfigureAwait(false);
+                    if (payload == null)
+                    {
+                        continue;
+                    }
 
-            _stream.Push(payload, 0, payload.Length);
+                    _stream.Push(payload, 0, payload.Length);
+                }
+            }
+            catch (TaskCanceledException)
+            {
+            }
+            catch (OperationCanceledException)
+            {
+            }
         }
 
         public void Dispose()
@@ -56,7 +85,22 @@ namespace PinionCore.Remote.Gateway.GatewayUserListeners
             }
 
             _disposed = true;
-            _user.ResponseEvent -= _OnResponse;
+            _pumpCancellation.Cancel();
+            try
+            {
+                _pumpTask.Wait();
+            }
+            catch (AggregateException ex)
+            {
+                if (!(ex.InnerException is TaskCanceledException) && !(ex.InnerException is OperationCanceledException))
+                {
+                    throw;
+                }
+            }
+            finally
+            {
+                _pumpCancellation.Dispose();
+            }
         }
     }
 }

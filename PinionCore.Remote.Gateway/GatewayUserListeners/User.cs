@@ -8,10 +8,12 @@ namespace PinionCore.Remote.Gateway.GatewayUserListeners
     {
         readonly PinionCore.Network.Stream _Stream;
         readonly Property<uint> _Id;
+        readonly uint _UserId;
         public User(uint id)
         {
             _Stream = new PinionCore.Network.Stream();
             _Id = new Property<uint>(id);
+            _UserId = id;
         }
         Property<uint> IUser.Id => _Id;
 
@@ -33,7 +35,7 @@ namespace PinionCore.Remote.Gateway.GatewayUserListeners
 
         IAwaitableSource<int> IStreamable.Receive(byte[] buffer, int offset, int count)
         {
-            throw new NotImplementedException();
+            return ((IStreamable)_Stream).Receive(buffer, offset, count);
         }
 
         void IUser.Request(byte[] payload)
@@ -43,10 +45,16 @@ namespace PinionCore.Remote.Gateway.GatewayUserListeners
 
         IAwaitableSource<int> IStreamable.Send(byte[] buffer, int offset, int count)
         {
+            var sendTask = ((IStreamable)_Stream).Send(buffer, offset, count);
             var sendBuffer = new byte[count];
             Array.Copy(buffer, offset, sendBuffer, 0, count);
-            _ResponseEvent(sendBuffer);
-            return count.ToWaitableValue();
+            var response = _ResponseEvent;
+            if (response != null)
+            {
+                response(sendBuffer);
+            }
+            UserStreamRegistry.Enqueue(_UserId, sendBuffer);
+            return sendTask;
         }
     }
 }
