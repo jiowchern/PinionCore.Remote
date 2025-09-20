@@ -9,132 +9,77 @@ using PinionCore.Remote.Soul;
 
 namespace PinionCore.Remote.Gateway.Tests
 {
+    /// <summary>
+    /// ServiceRegistry 和 SessionListener 整合測試
+    /// </summary>
     public class ServiceRegistrySessionListenerIntegrationTests
     {
-        private const uint DefaultGroup = 1;
-
         [Test, Timeout(10000)]
         public async Task ServiceRegistryAndSessionListenerExchangeMessages()
         {
-            var pool = PoolProvider.Shared;
-            var serializer = new ServiceRegistrySessionListenerSerializer(pool);
+            // 初始化測試組件
+            var serializer = GatewayTestHelper.CreateSerializer();
+            using var streamSetup = GatewayTestHelper.CreateStreamSetup();
 
-            var serviceStream = new PinionCore.Network.Stream();
-            var gatewayStream = new PinionCore.Network.ReverseStream(serviceStream);
+            // 創建核心組件
+            using var sessionListener = new SessionListener(streamSetup.ClientStream, PoolProvider.Shared, serializer);
+            using var registry = new ServiceRegistry(PoolProvider.Shared, serializer);
+            using var userProvider = new UserProvider(sessionListener, PoolProvider.Shared);
+            using var subscriber = new ListenableSubscriber(sessionListener, PoolProvider.Shared);
 
-            using var sessionListener = new SessionListener(serviceStream, pool, serializer);
-            using var registry = new ServiceRegistry(pool, serializer);
-            using var userProvider = new UserProvider(sessionListener, pool);
-            using var subscriber = new ListenableSubscriber(sessionListener, pool);
+            // 創建事件等待器
+            using var eventWaiters = new GatewayTestHelper.EventWaiters();
 
-            using var joinEvent = new ManualResetEventSlim(false);
-            using var leaveEvent = new ManualResetEventSlim(false);
-            using var serverMessageEvent = new ManualResetEventSlim(false);
-
+            // 設置初始負載
             var initialPayload = new byte[] { 9, 8, 7 };
 
-            userProvider.JoinEvent += (_, reader, sender) =>
-            {
-                var buffer = pool.Alloc(initialPayload.Length + sizeof(uint));
-                var segment = buffer.Bytes;
-                BinaryPrimitives.WriteUInt32LittleEndian(segment.Array.AsSpan(segment.Offset, sizeof(uint)), DefaultGroup);
-                Array.Copy(initialPayload, 0, segment.Array, segment.Offset + sizeof(uint), initialPayload.Length);
-                sender.Push(buffer);
-                joinEvent.Set();
-            };
-            userProvider.LeaveEvent += _ => leaveEvent.Set();
+            // 設置用戶提供者事件處理（加入時發送初始消息）
+            GatewayTestHelper.SetupUserProviderEvents(userProvider, eventWaiters, initialPayload);
 
-            subscriber.MessageEvent += (_, buffers, sender) =>
-            {
-                serverMessageEvent.Set();
-                foreach (var buffer in buffers)
-                {
-                    var segment = buffer.Bytes;
-                    if (segment.Count < sizeof(uint))
-                    {
-                        continue;
-                    }
+            // 設置訂閱者回音消息處理
+            GatewayTestHelper.SetupEchoMessageHandler(subscriber, eventWaiters);
 
-                    var group = BinaryPrimitives.ReadUInt32LittleEndian(segment.Array.AsSpan(segment.Offset, sizeof(uint)));
-                    var payloadLength = segment.Count - sizeof(uint);
-                    var echo = pool.Alloc(segment.Count);
-                    var echoSegment = echo.Bytes;
-                    BinaryPrimitives.WriteUInt32LittleEndian(echoSegment.Array.AsSpan(echoSegment.Offset, sizeof(uint)), group);
-                    Array.Copy(segment.Array, segment.Offset + sizeof(uint), echoSegment.Array, echoSegment.Offset + sizeof(uint), payloadLength);
-                    sender.Push(echo);
-                }
-            };
-
+            // 啟動會話監聽器並註冊服務
             sessionListener.Start();
-            registry.Register(DefaultGroup, gatewayStream);
+            registry.Register(GatewayTestHelper.DefaultGroup, streamSetup.GatewayStream);
 
-            var clientStream = new PinionCore.Network.Stream();
-            var gatewayUserStream = new PinionCore.Network.ReverseStream(clientStream);
-            var userReader = new PinionCore.Network.PackageReader(clientStream, pool);
-            var userSender = new PinionCore.Network.PackageSender(clientStream, pool);
+            // 創建客戶端流設置
+            using var clientSetup = GatewayTestHelper.CreateStreamSetup();
 
-            var session = new UserSession(99, gatewayUserStream, pool);
+            // 創建用戶會話並加入註冊表
+            var session = GatewayTestHelper.CreateUserSession(99, clientSetup.GatewayStream);
             registry.Join(session);
 
-            Assert.That(joinEvent.Wait(TimeSpan.FromSeconds(5)), Is.True);
+            // 等待加入事件
+            GatewayTestHelper.WaitForEvent(eventWaiters.JoinEvent, description: "加入事件");
 
-            var initialBuffers = await userReader.Read();
-            Assert.That(initialBuffers.Count, Is.GreaterThan(0));
-            var initialMessages = initialBuffers.Select(ReadMessage).ToList();
-            Assert.That(initialMessages.Any(m => m.Group == DefaultGroup && EndsWithPayload(m.Payload, initialPayload)), Is.True);
+            // 驗證收到初始消息
+            var initialBuffers = await clientSetup.Reader.Read();
+            Assert.That(initialBuffers.Count, Is.GreaterThan(0), "應收到至少一個初始緩衝區");
+            var initialMessages = initialBuffers.Select(GatewayTestHelper.ReadMessage).ToList();
+            Assert.That(initialMessages.Any(m => m.Group == GatewayTestHelper.DefaultGroup &&
+                GatewayTestHelper.EndsWithPayload(m.Payload, initialPayload)), Is.True,
+                "應收到包含初始負載的消息");
 
+            // 從客戶端發送消息
             var clientPayload = new byte[] { 1, 2, 3, 4 };
-            var clientBuffer = pool.Alloc(clientPayload.Length + sizeof(uint));
-            var clientSegment = clientBuffer.Bytes;
-            BinaryPrimitives.WriteUInt32LittleEndian(clientSegment.Array.AsSpan(clientSegment.Offset, sizeof(uint)), DefaultGroup);
-            Array.Copy(clientPayload, 0, clientSegment.Array, clientSegment.Offset + sizeof(uint), clientPayload.Length);
-            userSender.Push(clientBuffer);
+            var clientBuffer = GatewayTestHelper.CreateGroupBuffer(GatewayTestHelper.DefaultGroup, clientPayload);
+            clientSetup.Sender.Push(clientBuffer);
 
-            Assert.That(serverMessageEvent.Wait(TimeSpan.FromSeconds(5)), Is.True);
+            // 等待服務端處理消息
+            GatewayTestHelper.WaitForEvent(eventWaiters.MessageEvent, description: "服務端消息處理事件");
 
-            var responseBuffers = await userReader.Read();
-            Assert.That(responseBuffers.Count, Is.GreaterThan(0));
-            var responseMessages = responseBuffers.Select(ReadMessage).ToList();
-            Assert.That(responseMessages.Any(m => m.Group == DefaultGroup && m.Payload.Length >= clientPayload.Length), Is.True);
+            // 驗證收到回音消息
+            var responseBuffers = await clientSetup.Reader.Read();
+            Assert.That(responseBuffers.Count, Is.GreaterThan(0), "應收到至少一個回應緩衝區");
+            var responseMessages = responseBuffers.Select(GatewayTestHelper.ReadMessage).ToList();
+            Assert.That(responseMessages.Any(m => m.Group == GatewayTestHelper.DefaultGroup &&
+                m.Payload.Length >= clientPayload.Length), Is.True,
+                "應收到包含客戶端負載的回音消息");
 
+            // 測試離開流程
             registry.Leave(session);
-            Assert.That(leaveEvent.Wait(TimeSpan.FromSeconds(5)), Is.True);
-        }
-
-        private static bool EndsWithPayload(byte[] actual, byte[] expected)
-        {
-            if (actual == null || actual.Length < expected.Length)
-            {
-                return false;
-            }
-
-            for (var i = 0; i < expected.Length; i++)
-            {
-                if (actual[actual.Length - expected.Length + i] != expected[i])
-                {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
-        private static (uint Group, byte[] Payload) ReadMessage(Memorys.Buffer buffer)
-        {
-            var segment = buffer.Bytes;
-            if (segment.Count < sizeof(uint))
-            {
-                return (0, Array.Empty<byte>());
-            }
-
-            var group = BinaryPrimitives.ReadUInt32LittleEndian(segment.Array.AsSpan(segment.Offset, sizeof(uint)));
-            var payload = new byte[segment.Count - sizeof(uint)];
-            if (payload.Length > 0)
-            {
-                Array.Copy(segment.Array, segment.Offset + sizeof(uint), payload, 0, payload.Length);
-            }
-
-            return (group, payload);
+            GatewayTestHelper.WaitForEvent(eventWaiters.LeaveEvent, description: "離開事件");
         }
     }
 }
