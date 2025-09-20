@@ -1,6 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Reactive.Disposables;
 using System.Reactive.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using PinionCore.Memorys;
 using PinionCore.Network;
 using PinionCore.Remote.Soul;
@@ -44,8 +47,56 @@ namespace PinionCore.Remote.Gateway.Tests
             var reader = new PackageReader(streamable, _pool);
             var sender = new PackageSender(streamable, _pool);
 
-            var bufferObservable = Observable.FromAsync(() => reader.Read())
-                .SelectMany(buffers => buffers);
+            var bufferObservable = Observable.Create<Memorys.Buffer>(observer =>
+            {
+                var cts = new CancellationTokenSource();
+                var pumpTask = Task.Run(async () =>
+                {
+                    try
+                    {
+                        while (!cts.Token.IsCancellationRequested)
+                        {
+                            var buffers = await reader.Read(cts.Token).ConfigureAwait(false);
+                            if (buffers == null || buffers.Count == 0)
+                            {
+                                continue;
+                            }
+
+                            foreach (var buffer in buffers)
+                            {
+                                observer.OnNext(buffer);
+                            }
+                        }
+                    }
+                    catch (OperationCanceledException)
+                    {
+                    }
+                    catch (Exception ex)
+                    {
+                        observer.OnError(ex);
+                        return;
+                    }
+
+                    observer.OnCompleted();
+                });
+
+                return Disposable.Create(() =>
+                {
+                    cts.Cancel();
+                    try
+                    {
+                        pumpTask.Wait(TimeSpan.FromSeconds(1));
+                    }
+                    catch (AggregateException ex)
+                    {
+                        ex.Handle(e => e is OperationCanceledException);
+                    }
+                    finally
+                    {
+                        cts.Dispose();
+                    }
+                });
+            });
 
             var subscription = bufferObservable.Subscribe(buffer =>
             {
