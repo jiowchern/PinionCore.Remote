@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
+using System.Threading;
+using System.Threading.Tasks;
 using PinionCore.Memorys;
 using PinionCore.Network;
 using PinionCore.Utility;
@@ -17,7 +18,8 @@ namespace PinionCore.Remote.Ghost
 
 
         private readonly System.Collections.Concurrent.ConcurrentBag<System.Exception> _Exceptions;
-        private TaskAwaiter<List<Memorys.Buffer>> _ReadTask;
+        private Task<List<Memorys.Buffer>> _ReadTask;
+        private CancellationTokenSource _readCancellation;
 
         public event System.Action<System.Exception> ErrorEvent;
         public GhostSerializer(PinionCore.Network.PackageReader reader, PackageSender sender, IInternalSerializable serializable)
@@ -67,7 +69,8 @@ namespace PinionCore.Remote.Ghost
         {
             PinionCore.Utility.Log.Instance.WriteInfoImmediate("Agent online enter.");
             //Singleton<Log>.Instance.WriteInfo("Agent online enter.");
-            _ReadTask = _Reader.Read().GetAwaiter();
+            _readCancellation = new CancellationTokenSource();
+            _ReadTask = _Reader.Read(_readCancellation.Token);
         }
 
         public void Stop()
@@ -81,6 +84,9 @@ namespace PinionCore.Remote.Ghost
 
             }
             Singleton<Log>.Instance.WriteInfo("Agent online leave.");
+            _readCancellation?.Dispose();
+            _readCancellation = null;
+            _ReadTask = null;
         }
 
         void _Update()
@@ -91,10 +97,33 @@ namespace PinionCore.Remote.Ghost
                 return;
             }
 
-            if (_ReadTask.IsCompleted)
+            if (_ReadTask != null && _ReadTask.IsCompleted)
             {
-                _ReadDone(_ReadTask.GetResult());
-                _ReadTask = _Reader.Read().GetAwaiter();
+                var completedWithCancellation = false;
+                try
+                {
+                    _ReadDone(_ReadTask.GetAwaiter().GetResult());
+                }
+                catch (OperationCanceledException)
+                {
+                    if (_readCancellation?.IsCancellationRequested == true)
+                    {
+                        completedWithCancellation = true;
+                    }
+                    else
+                    {
+                        throw;
+                    }
+                }
+
+                if (!completedWithCancellation && _readCancellation?.IsCancellationRequested != true)
+                {
+                    _ReadTask = _Reader.Read(_readCancellation.Token);
+                }
+                else if (completedWithCancellation)
+                {
+                    _ReadTask = null;
+                }
             }
             _Process();
         }
@@ -122,7 +151,10 @@ namespace PinionCore.Remote.Ghost
 
         private void _ReaderStop()
         {
-
+            if (_readCancellation != null && !_readCancellation.IsCancellationRequested)
+            {
+                _readCancellation.Cancel();
+            }
         }
 
         public void Update()

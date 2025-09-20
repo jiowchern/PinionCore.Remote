@@ -319,7 +319,15 @@ namespace PinionCore.Remote.Gateway.Frontends
             {
                 while (!token.IsCancellationRequested)
                 {
-                    var buffers = await _clientReader.Read().ConfigureAwait(false);
+                    List<Memorys.Buffer> buffers;
+                    try
+                    {
+                        buffers = await _clientReader.Read(token).ConfigureAwait(false);
+                    }
+                    catch (OperationCanceledException) when (token.IsCancellationRequested)
+                    {
+                        break;
+                    }
                     if (buffers == null || buffers.Count == 0)
                     {
                         continue;
