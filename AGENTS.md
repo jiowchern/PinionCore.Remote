@@ -99,3 +99,4 @@ static partial void _Create(ref PinionCore.Remote.IProtocol protocol);
 - Unity WebGL 需自行實作 WebSocket 客戶端
 - IL2CPP 與 AOT 環境下序列化型別需預先註冊
 - Standalone 模式適合開發階段除錯，生產環境應使用網路模式
+- 英文思考，結論用中文撰寫

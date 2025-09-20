@@ -7,10 +7,8 @@ namespace PinionCore.Remote.Soul
     public class SyncService : System.IDisposable
     {
         readonly IEntry _Entry;
-        readonly UserProvider _UserProvider;
-        readonly IDisposable _UserProviderDisposable;
-
         private readonly IProtocol _Protocol;
+        readonly IListenable _Listener;
         private readonly ISerializable _Serializable;
         private readonly IInternalSerializable _InternalSerializable;
         private readonly PinionCore.Memorys.IPool _Pool;
@@ -20,15 +18,13 @@ namespace PinionCore.Remote.Soul
         private struct Pending
         {
             public bool IsJoin;
-            public Network.IStreamable Stream;
-            public PinionCore.Network.PackageReader Reader;
-            public PinionCore.Network.PackageSender Sender;
+            public Network.IStreamable Stream;            
         }
 
         private readonly ConcurrentQueue<Pending> _Pending;
         
 
-        public SyncService(IEntry entry, IProtocol protocol, ISerializable serializable, IInternalSerializable internal_serializable, PinionCore.Memorys.IPool pool, UserProvider user_provider)
+        public SyncService(IEntry entry, IProtocol protocol, ISerializable serializable, IInternalSerializable internal_serializable, PinionCore.Memorys.IPool pool,IListenable listener)
         {
             _Entry = entry;
             _Protocol = protocol;
@@ -36,28 +32,24 @@ namespace PinionCore.Remote.Soul
             _InternalSerializable = internal_serializable;
             _Pool = pool;
 
-            _UserProvider = user_provider;
-            _UserProviderDisposable = user_provider;
-
             _Users = new ConcurrentDictionary<Network.IStreamable, User>();
             _Pending = new ConcurrentQueue<Pending>();
-            
-
-            _UserProvider.JoinEvent += _OnJoin;
-            _UserProvider.LeaveEvent += _OnLeave;
+            _Listener = listener;
+            _Listener.StreamableLeaveEvent += Leave;
+            _Listener.StreamableEnterEvent += Join;
         }
 
         public event System.Action UsersStateChangedEvent;
 
-        private void _OnJoin(Network.IStreamable stream, PinionCore.Network.PackageReader reader, PinionCore.Network.PackageSender sender)
+        void Join(Network.IStreamable stream)
         {
-            _Pending.Enqueue(new Pending { IsJoin = true, Stream = stream, Reader = reader, Sender = sender });
+            _Pending.Enqueue(new Pending { IsJoin = true, Stream = stream});
          
         }
 
-        private void _OnLeave(Network.IStreamable stream)
+        void Leave(Network.IStreamable stream)
         {
-            _Pending.Enqueue(new Pending { IsJoin = false, Stream = stream, Reader = null, Sender = null });
+            _Pending.Enqueue(new Pending { IsJoin = false, Stream = stream});
          
         }
 
@@ -70,13 +62,15 @@ namespace PinionCore.Remote.Soul
             {
                 if (ev.IsJoin)
                 {
-                    var user = new User(ev.Reader, ev.Sender, _Protocol, _Serializable, _InternalSerializable, _Pool);
+                    var reader = new PinionCore.Network.PackageReader(ev.Stream, _Pool);
+                    var sender = new PinionCore.Network.PackageSender(ev.Stream, _Pool);
+                    var user = new User(reader, sender, _Protocol, _Serializable, _InternalSerializable, _Pool);
                     var capturedStream = ev.Stream;
-                    var capturedSender = ev.Sender as IDisposable;
+                    var capturedSender = sender as IDisposable;
                     user.ErrorEvent += () =>
                     {
                         capturedSender?.Dispose();
-                        _OnLeave(capturedStream);
+                        Leave(capturedStream);
                     };
                     user.Launch();
                     if (_Users.TryAdd(ev.Stream, user))
@@ -87,7 +81,7 @@ namespace PinionCore.Remote.Soul
                     {
                         // already exists; clean up the extra instance
                         user.Shutdown();
-                        var dispose = ev.Sender as IDisposable;
+                        var dispose = sender as IDisposable;
                         dispose.Dispose();
                     }
                 }
@@ -119,9 +113,9 @@ namespace PinionCore.Remote.Soul
 
         void IDisposable.Dispose()
         {
-            _UserProvider.JoinEvent -= _OnJoin;
-            _UserProvider.LeaveEvent -= _OnLeave;
-            _UserProviderDisposable.Dispose();
+            _Listener.StreamableLeaveEvent -= Leave;
+            _Listener.StreamableEnterEvent -= Join;
+            
             
         }
     }
