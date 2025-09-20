@@ -7,7 +7,7 @@ using PinionCore.Remote.Soul;
 
 namespace PinionCore.Remote.Gateway
 {
-    public class SessionListener : PinionCore.Remote.Soul.IListenable , IDisposable
+    public class GatewayUserListener : PinionCore.Remote.Soul.IListenable , IDisposable
     {
         class User : IDisposable
         {
@@ -62,7 +62,7 @@ namespace PinionCore.Remote.Gateway
         readonly IPool _Pool;
         readonly Serializer _Serializer;
         // stream 是來自與 gateway 的連線
-        public SessionListener(IStreamable stream , IPool pool, Serializer serializer)
+        public GatewayUserListener(IStreamable stream , IPool pool, Serializer serializer)
         {
             _UserDict = new System.Collections.Concurrent.ConcurrentDictionary<uint, User>();
             _Pool = pool;

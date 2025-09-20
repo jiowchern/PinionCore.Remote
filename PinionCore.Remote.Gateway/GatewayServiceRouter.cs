@@ -9,7 +9,7 @@ using PinionCore.Remote.Actors;
 
 namespace PinionCore.Remote.Gateway
 {
-    internal sealed class ServiceRegistry : IDisposable
+    internal sealed class GatewayServiceRouter : IDisposable
     {
         private readonly IPool _pool;
         private readonly Serializer _serializer;
@@ -20,7 +20,7 @@ namespace PinionCore.Remote.Gateway
         private readonly Dictionary<uint, Dictionary<uint, ServiceSession>> _serviceByUserAndGroup;
         private bool _disposed;
 
-        public ServiceRegistry(IPool pool, Serializer serializer)
+        public GatewayServiceRouter(IPool pool, Serializer serializer)
         {
             _pool = pool ?? throw new ArgumentNullException(nameof(pool));
             _serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
@@ -462,7 +462,7 @@ namespace PinionCore.Remote.Gateway
         {
             if (_disposed)
             {
-                throw new ObjectDisposedException(nameof(ServiceRegistry));
+                throw new ObjectDisposedException(nameof(GatewayServiceRouter));
             }
         }
 

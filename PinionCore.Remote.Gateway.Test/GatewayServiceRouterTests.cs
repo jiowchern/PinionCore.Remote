@@ -4,20 +4,21 @@ using System.Linq;
 using System.Threading.Tasks;
 using NUnit.Framework;
 using PinionCore.Memorys;
+using PinionCore.Remote.Gateway;
 
 namespace PinionCore.Remote.Gateway.Tests
 {
     /// <summary>
-    /// ServiceRegistry 功能測試
+    /// GatewayServiceRouter 功能測試
     /// </summary>
-    public class ServiceRegistryTests
+    public class GatewayServiceRouterTests
     {
         [Test]
         public async Task JoinRoutesMessagesBothWays()
         {
             // 初始化測試組件
             var serializer = GatewayTestHelper.CreateSerializer();
-            using var registry = new ServiceRegistry(PoolProvider.Shared, serializer);
+            using var registry = new GatewayServiceRouter(PoolProvider.Shared, serializer);
 
             // 創建服務端流設置
             using var serviceSetup = GatewayTestHelper.CreateStreamSetup();
@@ -83,7 +84,7 @@ namespace PinionCore.Remote.Gateway.Tests
         {
             // 測試先加入用戶後註冊服務的情況
             var serializer = GatewayTestHelper.CreateSerializer();
-            using var registry = new ServiceRegistry(PoolProvider.Shared, serializer);
+            using var registry = new GatewayServiceRouter(PoolProvider.Shared, serializer);
 
             // 創建客戶端會話並先加入註冊表
             using var clientSetup = GatewayTestHelper.CreateStreamSetup();
@@ -108,7 +109,7 @@ namespace PinionCore.Remote.Gateway.Tests
         {
             // 測試註銷服務時用戶重新分配到剩餘服務的情況
             var serializer = GatewayTestHelper.CreateSerializer();
-            using var registry = new ServiceRegistry(PoolProvider.Shared, serializer);
+            using var registry = new GatewayServiceRouter(PoolProvider.Shared, serializer);
 
             // 註冊第一個服務 A
             using var serviceSetupA = GatewayTestHelper.CreateStreamSetup();

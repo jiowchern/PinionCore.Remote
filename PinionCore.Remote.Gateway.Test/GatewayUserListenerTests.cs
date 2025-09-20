@@ -3,19 +3,20 @@ using System.Linq;
 using System.Threading;
 using NUnit.Framework;
 using PinionCore.Memorys;
+using PinionCore.Remote.Gateway;
 using PinionCore.Remote.Soul;
 
 namespace PinionCore.Remote.Gateway.Tests
 {
     /// <summary>
-    /// SessionListener 功能測試
+    /// GatewayUserListener 功能測試
     /// </summary>
-    public class SessionListenerTests
+    public class GatewayUserListenerTests
     {
         [Test, Timeout(10000)]
         public async System.Threading.Tasks.Task Test()
         {
-            // 創建基礎流（注意：SessionListener 和 網關讀寫器使用相反的流）
+            // 創建基礎流（注意：GatewayUserListener 和 網關讀寫器使用相反的流）
             var stream = new PinionCore.Network.Stream();
             var gatewayStream = new PinionCore.Network.ReverseStream(stream);
             var gatewayReader = new PinionCore.Network.PackageReader(gatewayStream, PoolProvider.Shared);
@@ -23,8 +24,8 @@ namespace PinionCore.Remote.Gateway.Tests
 
             var serializer = GatewayTestHelper.CreateSerializer();
 
-            // 創建 SessionListener 和相關組件（SessionListener 使用原始流）
-            var sessionListener = new SessionListener(stream, PoolProvider.Shared, serializer);
+            // 創建 GatewayUserListener 和相關組件（GatewayUserListener 使用原始流）
+            var sessionListener = new GatewayUserListener(stream, PoolProvider.Shared, serializer);
             var userProvider = new UserProvider(sessionListener, PoolProvider.Shared);
 
             // 創建事件等待器
@@ -67,11 +68,11 @@ namespace PinionCore.Remote.Gateway.Tests
             // 設置斷線事件處理
             sessionListener.OnDisconnected += () =>
             {
-                Console.WriteLine("SessionListener 斷線");
+                Console.WriteLine("GatewayUserListener 斷線");
             };
 
-            // 啟動 SessionListener
-            Console.WriteLine("啟動 SessionListener");
+            // 啟動 GatewayUserListener
+            Console.WriteLine("啟動 GatewayUserListener");
             sessionListener.Start();
 
             // 測試加入流程

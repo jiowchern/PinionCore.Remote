@@ -5,25 +5,26 @@ using System.Threading;
 using System.Threading.Tasks;
 using NUnit.Framework;
 using PinionCore.Memorys;
+using PinionCore.Remote.Gateway;
 using PinionCore.Remote.Soul;
 
 namespace PinionCore.Remote.Gateway.Tests
 {
     /// <summary>
-    /// ServiceRegistry 和 SessionListener 整合測試
+    /// GatewayServiceRouter 與 GatewayUserListener 整合測試
     /// </summary>
-    public class ServiceRegistrySessionListenerIntegrationTests
+    public class GatewayServiceRouterGatewayUserListenerIntegrationTests
     {
         [Test, Timeout(10000)]
-        public async Task ServiceRegistryAndSessionListenerExchangeMessages()
+        public async Task GatewayServiceRouterAndGatewayUserListenerExchangeMessages()
         {
             // 初始化測試組件
             var serializer = GatewayTestHelper.CreateSerializer();
             using var streamSetup = GatewayTestHelper.CreateStreamSetup();
 
             // 創建核心組件
-            using var sessionListener = new SessionListener(streamSetup.ClientStream, PoolProvider.Shared, serializer);
-            using var registry = new ServiceRegistry(PoolProvider.Shared, serializer);
+            using var sessionListener = new GatewayUserListener(streamSetup.ClientStream, PoolProvider.Shared, serializer);
+            using var registry = new GatewayServiceRouter(PoolProvider.Shared, serializer);
             using var userProvider = new UserProvider(sessionListener, PoolProvider.Shared);
             using var subscriber = new ListenableSubscriber(sessionListener, PoolProvider.Shared);
 
