@@ -2,9 +2,9 @@
 using PinionCore.Network;
 using PinionCore.Remote.Gateway.Protocols;
 
-namespace PinionCore.Remote.Gateway.GatewayUserListeners 
+namespace PinionCore.Remote.Gateway.Servers 
 {
-    class User : IUser ,IStreamable
+    class User : IServiceSession ,IStreamable
     {
         readonly PinionCore.Network.Stream _Stream;
         readonly Property<uint> _Id;
@@ -15,10 +15,10 @@ namespace PinionCore.Remote.Gateway.GatewayUserListeners
             _Id = new Property<uint>(id);
             _UserId = id;
         }
-        Property<uint> IUser.Id => _Id;
+        Property<uint> IServiceSession.Id => _Id;
 
         event Action<byte[]> _ResponseEvent;
-        event Action<byte[]> IUser.ResponseEvent
+        event Action<byte[]> IServiceSession.ResponseEvent
         {
             add
             {
@@ -38,7 +38,7 @@ namespace PinionCore.Remote.Gateway.GatewayUserListeners
             return ((IStreamable)_Stream).Receive(buffer, offset, count);
         }
 
-        void IUser.Request(byte[] payload)
+        void IServiceSession.Request(byte[] payload)
         {
             _Stream.Push(payload, 0, payload.Length);   
         }

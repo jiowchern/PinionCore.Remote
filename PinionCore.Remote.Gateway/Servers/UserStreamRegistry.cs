@@ -3,7 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using PinionCore.Network;
 
-namespace PinionCore.Remote.Gateway.GatewayUserListeners
+namespace PinionCore.Remote.Gateway.Servers
 {
     internal static class UserStreamRegistry
     {

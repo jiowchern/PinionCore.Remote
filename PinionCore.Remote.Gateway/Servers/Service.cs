@@ -6,7 +6,7 @@ using PinionCore.Network;
 using PinionCore.Remote.Ghost;
 using PinionCore.Remote.Soul;
 
-namespace PinionCore.Remote.Gateway.GatewayUserListeners 
+namespace PinionCore.Remote.Gateway.Servers 
 {
     
     
@@ -16,9 +16,6 @@ namespace PinionCore.Remote.Gateway.GatewayUserListeners
         readonly IService _GameService;
         readonly IService _UserService;
 
-        public event Action<IStreamable> GameUserJoinEvent;
-        public event Action<IStreamable> GameUserLeaveEvent;
-
         public Service(IEntry entry, IProtocol protocol)
             :this(entry, protocol, new PinionCore.Remote.Serializer(protocol.SerializeTypes), new PinionCore.Remote.InternalSerializer(), PinionCore.Memorys.PoolProvider.Shared)
         {
@@ -26,7 +23,7 @@ namespace PinionCore.Remote.Gateway.GatewayUserListeners
         }
         public Service(IEntry entry , IProtocol protocol , ISerializable serializable , IInternalSerializable internalSerializable  , IPool pool)
         {
-            var userListener = new PinionCore.Remote.Gateway.GatewayUserListeners.GatewayUserListener();
+            var userListener = new PinionCore.Remote.Gateway.Servers.Listener();
             var userEntry = new Entry(userListener);
             var userProtocol = Protocols.ProtocolProvider.Create();
             _UserService = Standalone.Provider.CreateService(userEntry, userProtocol);
@@ -49,13 +46,13 @@ namespace PinionCore.Remote.Gateway.GatewayUserListeners
         private void _GameUserJoin(IStreamable streamable)
         {
             _GameService.Join(streamable);
-            GameUserJoinEvent?.Invoke(streamable);
+
         }
 
         private void _GameUserLeave(IStreamable streamable)
         {
             _GameService.Leave(streamable);
-            GameUserLeaveEvent?.Invoke(streamable);
+
         }
 
         public void Dispose()

@@ -1,27 +1,26 @@
 ﻿using System;
-using System.Net.NetworkInformation;
 using PinionCore.Network;
 using PinionCore.Remote.Gateway.Protocols;
 using PinionCore.Remote.Soul;
 
-namespace PinionCore.Remote.Gateway.GatewayUserListeners 
+namespace PinionCore.Remote.Gateway.Servers 
 {
-    class GatewayUserListener : IGatewayUserListener , IListenable 
+    class Listener : IUserService , IListenable 
     {
         readonly IdProvider _IdProvider;
-        readonly System.Collections.Concurrent.ConcurrentDictionary<uint, IUser> _Users = new System.Collections.Concurrent.ConcurrentDictionary<uint, IUser>();
-        readonly Notifier<IUser> _UserNotifier;
+        readonly System.Collections.Concurrent.ConcurrentDictionary<uint, IServiceSession> _Users = new System.Collections.Concurrent.ConcurrentDictionary<uint, IServiceSession>();
+        readonly Notifier<IServiceSession> _UserNotifier;
         
 
-        public GatewayUserListener()
+        public Listener()
         {
             _IdProvider = new IdProvider();
-            _Users = new System.Collections.Concurrent.ConcurrentDictionary<uint, IUser>();
-            _UserNotifier = new Notifier<IUser>();
+            _Users = new System.Collections.Concurrent.ConcurrentDictionary<uint, IServiceSession>();
+            _UserNotifier = new Notifier<IServiceSession>();
         }
 
         
-        Notifier<IUser> IGatewayUserListener.UserNotifier => _UserNotifier;
+        Notifier<IServiceSession> IUserService.UserNotifier => _UserNotifier;
 
         event Action<IStreamable> _StreamableEnterEvent;
         event Action<IStreamable> IListenable.StreamableEnterEvent
@@ -51,7 +50,7 @@ namespace PinionCore.Remote.Gateway.GatewayUserListeners
             }
         }
 
-        Value<uint> IGatewayUserListener.Join()
+        Value<uint> IUserService.Join()
         {
             var id = _IdProvider.Landlord.Rent();
             var user = new User(id);
@@ -65,7 +64,7 @@ namespace PinionCore.Remote.Gateway.GatewayUserListeners
             return id;
         }
 
-        Value<ReturnCode> IGatewayUserListener.Leave(uint user)
+        Value<ReturnCode> IUserService.Leave(uint user)
         {
             var code = ReturnCode.NotFound;
             if (_Users.TryRemove(user, out var u))

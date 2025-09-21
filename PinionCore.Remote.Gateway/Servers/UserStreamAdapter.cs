@@ -1,14 +1,14 @@
-using System;
+﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
 using PinionCore.Network;
 using PinionCore.Remote.Gateway.Protocols;
 
-namespace PinionCore.Remote.Gateway.GatewayUserListeners
+namespace PinionCore.Remote.Gateway.Servers
 {
     public sealed class UserStreamAdapter : IStreamable, IDisposable
     {
-        private readonly IUser _user;
+        private readonly IServiceSession _user;
         private readonly Stream _stream;
         private readonly IStreamable _streamView;
         private readonly UserStreamRegistry.Bridge _bridge;
@@ -16,7 +16,7 @@ namespace PinionCore.Remote.Gateway.GatewayUserListeners
         private readonly Task _pumpTask;
         private bool _disposed;
 
-        public UserStreamAdapter(IUser user)
+        public UserStreamAdapter(IServiceSession user)
         {
             if (user == null)
             {

@@ -3,7 +3,7 @@ using System.Linq;
 using System.Reactive.Linq;
 using NUnit.Framework;
 using PinionCore.Network;
-using PinionCore.Remote.Gateway.GatewayUserListeners;
+using PinionCore.Remote.Gateway.Servers;
 using PinionCore.Remote.Gateway.Protocols;
 using PinionCore.Remote.Ghost;
 using PinionCore.Remote.Reactive;
@@ -14,17 +14,17 @@ using PinionCore.Remote.Tools.Protocol.Sources.TestCommon;
 
 namespace PinionCore.Remote.Gateway.Tests
 {
-    public class GatewayUserListenerTests
+    public class ServersTests
     {
         [NUnit.Framework.Test,Timeout(10000)]
-        public async System.Threading.Tasks.Task UserGameProtocolInteractionTest()
+        public async System.Threading.Tasks.Task UserGameProtocolIntegrationTest()
         {
             var pool = PinionCore.Memorys.PoolProvider.Shared;
 
             var gameProtocol = PinionCore.Remote.Tools.Protocol.Sources.TestCommon.ProtocolProvider.CreateCase1();
             var gameEntry = new GameEntry();
-            var service = new PinionCore.Remote.Gateway.GatewayUserListeners.Service(gameEntry, gameProtocol);
-            var userAgent = PinionCore.Remote.Gateway.GatewayUserListeners.Provider.CreateAgent();
+            var service = new PinionCore.Remote.Gateway.Servers.Service(gameEntry, gameProtocol);
+            var userAgent = PinionCore.Remote.Gateway.Servers.Provider.CreateAgent();
             var userAgentDisconnect = userAgent.Connect(service);
             var userUpdateTaskEnable = true;
             var userUpdateTask = System.Threading.Tasks.Task.Run( ()=> {
@@ -36,7 +36,7 @@ namespace PinionCore.Remote.Gateway.Tests
                     userAgent.HandlePackets();
                 }                
             });
-            var userObs = from gpi in userAgent.QueryNotifier<IGatewayUserListener>().SupplyEvent()
+            var userObs = from gpi in userAgent.QueryNotifier<IUserService>().SupplyEvent()
                           from joinId in gpi.Join().RemoteValue()
                           from user_ in gpi.UserNotifier.Base.SupplyEvent()
                           where user_.Id == joinId
@@ -74,7 +74,7 @@ namespace PinionCore.Remote.Gateway.Tests
             Assert.AreEqual(1, gameGetValue);
         }
 
-        private IStreamable _ToStream(IUser user)
+        private IStreamable _ToStream(IServiceSession user)
         {
             if (user is IStreamable directStream)
             {

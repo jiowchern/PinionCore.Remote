@@ -2,7 +2,7 @@
 using System.Text;
 using PinionCore.Remote.Gateway.Protocols;
 
-namespace PinionCore.Remote.Gateway.GatewayUserListeners 
+namespace PinionCore.Remote.Gateway.Servers 
 {
     internal class Entry : IEntry
     {
@@ -12,9 +12,9 @@ namespace PinionCore.Remote.Gateway.GatewayUserListeners
             public ISoul Soul;
         }
 
-        readonly IGatewayUserListener _Listener;
+        readonly IUserService _Listener;
         readonly System.Collections.Generic.List<BinderInfo> _Infos;
-        public Entry(IGatewayUserListener gatewayUserListener)
+        public Entry(IUserService gatewayUserListener)
         {
             _Infos = new List<BinderInfo>();
             _Listener = gatewayUserListener;
@@ -24,7 +24,7 @@ namespace PinionCore.Remote.Gateway.GatewayUserListeners
             _Infos.Add(new BinderInfo
             {
                 Binder = binder,
-                Soul = binder.Bind<IGatewayUserListener>(_Listener)
+                Soul = binder.Bind<IUserService>(_Listener)
             });
         }
 

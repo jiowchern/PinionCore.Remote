@@ -1,4 +1,4 @@
-﻿namespace PinionCore.Remote.Gateway.GatewayUserListeners 
+﻿namespace PinionCore.Remote.Gateway.Servers 
 {
     class IdProvider : ILandlordProviable<uint>
     {

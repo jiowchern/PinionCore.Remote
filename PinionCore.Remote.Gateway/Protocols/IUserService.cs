@@ -1,11 +1,11 @@
 ﻿namespace PinionCore.Remote.Gateway.Protocols
 {
 
-    public interface IGatewayUserListener
+    public interface IUserService
     {
         PinionCore.Remote.Value<uint> Join();
         PinionCore.Remote.Value<ReturnCode> Leave(uint user);
-        PinionCore.Remote.Notifier<IUser> UserNotifier { get; }
+        PinionCore.Remote.Notifier<IServiceSession> UserNotifier { get; }
     }
 }
 

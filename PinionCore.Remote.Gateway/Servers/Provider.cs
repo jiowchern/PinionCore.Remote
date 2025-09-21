@@ -1,6 +1,6 @@
 ﻿using PinionCore.Remote.Ghost;
 
-namespace PinionCore.Remote.Gateway.GatewayUserListeners
+namespace PinionCore.Remote.Gateway.Servers
 {
     internal static class Provider
     {
