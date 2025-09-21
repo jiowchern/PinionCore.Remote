@@ -1,214 +1,240 @@
-﻿# Gateway Architecture
+﻿ # PinionCore Remote Gateway 架構文檔
 
-在真實的環境中為了避免曝光遊戲伺服器的 IP 位址, 會在遊戲伺服器前端加上一層 Gateway 來處理 Client 的連線請求,
-以 PinionCore Remote 來說從原先的建立 Agent 直接連線到 GameServer, 變成建立 GatewayClientSession 連線到 Gateway 再由 Gateway 分配已經註冊的遊戲服務給 GatewayClientSession, GatewayClientSession 再建立對應的 Agent 與 GameServer 互動。
+ ## 概述
 
-## 架構修改
+ PinionCore Remote Gateway
+是一個高效的遊戲伺服器代理層，為分散式遊戲架構提供客戶端會話路由、服務發現與負載均衡功能。透過隱藏後端遊戲伺服器的 
+地址，提供統一的遊戲服務入口點。
 
-這是原本的架構, Client 直接建立 Agent 連線到 GameServer
-```mermaid
----
-config:
-  
----
-flowchart LR
-    subgraph GameClient["GameClient"]
-        Agent1["Ghost.IAgent"]
-        
-    end
-    subgraph GameServer["GameServer"]
-        Listener1["Soul.IListenable"]
-    end
+ ## 核心架構
 
-    Agent1 -- direct connect --> Listener1
-```
+ ### 設計目標
 
-目標修改後的架構, Client 建立 GatewayClientSession 連線到 Gateway, Gateway 把已經註冊的服務分配給 GatewayClientSession, GatewayClientSession 再建立對應的 Agent 與 GameServer 互動。
-```mermaid
----
-config:
-  layout: elk  
----
-flowchart LR
- subgraph GatewayHost["GatewayHost"]
-        GatewaySessionCoordinator@{ label: "<b>GatewaySessionCoordinator<br></b>為 GatewayClientSession 分配來自<b></b><span style=\"font-weight:\">GatewayServiceRouter 的 Service</span>" }
-        GatewayServiceRouter@{ label: "<b>GatewayServiceRouter</b><br>1.接收<span style=\"--tw-scale-x:\">GatewayUserListener的註冊請求, 建立 Service</span><br>2.接收<span style=\"--tw-scale-x:\">GatewaySessionCoordinator 的通知為User 分配 Service</span><br>" }
-  end
- subgraph ClientSession["ClientSession"]
-        GatewayClientSession["<b>GatewayClientSession</b><br>接收 GatewaySessionCoordinator 通知建立對應的 Agents"]
-  end
- subgraph GameClient["GameClient"]
-        Agent["Ghost.IAgent"]
-        ClientSession
-  end
- subgraph Gateway["Gateway"]
-        GatewayHost
-  end
- subgraph GameServers["GameServers"]
-        GameServer["GameServer2"]
-  end
- subgraph GameServer["GameServer"]
-        AsyncService["<b>Soul.AsyncService</b>"]
-        GatewayUserListener@{ label: "<b>GatewayUserListener</b><br>繼承 Soul.IListenable<br>接收<span style=\"font-weight:\">GatewayServiceRouter通知, 建立User</span>" }
-  end
-    GatewayClientSession -. connect .-> GatewaySessionCoordinator
-    GatewayClientSession -- create --> Agent
-    GatewaySessionCoordinator -- invoke --> GatewayServiceRouter
-    GatewayUserListener -- event --> AsyncService
-    GatewayUserListener -. connect .-> GatewayServiceRouter
-    GatewaySessionCoordinator@{ shape: rect}
-    GatewayServiceRouter@{ shape: rect}
-    GatewayUserListener@{ shape: rect}
-    style GameClient stroke-width:4px,stroke-dasharray: 5
-    style Gateway stroke-width:4px,stroke-dasharray: 6
-    style GameServers stroke-width:4px,stroke-dasharray: 7
+ - **服務隱藏**：隱藏後端遊戲伺服器 IP，增強安全性
+ - **會話路由**：智能路由客戶端會話到適當的遊戲服務
+ - **負載均衡**：在多個遊戲服務間分配客戶端連線
+ - **服務發現**：動態註冊與發現可用的遊戲服務
+ - **狀態管理**：維護客戶端會話與服務綁定狀態
 
-```
-## 類別圖
-```mermaid
----
-config:
-  layout: dagre
----
-classDiagram
-direction RL
-    note for IAgent "PinionCore.Remote.Ghost.IAgent"
-    note for IListenable "PinionCore.Remote.Soul.IListenable"
-    note for IStreamable "PinionCore.Network.IStreamable"
-    class IAgent  {
-        <<interface>>
-    }
-    
-    class IListenable {
-        <<interface>>
-    }
-    
-    class IStreamable {
-        <<interface>>
-    }
-    
-    class IAgentProvider {
-	    +CreateEvent System.Action~uint,IAgent~
-	    +DestroyEvent System.Action~uint,IAgent~
-    }
+ ### 系統拓撲
 
-    note for GatewayClientSession "從 GatewayHost 接收 GatewaySessionCoordinator 通知"
-    class GatewayClientSession {
-	    -map[uint]IAgent _Agents
-	    +Create(uint group) Ghost.IAgent
-	    +Destroy(uint group) bool
-	    +OnMessage(uint group, byte[] payload) ;
-    }
-    class UserSession {
-	    -IStreamable _Client
-	    +uint Id
-	    +PackageReader Reader
-	    +PackageSender Sender
-	    +HashSet~uint~ ConnectedGroups
-	    +SendToUser(uint group, byte[] payload)
-    }
-    note for GatewaySessionCoordinator "為 GatewayClientSession 分配來自 GatewayServiceRouter 的 Service"
-    class GatewaySessionCoordinator {
-	    +Register(IStreamable) UserSession
-	    +Unregister(IStreamable) UserSession
-    }
-    class ServiceSession {
-	    -IStreamable _Service
-	    +uint Group
-	    +Bind(UserSession)
-	    +Unbind(UserSession)
-	    +Send(ServiceRegistryPackage)
-    }
+ ```
+ [遊戲客戶端]
+      ↓
+ [Gateway Coordinator] ← 統一入口點
+      ↓
+ [Session Orchestrator] ← 會話協調與路由
+      ↓
+ [遊戲服務群組] ← 後端遊戲邏輯
+ ```
 
-    note for GatewayServiceRouter "1.接收 GatewayUserListener 的註冊請求 2.接收 GatewaySessionCoordinator 的通知為 User 分配 Service"
-    class GatewayServiceRouter {
-	    -Dictionary~uint,List~ServiceSession~~ _servicesByGroup
-	    -Dictionary~uint,Dictionary~uint,ServiceSession~~ _serviceByUserAndGroup
-	    -DataflowActor~Func~Task~~ _actor
-	    +Join(UserSession)
-	    +Leave(UserSession)
-	    +Register(uint group,IStreamable)
-	    +Unregister(uint group,IStreamable)
-    }
+ ## 核心組件
 
-    note for GatewayUserListener "繼承 Soul.IListenable 接收 GatewayServiceRouter 通知, 建立 User IStreamable"
-    class GatewayUserListener {
-        -IStreamable[] _Users
-	    -IStreamable _Stream
-    }
-    class ClientSession {
-        -GatewayClientSession _AgentSession
-    }
+ ### 1. Gateway Coordinator (遊戲代理協調器)
 
-    class GatewayHost {
-        -GatewaySessionCoordinator _Dispatcher
-        -GatewayServiceRouter _Registry
-    }
+ **職責**：作為系統的主要入口點，管理整個 Gateway 服務的生命週期
 
-    class GameServer {
-        -AsyncService _Users
-        -GatewayUserListener _Listener
-    }
-	<<interface>> IAgent
-	<<interface>> IStreamable
-	<<interface>> IListenable
-	<<interface>> IAgentProvider
-    IAgentProvider <|-- GatewayClientSession
-    IStreamable <|-- ServiceSession
-    IListenable <|-- GatewayUserListener
+ **功能**：
+ - 初始化會話協調器 (SessionOrchestrator)
+ - 提供服務註冊介面 (IServiceRegistry)
+ - 整合 PinionCore Remote 服務架構
 
-```
+ **關鍵特性**：
+ - 統一的服務入口點
+ - 管理 SessionOrchestrator 的生命週期
+ - 提供 IService 介面供外部系統整合
 
-### GatewayServiceRouter 行為補充
+ ### 2. Session Orchestrator (會話協調器)
 
-- `UserSession` 由 `GatewaySessionCoordinator` 建立時即帶入唯一的 `Id`，與 `GatewayUserListener.User` 的 Id 對應，`GatewayServiceRouter` 僅依此 Id 維護狀態，不再重新分配。
-- `Join(UserSession)` 會在單一 `DataflowActor` 執行緒上處理，針對目前註冊的每一個 group 選擇負載最低的 `ServiceSession` 並送出 `Join` 封包，封包中的 `UserId` 等於 `UserSession.Id`。
-- User 與 Service 間的資料在傳遞時會在 payload 前方增加 4 bytes little-endian 的 group header；Gateway 端、`GatewayServiceRouter` 與 `UserSession` 都依據此 header 進行路由。
-- `Register` 新服務時計算所有尚未在該 group 建立連線的 `UserSession`，立即補發 Join；`Unregister` 會將受影響的使用者重新指派到現存服務，若目前無可用服務則留下 TODO 以後處理。
+ **職責**：Gateway 的核心路由引擎，負責會話管理與服務分配
 
-## 時序圖
+ **功能**：
+ - **會話管理**：追蹤活躍的客戶端會話 (IRoutableSession)
+ - **服務綁定**：將客戶端會話綁定到特定遊戲服務
+ - **狀態協調**：維護會話綁定狀態，處理異步操作
+ - **負載均衡**：智能分配會話到可用服務
 
-### GatewayClientSession 連線流程
-```mermaid
-sequenceDiagram
-    participant GatewayClientSession 
-    participant GatewaySessionCoordinator
-    participant GatewayServiceRouter
-    participant GatewayUserListener
+ **核心設計模式**：
+ - **SessionBinding**：表示會話與服務的綁定關係
+ - **ServiceRegistration**：管理已註冊的遊戲服務
+ - **異步綁定**：支援非阻塞的會話分配流程
 
-    GatewayClientSession ->> GatewaySessionCoordinator: Connect(IStreamable client)
-    GatewaySessionCoordinator ->> GatewaySessionCoordinator : Create UserSession (帶入 Id)
-    GatewaySessionCoordinator ->> GatewayServiceRouter: Join(UserSession user)
-    GatewayServiceRouter ->> GatewayServiceRouter: Assign ServiceSessions to UserSession (per group)
-    GatewayServiceRouter ->> GatewayUserListener: Notify new User(IStreamable user)
+ ### 3. Service Entry Point (服務入口點)
 
-    GatewayUserListener ->> GatewayUserListener: Create User IStreamable
-    GatewayUserListener  ->> AsyncService: event IListenable.StreamEnterEvent
-```
+ **職責**：為遊戲服務提供標準化的接入點
 
-### GatewayClientSession 斷線流程
-```mermaid
-sequenceDiagram
-    participant GatewayClientSession 
-    participant GatewaySessionCoordinator
-    participant GatewayServiceRouter
-    participant GatewayUserListener
-    GatewayClientSession ->> GatewaySessionCoordinator: Disconnect(IStreamable client)
-    GatewaySessionCoordinator ->> GatewayServiceRouter: Leave(UserSession user)
-    GatewayServiceRouter ->> GatewayServiceRouter: Unbind & reassign groups if any service remains
-    GatewayServiceRouter ->> GatewayUserListener: Notify lost User(IStreamable user)
-    GatewayUserListener ->> GatewayUserListener: Remove User IStreamable
-    GatewayUserListener  ->> AsyncService: event IListenable.StreamLeaveEvent
-```
+ **功能**：
+ - 實作 IEntry 介面，整合 PinionCore Remote 架構
+ - 管理客戶端綁定器 (IBinder) 的註冊與取消註冊
+ - 橋接 SessionOrchestrator 與 PinionCore Remote 系統
 
-### GatewayClientSession 建立 Agent 流程
-```mermaid
-sequenceDiagram    
-    AsyncService ->> GatewayUserListener: IStreamable.Send (any package)
-    GatewayUserListener ->> GatewayServiceRouter: sessionId + payload
-    GatewayServiceRouter -> ServiceSession : route by group header
-    ServiceSession ->> UserSession: locate by sessionId
-    UserSession ->> GatewayClientSession: send [group header + payload]
-    GatewayClientSession -->> Agent : if group not exist create
-```
-### 
+ ### 4. Proxied Client (代理客戶端)
+
+ **職責**：客戶端會話的抽象表示，支援路由與連線管理
+
+ **功能**：
+ - 實作 IRoutableSession 與 IConnectionManager 介面
+ - 管理多群組會話綁定
+ - 維護會話引用計數
+ - 提供會話通知機制
+
+ **設計特色**：
+ - 支援一對多的會話群組映射
+ - 自動管理會話生命週期
+ - 線程安全的會話操作
+
+ ### 5. Client Proxy (客戶端代理)
+
+ **職責**：管理客戶端代理連線與代理生命週期
+
+ **功能**：
+ - 監聽 IConnectionManager 的會話變更事件
+ - 為每個客戶端會話建立對應的 IAgent
+ - 使用 ClientStreamAdapter 橋接會話與代理
+ - 管理代理集合的動態更新
+
+ ## 協議與通訊層
+
+ ### 1. Game Lobby (遊戲大廳)
+
+ **職責**：定義遊戲服務的標準介面
+
+ **介面方法**：
+ - `Join()`：客戶端加入，返回客戶端 ID
+ - `Leave(uint clientId)`：客戶端離開
+ - `ClientNotifier`：客戶端連線狀態通知器
+
+ **改進特色**：
+ - 使用 `ResponseStatus` 枚舉提供詳細的狀態回報
+ - 支援非同步操作模式
+ - 清晰的客戶端生命週期管理
+
+ ### 2. Client Connection (客戶端連線)
+
+ **職責**：抽象客戶端連線，支援請求-回應模式
+
+ **介面方法**：
+ - `Id`：唯一客戶端識別碼
+ - `Request(byte[] payload)`：發送請求到客戶端
+ - `ResponseEvent`：客戶端回應事件
+
+ ### 3. Connection Manager (連線管理器)
+
+ **職責**：管理客戶端連線集合，提供連線狀態通知
+
+ **功能**：
+ - 維護活躍客戶端連線集合
+ - 提供連線新增/移除事件通知
+ - 支援連線狀態查詢
+
+ ## 傳輸層組件
+
+ ### 1. Gateway Service (閘道服務)
+
+ **職責**：統合客戶端服務與遊戲服務的雙向橋接
+
+ **功能**：
+ - 管理客戶端服務 (ClientService) 與遊戲服務 (GameService)
+ - 處理客戶端加入/離開事件
+ - 提供統一的 IService 介面
+
+ ### 2. Connection Listener (連線監聽器)
+
+ **職責**：實作 IGameLobby 與 IListenable，管理客戶端連線生命週期
+
+ **功能**：
+ - 自動分配客戶端 ID (使用 ClientIdGenerator)
+ - 維護客戶端連線註冊表
+ - 支援 IStreamable 事件通知
+ - 整合 ClientStreamRegistry 進行串流管理
+
+ ### 3. Connected Client (已連線客戶端)
+
+ **職責**：客戶端連線的具體實作，支援 IClientConnection 與 IStreamable
+
+ **功能**：
+ - 封裝客戶端 ID 與串流操作
+ - 實作請求-回應機制
+ - 提供網路串流抽象
+
+ ### 4. Client Stream Adapter (客戶端串流適配器)
+
+ **職責**：橋接 IClientConnection 與 IStreamable，支援異步串流操作
+
+ **功能**：
+ - 非阻塞的串流讀寫
+ - 與 ClientStreamRegistry 整合
+ - 異步資料幫浦機制
+ - 自動資源清理
+
+ ### 5. Client Stream Registry (客戶端串流註冊表)
+
+ **職責**：全域客戶端串流管理，支援跨組件的串流存取
+
+ **功能**：
+ - 執行緒安全的串流註冊/取消註冊
+ - 串流橋接機制 (Bridge 模式)
+ - 異步訊息佇列管理
+ - 自動資源釋放
+
+ ## 測試框架
+
+ ### 1. Testable Agent (可測試代理)
+
+ **職責**：為單元測試提供代理操作介面
+
+ ### 2. Agent Test Harness (代理測試工具)
+
+ **職責**：自動化代理生命週期管理，支援測試場景
+
+ ### 3. Test Game Entry (測試遊戲入口)
+
+ **職責**：測試環境下的遊戲服務模擬
+
+ ### 4. Event Subscription Mock (事件訂閱模擬器)
+
+ **職責**：模擬 IListenable 事件處理，支援測試驗證
+
+ ## 工作流程
+
+ ### 客戶端連線流程
+
+ 1. **連線建立**：客戶端連線到 Gateway Coordinator
+ 2. **會話分配**：SessionOrchestrator 分配 ProxiedClient
+ 3. **服務綁定**：根據負載均衡策略選擇遊戲服務
+ 4. **代理建立**：ClientProxy 為會話建立對應的 IAgent
+ 5. **串流橋接**：ClientStreamAdapter 建立雙向串流管道
+
+ ### 服務註冊流程
+
+ 1. **服務啟動**：遊戲服務透過 ConnectionListener 建立 IGameLobby
+ 2. **註冊請求**：向 SessionOrchestrator 註冊服務與群組
+ 3. **事件訂閱**：SessionOrchestrator 訂閱服務的客戶端事件
+ 4. **狀態同步**：為現有會話分配新註冊的服務
+
+ ### 異步綁定機制
+
+ 1. **立即返回**：`_TryAttach` 立即返回 true，不等待綁定完成
+ 2. **異步分配**：透過 `OnUserIdAssigned` 回調處理 UserId 分配
+ 3. **狀態協調**：PendingSessions 機制處理競爭條件
+ 4. **自動綁定**：ClientConnection 可用時自動完成綁定
+
+ ## 命名優化總結
+
+ 本次重構統一了術語使用，提升代碼可讀性：
+
+ ### 核心改進
+ - **IGameService** → **IGameLobby**：更準確表達遊戲大廳概念
+ - **Router** → **SessionOrchestrator**：強調會話協調職責
+ - **Assignment** → **SessionBinding**：清晰表達綁定關係
+ - **User** → **Client/ConnectedClient**：避免與業務層概念混淆
+
+ ### 介面標準化
+ - **IServiceSession** → **IClientConnection**：明確客戶端連線概念
+ - **IServiceSessionOwner** → **IConnectionManager**：連線管理語義化
+ - **ReturnCode** → **ResponseStatus**：RESTful 風格狀態碼
+
+ ### 組件重命名
+ - **GatewayHost** → **GatewayCoordinator**：強調協調功能
+ - **GatewayAgent** → **ClientProxy**：明確代理模式
+ - **Entry** → **ServiceEntryPoint**：清晰入口點概念
