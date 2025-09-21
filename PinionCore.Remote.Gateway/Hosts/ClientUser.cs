@@ -24,6 +24,7 @@ namespace PinionCore.Remote.Gateway.Hosts
 
         bool ISession.Set(uint group, IServiceSession user)
         {
+            // 4. Argument validation 這邊沒進來
             if (user == null)
             {
                 throw new ArgumentNullException(nameof(user));
@@ -45,6 +46,7 @@ namespace PinionCore.Remote.Gateway.Hosts
                 else
                 {
                     _sessionRefCounts[user] = 1;
+                    // 5. Notify addition 這邊沒進來
                     _sessions.Collection.Add(user);
                 }
 

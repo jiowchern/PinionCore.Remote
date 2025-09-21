@@ -5,7 +5,7 @@ using PinionCore.Remote.Soul;
 
 namespace PinionCore.Remote.Gateway.Servers 
 {
-    class Listener : IUserService , IListenable 
+    class Listener : IGameService , IListenable 
     {
         readonly IdProvider _IdProvider;
         readonly System.Collections.Concurrent.ConcurrentDictionary<uint, IServiceSession> _Users = new System.Collections.Concurrent.ConcurrentDictionary<uint, IServiceSession>();
@@ -20,7 +20,7 @@ namespace PinionCore.Remote.Gateway.Servers
         }
 
         
-        Notifier<IServiceSession> IUserService.UserNotifier => _UserNotifier;
+        Notifier<IServiceSession> IGameService.UserNotifier => _UserNotifier;
 
         event Action<IStreamable> _StreamableEnterEvent;
         event Action<IStreamable> IListenable.StreamableEnterEvent
@@ -50,7 +50,7 @@ namespace PinionCore.Remote.Gateway.Servers
             }
         }
 
-        Value<uint> IUserService.Join()
+        Value<uint> IGameService.Join()
         {
             var id = _IdProvider.Landlord.Rent();
             var user = new User(id);
@@ -64,7 +64,7 @@ namespace PinionCore.Remote.Gateway.Servers
             return id;
         }
 
-        Value<ReturnCode> IUserService.Leave(uint user)
+        Value<ReturnCode> IGameService.Leave(uint user)
         {
             var code = ReturnCode.NotFound;
             if (_Users.TryRemove(user, out var u))

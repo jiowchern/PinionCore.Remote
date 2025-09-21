@@ -12,9 +12,9 @@ namespace PinionCore.Remote.Gateway.Servers
             public ISoul Soul;
         }
 
-        readonly IUserService _Listener;
+        readonly IGameService _Listener;
         readonly System.Collections.Generic.List<BinderInfo> _Infos;
-        public Entry(IUserService gatewayUserListener)
+        public Entry(IGameService gatewayUserListener)
         {
             _Infos = new List<BinderInfo>();
             _Listener = gatewayUserListener;
@@ -24,7 +24,7 @@ namespace PinionCore.Remote.Gateway.Servers
             _Infos.Add(new BinderInfo
             {
                 Binder = binder,
-                Soul = binder.Bind<IUserService>(_Listener)
+                Soul = binder.Bind<IGameService>(_Listener)
             });
         }
 
