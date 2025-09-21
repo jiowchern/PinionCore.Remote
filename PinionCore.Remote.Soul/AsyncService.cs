@@ -1,12 +1,14 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
+using PinionCore.Network;
 
 namespace PinionCore.Remote.Soul
 {
     public class AsyncService : Soul.IService
     {
         readonly SyncService _SyncService;
+        readonly IService _Service;
         readonly IDisposable _Disposed;
 
         readonly Task _ThreadUpdater;
@@ -22,12 +24,12 @@ namespace PinionCore.Remote.Soul
             }
 
             _SyncService = syncService;
+            _Service = syncService;
             _Disposed = _SyncService;
 
             Cancellation_ = new CancellationTokenSource();
             _UpdateSignal = new SemaphoreSlim(0);
-
-            _SyncService.UsersStateChangedEvent += _RequestUpdate;
+            
             _RequestUpdate();
 
             _ThreadUpdater = Task.Factory.StartNew(() => _Update(), Cancellation_.Token, TaskCreationOptions.LongRunning, TaskScheduler.Default);
@@ -90,12 +92,23 @@ namespace PinionCore.Remote.Soul
                 _ThreadUpdater.Wait();
             }
             finally
-            {
-                _SyncService.UsersStateChangedEvent -= _RequestUpdate;
+            {                
                 _UpdateSignal.Dispose();
                 _Disposed.Dispose();
                 Cancellation_.Dispose();
             }
+        }
+
+        void IService.Join(IStreamable user)
+        {
+            _Service.Join(user);
+            _RequestUpdate();
+        }
+
+        void IService.Leave(IStreamable user)
+        {
+            _Service.Leave(user);
+            _RequestUpdate();
         }
     }
 }

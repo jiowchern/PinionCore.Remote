@@ -48,13 +48,13 @@ flowchart LR
         GameServer["GameServer2"]
   end
  subgraph GameServer["GameServer"]
-        UserProvider["<b>Soul.UserProvider</b>"]
+        AsyncService["<b>Soul.AsyncService</b>"]
         GatewayUserListener@{ label: "<b>GatewayUserListener</b><br>繼承 Soul.IListenable<br>接收<span style=\"font-weight:\">GatewayServiceRouter通知, 建立User</span>" }
   end
     GatewayClientSession -. connect .-> GatewaySessionCoordinator
     GatewayClientSession -- create --> Agent
     GatewaySessionCoordinator -- invoke --> GatewayServiceRouter
-    GatewayUserListener -- event --> UserProvider
+    GatewayUserListener -- event --> AsyncService
     GatewayUserListener -. connect .-> GatewayServiceRouter
     GatewaySessionCoordinator@{ shape: rect}
     GatewayServiceRouter@{ shape: rect}
@@ -146,7 +146,7 @@ direction RL
     }
 
     class GameServer {
-        -UserProvider _Users
+        -AsyncService _Users
         -GatewayUserListener _Listener
     }
 	<<interface>> IAgent
@@ -183,7 +183,7 @@ sequenceDiagram
     GatewayServiceRouter ->> GatewayUserListener: Notify new User(IStreamable user)
 
     GatewayUserListener ->> GatewayUserListener: Create User IStreamable
-    GatewayUserListener  ->> UserProvider: event IListenable.StreamEnterEvent
+    GatewayUserListener  ->> AsyncService: event IListenable.StreamEnterEvent
 ```
 
 ### GatewayClientSession 斷線流程
@@ -198,13 +198,13 @@ sequenceDiagram
     GatewayServiceRouter ->> GatewayServiceRouter: Unbind & reassign groups if any service remains
     GatewayServiceRouter ->> GatewayUserListener: Notify lost User(IStreamable user)
     GatewayUserListener ->> GatewayUserListener: Remove User IStreamable
-    GatewayUserListener  ->> UserProvider: event IListenable.StreamLeaveEvent
+    GatewayUserListener  ->> AsyncService: event IListenable.StreamLeaveEvent
 ```
 
 ### GatewayClientSession 建立 Agent 流程
 ```mermaid
 sequenceDiagram    
-    UserProvider ->> GatewayUserListener: IStreamable.Send (any package)
+    AsyncService ->> GatewayUserListener: IStreamable.Send (any package)
     GatewayUserListener ->> GatewayServiceRouter: sessionId + payload
     GatewayServiceRouter -> ServiceSession : route by group header
     ServiceSession ->> UserSession: locate by sessionId

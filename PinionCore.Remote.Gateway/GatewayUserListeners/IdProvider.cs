@@ -1,0 +1,17 @@
+﻿namespace PinionCore.Remote.Gateway.GatewayUserListeners 
+{
+    class IdProvider : ILandlordProviable<uint>
+    {
+        public readonly PinionCore.Remote.Landlord<uint> Landlord;
+        uint _CurrentId = 0;
+        
+        public IdProvider() 
+        {
+            Landlord = new PinionCore.Remote.Landlord<uint>(this);
+        }
+        uint ILandlordProviable<uint>.Spawn()
+        {
+            return ++_CurrentId;
+        }
+    }
+}

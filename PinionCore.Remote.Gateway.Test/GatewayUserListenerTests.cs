@@ -8,6 +8,7 @@ using PinionCore.Remote.Gateway.Protocols;
 using PinionCore.Remote.Ghost;
 using PinionCore.Remote.Reactive;
 using PinionCore.Remote.Soul;
+using PinionCore.Remote.Standalone;
 using PinionCore.Remote.Tools.Protocol.Sources.TestCommon;
 
 
@@ -16,20 +17,15 @@ namespace PinionCore.Remote.Gateway.Tests
     public class GatewayUserListenerTests
     {
         [NUnit.Framework.Test,Timeout(10000)]
-        public async System.Threading.Tasks.Task Test()
+        public async System.Threading.Tasks.Task UserGameProtocolInteractionTest()
         {
             var pool = PinionCore.Memorys.PoolProvider.Shared;
-            var gameEntry = new GameEntry();
-            var listener = new PinionCore.Remote.Gateway.GatewayUserListeners.GatewayUserListener();
-            var userEntry = new PinionCore.Remote.Gateway.GatewayUserListeners.Entry(listener);
+
             var gameProtocol = PinionCore.Remote.Tools.Protocol.Sources.TestCommon.ProtocolProvider.CreateCase1();
-            var userProtocol = PinionCore.Remote.Gateway.Protocols.ProtocolProvider.Create();
-            
-
-            var userService = PinionCore.Remote.Standalone.Provider.CreateService(userEntry, userProtocol);
-            var gameService = PinionCore.Remote.Gateway.GatewayUserListeners.GameService.Create(gameEntry , gameProtocol, listener);
-
-            var userAgent = userService.Create();
+            var gameEntry = new GameEntry();
+            var service = new PinionCore.Remote.Gateway.GatewayUserListeners.Service(gameEntry, gameProtocol);
+            var userAgent = PinionCore.Remote.Gateway.GatewayUserListeners.Provider.CreateAgent();
+            var userAgentDisconnect = userAgent.Connect(service);
             var userUpdateTaskEnable = true;
             var userUpdateTask = System.Threading.Tasks.Task.Run( ()=> {
                 while (userUpdateTaskEnable)
@@ -70,11 +66,9 @@ namespace PinionCore.Remote.Gateway.Tests
 
             gameUpdateTaskEnable = false;
             await gameUpdateTask;
-
+            userAgentDisconnect();
             gameAgent.Disable();
-            gameService.Dispose();
-            userService.Destroy(userAgent);
-            userService.Dispose();
+            service.Dispose();
 
 
             Assert.AreEqual(1, gameGetValue);

@@ -1,14 +1,14 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using PinionCore.Network;
 
 namespace PinionCore.Remote.Soul
 {
-    public class SyncService : System.IDisposable
+    public class SyncService : System.IDisposable , IService
     {
         readonly IEntry _Entry;
         private readonly IProtocol _Protocol;
-        readonly IListenable _Listener;
         private readonly ISerializable _Serializable;
         private readonly IInternalSerializable _InternalSerializable;
         private readonly PinionCore.Memorys.IPool _Pool;
@@ -24,7 +24,7 @@ namespace PinionCore.Remote.Soul
         private readonly ConcurrentQueue<Pending> _Pending;
         
 
-        public SyncService(IEntry entry, IProtocol protocol, ISerializable serializable, IInternalSerializable internal_serializable, PinionCore.Memorys.IPool pool,IListenable listener)
+        public SyncService(IEntry entry, IProtocol protocol, ISerializable serializable, IInternalSerializable internal_serializable, PinionCore.Memorys.IPool pool)
         {
             _Entry = entry;
             _Protocol = protocol;
@@ -34,23 +34,19 @@ namespace PinionCore.Remote.Soul
 
             _Users = new ConcurrentDictionary<Network.IStreamable, User>();
             _Pending = new ConcurrentQueue<Pending>();
-            _Listener = listener;
-            _Listener.StreamableLeaveEvent += Leave;
-            _Listener.StreamableEnterEvent += Join;
+            
         }
 
-        public event System.Action UsersStateChangedEvent;
+        
 
         void Join(Network.IStreamable stream)
         {
-            _Pending.Enqueue(new Pending { IsJoin = true, Stream = stream});
-         
+            _Pending.Enqueue(new Pending { IsJoin = true, Stream = stream});         
         }
 
         void Leave(Network.IStreamable stream)
         {
-            _Pending.Enqueue(new Pending { IsJoin = false, Stream = stream});
-         
+            _Pending.Enqueue(new Pending { IsJoin = false, Stream = stream});         
         }
 
         public void Update()
@@ -92,8 +88,7 @@ namespace PinionCore.Remote.Soul
                         user.Shutdown();
                         _Entry.UnregisterClientBinder(user.Binder);
                     }
-                }
-                UsersStateChangedEvent?.Invoke();
+                }                
             }
             
 
@@ -112,11 +107,18 @@ namespace PinionCore.Remote.Soul
         }
 
         void IDisposable.Dispose()
+        {            
+            
+        }
+
+        void IService.Join(IStreamable user)
         {
-            _Listener.StreamableLeaveEvent -= Leave;
-            _Listener.StreamableEnterEvent -= Join;
-            
-            
+            Join(user);
+        }
+
+        void IService.Leave(IStreamable user)
+        {
+            Leave(user);
         }
     }
 }

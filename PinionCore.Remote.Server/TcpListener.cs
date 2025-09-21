@@ -15,14 +15,9 @@ namespace PinionCore.Remote.Server.Tcp
 
         public Listener()
         {
-
             _NotifiableCollection = new NotifiableCollection<IStreamable>();
-
-
-
             DataReceivedEvent += (size) => { };
             DataSentEvent += (size) => { };
-
         }
 
         event Action<IStreamable> Soul.IListenable.StreamableEnterEvent

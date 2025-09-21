@@ -10,9 +10,7 @@ namespace PinionCore.Remote.Standalone.Test
         [NUnit.Framework.Test,Timeout(10000)]
         public void ServiceTest()
         {
-            var serverPeerStream = new PinionCore.Remote.Standalone.Stream();
-            IStreamable serverStream = serverPeerStream;
-            IStreamable clientStream = new ReverseStream(serverPeerStream);
+            
 
             IEntry entry = NSubstitute.Substitute.For<IEntry>();
             Soul.IListenable listenable = NSubstitute.Substitute.For<Soul.IListenable>();
@@ -24,16 +22,15 @@ namespace PinionCore.Remote.Standalone.Test
             var internalSer = new PinionCore.Remote.InternalSerializer();
             Memorys.Pool pool = PinionCore.Memorys.PoolProvider.Shared;
             
-            Soul.IService service = new PinionCore.Remote.Soul.AsyncService(new Soul.SyncService(entry, protocol, serializer, internalSer, pool, listenable));
-
+            Soul.IService service = new PinionCore.Remote.Soul.AsyncService(new Soul.SyncService(entry, protocol, serializer, internalSer, pool));
 
             var ghostAgent = new PinionCore.Remote.Ghost.Agent(protocol, serializer, internalSer, pool);
-            ghostAgent.Enable(clientStream);
+            var ghostAgentDisconnect = ghostAgent.Connect(service);
             IAgent agent = ghostAgent;
             IGpiA ghostGpia = null;
 
-            NSubstitute.Core.Events.DelegateEventWrapper<Action<IStreamable>> wrapper = NSubstitute.Raise.Event<System.Action<IStreamable>>(serverStream);
-            listenable.StreamableEnterEvent += wrapper;
+            //NSubstitute.Core.Events.DelegateEventWrapper<Action<IStreamable>> wrapper = NSubstitute.Raise.Event<System.Action<IStreamable>>(serverStream);
+            //listenable.StreamableEnterEvent += wrapper;
 
 
             agent.QueryNotifier<IGpiA>().Supply += gpi => ghostGpia = gpi;
@@ -45,7 +42,7 @@ namespace PinionCore.Remote.Standalone.Test
             }
             ghostAgent.Disable();
             agent.Disable();
-            listenable.StreamableLeaveEvent -= wrapper;
+            //listenable.StreamableLeaveEvent -= wrapper;
 
             IDisposable disposable = service;
             disposable.Dispose();

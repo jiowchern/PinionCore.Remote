@@ -8,6 +8,7 @@ using System.Reactive.Linq;
 using System.Net.WebSockets;
 using PinionCore.Remote.Tools.Protocol.Sources.TestCommon;
 using System;
+using PinionCore.Remote.Standalone;
 namespace PinionCore.Integration.Tests
 {
     public class EchoTests
@@ -26,11 +27,13 @@ namespace PinionCore.Integration.Tests
 
             var service = PinionCore.Remote.Standalone.Provider.CreateService(entry, protocol);
 
-
             var agentsObs = from i in System.Reactive.Linq.Observable.Range(0, agent_count)
-                            select service.Create(new Remote.Standalone.Stream());
+                            select PinionCore.Remote.Standalone.Provider.CreateAgent(protocol);
 
             var agents = await agentsObs.ToList();
+
+            var agentDisconnects = (from a in agents
+                                  select a.Connect(service)).ToArray();
 
 
             var stopWatch = new System.Diagnostics.Stopwatch();
@@ -50,15 +53,13 @@ namespace PinionCore.Integration.Tests
                 {
                     foreach (var agent in agents)
                     {
-                        agent.HandleMessage();
                         agent.HandlePackets();
+                        agent.HandleMessage();
+                        
                     }
                     //await System.Threading.Tasks.Task.Delay(1);
                 }
             });
-
-
-
 
 
             intervalsObs.Subscribe(interval => intervals.Add(interval));
@@ -70,6 +71,11 @@ namespace PinionCore.Integration.Tests
             var maxInterval = intervals.Max(i => i.Ticks);
             var minInterval = intervals.Min(i => i.Ticks);
             var avgInterval = sumInterval / agent_count;
+
+            foreach(var agentDisconnect in agentDisconnects)
+            {
+                agentDisconnect();
+            }
             System.Console.WriteLine($"avg:{TimeSpan.FromTicks(avgInterval).TotalSeconds} min:{TimeSpan.FromTicks(minInterval).TotalSeconds} max:{TimeSpan.FromTicks(maxInterval).TotalSeconds} sum:{TimeSpan.FromTicks(sumInterval).TotalSeconds}") ;
 
 
