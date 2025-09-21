@@ -20,19 +20,52 @@ namespace PinionCore.Remote.Gateway.Hosts
     {
         private sealed class Assignment
         {
+            private readonly System.Collections.Generic.List<System.Action<uint>> _userIdCallbacks;
             internal ISession Session { get; }
             internal Registration Registration { get; }
             internal uint Group { get; }
-            internal uint UserId { get; set; }
+            internal uint UserId { get; private set; }
             internal IServiceSession ServiceSession { get; set; }
             internal bool Bound { get; set; }
             internal bool Releasing { get; set; }
+            internal bool HasUserId { get; private set; }
 
             internal Assignment(ISession session, Registration registration, uint group)
             {
                 Session = session;
                 Registration = registration;
                 Group = group;
+                _userIdCallbacks = new System.Collections.Generic.List<System.Action<uint>>();
+            }
+
+            internal void OnUserIdAssigned(System.Action<uint> callback)
+            {
+                if (HasUserId)
+                {
+                    callback(UserId);
+                }
+                else
+                {
+                    _userIdCallbacks.Add(callback);
+                }
+            }
+
+            internal void SetUserId(uint userId)
+            {
+                if (HasUserId)
+                {
+                    return;
+                }
+
+                HasUserId = true;
+                UserId = userId;
+
+                foreach (var callback in _userIdCallbacks)
+                {
+                    callback(userId);
+                }
+
+                _userIdCallbacks.Clear();
             }
         }
 
@@ -44,6 +77,7 @@ namespace PinionCore.Remote.Gateway.Hosts
             internal Dictionary<uint, Assignment> AssignmentsByUserId { get; }
             internal Action<IServiceSession> SupplyHandler { get; }
             internal Action<IServiceSession> UnsupplyHandler { get; }
+            internal Dictionary<uint, IServiceSession> PendingSessions { get; }
 
             internal Registration(IGameService service, uint group, Action<IServiceSession> supplyHandler, Action<IServiceSession> unsupplyHandler)
             {
@@ -53,6 +87,7 @@ namespace PinionCore.Remote.Gateway.Hosts
                 UnsupplyHandler = unsupplyHandler;
                 SessionAssignments = new Dictionary<ISession, Assignment>();
                 AssignmentsByUserId = new Dictionary<uint, Assignment>();
+                PendingSessions = new Dictionary<uint, IServiceSession>();
             }
 
             internal void Subscribe()
@@ -242,11 +277,11 @@ namespace PinionCore.Remote.Gateway.Hosts
         {
             if (registration.SessionAssignments.TryGetValue(session, out assignment))
             {
-                return assignment.Bound;
+                return true;
             }
 
-            assignment = new Assignment(session, registration, group);
-            registration.SessionAssignments[session] = assignment;
+            var newAssignment = new Assignment(session, registration, group);
+            registration.SessionAssignments[session] = newAssignment;
 
             if (!_sessionAssignments.TryGetValue(session, out var groupAssignments))
             {
@@ -254,23 +289,51 @@ namespace PinionCore.Remote.Gateway.Hosts
                 _sessionAssignments[session] = groupAssignments;
             }
 
-            groupAssignments[group] = assignment;
+            groupAssignments[group] = newAssignment;
+
+            newAssignment.OnUserIdAssigned(userId =>
+            {
+                if (!registration.SessionAssignments.TryGetValue(session, out var current) || !ReferenceEquals(current, newAssignment))
+                {
+                    registration.PendingSessions.Remove(userId);
+                    return;
+                }
+
+                registration.AssignmentsByUserId[userId] = newAssignment;
+
+                if (registration.PendingSessions.TryGetValue(userId, out var pendingSession))
+                {
+                    registration.PendingSessions.Remove(userId);
+                    _BindAssignment(newAssignment, pendingSession);
+                }
+                else
+                {
+                    _TryBindImmediate(newAssignment);
+                }
+            });
 
             var joinValue = registration.Service.Join();
-            var userId = joinValue.GetAwaiter().GetResult();
-            assignment.UserId = userId;
-            registration.AssignmentsByUserId[userId] = assignment;
 
-            _TryBindImmediate(assignment);
-
-            if (!assignment.Bound)
+            void OnJoined(uint userId)
             {
-                registration.SessionAssignments.Remove(session);
-                registration.AssignmentsByUserId.Remove(userId);
-                groupAssignments.Remove(group);
+                lock (_syncRoot)
+                {
+                    joinValue.OnValue -= OnJoined;
+
+                    if (!registration.SessionAssignments.TryGetValue(session, out var current) || !ReferenceEquals(current, newAssignment))
+                    {
+                        newAssignment.SetUserId(userId);
+                        return;
+                    }
+
+                    newAssignment.SetUserId(userId);
+                }
             }
 
-            return assignment.Bound;
+            joinValue.OnValue += OnJoined;
+
+            assignment = newAssignment;
+            return true;
         }
 
         private void _TryBindImmediate(Assignment assignment)
@@ -311,7 +374,6 @@ namespace PinionCore.Remote.Gateway.Hosts
         private void _ReleaseAssignment(Assignment assignment, bool reassign)
         {
             assignment.Registration.SessionAssignments.Remove(assignment.Session);
-            assignment.Registration.AssignmentsByUserId.Remove(assignment.UserId);
 
             if (_sessionAssignments.TryGetValue(assignment.Session, out var groupAssignments) && groupAssignments.TryGetValue(assignment.Group, out var current) && ReferenceEquals(current, assignment))
             {
@@ -324,7 +386,12 @@ namespace PinionCore.Remote.Gateway.Hosts
                 assignment.Session.Unset(assignment.Group);
             }
 
-            assignment.Registration.Service.Leave(assignment.UserId).GetAwaiter().GetResult();
+            assignment.OnUserIdAssigned(userId =>
+            {
+                assignment.Registration.AssignmentsByUserId.Remove(userId);
+                assignment.Registration.PendingSessions.Remove(userId);
+                assignment.Registration.Service.Leave(userId).GetAwaiter().GetResult();
+            });
 
             if (reassign && _sessions.Contains(assignment.Session))
             {
@@ -343,6 +410,7 @@ namespace PinionCore.Remote.Gateway.Hosts
 
                 if (!registration.AssignmentsByUserId.TryGetValue(serviceSession.Id.Value, out var assignment))
                 {
+                    registration.PendingSessions[serviceSession.Id.Value] = serviceSession;
                     return;
                 }
 
@@ -367,6 +435,7 @@ namespace PinionCore.Remote.Gateway.Hosts
 
                 if (!registration.AssignmentsByUserId.TryGetValue(serviceSession.Id.Value, out var assignment))
                 {
+                    registration.PendingSessions.Remove(serviceSession.Id.Value);
                     return;
                 }
 
