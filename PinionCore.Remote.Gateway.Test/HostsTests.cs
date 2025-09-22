@@ -119,11 +119,20 @@ namespace PinionCore.Remote.Gateway.Tests
         {
             var gameEntry = new GameEntry();
             var gameProtocol = PinionCore.Remote.Tools.Protocol.Sources.TestCommon.ProtocolProvider.CreateCase1();
-            // 建立遊戲服務
-            var gameService = new PinionCore.Remote.Gateway.Servers.GatewayService(gameEntry , gameProtocol);
+
+            // 建立真正的遊戲服務
+            PinionCore.Remote.Soul.IService actualGameService = Standalone.Provider.CreateService(gameEntry, gameProtocol);
+
+            // 建立連線服務
+            var connectionService = new PinionCore.Remote.Gateway.Servers.ConnectionService();
+
+            // 掛接 Join/Leave 事件來連結遊戲服務
+            connectionService.Listener.StreamableEnterEvent += streamable => actualGameService.Join(streamable);
+            connectionService.Listener.StreamableLeaveEvent += streamable => actualGameService.Leave(streamable);
+
             // 建立host 監聽的服務 agent
             var userAgent = PinionCore.Remote.Gateway.Provider.CreateAgent();
-            var userAgentDisconnect = userAgent.Connect(gameService);
+            var userAgentDisconnect = userAgent.Connect(connectionService.Service);
             var userAgentWorker = new AgentWorker(userAgent);
             userAgentWorker.Start();
 
@@ -164,8 +173,14 @@ namespace PinionCore.Remote.Gateway.Tests
             gatewayHost.Registry.Unregister(game);
             gatewayHost.Service.Dispose();
             await userAgentWorker.StopAsync();
+
+            // 清理資源
+            connectionService.Listener.StreamableEnterEvent -= streamable => actualGameService.Join(streamable);
+            connectionService.Listener.StreamableLeaveEvent -= streamable => actualGameService.Leave(streamable);
+
             userAgentDisconnect();
-            gameService.Dispose();
+            connectionService.Dispose();
+            actualGameService.Dispose();
         }
      }
 }

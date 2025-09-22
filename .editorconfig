@@ -27,14 +27,14 @@ dotnet_naming_symbols.public_fields.applicable_kinds = field
 dotnet_naming_symbols.public_fields.applicable_accessibilities = public
 dotnet_naming_style.pascal_case.capitalization = pascal_case
 
-# 私有欄位命名規則 (camelCase + 後綴 "_")
-dotnet_naming_rule.private_fields_should_be_camel_case_with_trailing_underscore.severity = suggestion
-dotnet_naming_rule.private_fields_should_be_camel_case_with_trailing_underscore.symbols = private_fields
-dotnet_naming_rule.private_fields_should_be_camel_case_with_trailing_underscore.style = camel_case_with_trailing_underscore
+# 私有欄位命名規則 (前綴 "_" + CamelCase )
+dotnet_naming_rule.private_fields_should_be_prefixed_underscore_pascal_case.severity = suggestion
+dotnet_naming_rule.private_fields_should_be_prefixed_underscore_pascal_case.symbols = private_fields
+dotnet_naming_rule.private_fields_should_be_prefixed_underscore_pascal_case.style = prefixed_underscore_pascal_case
 dotnet_naming_symbols.private_fields.applicable_kinds = field
 dotnet_naming_symbols.private_fields.applicable_accessibilities = private
-dotnet_naming_style.camel_case_with_trailing_underscore.capitalization = pascal_case
-dotnet_naming_style.camel_case_with_trailing_underscore.required_suffix = _
+dotnet_naming_style.prefixed_underscore_pascal_case.capitalization = pascal_case
+dotnet_naming_style.prefixed_underscore_pascal_case.required_prefix = _
 
 # 事件命名規則 (PascalCase + 後綴 "Event")
 dotnet_naming_rule.events_should_have_event_suffix.severity = suggestion

@@ -23,9 +23,19 @@ namespace PinionCore.Remote.Gateway.Tests
 
             var gameProtocol = PinionCore.Remote.Tools.Protocol.Sources.TestCommon.ProtocolProvider.CreateCase1();
             var gameEntry = new GameEntry();
-            var service = new PinionCore.Remote.Gateway.Servers.GatewayService(gameEntry, gameProtocol);
+
+            // 建立遊戲服務
+            PinionCore.Remote.Soul.IService gameService = Standalone.Provider.CreateService(gameEntry, gameProtocol);
+
+            // 建立連線服務
+            var connectionService = new PinionCore.Remote.Gateway.Servers.ConnectionService();
+
+            // 掛接 Join/Leave 事件來連結遊戲服務
+            connectionService.Listener.StreamableEnterEvent += streamable => gameService.Join(streamable);
+            connectionService.Listener.StreamableLeaveEvent += streamable => gameService.Leave(streamable);
+
             var userAgent = Provider.CreateAgent();
-            var userAgentDisconnect = userAgent.Connect(service);
+            var userAgentDisconnect = userAgent.Connect(connectionService.Service);
             var userUpdateTaskEnable = true;
             var userUpdateTask = System.Threading.Tasks.Task.Run( ()=> {
                 while (userUpdateTaskEnable)
@@ -66,9 +76,14 @@ namespace PinionCore.Remote.Gateway.Tests
 
             gameUpdateTaskEnable = false;
             await gameUpdateTask;
+            // 清理資源
+            connectionService.Listener.StreamableEnterEvent -= streamable => gameService.Join(streamable);
+            connectionService.Listener.StreamableLeaveEvent -= streamable => gameService.Leave(streamable);
+
             userAgentDisconnect();
             gameAgent.Disable();
-            service.Dispose();
+            connectionService.Dispose();
+            gameService.Dispose();
 
 
             Assert.AreEqual(1, gameGetValue);
