@@ -13,6 +13,7 @@ namespace PinionCore.Remote.Gateway.Hosts
         {
             public IAgent Agent;
             public IClientConnection Session;
+            public Servers.ClientStreamAdapter StreamAdapter;
         }
 
         readonly System.Collections.Generic.List<User> _Users;
@@ -51,13 +52,16 @@ namespace PinionCore.Remote.Gateway.Hosts
 
         private void _Destroy(IClientConnection session)
         {
-            var removes = from u in _Users where u.Session == session select u.Agent;
-            foreach (var re in removes)
+            var removes = from u in _Users where u.Session == session select u;
+            foreach (var user in removes)
             {
-                Agents.Collection.Remove(re);
-                re.Disable();
+                user.StreamAdapter?.Dispose();
+                user.StreamAdapter = null;
+
+                Agents.Collection.Remove(user.Agent);
+                user.Agent.Disable();
             }
-            _Users.RemoveAll(u => u.Session == session);              
+            _Users.RemoveAll(u => u.Session == session);
         }
 
         private void _Create(IClientConnection session)
@@ -65,12 +69,22 @@ namespace PinionCore.Remote.Gateway.Hosts
             var agent = PinionCore.Remote.Standalone.Provider.CreateAgent(_GameProtocol);
             var stream = new Servers.ClientStreamAdapter(session);
             agent.Enable(stream);
-            _Users.Add(new User { Agent=agent, Session = session });
+            _Users.Add(new User { Agent=agent, Session = session, StreamAdapter = stream });
             Agents.Collection.Add(agent);
         }
         public void Dispose()
         {
             _Disable();
+
+            foreach (var user in _Users)
+            {
+                Agents.Collection.Remove(user.Agent);
+                user.Agent.Disable();
+                user.StreamAdapter?.Dispose();
+                user.StreamAdapter = null;
+            }
+
+            _Users.Clear();
         }
     }
 }
