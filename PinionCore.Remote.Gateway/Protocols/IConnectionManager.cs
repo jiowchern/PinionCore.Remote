@@ -1,8 +1,8 @@
 ﻿namespace PinionCore.Remote.Gateway.Protocols
 {
-    public interface IServiceSessionOwner
+    public interface IConnectionManager
     {
-        PinionCore.Remote.Notifier<IServiceSession> Sessions { get; }
+        PinionCore.Remote.Notifier<IClientConnection> Connections { get; }
     }
 }
 

@@ -5,24 +5,24 @@ using PinionCore.Remote.Gateway.Protocols;
 
 namespace PinionCore.Remote.Gateway.Hosts
 {
-    internal class ClientUser : ISession, IServiceSessionOwner
+    internal class ProxiedClient : IRoutableSession, IConnectionManager
     {
         private readonly object _syncRoot;
-        private readonly Dictionary<uint, IServiceSession> _sessionsByGroup;
-        private readonly Dictionary<IServiceSession, int> _sessionRefCounts;
-        private readonly Notifier<IServiceSession> _sessions;
+        private readonly Dictionary<uint, IClientConnection> _sessionsByGroup;
+        private readonly Dictionary<IClientConnection, int> _sessionRefCounts;
+        private readonly Notifier<IClientConnection> _sessions;
 
-        public ClientUser()
+        public ProxiedClient()
         {
             _syncRoot = new object();
-            _sessionsByGroup = new Dictionary<uint, IServiceSession>();
-            _sessionRefCounts = new Dictionary<IServiceSession, int>();
-            _sessions = new Notifier<IServiceSession>();
+            _sessionsByGroup = new Dictionary<uint, IClientConnection>();
+            _sessionRefCounts = new Dictionary<IClientConnection, int>();
+            _sessions = new Notifier<IClientConnection>();
         }
 
-        Notifier<IServiceSession> IServiceSessionOwner.Sessions => _sessions;
+        Notifier<IClientConnection> IConnectionManager.Connections => _sessions;
 
-        bool ISession.Set(uint group, IServiceSession user)
+        bool IRoutableSession.Set(uint group, IClientConnection user)
         {
             // 4. Argument validation 這邊沒進來
             if (user == null)
@@ -54,7 +54,7 @@ namespace PinionCore.Remote.Gateway.Hosts
             }
         }
 
-        bool ISession.Unset(uint group)
+        bool IRoutableSession.Unset(uint group)
         {
             lock (_syncRoot)
             {

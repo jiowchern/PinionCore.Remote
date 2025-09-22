@@ -10,27 +10,27 @@ namespace PinionCore.Remote.Gateway.Servers
 {
     
     
-    class Service : IService
+    class GatewayService : IService
     {
         readonly System.Action _Dispose;
         readonly IService _GameService;
-        readonly IService _UserService;
+        readonly IService _ClientService;
 
-        public Service(IEntry entry, IProtocol protocol)
+        public GatewayService(IEntry entry, IProtocol protocol)
             :this(entry, protocol, new PinionCore.Remote.Serializer(protocol.SerializeTypes), new PinionCore.Remote.InternalSerializer(), PinionCore.Memorys.PoolProvider.Shared)
         {
 
         }
-        public Service(IEntry entry , IProtocol protocol , ISerializable serializable , IInternalSerializable internalSerializable  , IPool pool)
+        public GatewayService(IEntry entry , IProtocol protocol , ISerializable serializable , IInternalSerializable internalSerializable  , IPool pool)
         {
-            var userListener = new PinionCore.Remote.Gateway.Servers.Listener();
-            var userEntry = new Entry(userListener);
-            var userProtocol = Protocols.ProtocolProvider.Create();
-            _UserService = Standalone.Provider.CreateService(userEntry, userProtocol);
+            var clientListener = new PinionCore.Remote.Gateway.Servers.ConnectionListener();
+            var clientEntry = new ServiceEntryPoint(clientListener);
+            var clientProtocol = Protocols.ProtocolProvider.Create();
+            _ClientService = Standalone.Provider.CreateService(clientEntry, clientProtocol);
             _GameService = Standalone.Provider.CreateService(entry, protocol, serializable , internalSerializable , pool);
 
 
-            IListenable listenable = userListener;
+            IListenable listenable = clientListener;
             listenable.StreamableLeaveEvent += _GameUserLeave;
             listenable.StreamableEnterEvent += _GameUserJoin;
 
@@ -39,7 +39,7 @@ namespace PinionCore.Remote.Gateway.Servers
                 listenable.StreamableLeaveEvent -= _GameUserLeave;
                 listenable.StreamableEnterEvent -= _GameUserJoin;
                 _GameService.Dispose();
-                _UserService.Dispose();                
+                _ClientService.Dispose();                
             };
         }
 
@@ -62,12 +62,12 @@ namespace PinionCore.Remote.Gateway.Servers
 
         void IService.Join(IStreamable user)
         {
-            _UserService.Join(user);
+            _ClientService.Join(user);
         }
 
         void IService.Leave(IStreamable user)
         {
-            _UserService.Leave(user);
+            _ClientService.Leave(user);
         }
     }
 }

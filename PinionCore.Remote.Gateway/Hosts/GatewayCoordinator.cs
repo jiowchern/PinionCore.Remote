@@ -3,20 +3,20 @@ using PinionCore.Remote.Soul;
 
 namespace PinionCore.Remote.Gateway.Hosts
 {
-    internal class GatewayHost 
+    internal class GatewayCoordinator
     {
-        private readonly Router _Router;
-        private readonly Entry _Entry;
+        private readonly SessionOrchestrator _SessionOrchestrator;
+        private readonly ServiceEntryPoint _ServiceEntryPoint;
         public readonly IService Service;
-        public readonly IRouterServiceRegistry Registry;
+        public readonly IServiceRegistry Registry;
 
-        public GatewayHost()
+        public GatewayCoordinator()
         {
-            _Router = new Router();
-            Registry = _Router;
-            _Entry = new Entry(_Router);
+            _SessionOrchestrator = new SessionOrchestrator();
+            Registry = _SessionOrchestrator;
+            _ServiceEntryPoint = new ServiceEntryPoint(_SessionOrchestrator);
             var protocol = PinionCore.Remote.Gateway.Protocols.ProtocolProvider.Create();
-            Service = PinionCore.Remote.Standalone.Provider.CreateService(_Entry, protocol);
+            Service = PinionCore.Remote.Standalone.Provider.CreateService(_ServiceEntryPoint, protocol);
         }
         
     }

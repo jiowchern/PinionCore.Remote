@@ -23,7 +23,7 @@ namespace PinionCore.Remote.Gateway.Tests
 
             var gameProtocol = PinionCore.Remote.Tools.Protocol.Sources.TestCommon.ProtocolProvider.CreateCase1();
             var gameEntry = new GameEntry();
-            var service = new PinionCore.Remote.Gateway.Servers.Service(gameEntry, gameProtocol);
+            var service = new PinionCore.Remote.Gateway.Servers.GatewayService(gameEntry, gameProtocol);
             var userAgent = Provider.CreateAgent();
             var userAgentDisconnect = userAgent.Connect(service);
             var userUpdateTaskEnable = true;
@@ -36,9 +36,9 @@ namespace PinionCore.Remote.Gateway.Tests
                     userAgent.HandlePackets();
                 }                
             });
-            var userObs = from gpi in userAgent.QueryNotifier<IGameService>().SupplyEvent()
+            var userObs = from gpi in userAgent.QueryNotifier<IGameLobby>().SupplyEvent()
                           from joinId in gpi.Join().RemoteValue()
-                          from user_ in gpi.UserNotifier.Base.SupplyEvent()
+                          from user_ in gpi.ClientNotifier.Base.SupplyEvent()
                           where user_.Id == joinId
                           select user_;
             var user = await userObs.FirstAsync();
@@ -74,14 +74,14 @@ namespace PinionCore.Remote.Gateway.Tests
             Assert.AreEqual(1, gameGetValue);
         }
 
-        private IStreamable _ToStream(IServiceSession user)
+        private IStreamable _ToStream(IClientConnection user)
         {
             if (user is IStreamable directStream)
             {
                 throw new Exception("");
             }
 
-            return new UserStreamAdapter(user);
+            return new ClientStreamAdapter(user);
         }
     }
 }

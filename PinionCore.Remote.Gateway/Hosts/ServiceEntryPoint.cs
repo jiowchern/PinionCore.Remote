@@ -5,21 +5,21 @@ using PinionCore.Remote.Gateway.Protocols;
 
 namespace PinionCore.Remote.Gateway.Hosts
 {
-    internal class Entry : IEntry
+    internal class ServiceEntryPoint : IEntry
     {
 
         class User
         {
             public ISoul Soul;
             
-            public ClientUser ClientUser;
+            public ProxiedClient ProxiedClient;
         }
 
-        private readonly IRouterSessionMembership _Router;
+        private readonly ISessionMembership _Router;
         readonly System.Collections.Generic.Dictionary<IBinder, User> _Users;
 
 
-        public Entry(IRouterSessionMembership router)
+        public ServiceEntryPoint(ISessionMembership router)
         {
             _Router = router;
             _Users = new System.Collections.Generic.Dictionary<IBinder, User>();
@@ -31,10 +31,10 @@ namespace PinionCore.Remote.Gateway.Hosts
             {
                 throw new ArgumentException("Binder already registered.", nameof(binder));
             }
-            user.ClientUser = new ClientUser();
+            user.ProxiedClient = new ProxiedClient();
             // 3. Join the router session
-            _Router.Join(user.ClientUser);
-            user.Soul = binder.Bind<IServiceSessionOwner>(user.ClientUser);
+            _Router.Join(user.ProxiedClient);
+            user.Soul = binder.Bind<IConnectionManager>(user.ProxiedClient);
             
         }
 
@@ -43,7 +43,7 @@ namespace PinionCore.Remote.Gateway.Hosts
             if(_Users.TryGetValue(binder, out User user))
             {
                 _Users.Remove(binder);
-                _Router.Leave(user.ClientUser);
+                _Router.Leave(user.ProxiedClient);
                 binder.Unbind(user.Soul);                
             }
             else

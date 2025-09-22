@@ -4,21 +4,21 @@ using PinionCore.Remote.Gateway.Protocols;
 
 namespace PinionCore.Remote.Gateway.Servers 
 {
-    class User : IServiceSession ,IStreamable
+    class ConnectedClient : IClientConnection ,IStreamable
     {
         readonly PinionCore.Network.Stream _Stream;
         readonly Property<uint> _Id;
-        readonly uint _UserId;
-        public User(uint id)
+        readonly uint _ConnectedClientId;
+        public ConnectedClient(uint id)
         {
             _Stream = new PinionCore.Network.Stream();
             _Id = new Property<uint>(id);
-            _UserId = id;
+            _ConnectedClientId = id;
         }
-        Property<uint> IServiceSession.Id => _Id;
+        Property<uint> IClientConnection.Id => _Id;
 
         event Action<byte[]> _ResponseEvent;
-        event Action<byte[]> IServiceSession.ResponseEvent
+        event Action<byte[]> IClientConnection.ResponseEvent
         {
             add
             {
@@ -38,7 +38,7 @@ namespace PinionCore.Remote.Gateway.Servers
             return ((IStreamable)_Stream).Receive(buffer, offset, count);
         }
 
-        void IServiceSession.Request(byte[] payload)
+        void IClientConnection.Request(byte[] payload)
         {
             _Stream.Push(payload, 0, payload.Length);   
         }
@@ -53,7 +53,7 @@ namespace PinionCore.Remote.Gateway.Servers
             {
                 response(sendBuffer);
             }
-            UserStreamRegistry.Enqueue(_UserId, sendBuffer);
+            ClientStreamRegistry.Enqueue(_ConnectedClientId, sendBuffer);
             return sendTask;
         }
     }

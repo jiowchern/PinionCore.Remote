@@ -4,7 +4,7 @@ using PinionCore.Remote.Gateway.Protocols;
 
 namespace PinionCore.Remote.Gateway.Servers 
 {
-    internal class Entry : IEntry
+    internal class ServiceEntryPoint : IEntry
     {
         struct BinderInfo
         {
@@ -12,19 +12,19 @@ namespace PinionCore.Remote.Gateway.Servers
             public ISoul Soul;
         }
 
-        readonly IGameService _Listener;
+        readonly IGameLobby _Listener;
         readonly System.Collections.Generic.List<BinderInfo> _Infos;
-        public Entry(IGameService gatewayUserListener)
+        public ServiceEntryPoint(IGameLobby gatewayClientListener)
         {
             _Infos = new List<BinderInfo>();
-            _Listener = gatewayUserListener;
+            _Listener = gatewayClientListener;
         }
         void IBinderProvider.RegisterClientBinder(IBinder binder)
         {
             _Infos.Add(new BinderInfo
             {
                 Binder = binder,
-                Soul = binder.Bind<IGameService>(_Listener)
+                Soul = binder.Bind<IGameLobby>(_Listener)
             });
         }
 

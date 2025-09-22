@@ -7,12 +7,12 @@ using PinionCore.Remote.Ghost;
 
 namespace PinionCore.Remote.Gateway.Hosts
 {
-    class GatewayAgent : IDisposable
+    class ClientProxy : IDisposable
     {
         class User
         {
             public IAgent Agent;
-            public IServiceSession Session;
+            public IClientConnection Session;
         }
 
         readonly System.Collections.Generic.List<User> _Users;
@@ -21,35 +21,35 @@ namespace PinionCore.Remote.Gateway.Hosts
         System.Action _Disable;
         public readonly Notifier<IAgent> Agents;
         public readonly IAgent Agent;
-        public GatewayAgent(IProtocol gameProtocol) {
+        public ClientProxy(IProtocol gameProtocol) {
             
             _Users = new System.Collections.Generic.List<User>();
             _GameProtocol = gameProtocol;
             Agent = PinionCore.Remote.Gateway.Provider.CreateAgent();
             Agents = new Notifier<IAgent>();
 
-            Agent.QueryNotifier<IServiceSessionOwner>().Supply += _Create;
-            Agent.QueryNotifier<IServiceSessionOwner>().Unsupply += _Destroy;
+            Agent.QueryNotifier<IConnectionManager>().Supply += _Create;
+            Agent.QueryNotifier<IConnectionManager>().Unsupply += _Destroy;
 
             _Disable = () => {
-                Agent.QueryNotifier<IServiceSessionOwner>().Supply -= _Create;
-                Agent.QueryNotifier<IServiceSessionOwner>().Unsupply -= _Destroy;
+                Agent.QueryNotifier<IConnectionManager>().Supply -= _Create;
+                Agent.QueryNotifier<IConnectionManager>().Unsupply -= _Destroy;
             };
         }
 
-        private void _Destroy(IServiceSessionOwner owner)
+        private void _Destroy(IConnectionManager owner)
         {
-            owner.Sessions.Base.Supply -= _Create;
-            owner.Sessions.Base.Unsupply -= _Destroy;
+            owner.Connections.Base.Supply -= _Create;
+            owner.Connections.Base.Unsupply -= _Destroy;
         }        
 
-        private void _Create(IServiceSessionOwner owner)
+        private void _Create(IConnectionManager owner)
         {
-            owner.Sessions.Base.Supply += _Create;
-            owner.Sessions.Base.Unsupply += _Destroy;
+            owner.Connections.Base.Supply += _Create;
+            owner.Connections.Base.Unsupply += _Destroy;
         }
 
-        private void _Destroy(IServiceSession session)
+        private void _Destroy(IClientConnection session)
         {
             var removes = from u in _Users where u.Session == session select u.Agent;
             foreach (var re in removes)
@@ -60,10 +60,10 @@ namespace PinionCore.Remote.Gateway.Hosts
             _Users.RemoveAll(u => u.Session == session);              
         }
 
-        private void _Create(IServiceSession session)
+        private void _Create(IClientConnection session)
         {
             var agent = PinionCore.Remote.Standalone.Provider.CreateAgent(_GameProtocol);
-            var stream = new Servers.UserStreamAdapter(session);
+            var stream = new Servers.ClientStreamAdapter(session);
             agent.Enable(stream);
             _Users.Add(new User { Agent=agent, Session = session });
             Agents.Collection.Add(agent);

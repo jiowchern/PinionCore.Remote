@@ -5,7 +5,7 @@ using PinionCore.Network;
 
 namespace PinionCore.Remote.Gateway.Servers
 {
-    internal static class UserStreamRegistry
+    internal static class ClientStreamRegistry
     {
         internal sealed class Bridge : System.IDisposable
         {

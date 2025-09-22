@@ -5,37 +5,37 @@ using PinionCore.Remote.Gateway.Protocols;
 
 namespace PinionCore.Remote.Gateway.Hosts
 {
-    interface IRouterSessionMembership
+    interface ISessionMembership
     {
-        void Join(ISession session);
-        void Leave(ISession session);
+        void Join(IRoutableSession session);
+        void Leave(IRoutableSession session);
     }
 
-    interface IRouterServiceRegistry
+    interface IServiceRegistry
     {
-        void Register(uint group, IGameService service);
-        void Unregister(IGameService service);
+        void Register(uint group, IGameLobby service);
+        void Unregister(IGameLobby service);
     }
-    internal class Router : IRouterSessionMembership , IRouterServiceRegistry
+    internal class SessionOrchestrator : ISessionMembership , IServiceRegistry
     {
-        private sealed class Assignment
+        private sealed class SessionBinding
         {
-            private readonly System.Collections.Generic.List<System.Action<uint>> _userIdCallbacks;
-            internal ISession Session { get; }
-            internal Registration Registration { get; }
+            private readonly System.Collections.Generic.List<System.Action<uint>> _clientIdCallbacks;
+            internal IRoutableSession Session { get; }
+            internal ServiceRegistration Registration { get; }
             internal uint Group { get; }
             internal uint UserId { get; private set; }
-            internal IServiceSession ServiceSession { get; set; }
+            internal IClientConnection ClientConnection { get; set; }
             internal bool Bound { get; set; }
             internal bool Releasing { get; set; }
             internal bool HasUserId { get; private set; }
 
-            internal Assignment(ISession session, Registration registration, uint group)
+            internal SessionBinding(IRoutableSession session, ServiceRegistration registration, uint group)
             {
                 Session = session;
                 Registration = registration;
                 Group = group;
-                _userIdCallbacks = new System.Collections.Generic.List<System.Action<uint>>();
+                _clientIdCallbacks = new System.Collections.Generic.List<System.Action<uint>>();
             }
 
             internal void OnUserIdAssigned(System.Action<uint> callback)
@@ -46,11 +46,11 @@ namespace PinionCore.Remote.Gateway.Hosts
                 }
                 else
                 {
-                    _userIdCallbacks.Add(callback);
+                    _clientIdCallbacks.Add(callback);
                 }
             }
 
-            internal void SetUserId(uint userId)
+            internal void SetUserId(uint clientId)
             {
                 if (HasUserId)
                 {
@@ -58,67 +58,67 @@ namespace PinionCore.Remote.Gateway.Hosts
                 }
 
                 HasUserId = true;
-                UserId = userId;
+                UserId = clientId;
 
-                foreach (var callback in _userIdCallbacks)
+                foreach (var callback in _clientIdCallbacks)
                 {
-                    callback(userId);
+                    callback(clientId);
                 }
 
-                _userIdCallbacks.Clear();
+                _clientIdCallbacks.Clear();
             }
         }
 
-        private sealed class Registration
+        private sealed class ServiceRegistration
         {
-            internal IGameService Service { get; }
+            internal IGameLobby Service { get; }
             internal uint Group { get; }
-            internal Dictionary<ISession, Assignment> SessionAssignments { get; }
-            internal Dictionary<uint, Assignment> AssignmentsByUserId { get; }
-            internal Action<IServiceSession> SupplyHandler { get; }
-            internal Action<IServiceSession> UnsupplyHandler { get; }
-            internal Dictionary<uint, IServiceSession> PendingSessions { get; }
+            internal Dictionary<IRoutableSession, SessionBinding> SessionBindings { get; }
+            internal Dictionary<uint, SessionBinding> BindingsByClientId { get; }
+            internal Action<IClientConnection> SupplyHandler { get; }
+            internal Action<IClientConnection> UnsupplyHandler { get; }
+            internal Dictionary<uint, IClientConnection> PendingConnections { get; }
 
-            internal Registration(IGameService service, uint group, Action<IServiceSession> supplyHandler, Action<IServiceSession> unsupplyHandler)
+            internal ServiceRegistration(IGameLobby service, uint group, Action<IClientConnection> supplyHandler, Action<IClientConnection> unsupplyHandler)
             {
                 Service = service;
                 Group = group;
                 SupplyHandler = supplyHandler;
                 UnsupplyHandler = unsupplyHandler;
-                SessionAssignments = new Dictionary<ISession, Assignment>();
-                AssignmentsByUserId = new Dictionary<uint, Assignment>();
-                PendingSessions = new Dictionary<uint, IServiceSession>();
+                SessionBindings = new Dictionary<IRoutableSession, SessionBinding>();
+                BindingsByClientId = new Dictionary<uint, SessionBinding>();
+                PendingConnections = new Dictionary<uint, IClientConnection>();
             }
 
             internal void Subscribe()
             {
-                Service.UserNotifier.Base.Supply += SupplyHandler;
-                Service.UserNotifier.Base.Unsupply += UnsupplyHandler;
+                Service.ClientNotifier.Base.Supply += SupplyHandler;
+                Service.ClientNotifier.Base.Unsupply += UnsupplyHandler;
             }
 
             internal void Unsubscribe()
             {
-                Service.UserNotifier.Base.Supply -= SupplyHandler;
-                Service.UserNotifier.Base.Unsupply -= UnsupplyHandler;
+                Service.ClientNotifier.Base.Supply -= SupplyHandler;
+                Service.ClientNotifier.Base.Unsupply -= UnsupplyHandler;
             }
         }
 
         private readonly object _syncRoot;
-        private readonly HashSet<ISession> _sessions;
-        private readonly Dictionary<ISession, Dictionary<uint, Assignment>> _sessionAssignments;
-        private readonly Dictionary<uint, List<Registration>> _registrationsByGroup;
-        private readonly Dictionary<IGameService, Registration> _registrationsByService;
+        private readonly HashSet<IRoutableSession> _sessions;
+        private readonly Dictionary<IRoutableSession, Dictionary<uint, SessionBinding>> _sessionBindings;
+        private readonly Dictionary<uint, List<ServiceRegistration>> _registrationsByGroup;
+        private readonly Dictionary<IGameLobby, ServiceRegistration> _registrationsByService;
 
-        public Router()
+        public SessionOrchestrator()
         {
             _syncRoot = new object();
-            _sessions = new HashSet<ISession>();
-            _sessionAssignments = new Dictionary<ISession, Dictionary<uint, Assignment>>();
-            _registrationsByGroup = new Dictionary<uint, List<Registration>>();
-            _registrationsByService = new Dictionary<IGameService, Registration>();
+            _sessions = new HashSet<IRoutableSession>();
+            _sessionBindings = new Dictionary<IRoutableSession, Dictionary<uint, SessionBinding>>();
+            _registrationsByGroup = new Dictionary<uint, List<ServiceRegistration>>();
+            _registrationsByService = new Dictionary<IGameLobby, ServiceRegistration>();
         }
 
-        public void Join(ISession session)
+        public void Join(IRoutableSession session)
         {
             if (session == null)
             {
@@ -132,19 +132,19 @@ namespace PinionCore.Remote.Gateway.Hosts
                     return;
                 }
 
-                if (!_sessionAssignments.ContainsKey(session))
+                if (!_sessionBindings.ContainsKey(session))
                 {
-                    _sessionAssignments[session] = new Dictionary<uint, Assignment>();
+                    _sessionBindings[session] = new Dictionary<uint, SessionBinding>();
                 }
 
                 foreach (var group in _registrationsByGroup.Keys.ToArray())
                 {
-                    _EnsureSessionAssignment(session, group);
+                    _EnsureSessionBinding(session, group);
                 }
             }
         }
 
-        public void Leave(ISession session)
+        public void Leave(IRoutableSession session)
         {
             if (session == null)
             {
@@ -158,21 +158,21 @@ namespace PinionCore.Remote.Gateway.Hosts
                     return;
                 }
 
-                if (!_sessionAssignments.TryGetValue(session, out var groupAssignments))
+                if (!_sessionBindings.TryGetValue(session, out var groupBindings))
                 {
                     return;
                 }
 
-                foreach (var assignment in groupAssignments.Values.ToList())
+                foreach (var binding in groupBindings.Values.ToList())
                 {
-                    _ReleaseAssignment(assignment, reassign: false);
+                    _ReleaseBinding(binding, reassign: false);
                 }
 
-                _sessionAssignments.Remove(session);
+                _sessionBindings.Remove(session);
             }
         }
 
-        public void Register(uint group, IGameService service)
+        public void Register(uint group, IGameLobby service)
         {
             if (service == null)
             {
@@ -186,17 +186,17 @@ namespace PinionCore.Remote.Gateway.Hosts
                     return;
                 }
 
-                var registration = new Registration(
+                var registration = new ServiceRegistration(
                     service,
                     group,
-                    svc => _OnServiceSessionSupplied(service, svc),
-                    svc => _OnServiceSessionUnsupplied(service, svc));
+                    svc => _OnClientConnectionSupplied(service, svc),
+                    svc => _OnClientConnectionUnsupplied(service, svc));
 
                 _registrationsByService.Add(service, registration);
 
                 if (!_registrationsByGroup.TryGetValue(group, out var registrations))
                 {
-                    registrations = new List<Registration>();
+                    registrations = new List<ServiceRegistration>();
                     _registrationsByGroup[group] = registrations;
                 }
 
@@ -205,12 +205,12 @@ namespace PinionCore.Remote.Gateway.Hosts
 
                 foreach (var session in _sessions)
                 {
-                    _EnsureSessionAssignment(session, group);
+                    _EnsureSessionBinding(session, group);
                 }
             }
         }
 
-        public void Unregister(IGameService service)
+        public void Unregister(IGameLobby service)
         {
             if (service == null)
             {
@@ -236,170 +236,170 @@ namespace PinionCore.Remote.Gateway.Hosts
                     }
                 }
 
-                foreach (var assignment in registration.SessionAssignments.Values.ToList())
+                foreach (var binding in registration.SessionBindings.Values.ToList())
                 {
-                    _ReleaseAssignment(assignment, reassign: true);
+                    _ReleaseBinding(binding, reassign: true);
                 }
             }
         }
 
-        private void _EnsureSessionAssignment(ISession session, uint group)
+        private void _EnsureSessionBinding(IRoutableSession session, uint group)
         {
             if (!_registrationsByGroup.TryGetValue(group, out var registrations) || registrations.Count == 0)
             {
                 return;
             }
 
-            if (!_sessionAssignments.TryGetValue(session, out var groupAssignments))
+            if (!_sessionBindings.TryGetValue(session, out var groupBindings))
             {
-                groupAssignments = new Dictionary<uint, Assignment>();
-                _sessionAssignments[session] = groupAssignments;
+                groupBindings = new Dictionary<uint, SessionBinding>();
+                _sessionBindings[session] = groupBindings;
             }
 
-            if (groupAssignments.TryGetValue(group, out var current) && current != null && current.Bound)
+            if (groupBindings.TryGetValue(group, out var current) && current != null && current.Bound)
             {
                 return;
             }
 
             foreach (var registration in registrations)
             {
-                if (_TryAttach(registration, session, group, out var assignment))
+                if (_TryAttach(registration, session, group, out var binding))
                 {
-                    groupAssignments[group] = assignment;
+                    groupBindings[group] = binding;
                     return;
                 }
             }
 
-            groupAssignments.Remove(group);
+            groupBindings.Remove(group);
         }
 
-        private bool _TryAttach(Registration registration, ISession session, uint group, out Assignment assignment)
+        private bool _TryAttach(ServiceRegistration registration, IRoutableSession session, uint group, out SessionBinding binding)
         {
-            if (registration.SessionAssignments.TryGetValue(session, out assignment))
+            if (registration.SessionBindings.TryGetValue(session, out binding))
             {
                 return true;
             }
 
-            var newAssignment = new Assignment(session, registration, group);
-            registration.SessionAssignments[session] = newAssignment;
+            var newBinding = new SessionBinding(session, registration, group);
+            registration.SessionBindings[session] = newBinding;
 
-            if (!_sessionAssignments.TryGetValue(session, out var groupAssignments))
+            if (!_sessionBindings.TryGetValue(session, out var groupBindings))
             {
-                groupAssignments = new Dictionary<uint, Assignment>();
-                _sessionAssignments[session] = groupAssignments;
+                groupBindings = new Dictionary<uint, SessionBinding>();
+                _sessionBindings[session] = groupBindings;
             }
 
-            groupAssignments[group] = newAssignment;
+            groupBindings[group] = newBinding;
 
-            newAssignment.OnUserIdAssigned(userId =>
+            newBinding.OnUserIdAssigned(clientId =>
             {
-                if (!registration.SessionAssignments.TryGetValue(session, out var current) || !ReferenceEquals(current, newAssignment))
+                if (!registration.SessionBindings.TryGetValue(session, out var current) || !ReferenceEquals(current, newBinding))
                 {
-                    registration.PendingSessions.Remove(userId);
+                    registration.PendingConnections.Remove(clientId);
                     return;
                 }
 
-                registration.AssignmentsByUserId[userId] = newAssignment;
+                registration.BindingsByClientId[clientId] = newBinding;
 
-                if (registration.PendingSessions.TryGetValue(userId, out var pendingSession))
+                if (registration.PendingConnections.TryGetValue(clientId, out var pendingSession))
                 {
-                    registration.PendingSessions.Remove(userId);
-                    _BindAssignment(newAssignment, pendingSession);
+                    registration.PendingConnections.Remove(clientId);
+                    _BindSession(newBinding, pendingSession);
                 }
                 else
                 {
-                    _TryBindImmediate(newAssignment);
+                    _TryBindImmediate(newBinding);
                 }
             });
 
             var joinValue = registration.Service.Join();
 
-            void OnJoined(uint userId)
+            void OnJoined(uint clientId)
             {
                 lock (_syncRoot)
                 {
                     joinValue.OnValue -= OnJoined;
 
-                    if (!registration.SessionAssignments.TryGetValue(session, out var current) || !ReferenceEquals(current, newAssignment))
+                    if (!registration.SessionBindings.TryGetValue(session, out var current) || !ReferenceEquals(current, newBinding))
                     {
-                        newAssignment.SetUserId(userId);
+                        newBinding.SetUserId(clientId);
                         return;
                     }
 
-                    newAssignment.SetUserId(userId);
+                    newBinding.SetUserId(clientId);
                 }
             }
 
             joinValue.OnValue += OnJoined;
 
-            assignment = newAssignment;
+            binding = newBinding;
             return true;
         }
 
-        private void _TryBindImmediate(Assignment assignment)
+        private void _TryBindImmediate(SessionBinding binding)
         {
-            foreach (var candidate in assignment.Registration.Service.UserNotifier.Collection)
+            foreach (var candidate in binding.Registration.Service.ClientNotifier.Collection)
             {
-                if (candidate.Id.Value == assignment.UserId)
+                if (candidate.Id.Value == binding.UserId)
                 {
-                    _BindAssignment(assignment, candidate);
+                    _BindSession(binding, candidate);
                     break;
                 }
             }
         }
 
-        private void _BindAssignment(Assignment assignment, IServiceSession serviceSession)
+        private void _BindSession(SessionBinding binding, IClientConnection clientConnection)
         {
-            assignment.ServiceSession = serviceSession;
-            var success = assignment.Session.Set(assignment.Group, serviceSession);
+            binding.ClientConnection = clientConnection;
+            var success = binding.Session.Set(binding.Group, clientConnection);
             if (!success)
             {
-                assignment.ServiceSession = null;
-                assignment.Registration.Service.Leave(assignment.UserId).GetAwaiter().GetResult();
-                assignment.Registration.AssignmentsByUserId.Remove(assignment.UserId);
-                assignment.Registration.SessionAssignments.Remove(assignment.Session);
+                binding.ClientConnection = null;
+                binding.Registration.Service.Leave(binding.UserId).GetAwaiter().GetResult();
+                binding.Registration.BindingsByClientId.Remove(binding.UserId);
+                binding.Registration.SessionBindings.Remove(binding.Session);
 
-                if (_sessionAssignments.TryGetValue(assignment.Session, out var groupAssignments))
+                if (_sessionBindings.TryGetValue(binding.Session, out var groupBindings))
                 {
-                    groupAssignments.Remove(assignment.Group);
+                    groupBindings.Remove(binding.Group);
                 }
 
-                _EnsureSessionAssignment(assignment.Session, assignment.Group);
+                _EnsureSessionBinding(binding.Session, binding.Group);
                 return;
             }
 
-            assignment.Bound = true;
+            binding.Bound = true;
         }
 
-        private void _ReleaseAssignment(Assignment assignment, bool reassign)
+        private void _ReleaseBinding(SessionBinding binding, bool reassign)
         {
-            assignment.Registration.SessionAssignments.Remove(assignment.Session);
+            binding.Registration.SessionBindings.Remove(binding.Session);
 
-            if (_sessionAssignments.TryGetValue(assignment.Session, out var groupAssignments) && groupAssignments.TryGetValue(assignment.Group, out var current) && ReferenceEquals(current, assignment))
+            if (_sessionBindings.TryGetValue(binding.Session, out var groupBindings) && groupBindings.TryGetValue(binding.Group, out var current) && ReferenceEquals(current, binding))
             {
-                groupAssignments.Remove(assignment.Group);
+                groupBindings.Remove(binding.Group);
             }
 
-            if (assignment.Bound)
+            if (binding.Bound)
             {
-                assignment.Releasing = true;
-                assignment.Session.Unset(assignment.Group);
+                binding.Releasing = true;
+                binding.Session.Unset(binding.Group);
             }
 
-            assignment.OnUserIdAssigned(userId =>
+            binding.OnUserIdAssigned(clientId =>
             {
-                assignment.Registration.AssignmentsByUserId.Remove(userId);
-                assignment.Registration.PendingSessions.Remove(userId);
-                assignment.Registration.Service.Leave(userId).GetAwaiter().GetResult();
+                binding.Registration.BindingsByClientId.Remove(clientId);
+                binding.Registration.PendingConnections.Remove(clientId);
+                binding.Registration.Service.Leave(clientId).GetAwaiter().GetResult();
             });
 
-            if (reassign && _sessions.Contains(assignment.Session))
+            if (reassign && _sessions.Contains(binding.Session))
             {
-                _EnsureSessionAssignment(assignment.Session, assignment.Group);
+                _EnsureSessionBinding(binding.Session, binding.Group);
             }
         }
 
-        private void _OnServiceSessionSupplied(IGameService service, IServiceSession serviceSession)
+        private void _OnClientConnectionSupplied(IGameLobby service, IClientConnection clientConnection)
         {
             lock (_syncRoot)
             {
@@ -408,23 +408,23 @@ namespace PinionCore.Remote.Gateway.Hosts
                     return;
                 }
 
-                if (!registration.AssignmentsByUserId.TryGetValue(serviceSession.Id.Value, out var assignment))
+                if (!registration.BindingsByClientId.TryGetValue(clientConnection.Id.Value, out var binding))
                 {
-                    registration.PendingSessions[serviceSession.Id.Value] = serviceSession;
+                    registration.PendingConnections[clientConnection.Id.Value] = clientConnection;
                     return;
                 }
 
-                if (assignment.Bound)
+                if (binding.Bound)
                 {
-                    assignment.ServiceSession = serviceSession;
+                    binding.ClientConnection = clientConnection;
                     return;
                 }
 
-                _BindAssignment(assignment, serviceSession);
+                _BindSession(binding, clientConnection);
             }
         }
 
-        private void _OnServiceSessionUnsupplied(IGameService service, IServiceSession serviceSession)
+        private void _OnClientConnectionUnsupplied(IGameLobby service, IClientConnection clientConnection)
         {
             lock (_syncRoot)
             {
@@ -433,28 +433,28 @@ namespace PinionCore.Remote.Gateway.Hosts
                     return;
                 }
 
-                if (!registration.AssignmentsByUserId.TryGetValue(serviceSession.Id.Value, out var assignment))
+                if (!registration.BindingsByClientId.TryGetValue(clientConnection.Id.Value, out var binding))
                 {
-                    registration.PendingSessions.Remove(serviceSession.Id.Value);
+                    registration.PendingConnections.Remove(clientConnection.Id.Value);
                     return;
                 }
 
-                registration.AssignmentsByUserId.Remove(serviceSession.Id.Value);
-                registration.SessionAssignments.Remove(assignment.Session);
+                registration.BindingsByClientId.Remove(clientConnection.Id.Value);
+                registration.SessionBindings.Remove(binding.Session);
 
-                if (_sessionAssignments.TryGetValue(assignment.Session, out var groupAssignments) && groupAssignments.TryGetValue(registration.Group, out var current) && ReferenceEquals(current, assignment))
+                if (_sessionBindings.TryGetValue(binding.Session, out var groupBindings) && groupBindings.TryGetValue(registration.Group, out var current) && ReferenceEquals(current, binding))
                 {
-                    groupAssignments.Remove(registration.Group);
+                    groupBindings.Remove(registration.Group);
                 }
 
-                if (assignment.Bound && !assignment.Releasing)
+                if (binding.Bound && !binding.Releasing)
                 {
-                    assignment.Session.Unset(registration.Group);
+                    binding.Session.Unset(registration.Group);
                 }
 
-                if (!assignment.Releasing && _sessions.Contains(assignment.Session))
+                if (!binding.Releasing && _sessions.Contains(binding.Session))
                 {
-                    _EnsureSessionAssignment(assignment.Session, registration.Group);
+                    _EnsureSessionBinding(binding.Session, registration.Group);
                 }
             }
         }

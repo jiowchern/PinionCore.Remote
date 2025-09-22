@@ -219,22 +219,4 @@
  3. **狀態協調**：PendingSessions 機制處理競爭條件
  4. **自動綁定**：ClientConnection 可用時自動完成綁定
 
- ## 命名優化總結
-
- 本次重構統一了術語使用，提升代碼可讀性：
-
- ### 核心改進
- - **IGameService** → **IGameLobby**：更準確表達遊戲大廳概念
- - **Router** → **SessionOrchestrator**：強調會話協調職責
- - **Assignment** → **SessionBinding**：清晰表達綁定關係
- - **User** → **Client/ConnectedClient**：避免與業務層概念混淆
-
- ### 介面標準化
- - **IServiceSession** → **IClientConnection**：明確客戶端連線概念
- - **IServiceSessionOwner** → **IConnectionManager**：連線管理語義化
- - **ReturnCode** → **ResponseStatus**：RESTful 風格狀態碼
-
- ### 組件重命名
- - **GatewayHost** → **GatewayCoordinator**：強調協調功能
- - **GatewayAgent** → **ClientProxy**：明確代理模式
- - **Entry** → **ServiceEntryPoint**：清晰入口點概念
+ 

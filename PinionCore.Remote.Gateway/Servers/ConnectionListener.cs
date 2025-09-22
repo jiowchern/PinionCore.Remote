@@ -5,22 +5,22 @@ using PinionCore.Remote.Soul;
 
 namespace PinionCore.Remote.Gateway.Servers 
 {
-    class Listener : IGameService , IListenable 
+    class ConnectionListener : IGameLobby , IListenable 
     {
         readonly IdProvider _IdProvider;
-        readonly System.Collections.Concurrent.ConcurrentDictionary<uint, IServiceSession> _Users = new System.Collections.Concurrent.ConcurrentDictionary<uint, IServiceSession>();
-        readonly Notifier<IServiceSession> _UserNotifier;
+        readonly System.Collections.Concurrent.ConcurrentDictionary<uint, IClientConnection> _Clients = new System.Collections.Concurrent.ConcurrentDictionary<uint, IClientConnection>();
+        readonly Notifier<IClientConnection> _ClientNotifier;
         
 
-        public Listener()
+        public ConnectionListener()
         {
             _IdProvider = new IdProvider();
-            _Users = new System.Collections.Concurrent.ConcurrentDictionary<uint, IServiceSession>();
-            _UserNotifier = new Notifier<IServiceSession>();
+            _Clients = new System.Collections.Concurrent.ConcurrentDictionary<uint, IClientConnection>();
+            _ClientNotifier = new Notifier<IClientConnection>();
         }
 
         
-        Notifier<IServiceSession> IGameService.UserNotifier => _UserNotifier;
+        Notifier<IClientConnection> IGameLobby.ClientNotifier => _ClientNotifier;
 
         event Action<IStreamable> _StreamableEnterEvent;
         event Action<IStreamable> IListenable.StreamableEnterEvent
@@ -50,32 +50,32 @@ namespace PinionCore.Remote.Gateway.Servers
             }
         }
 
-        Value<uint> IGameService.Join()
+        Value<uint> IGameLobby.Join()
         {
             var id = _IdProvider.Landlord.Rent();
-            var user = new User(id);
-            if(!_Users.TryAdd(id, user))
+            var client = new ConnectedClient(id);
+            if(!_Clients.TryAdd(id, client))
             {
-                throw new InvalidOperationException("Failed to add new user.");
+                throw new InvalidOperationException("Failed to add new client.");
             }
-            _UserNotifier.Collection.Add(user);
-            UserStreamRegistry.Register(id, user);
-            _StreamableEnterEvent?.Invoke(user);
+            _ClientNotifier.Collection.Add(client);
+            ClientStreamRegistry.Register(id, client);
+            _StreamableEnterEvent?.Invoke(client);
             return id;
         }
 
-        Value<ReturnCode> IGameService.Leave(uint user)
+        Value<ResponseStatus> IGameLobby.Leave(uint clientId)
         {
-            var code = ReturnCode.NotFound;
-            if (_Users.TryRemove(user, out var u))
+            var code = ResponseStatus.NotFound;
+            if (_Clients.TryRemove(clientId, out var u))
             {
-                _UserNotifier.Collection.Remove(u);
-                UserStreamRegistry.Unregister(user);
+                _ClientNotifier.Collection.Remove(u);
+                ClientStreamRegistry.Unregister(clientId);
                 if (u is IStreamable streamable)
                 {
                     _StreamableLeaveEvent?.Invoke(streamable);
                 }
-                code = ReturnCode.Success;
+                code = ResponseStatus.Success;
             }
             return code;
         }
