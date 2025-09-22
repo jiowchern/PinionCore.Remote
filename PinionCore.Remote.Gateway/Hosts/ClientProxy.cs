@@ -83,13 +83,16 @@ namespace PinionCore.Remote.Gateway.Hosts
         }
         public void Dispose()
         {
-            foreach (var user in _Users)
+            // 使用反向迴圈，與 _Destroy 方法保持一致，避免集合修改異常
+            for (var i = _Users.Count - 1; i >= 0; i--)
             {
+                var user = _Users[i];
                 Agents.Collection.Remove(user.Agent);
                 user.Agent.Disable();
                 user.Stream?.Dispose();
+                _Users.RemoveAt(i);
             }
-            _Users.Clear();
+
             _Disable();
         }
     }
