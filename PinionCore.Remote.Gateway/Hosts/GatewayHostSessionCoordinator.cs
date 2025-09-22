@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using PinionCore.Remote.Gateway.Protocols;
@@ -16,7 +16,7 @@ namespace PinionCore.Remote.Gateway.Hosts
         void Register(uint group, IGameLobby service);
         void Unregister(IGameLobby service);
     }
-    internal class SessionOrchestrator : ISessionMembership , IServiceRegistry
+    internal class GatewayHostSessionCoordinator : ISessionMembership , IServiceRegistry
     {
         private sealed class SessionBinding
         {
@@ -109,7 +109,7 @@ namespace PinionCore.Remote.Gateway.Hosts
         private readonly Dictionary<uint, List<ServiceRegistration>> _registrationsByGroup;
         private readonly Dictionary<IGameLobby, ServiceRegistration> _registrationsByService;
 
-        public SessionOrchestrator()
+        public GatewayHostSessionCoordinator()
         {
             _syncRoot = new object();
             _sessions = new HashSet<IRoutableSession>();
@@ -460,3 +460,5 @@ namespace PinionCore.Remote.Gateway.Hosts
         }
     }
 }
+
+

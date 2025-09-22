@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Net;
 using System.Runtime.Serialization;
 using PinionCore.Memorys;
@@ -8,24 +8,24 @@ using PinionCore.Remote.Soul;
 
 namespace PinionCore.Remote.Gateway.Servers 
 {
-    class ConnectionService 
+    class GatewayServerServiceHub 
     {
-        readonly System.Action _Dispose;
+        readonly System.Action _dispose;
         
         public readonly IService Service;
 
         public readonly IListenable Listener;
 
         
-        public ConnectionService()
+        public GatewayServerServiceHub()
         {
-            var clientListener = new PinionCore.Remote.Gateway.Servers.ConnectionListener();
-            var clientEntry = new ServiceEntryPoint(clientListener);
+            var clientListener = new PinionCore.Remote.Gateway.Servers.GatewayServerConnectionManager();
+            var clientEntry = new GatewayServerClientEntry(clientListener);
             var clientProtocol = Protocols.ProtocolProvider.Create();
             Service = Standalone.Provider.CreateService(clientEntry, clientProtocol);
             
             Listener = clientListener;
-            _Dispose = () =>
+            _dispose = () =>
             {
                 Service.Dispose();                
             };
@@ -33,9 +33,10 @@ namespace PinionCore.Remote.Gateway.Servers
    
         public void Dispose()
         {
-            _Dispose();
+            _dispose();
         }
 
         
     }
 }
+

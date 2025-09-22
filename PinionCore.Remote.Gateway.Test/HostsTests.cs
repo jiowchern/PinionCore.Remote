@@ -1,4 +1,4 @@
-﻿
+
 using System;
 using System.Linq;
 using System.Reactive.Linq;
@@ -23,14 +23,14 @@ namespace PinionCore.Remote.Gateway.Tests
         [NUnit.Framework.Test, Timeout(10000)]
         public async System.Threading.Tasks.Task UserSessionSetAndLeaveTest()
         {
-            var listener1 = new PinionCore.Remote.Gateway.Servers.ConnectionListener();
+            var listener1 = new PinionCore.Remote.Gateway.Servers.GatewayServerConnectionManager();
             PinionCore.Remote.Gateway.Protocols.IGameLobby service1 = listener1;
             
 
-            var listener2 = new PinionCore.Remote.Gateway.Servers.ConnectionListener();
+            var listener2 = new PinionCore.Remote.Gateway.Servers.GatewayServerConnectionManager();
             PinionCore.Remote.Gateway.Protocols.IGameLobby service2 = listener2;
 
-            var user1 = new PinionCore.Remote.Gateway.Hosts.ProxiedClient();
+            var user1 = new PinionCore.Remote.Gateway.Hosts.GatewayHostConnectionManager();
             IRoutableSession session1 = user1;
             IConnectionManager owner1 = user1;
 
@@ -80,16 +80,16 @@ namespace PinionCore.Remote.Gateway.Tests
         [NUnit.Framework.Test, Timeout(10000)]
         public void UserSessionRouteManagementTest()
         {
-            var route = new PinionCore.Remote.Gateway.Hosts.SessionOrchestrator();
-            var user1 = new PinionCore.Remote.Gateway.Hosts.ProxiedClient();
+            var route = new PinionCore.Remote.Gateway.Hosts.GatewayHostSessionCoordinator();
+            var user1 = new PinionCore.Remote.Gateway.Hosts.GatewayHostConnectionManager();
             IConnectionManager owner1 = user1;
 
-            var listener1 = new PinionCore.Remote.Gateway.Servers.ConnectionListener();
+            var listener1 = new PinionCore.Remote.Gateway.Servers.GatewayServerConnectionManager();
             PinionCore.Remote.Gateway.Protocols.IGameLobby service1 = listener1;
 
-            var listener2 = new PinionCore.Remote.Gateway.Servers.ConnectionListener();
+            var listener2 = new PinionCore.Remote.Gateway.Servers.GatewayServerConnectionManager();
             PinionCore.Remote.Gateway.Protocols.IGameLobby service2 = listener2;
-            var listener3 = new PinionCore.Remote.Gateway.Servers.ConnectionListener();
+            var listener3 = new PinionCore.Remote.Gateway.Servers.GatewayServerConnectionManager();
             PinionCore.Remote.Gateway.Protocols.IGameLobby service3 = listener3;
 
             route.Join(user1);
@@ -107,7 +107,7 @@ namespace PinionCore.Remote.Gateway.Tests
 
             route.Leave(user1);
 
-            var user2 = new PinionCore.Remote.Gateway.Hosts.ProxiedClient();
+            var user2 = new PinionCore.Remote.Gateway.Hosts.GatewayHostConnectionManager();
             IConnectionManager owner2 = user2;
             route.Join(user2);
 
@@ -115,46 +115,46 @@ namespace PinionCore.Remote.Gateway.Tests
         }        
 
         [NUnit.Framework.Test, Timeout(10000)]
-        public async System.Threading.Tasks.Task GatewayCoordinatorAgentWorkflowTest()
+        public async System.Threading.Tasks.Task GatewayHostServiceHubAgentWorkflowTest()
         {
             var gameEntry = new GameEntry();
             var gameProtocol = PinionCore.Remote.Tools.Protocol.Sources.TestCommon.ProtocolProvider.CreateCase1();
 
-            // 建立真正的遊戲服務
+            // Create the actual game service host
             PinionCore.Remote.Soul.IService actualGameService = Standalone.Provider.CreateService(gameEntry, gameProtocol);
 
-            // 建立連線服務
-            var connectionService = new PinionCore.Remote.Gateway.Servers.ConnectionService();
+            // Create the gateway-facing service hub
+            var connectionService = new PinionCore.Remote.Gateway.Servers.GatewayServerServiceHub();
 
-            // 掛接 Join/Leave 事件來連結遊戲服務
+            // Bridge Join/Leave events to the actual game service
             connectionService.Listener.StreamableEnterEvent += streamable => actualGameService.Join(streamable);
             connectionService.Listener.StreamableLeaveEvent += streamable => actualGameService.Leave(streamable);
 
-            // 建立host 監聽的服務 agent
+            // Connect host agent to the gateway hub
             var userAgent = PinionCore.Remote.Gateway.Provider.CreateAgent();
             var userAgentDisconnect = userAgent.Connect(connectionService.Service);
             var userAgentWorker = new AgentWorker(userAgent);
             userAgentWorker.Start();
 
-            // 取得遊戲服務
+            // Retrieve the game lobby from the user agent
             var gameObs = from _game in userAgent.QueryNotifier<IGameLobby>().SupplyEvent()
                           select _game;
             var game = await gameObs.FirstAsync();
 
-            // 建立 gateway host
-            var gatewayHost = new PinionCore.Remote.Gateway.Hosts.GatewayCoordinator();
+            // Create the gateway host hub
+            var gatewayHost = new PinionCore.Remote.Gateway.Hosts.GatewayHostServiceHub();
 
-            // 1. 註冊遊戲服務
+            // Register the game lobby with the gateway host
             gatewayHost.Registry.Register(1, game);
 
-            // 建立 gateway agent
-            var gatewayAgent = new PinionCore.Remote.Gateway.Hosts.ClientProxy(gameProtocol);
-            // 2. 連線到 gateway host
+            // Register the game lobby with the gateway host
+            var gatewayAgent = new PinionCore.Remote.Gateway.Hosts.GatewayHostClientAgentPool(gameProtocol);
+            // Connect the gateway agent pool to the host
             gatewayAgent.Agent.Connect(gatewayHost.Service);
             var gatewayAgentWorker = new AgentWorker(gatewayAgent.Agent);
             gatewayAgentWorker.Start();
 
-            // 取得遊戲服務的 agent
+            // Create the gateway agent pool
             var gameAgentObs = from _gameAgent in gatewayAgent.Agents.Base.SupplyEvent()                            
                             select _gameAgent;
             var gameAgent = await gameAgentObs.FirstAsync();
@@ -174,7 +174,7 @@ namespace PinionCore.Remote.Gateway.Tests
             gatewayHost.Service.Dispose();
             await userAgentWorker.StopAsync();
 
-            // 清理資源
+            // Connect the gateway agent pool to the host
             connectionService.Listener.StreamableEnterEvent -= streamable => actualGameService.Join(streamable);
             connectionService.Listener.StreamableLeaveEvent -= streamable => actualGameService.Leave(streamable);
 
@@ -184,3 +184,6 @@ namespace PinionCore.Remote.Gateway.Tests
         }
      }
 }
+
+
+

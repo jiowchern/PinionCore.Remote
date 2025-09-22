@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using PinionCore.Network;
@@ -6,17 +6,17 @@ using PinionCore.Remote.Gateway.Protocols;
 
 namespace PinionCore.Remote.Gateway.Servers
 {
-    public sealed class ClientStreamAdapter : IStreamable, IDisposable
+    public sealed class GatewayServerSessionAdapter : IStreamable, IDisposable
     {
         private readonly IClientConnection _client;
         private readonly Stream _stream;
         private readonly IStreamable _streamView;
-        private readonly ClientStreamRegistry.Bridge _bridge;
+        private readonly GatewayServerClientChannelRegistry.Bridge _bridge;
         private readonly CancellationTokenSource _pumpCancellation;
         private readonly Task _pumpTask;
         private bool _disposed;
 
-        public ClientStreamAdapter(IClientConnection client)
+        public GatewayServerSessionAdapter(IClientConnection client)
         {
             if (client == null)
             {
@@ -27,7 +27,7 @@ namespace PinionCore.Remote.Gateway.Servers
             _stream = new Stream();
             _streamView = _stream;
             var clientId = client.Id.Value;
-            if (!ClientStreamRegistry.TryGet(clientId, out _bridge))
+            if (!GatewayServerClientChannelRegistry.TryGet(clientId, out _bridge))
             {
                 throw new InvalidOperationException(string.Format("Cannot locate client stream bridge for id {0}.", clientId));
             }
@@ -104,3 +104,4 @@ namespace PinionCore.Remote.Gateway.Servers
         }
     }
 }
+

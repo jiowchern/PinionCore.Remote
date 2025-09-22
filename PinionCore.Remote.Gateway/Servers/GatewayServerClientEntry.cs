@@ -1,10 +1,10 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Text;
 using PinionCore.Remote.Gateway.Protocols;
 
 namespace PinionCore.Remote.Gateway.Servers 
 {
-    internal class ServiceEntryPoint : IEntry
+    internal class GatewayServerClientEntry : IEntry
     {
         struct BinderInfo
         {
@@ -12,25 +12,25 @@ namespace PinionCore.Remote.Gateway.Servers
             public ISoul Soul;
         }
 
-        readonly IGameLobby _Listener;
-        readonly System.Collections.Generic.List<BinderInfo> _Infos;
-        public ServiceEntryPoint(IGameLobby gatewayClientListener)
+        readonly IGameLobby _listener;
+        readonly System.Collections.Generic.List<BinderInfo> _bindings;
+        public GatewayServerClientEntry(IGameLobby gatewayClientListener)
         {
-            _Infos = new List<BinderInfo>();
-            _Listener = gatewayClientListener;
+            _bindings = new List<BinderInfo>();
+            _listener = gatewayClientListener;
         }
         void IBinderProvider.RegisterClientBinder(IBinder binder)
         {
-            _Infos.Add(new BinderInfo
+            _bindings.Add(new BinderInfo
             {
                 Binder = binder,
-                Soul = binder.Bind<IGameLobby>(_Listener)
+                Soul = binder.Bind<IGameLobby>(_listener)
             });
         }
 
         void IBinderProvider.UnregisterClientBinder(IBinder binder)
         {
-            foreach (var info in _Infos)
+            foreach (var info in _bindings)
             {
                 if (info.Binder != binder)
                 {                    
@@ -38,7 +38,7 @@ namespace PinionCore.Remote.Gateway.Servers
                 }
 
                 binder.Unbind(info.Soul);
-                _Infos.Remove(info);
+                _bindings.Remove(info);
                 break;
             }
         }
@@ -49,3 +49,4 @@ namespace PinionCore.Remote.Gateway.Servers
         }
     }
 }
+

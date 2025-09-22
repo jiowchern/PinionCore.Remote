@@ -1,18 +1,18 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using PinionCore.Remote;
 using PinionCore.Remote.Gateway.Protocols;
 
 namespace PinionCore.Remote.Gateway.Hosts
 {
-    internal class ProxiedClient : IRoutableSession, IConnectionManager
+    internal class GatewayHostConnectionManager : IRoutableSession, IConnectionManager
     {
         private readonly object _syncRoot;
         private readonly Dictionary<uint, IClientConnection> _sessionsByGroup;
         private readonly Dictionary<IClientConnection, int> _sessionRefCounts;
         private readonly Notifier<IClientConnection> _sessions;
 
-        public ProxiedClient()
+        public GatewayHostConnectionManager()
         {
             _syncRoot = new object();
             _sessionsByGroup = new Dictionary<uint, IClientConnection>();
@@ -24,7 +24,7 @@ namespace PinionCore.Remote.Gateway.Hosts
 
         bool IRoutableSession.Set(uint group, IClientConnection user)
         {
-            // 4. Argument validation 這邊沒進來
+            // Validate arguments
             if (user == null)
             {
                 throw new ArgumentNullException(nameof(user));
@@ -46,7 +46,7 @@ namespace PinionCore.Remote.Gateway.Hosts
                 else
                 {
                     _sessionRefCounts[user] = 1;
-                    // 5. Notify addition 這邊沒進來
+                    // Notify when a session first gains a connection
                     _sessions.Collection.Add(user);
                 }
 
@@ -84,3 +84,5 @@ namespace PinionCore.Remote.Gateway.Hosts
         }
     }
 }
+
+

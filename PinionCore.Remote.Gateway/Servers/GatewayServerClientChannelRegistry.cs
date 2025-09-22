@@ -1,11 +1,11 @@
-﻿using System.Collections.Concurrent;
+using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
 using PinionCore.Network;
 
 namespace PinionCore.Remote.Gateway.Servers
 {
-    internal static class ClientStreamRegistry
+    internal static class GatewayServerClientChannelRegistry
     {
         internal sealed class Bridge : System.IDisposable
         {
@@ -72,35 +72,37 @@ namespace PinionCore.Remote.Gateway.Servers
             }
         }
 
-        private static readonly ConcurrentDictionary<uint, Bridge> Bridges = new ConcurrentDictionary<uint, Bridge>();
+        private static readonly ConcurrentDictionary<uint, Bridge> _bridges = new ConcurrentDictionary<uint, Bridge>();
 
-        internal static void Register(uint userId, IStreamable serverStream)
+        internal static void Register(uint channelId, IStreamable serverStream)
         {
             var bridge = new Bridge(serverStream);
-            Bridges[userId] = bridge;
+            _bridges[channelId] = bridge;
         }
 
-        internal static void Unregister(uint userId)
+        internal static void Unregister(uint channelId)
         {
             Bridge bridge;
-            if (Bridges.TryRemove(userId, out bridge))
+            if (_bridges.TryRemove(channelId, out bridge))
             {
                 bridge.Dispose();
             }
         }
 
-        internal static bool TryGet(uint userId, out Bridge bridge)
+        internal static bool TryGet(uint channelId, out Bridge bridge)
         {
-            return Bridges.TryGetValue(userId, out bridge);
+            return _bridges.TryGetValue(channelId, out bridge);
         }
 
-        internal static void Enqueue(uint userId, byte[] payload)
+        internal static void Enqueue(uint channelId, byte[] payload)
         {
             Bridge bridge;
-            if (Bridges.TryGetValue(userId, out bridge))
+            if (_bridges.TryGetValue(channelId, out bridge))
             {
                 bridge.Enqueue(payload);
             }
         }
     }
 }
+
+

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Reactive.Linq;
 using NUnit.Framework;
@@ -24,13 +24,13 @@ namespace PinionCore.Remote.Gateway.Tests
             var gameProtocol = PinionCore.Remote.Tools.Protocol.Sources.TestCommon.ProtocolProvider.CreateCase1();
             var gameEntry = new GameEntry();
 
-            // 建立遊戲服務
+            // Create the game service host
             PinionCore.Remote.Soul.IService gameService = Standalone.Provider.CreateService(gameEntry, gameProtocol);
 
-            // 建立連線服務
-            var connectionService = new PinionCore.Remote.Gateway.Servers.ConnectionService();
+            // Create the gateway service hub
+            var connectionService = new PinionCore.Remote.Gateway.Servers.GatewayServerServiceHub();
 
-            // 掛接 Join/Leave 事件來連結遊戲服務
+            // Bridge Join/Leave events to the game service
             connectionService.Listener.StreamableEnterEvent += streamable => gameService.Join(streamable);
             connectionService.Listener.StreamableLeaveEvent += streamable => gameService.Leave(streamable);
 
@@ -76,7 +76,7 @@ namespace PinionCore.Remote.Gateway.Tests
 
             gameUpdateTaskEnable = false;
             await gameUpdateTask;
-            // 清理資源
+            // Cleanup event subscriptions and resources
             connectionService.Listener.StreamableEnterEvent -= streamable => gameService.Join(streamable);
             connectionService.Listener.StreamableLeaveEvent -= streamable => gameService.Leave(streamable);
 
@@ -96,7 +96,8 @@ namespace PinionCore.Remote.Gateway.Tests
                 throw new Exception("");
             }
 
-            return new ClientStreamAdapter(user);
+            return new GatewayServerSessionAdapter(user);
         }
     }
 }
+
