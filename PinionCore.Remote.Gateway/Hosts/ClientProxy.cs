@@ -13,6 +13,7 @@ namespace PinionCore.Remote.Gateway.Hosts
         {
             public IAgent Agent;
             public IClientConnection Session;
+            public Servers.ClientStreamAdapter Stream;
         }
 
         readonly System.Collections.Generic.List<User> _Users;
@@ -51,13 +52,19 @@ namespace PinionCore.Remote.Gateway.Hosts
 
         private void _Destroy(IClientConnection session)
         {
-            var removes = from u in _Users where u.Session == session select u.Agent;
-            foreach (var re in removes)
+            for (var i = _Users.Count - 1; i >= 0; i--)
             {
-                Agents.Collection.Remove(re);
-                re.Disable();
+                var user = _Users[i];
+                if (user.Session != session)
+                {
+                    continue;
+                }
+
+                Agents.Collection.Remove(user.Agent);
+                user.Agent.Disable();
+                user.Stream?.Dispose();
+                _Users.RemoveAt(i);
             }
-            _Users.RemoveAll(u => u.Session == session);              
         }
 
         private void _Create(IClientConnection session)
@@ -65,11 +72,24 @@ namespace PinionCore.Remote.Gateway.Hosts
             var agent = PinionCore.Remote.Standalone.Provider.CreateAgent(_GameProtocol);
             var stream = new Servers.ClientStreamAdapter(session);
             agent.Enable(stream);
-            _Users.Add(new User { Agent=agent, Session = session });
-            Agents.Collection.Add(agent);
+            var user = new User
+            {
+                Agent = agent,
+                Session = session,
+                Stream = stream,
+            };
+            _Users.Add(user);
+            Agents.Collection.Add(user.Agent);
         }
         public void Dispose()
         {
+            foreach (var user in _Users)
+            {
+                Agents.Collection.Remove(user.Agent);
+                user.Agent.Disable();
+                user.Stream?.Dispose();
+            }
+            _Users.Clear();
             _Disable();
         }
     }
