@@ -41,6 +41,21 @@ namespace PinionCore.Network
 
         void IDisposable.Dispose()
         {
+            if (_Sending == null)
+                return;
+
+            if (!_Sending.IsCompleted)
+            {
+                try
+                {
+                    _Sending.GetAwaiter().GetResult();
+                }
+                catch
+                {
+                    // Ignore exceptions while waiting during dispose.
+                }
+            }
+
             _Sending.Dispose();
         }
 
