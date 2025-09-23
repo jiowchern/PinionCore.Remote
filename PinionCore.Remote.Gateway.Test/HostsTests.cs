@@ -112,7 +112,54 @@ namespace PinionCore.Remote.Gateway.Tests
             route.Join(user2);
 
             Assert.AreEqual(2, owner2.Connections.Collection.Count);
-        }        
+        }
+
+        [NUnit.Framework.Test, Timeout(10000)]
+        public void RoundRobinDistributionTest()
+        {
+            var coordinator = new PinionCore.Remote.Gateway.Hosts.GatewayHostSessionCoordinator();
+
+            PinionCore.Remote.Gateway.Protocols.IGameLobby lobby1 = new PinionCore.Remote.Gateway.Servers.GatewayServerConnectionManager();
+            PinionCore.Remote.Gateway.Protocols.IGameLobby lobby2 = new PinionCore.Remote.Gateway.Servers.GatewayServerConnectionManager();
+
+            coordinator.Register(1, lobby1);
+            coordinator.Register(1, lobby2);
+
+            var session1 = new PinionCore.Remote.Gateway.Hosts.GatewayHostConnectionManager();
+            var session2 = new PinionCore.Remote.Gateway.Hosts.GatewayHostConnectionManager();
+            var session3 = new PinionCore.Remote.Gateway.Hosts.GatewayHostConnectionManager();
+            var session4 = new PinionCore.Remote.Gateway.Hosts.GatewayHostConnectionManager();
+
+            coordinator.Join(session1);
+            WaitFor(() => ((IConnectionManager)session1).Connections.Collection.Count == 1);
+
+            coordinator.Join(session2);
+            WaitFor(() => ((IConnectionManager)session2).Connections.Collection.Count == 1);
+
+            coordinator.Join(session3);
+            WaitFor(() => ((IConnectionManager)session3).Connections.Collection.Count == 1);
+
+            WaitFor(() => lobby1.ClientNotifier.Collection.Count + lobby2.ClientNotifier.Collection.Count == 3);
+
+            Assert.AreEqual(2, lobby1.ClientNotifier.Collection.Count);
+            Assert.AreEqual(1, lobby2.ClientNotifier.Collection.Count);
+
+            coordinator.Join(session4);
+            WaitFor(() => ((IConnectionManager)session4).Connections.Collection.Count == 1);
+
+            WaitFor(() => lobby1.ClientNotifier.Collection.Count + lobby2.ClientNotifier.Collection.Count == 4);
+
+            Assert.AreEqual(2, lobby1.ClientNotifier.Collection.Count);
+            Assert.AreEqual(2, lobby2.ClientNotifier.Collection.Count);
+        }
+
+        private static void WaitFor(Func<bool> condition)
+        {
+            if (!SpinWait.SpinUntil(condition, TimeSpan.FromSeconds(1)))
+            {
+                Assert.Fail("The expected condition was not met within the allotted time.");
+            }
+        }
 
         [NUnit.Framework.Test, Timeout(10000)]
         public async System.Threading.Tasks.Task GatewayHostServiceHubAgentWorkflowTest()

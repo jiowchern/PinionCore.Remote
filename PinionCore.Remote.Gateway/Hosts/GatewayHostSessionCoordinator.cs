@@ -108,14 +108,16 @@ namespace PinionCore.Remote.Gateway.Hosts
         private readonly Dictionary<IRoutableSession, Dictionary<uint, SessionBinding>> _sessionBindings;
         private readonly Dictionary<uint, List<ServiceRegistration>> _registrationsByGroup;
         private readonly Dictionary<IGameLobby, ServiceRegistration> _registrationsByService;
+        private readonly IGameLobbySelectionStrategy _selectionStrategy;
 
-        public GatewayHostSessionCoordinator()
+        public GatewayHostSessionCoordinator(IGameLobbySelectionStrategy selectionStrategy = null)
         {
             _syncRoot = new object();
             _sessions = new HashSet<IRoutableSession>();
             _sessionBindings = new Dictionary<IRoutableSession, Dictionary<uint, SessionBinding>>();
             _registrationsByGroup = new Dictionary<uint, List<ServiceRegistration>>();
             _registrationsByService = new Dictionary<IGameLobby, ServiceRegistration>();
+            _selectionStrategy = selectionStrategy ?? new RoundRobinGameLobbySelectionStrategy();
         }
 
         public void Join(IRoutableSession session)
@@ -261,8 +263,38 @@ namespace PinionCore.Remote.Gateway.Hosts
                 return;
             }
 
+            var orderedServices = _selectionStrategy.OrderLobbies(group, registrations.Select(r => r.Service).ToList())
+                ?? Enumerable.Empty<IGameLobby>();
+
+            var registrationByService = registrations.ToDictionary(r => r.Service);
+            var triedServices = new HashSet<IGameLobby>();
+
+            foreach (var service in orderedServices)
+            {
+                if (!triedServices.Add(service))
+                {
+                    continue;
+                }
+
+                if (!registrationByService.TryGetValue(service, out var registration))
+                {
+                    continue;
+                }
+
+                if (_TryAttach(registration, session, group, out var binding))
+                {
+                    groupBindings[group] = binding;
+                    return;
+                }
+            }
+
             foreach (var registration in registrations)
             {
+                if (!triedServices.Add(registration.Service))
+                {
+                    continue;
+                }
+
                 if (_TryAttach(registration, session, group, out var binding))
                 {
                     groupBindings[group] = binding;
