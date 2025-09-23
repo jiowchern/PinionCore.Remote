@@ -8,10 +8,10 @@ using PinionCore.Remote.Tools.Protocol.Sources.TestCommon;
 
 namespace PinionCore.Remote.Gateway.Tests
 {
-    public class Tests
+    public class GatewayServerServiceTests
     {
         [NUnit.Framework.Test, NUnit.Framework.Timeout(30000)]
-        public async System.Threading.Tasks.Task Test()
+        public async System.Threading.Tasks.Task GatewayHostServiceIntegrationTest()
         {
             // 遊戲服務建立階段...
             var gameEntry1 = new TestGameEntry(TestGameEntry.GameType.Method1);
