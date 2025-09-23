@@ -2,10 +2,21 @@
 
 namespace PinionCore.Remote.Gateway.Tests
 {
-    class GameEntry : IEntry , PinionCore.Remote.Tools.Protocol.Sources.TestCommon.IMethodable1
+    class TestGameEntry : IEntry ,
+        PinionCore.Remote.Tools.Protocol.Sources.TestCommon.IMethodable1,
+        PinionCore.Remote.Tools.Protocol.Sources.TestCommon.IMethodable2
+
     {
-        public GameEntry()
+        private readonly GameType _GameType;
+
+        public enum GameType
         {
+            Method1,
+            Method2
+        }
+        public TestGameEntry(GameType gameType)
+        {
+            _GameType = gameType;
         }
 
         Value<int> IMethodable1.GetValue1()
@@ -13,9 +24,22 @@ namespace PinionCore.Remote.Gateway.Tests
             return 1;
         }
 
+        Value<int> IMethodable2.GetValue2()
+        {
+            return 2;
+        }
+
         void IBinderProvider.RegisterClientBinder(IBinder binder)
         {
-            binder.Bind<IMethodable1>(this);
+            if(_GameType == GameType.Method1)
+                binder.Bind<IMethodable1>(this);
+            else
+                binder.Bind<IMethodable2>(this);
+        }
+
+        Value<HelloReply> IMethodable2.SayHello(HelloRequest request)
+        {
+            return new HelloReply { Message = "Hello " + request.Name };
         }
 
         void IBinderProvider.UnregisterClientBinder(IBinder binder)

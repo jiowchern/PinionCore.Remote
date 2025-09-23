@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Linq;
 using System.Reactive.Linq;
 using NUnit.Framework;
@@ -22,7 +22,7 @@ namespace PinionCore.Remote.Gateway.Tests
             var pool = PinionCore.Memorys.PoolProvider.Shared;
 
             var gameProtocol = PinionCore.Remote.Tools.Protocol.Sources.TestCommon.ProtocolProvider.CreateCase1();
-            var gameEntry = new GameEntry();
+            var gameEntry = new TestGameEntry(TestGameEntry.GameType.Method1);
 
             // Create the game service host
             PinionCore.Remote.Soul.IService gameService = Standalone.Provider.CreateService(gameEntry, gameProtocol);

@@ -1,4 +1,4 @@
-
+﻿
 using System;
 using System.Linq;
 using System.Reactive.Linq;
@@ -117,7 +117,7 @@ namespace PinionCore.Remote.Gateway.Tests
         [NUnit.Framework.Test, Timeout(10000)]
         public async System.Threading.Tasks.Task GatewayHostServiceHubAgentWorkflowTest()
         {
-            var gameEntry = new GameEntry();
+            var gameEntry = new TestGameEntry(TestGameEntry.GameType.Method1);
             var gameProtocol = PinionCore.Remote.Tools.Protocol.Sources.TestCommon.ProtocolProvider.CreateCase1();
 
             // Create the actual game service host
