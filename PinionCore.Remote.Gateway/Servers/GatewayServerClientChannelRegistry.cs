@@ -73,6 +73,13 @@ namespace PinionCore.Remote.Gateway.Servers
         }
 
         private static readonly ConcurrentDictionary<uint, Bridge> _bridges = new ConcurrentDictionary<uint, Bridge>();
+        private static int _nextChannelId;
+
+        internal static uint AllocateChannelId()
+        {
+            var value = System.Threading.Interlocked.Increment(ref _nextChannelId);
+            return unchecked((uint)value);
+        }
 
         internal static void Register(uint channelId, IStreamable serverStream)
         {
