@@ -10,9 +10,9 @@ namespace PinionCore.Remote.Gateway.Hosts
         public readonly IService Service;
         public readonly IServiceRegistry Registry;
 
-        public GatewayHostServiceHub()
+        public GatewayHostServiceHub(IGameLobbySelectionStrategy selectionStrategy = null)
         {
-            _sessionCoordinator = new GatewayHostSessionCoordinator();
+            _sessionCoordinator = new GatewayHostSessionCoordinator(selectionStrategy);
             Registry = _sessionCoordinator;
             _clientEntry = new GatewayHostClientEntry(_sessionCoordinator);
             var protocol = PinionCore.Remote.Gateway.Protocols.ProtocolProvider.Create();
