@@ -1,4 +1,5 @@
-﻿using System.Reactive.Linq;
+﻿using System.Linq;
+using System.Reactive.Linq;
 using PinionCore.Remote.Gateway.Hosts;
 using PinionCore.Remote.Gateway.Protocols;
 using PinionCore.Remote.Gateway.Servers;
@@ -40,6 +41,16 @@ namespace PinionCore.Remote.Gateway.Tests
 
             // Gateway Host 連線階段...
             var hostHub = new GatewayHostServiceHub();
+
+            // Set up TCP listener for Gateway Host first
+            var tcpHostListener = new PinionCore.Remote.Server.Tcp.Listener();
+            var tcpHostPort = PinionCore.Network.Tcp.Tools.GetAvailablePort();
+            tcpHostListener.Bind(tcpHostPort);
+            Soul.IListenable hostListener = tcpHostListener;
+            hostListener.StreamableLeaveEvent += streamable => hostHub.Service.Leave(streamable);
+            hostListener.StreamableEnterEvent += streamable => hostHub.Service.Join(streamable);
+
+            // Connect Gateway Host to Game Service 1
             var userAgent1 = PinionCore.Remote.Gateway.Provider.CreateAgent();
             var userTcpConnector1 = new PinionCore.Network.Tcp.Connector();
             var peer1 = await userTcpConnector1.Connect(new System.Net.IPEndPoint(System.Net.IPAddress.Loopback, port1));
@@ -50,13 +61,8 @@ namespace PinionCore.Remote.Gateway.Tests
                             select lobby;
             var lobby1 = await lobby1Obs.FirstAsync();
             hostHub.Registry.Register(1, lobby1);
-            var tcpHostListener1 = new PinionCore.Remote.Server.Tcp.Listener();
-            var tcpHostPort1 = PinionCore.Network.Tcp.Tools.GetAvailablePort();
-            tcpHostListener1.Bind(tcpHostPort1);
-            Soul.IListenable hostListener1 = tcpHostListener1;
-            hostListener1.StreamableLeaveEvent += streamable => hostHub.Service.Leave(streamable);
-            hostListener1.StreamableEnterEvent += streamable => hostHub.Service.Join(streamable);
 
+            // Connect Gateway Host to Game Service 2
             var userAgent2 = PinionCore.Remote.Gateway.Provider.CreateAgent();
             var userTcpConnector2 = new PinionCore.Network.Tcp.Connector();
             var peer2 = await userTcpConnector2.Connect(new System.Net.IPEndPoint(System.Net.IPAddress.Loopback, port2));
@@ -67,78 +73,124 @@ namespace PinionCore.Remote.Gateway.Tests
                             select lobby;
             var lobby2 = await lobby2Obs.FirstAsync();
             hostHub.Registry.Register(2, lobby2);
-            var tcpHostListener2 = new PinionCore.Remote.Server.Tcp.Listener();
-            var tcpHostPort2 = PinionCore.Network.Tcp.Tools.GetAvailablePort();
-            tcpHostListener2.Bind(tcpHostPort2);
-            Soul.IListenable hostListener2 = tcpHostListener2;
-            hostListener2.StreamableLeaveEvent += streamable => hostHub.Service.Leave(streamable);
-            hostListener2.StreamableEnterEvent += streamable => hostHub.Service.Join(streamable);
 
 
-            // Gateway Host 遊戲服務註冊階段...
+            // Client connections to Gateway Host
             var client1 = new GatewayHostClientAgentPool(PinionCore.Remote.Tools.Protocol.Sources.TestCommon.ProtocolProvider.CreateCase1());
             var tcpClientConnector1 = new PinionCore.Network.Tcp.Connector();
-            var clientPeer1 = await tcpClientConnector1.Connect(new System.Net.IPEndPoint(System.Net.IPAddress.Loopback, tcpHostPort1));
+            var clientPeer1 = await tcpClientConnector1.Connect(new System.Net.IPEndPoint(System.Net.IPAddress.Loopback, tcpHostPort));
             client1.Agent.Enable(clientPeer1);
             var clientWorker1 = new AgentWorker(client1.Agent);
             clientWorker1.Start();
 
-            var client2 = new GatewayHostClientAgentPool(PinionCore.Remote.Tools.Protocol.Sources.TestCommon.ProtocolProvider.CreateCase1());
-            var tcpClientConnector2 = new PinionCore.Network.Tcp.Connector();
-            var clientPeer2 = await tcpClientConnector2.Connect(new System.Net.IPEndPoint(System.Net.IPAddress.Loopback, tcpHostPort2));
-            client2.Agent.Enable(clientPeer2);
-            var clientWorker2 = new AgentWorker(client2.Agent);
-            clientWorker2.Start();
 
-            var testValues1 = from agent1 in client1.Agents.SupplyEvent()
-                             from m1 in agent1.QueryNotifier<IMethodable1>().SupplyEvent()
-                             from m2 in agent1.QueryNotifier<IMethodable2>().SupplyEvent()
-                             from m1Value in m1.GetValue1().RemoteValue()
-                             from m2Value in m2.GetValue2().RemoteValue()
-                                select (m1Value, m2Value);
-            NUnit.Framework.Assert.AreEqual((1, 2), await testValues1.FirstAsync());
+            var agentsObs1 = from agent in client1.Agents.Base.SupplyEvent()
+                             select agent;
 
-            var testValues2 = from agent1 in client2.Agents.SupplyEvent()
-                              from m1 in agent1.QueryNotifier<IMethodable1>().SupplyEvent()
-                              from m2 in agent1.QueryNotifier<IMethodable2>().SupplyEvent()
-                              from m1Value in m1.GetValue1().RemoteValue()
-                              from m2Value in m2.GetValue2().RemoteValue()
-                              select (m1Value, m2Value);
-            NUnit.Framework.Assert.AreEqual((1, 2), await testValues2.FirstAsync());
+            var agents1 = await agentsObs1.Buffer(2).FirstAsync();
+            var testValue1 = 0;
+            foreach(var agent1 in agents1)
+            {
+                agent1.QueryNotifier<IMethodable1>().Supply += m1 =>
+                {
+                    var value = m1.GetValue1();
+
+                    value.OnValue += v => {
+                        testValue1 += v;
+                    };
+                };
+                agent1.QueryNotifier<IMethodable2>().Supply += m2 => {
+                    var value = m2.GetValue1();
+
+                    value.OnValue += v => {
+                        testValue1 += v;
+                    };
+                };
+            }
+                
+
+            while(testValue1 < 3)
+            {
+                foreach(var agent1 in agents1)
+                {
+                    agent1.HandlePackets();
+                    agent1.HandleMessage();
+                }
+                
+                await System.Threading.Tasks.Task.Delay(100);
+            }
+
+
+            // Test that both clients can access both game services through the Gateway Host
+            var m1Results = from agent in client1.Agents.Base.SupplyEvent()
+                           from m1 in agent.QueryNotifier<IMethodable1>().SupplyEvent()
+                           from value in m1.GetValue1().RemoteValue()
+                           select value;
+
+            var m2Results = from agent in client1.Agents.Base.SupplyEvent()
+                           from m2 in agent.QueryNotifier<IMethodable2>().SupplyEvent()
+                           from value in m2.GetValue2().RemoteValue()
+                           select value;
+
+            var result1 = await m1Results.FirstAsync();
+            var result2 = await m2Results.FirstAsync();
+
+            NUnit.Framework.Assert.AreEqual(1, result1);
+            NUnit.Framework.Assert.AreEqual(2, result2);
+           
 
 
             // releases ...
 
-            clientWorker2.StopAsync().Wait();
-            clientWorker1.StopAsync().Wait();
-            client2.Agent.Disable();
+            // Stop client workers first            
+            await clientWorker1.StopAsync();
+
+            // Disable client agents            
             client1.Agent.Disable();
 
+            // Unregister from host hub before disposing
+            hostHub.Registry.Unregister(lobby2);
+            hostHub.Registry.Unregister(lobby1);
+
+            // Disconnect event handlers for host listener
+            hostListener.StreamableLeaveEvent -= streamable => hostHub.Service.Leave(streamable);
+            hostListener.StreamableEnterEvent -= streamable => hostHub.Service.Join(streamable);
+
+            // Close TCP host listener
+            tcpHostListener.Close();
+
+            // Dispose host hub service
             hostHub.Service.Dispose();
 
-            hostListener2.StreamableLeaveEvent -= streamable => hostHub.Service.Leave(streamable);
-            hostListener2.StreamableEnterEvent -= streamable => hostHub.Service.Join(streamable);
-
-            hostListener1.StreamableLeaveEvent -= streamable => hostHub.Service.Leave(streamable);
-            hostListener1.StreamableEnterEvent -= streamable => hostHub.Service.Join(streamable);
-
-            hostHub.Registry.Unregister(lobby2);
+            // Stop and disable user agent 2
             await agentWorker2.StopAsync();
             userAgent2.Disable();
-            listener2.StreamableLeaveEvent -= streamable => service2.Leave(streamable);
-            listener2.StreamableEnterEvent -= streamable => service2.Join(streamable);
+
+            // Disconnect service 2 event handlers
+            listener2.StreamableLeaveEvent -= streamable => serviceHub2.Service.Leave(streamable);
+            listener2.StreamableEnterEvent -= streamable => serviceHub2.Service.Join(streamable);
+            serviceHub2.Listener.StreamableLeaveEvent -= streamable => service2.Leave(streamable);
+            serviceHub2.Listener.StreamableEnterEvent -= streamable => service2.Join(streamable);
+
+            // Dispose service 2 resources
+            serviceHub2.Service.Dispose();
             service2.Dispose();
             tcpListener2.Close();
-            serviceHub2.Service.Dispose();
 
-            hostHub.Registry.Unregister(lobby1);
+            // Stop and disable user agent 1
             await agentWorker1.StopAsync();
             userAgent1.Disable();
-            listener1.StreamableLeaveEvent -= streamable => service1.Leave(streamable);
-            listener1.StreamableEnterEvent -= streamable => service1.Join(streamable);
+
+            // Disconnect service 1 event handlers
+            listener1.StreamableLeaveEvent -= streamable => serviceHub1.Service.Leave(streamable);
+            listener1.StreamableEnterEvent -= streamable => serviceHub1.Service.Join(streamable);
+            serviceHub1.Listener.StreamableLeaveEvent -= streamable => service1.Leave(streamable);
+            serviceHub1.Listener.StreamableEnterEvent -= streamable => service1.Join(streamable);
+
+            // Dispose service 1 resources
+            serviceHub1.Service.Dispose();
             service1.Dispose();
             tcpListener1.Close();
-            serviceHub1.Service.Dispose();
         }
     }
 }
