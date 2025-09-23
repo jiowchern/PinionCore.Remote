@@ -108,14 +108,16 @@ namespace PinionCore.Remote.Gateway.Hosts
         private readonly Dictionary<IRoutableSession, Dictionary<uint, SessionBinding>> _sessionBindings;
         private readonly Dictionary<uint, List<ServiceRegistration>> _registrationsByGroup;
         private readonly Dictionary<IGameLobby, ServiceRegistration> _registrationsByService;
+        private readonly IGameLobbySelectionStrategy _selectionStrategy;
 
-        public GatewayHostSessionCoordinator()
+        public GatewayHostSessionCoordinator(IGameLobbySelectionStrategy selectionStrategy = null)
         {
             _syncRoot = new object();
             _sessions = new HashSet<IRoutableSession>();
             _sessionBindings = new Dictionary<IRoutableSession, Dictionary<uint, SessionBinding>>();
             _registrationsByGroup = new Dictionary<uint, List<ServiceRegistration>>();
             _registrationsByService = new Dictionary<IGameLobby, ServiceRegistration>();
+            _selectionStrategy = selectionStrategy ?? new RoundRobinGameLobbySelectionStrategy();
         }
 
         public void Join(IRoutableSession session)
@@ -261,7 +263,7 @@ namespace PinionCore.Remote.Gateway.Hosts
                 return;
             }
 
-            foreach (var registration in registrations)
+            foreach (var registration in _GetOrderedRegistrations(registrations, group))
             {
                 if (_TryAttach(registration, session, group, out var binding))
                 {
@@ -271,6 +273,38 @@ namespace PinionCore.Remote.Gateway.Hosts
             }
 
             groupBindings.Remove(group);
+        }
+
+        private IEnumerable<ServiceRegistration> _GetOrderedRegistrations(List<ServiceRegistration> registrations, uint group)
+        {
+            if (registrations == null || registrations.Count == 0)
+            {
+                yield break;
+            }
+
+            var seen = new HashSet<ServiceRegistration>();
+
+            var services = registrations.Select(r => r.Service).ToList();
+            foreach (var service in _selectionStrategy.Select(group, services))
+            {
+                if (service == null)
+                {
+                    continue;
+                }
+
+                if (_registrationsByService.TryGetValue(service, out var registration) && registration.Group == group && seen.Add(registration))
+                {
+                    yield return registration;
+                }
+            }
+
+            foreach (var registration in registrations)
+            {
+                if (seen.Add(registration))
+                {
+                    yield return registration;
+                }
+            }
         }
 
         private bool _TryAttach(ServiceRegistration registration, IRoutableSession session, uint group, out SessionBinding binding)

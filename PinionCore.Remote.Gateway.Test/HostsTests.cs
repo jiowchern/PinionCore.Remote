@@ -1,5 +1,6 @@
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Linq;
 using System.Threading;
@@ -13,6 +14,7 @@ using PinionCore.Remote.Gateway.Protocols;
 using PinionCore.Remote.Reactive;
 using PinionCore.Remote.Standalone;
 using PinionCore.Remote.Tools.Protocol.Sources.TestCommon;
+using PinionCore.Remote;
 
 
 
@@ -112,7 +114,41 @@ namespace PinionCore.Remote.Gateway.Tests
             route.Join(user2);
 
             Assert.AreEqual(2, owner2.Connections.Collection.Count);
-        }        
+        }
+
+        [NUnit.Framework.Test, Timeout(10000)]
+        public void RoundRobinStrategyDistributesSessions()
+        {
+            var strategy = new RoundRobinGameLobbySelectionStrategy();
+            var coordinator = new GatewayHostSessionCoordinator(strategy);
+
+            var lobbyA = new TestGameLobby("A");
+            var lobbyB = new TestGameLobby("B");
+
+            coordinator.Register(1, lobbyA);
+            coordinator.Register(1, lobbyB);
+
+            var session1 = new TestSession();
+            coordinator.Join(session1);
+            Assert.IsTrue(session1.WaitForBindingCount(1, TimeSpan.FromSeconds(1)));
+            Assert.AreSame(lobbyA, session1.GetBoundConnection(1)?.Owner);
+
+            var session2 = new TestSession();
+            coordinator.Join(session2);
+            Assert.IsTrue(session2.WaitForBindingCount(1, TimeSpan.FromSeconds(1)));
+            Assert.AreSame(lobbyB, session2.GetBoundConnection(1)?.Owner);
+
+            var session3 = new TestSession();
+            coordinator.Join(session3);
+            Assert.IsTrue(session3.WaitForBindingCount(1, TimeSpan.FromSeconds(1)));
+            Assert.AreSame(lobbyA, session3.GetBoundConnection(1)?.Owner);
+
+            coordinator.Leave(session1);
+            coordinator.Leave(session2);
+            coordinator.Leave(session3);
+            coordinator.Unregister(lobbyA);
+            coordinator.Unregister(lobbyB);
+        }
 
         [NUnit.Framework.Test, Timeout(10000)]
         public async System.Threading.Tasks.Task GatewayHostServiceHubAgentWorkflowTest()
@@ -181,6 +217,136 @@ namespace PinionCore.Remote.Gateway.Tests
             userAgentDisconnect();
             connectionService.Dispose();
             actualGameService.Dispose();
+        }
+
+        private sealed class TestGameLobby : IGameLobby
+        {
+            private readonly Dictionary<uint, TestClientConnection> _connections;
+            private readonly NotifiableCollection<IClientConnection> _collection;
+
+            public TestGameLobby(string name)
+            {
+                Name = name;
+                _connections = new Dictionary<uint, TestClientConnection>();
+                _collection = new NotifiableCollection<IClientConnection>();
+                ClientNotifier = new Notifier<IClientConnection>(_collection, _collection);
+            }
+
+            public string Name { get; }
+
+            public Notifier<IClientConnection> ClientNotifier { get; }
+
+            private uint _nextUserId;
+
+            public Value<uint> Join()
+            {
+                var userId = ++_nextUserId;
+                var connection = new TestClientConnection(userId, this);
+                _connections[userId] = connection;
+                ClientNotifier.Collection.Add(connection);
+
+                var value = new Value<uint>();
+                value.SetValue(userId);
+                return value;
+            }
+
+            public Value<ResponseStatus> Leave(uint clientId)
+            {
+                if (_connections.TryGetValue(clientId, out var connection))
+                {
+                    _connections.Remove(clientId);
+                    ClientNotifier.Collection.Remove(connection);
+                }
+
+                return new Value<ResponseStatus>(ResponseStatus.Success);
+            }
+        }
+
+        private sealed class TestClientConnection : IClientConnection
+        {
+            public TestClientConnection(uint id, TestGameLobby owner)
+            {
+                Id = new Property<uint>(id);
+                Owner = owner;
+            }
+
+            public TestGameLobby Owner { get; }
+
+            public Property<uint> Id { get; }
+
+            public event Action<byte[]> ResponseEvent
+            {
+                add { }
+                remove { }
+            }
+
+            public void Request(byte[] payload)
+            {
+            }
+        }
+
+        private sealed class TestSession : IRoutableSession
+        {
+            private readonly Dictionary<uint, TestClientConnection> _bindings;
+            private readonly object _syncRoot;
+
+            public TestSession()
+            {
+                _bindings = new Dictionary<uint, TestClientConnection>();
+                _syncRoot = new object();
+            }
+
+            public bool Set(uint group, IClientConnection clientConnection)
+            {
+                if (clientConnection is not TestClientConnection connection)
+                {
+                    return false;
+                }
+
+                lock (_syncRoot)
+                {
+                    _bindings[group] = connection;
+                    Monitor.PulseAll(_syncRoot);
+                }
+
+                return true;
+            }
+
+            public bool Unset(uint group)
+            {
+                lock (_syncRoot)
+                {
+                    return _bindings.Remove(group);
+                }
+            }
+
+            public bool WaitForBindingCount(int expectedCount, TimeSpan timeout)
+            {
+                var deadline = DateTime.UtcNow + timeout;
+                lock (_syncRoot)
+                {
+                    while (_bindings.Count < expectedCount)
+                    {
+                        var remaining = deadline - DateTime.UtcNow;
+                        if (remaining <= TimeSpan.Zero)
+                        {
+                            return false;
+                        }
+
+                        Monitor.Wait(_syncRoot, remaining);
+                    }
+
+                    return true;
+                }
+            }
+
+            public TestClientConnection GetBoundConnection(uint group)
+            {
+                lock (_syncRoot)
+                {
+                    return _bindings.TryGetValue(group, out var connection) ? connection : null;
+                }
+            }
         }
      }
 }
