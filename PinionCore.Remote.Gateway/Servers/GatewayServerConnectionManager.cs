@@ -7,14 +7,12 @@ namespace PinionCore.Remote.Gateway.Servers
 {
     class GatewayServerConnectionManager : IGameLobby , IListenable 
     {
-        readonly IdProvider _idProvider;
         readonly System.Collections.Concurrent.ConcurrentDictionary<uint, IClientConnection> _clients = new System.Collections.Concurrent.ConcurrentDictionary<uint, IClientConnection>();
         readonly Notifier<IClientConnection> _clientNotifier;
-        
+
 
         public GatewayServerConnectionManager()
         {
-            _idProvider = new IdProvider();
             _clients = new System.Collections.Concurrent.ConcurrentDictionary<uint, IClientConnection>();
             _clientNotifier = new Notifier<IClientConnection>();
         }
@@ -52,7 +50,7 @@ namespace PinionCore.Remote.Gateway.Servers
 
         Value<uint> IGameLobby.Join()
         {
-            var id = _idProvider.Landlord.Rent();
+            var id = GatewayServerClientChannelRegistry.AllocateChannelId();
             var client = new GatewayServerClientChannel(id);
             if(!_clients.TryAdd(id, client))
             {
