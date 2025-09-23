@@ -80,7 +80,7 @@ namespace PinionCore.Remote.Gateway.Tests
         [NUnit.Framework.Test, Timeout(10000)]
         public void UserSessionRouteManagementTest()
         {
-            var route = new PinionCore.Remote.Gateway.Hosts.GatewayHostSessionCoordinator();
+            var route = new PinionCore.Remote.Gateway.Hosts.GatewayHostSessionCoordinator(new RoundRobinGameLobbySelectionStrategy());
             var user1 = new PinionCore.Remote.Gateway.Hosts.GatewayHostConnectionManager();
             IConnectionManager owner1 = user1;
 
@@ -117,7 +117,7 @@ namespace PinionCore.Remote.Gateway.Tests
         [NUnit.Framework.Test, Timeout(10000)]
         public void RoundRobinDistributionTest()
         {
-            var coordinator = new PinionCore.Remote.Gateway.Hosts.GatewayHostSessionCoordinator();
+            var coordinator = new PinionCore.Remote.Gateway.Hosts.GatewayHostSessionCoordinator(new RoundRobinGameLobbySelectionStrategy());
 
             PinionCore.Remote.Gateway.Protocols.IGameLobby lobby1 = new PinionCore.Remote.Gateway.Servers.GatewayServerConnectionManager();
             PinionCore.Remote.Gateway.Protocols.IGameLobby lobby2 = new PinionCore.Remote.Gateway.Servers.GatewayServerConnectionManager();
@@ -161,7 +161,7 @@ namespace PinionCore.Remote.Gateway.Tests
             }
         }
 
-        [NUnit.Framework.Test, Timeout(10000)]
+        [NUnit.Framework.Test, Timeout(10000) , NUnit.Framework.Repeat(10)]
         public async System.Threading.Tasks.Task GatewayHostServiceHubAgentWorkflowTest()
         {
             var gameEntry = new TestGameEntry(TestGameEntry.GameType.Method1);

@@ -1,5 +1,6 @@
 ﻿using System.Linq;
 using System.Reactive.Linq;
+using NUnit.Framework;
 using PinionCore.Remote.Gateway.Hosts;
 using PinionCore.Remote.Gateway.Protocols;
 using PinionCore.Remote.Gateway.Servers;
@@ -11,7 +12,7 @@ namespace PinionCore.Remote.Gateway.Tests
 {
     public class GatewayServerServiceTests
     {
-        [NUnit.Framework.Test, NUnit.Framework.Timeout(30000)]
+        [NUnit.Framework.Test, NUnit.Framework.Timeout(30000),Repeat(10)]
         public async System.Threading.Tasks.Task GatewayHostServiceIntegrationTest()
         {
             // 遊戲服務建立階段...
