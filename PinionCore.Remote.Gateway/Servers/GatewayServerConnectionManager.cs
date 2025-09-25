@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using PinionCore.Network;
 using PinionCore.Remote.Gateway.Protocols;
 using PinionCore.Remote.Soul;
@@ -59,7 +59,7 @@ namespace PinionCore.Remote.Gateway.Servers
                 throw new InvalidOperationException("Failed to add new client.");
             }
             _clientNotifier.Collection.Add(client);
-            GatewayServerClientChannelRegistry.Register(id, client);
+            
             _streamableEnterEvent?.Invoke(client);
             return id;
         }
@@ -70,7 +70,7 @@ namespace PinionCore.Remote.Gateway.Servers
             if (_clients.TryRemove(clientId, out var u))
             {
                 _clientNotifier.Collection.Remove(u);
-                GatewayServerClientChannelRegistry.Unregister(clientId);
+                
                 if (u is IStreamable streamable)
                 {
                     _streamableLeaveEvent?.Invoke(streamable);

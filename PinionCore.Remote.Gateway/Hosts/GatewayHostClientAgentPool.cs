@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Linq;
 
 using PinionCore.Remote.Gateway.Protocols;
@@ -12,8 +12,7 @@ namespace PinionCore.Remote.Gateway.Hosts
         class User
         {
             public IAgent Agent;
-            public IClientConnection Session;
-            public Servers.GatewayServerSessionAdapter Stream;
+            public IClientConnection Session;            
         }
 
         readonly System.Collections.Generic.List<User> _users;
@@ -62,7 +61,7 @@ namespace PinionCore.Remote.Gateway.Hosts
 
                 Agents.Collection.Remove(user.Agent);
                 user.Agent.Disable();
-                user.Stream?.Dispose();
+                
                 _users.RemoveAt(i);
             }
         }
@@ -70,13 +69,12 @@ namespace PinionCore.Remote.Gateway.Hosts
         private void _Create(IClientConnection session)
         {
             var agent = PinionCore.Remote.Standalone.Provider.CreateAgent(_gameProtocol);
-            var stream = new Servers.GatewayServerSessionAdapter(session);
-            agent.Enable(stream);
+            
+            //agent.Enable(stream);
             var user = new User
             {
                 Agent = agent,
-                Session = session,
-                Stream = stream,
+                Session = session,                
             };
             _users.Add(user);
             Agents.Collection.Add(user.Agent);
@@ -89,7 +87,7 @@ namespace PinionCore.Remote.Gateway.Hosts
                 var user = _users[i];
                 Agents.Collection.Remove(user.Agent);
                 user.Agent.Disable();
-                user.Stream?.Dispose();
+                
                 _users.RemoveAt(i);
             }
 

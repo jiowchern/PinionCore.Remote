@@ -95,8 +95,8 @@ namespace PinionCore.Remote.Gateway.Tests
             {
                 throw new Exception("");
             }
-
-            return new GatewayServerSessionAdapter(user);
+            throw new NotImplementedException();
+            //return new GatewayServerSessionAdapter(user);
         }
     }
 }

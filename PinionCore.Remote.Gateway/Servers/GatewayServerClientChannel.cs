@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using PinionCore.Network;
 using PinionCore.Remote.Gateway.Protocols;
 
@@ -53,7 +53,7 @@ namespace PinionCore.Remote.Gateway.Servers
             {
                 response(sendBuffer);
             }
-            GatewayServerClientChannelRegistry.Enqueue(_channelId, sendBuffer);
+            
             return sendTask;
         }
     }
