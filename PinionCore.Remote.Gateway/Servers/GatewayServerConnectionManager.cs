@@ -72,7 +72,7 @@ namespace PinionCore.Remote.Gateway.Servers
             if (_clients.TryRemove(clientId, out var u))
             {
                 _Connections.Items.Remove(u);
-                
+                _idProvider.Landlord.Return(clientId);
                 if (u is IStreamable streamable)
                 {
                     _streamableLeaveEvent?.Invoke(streamable);

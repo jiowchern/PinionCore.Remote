@@ -5,10 +5,10 @@ using PinionCore.Remote.Gateway.Protocols;
 
 namespace PinionCore.Remote.Gateway.Hosts
 {
-    internal class GatewayHostSessionCoordinator : ISessionMembership, IServiceRegistry
+    internal class GatewayHostSessionCoordinator : ISessionMembership, IServiceRegistry , IDisposable
     {
-        private IGameLobbySelectionStrategy _SelectionStrategy;
-
+        private readonly IGameLobbySelectionStrategy _SelectionStrategy;
+               
         public GatewayHostSessionCoordinator(IGameLobbySelectionStrategy selectionStrategy)
         {
             _SelectionStrategy = selectionStrategy;
@@ -32,6 +32,10 @@ namespace PinionCore.Remote.Gateway.Hosts
         void IServiceRegistry.Unregister(IGameLobby service)
         {
             throw new NotImplementedException();
+        }
+
+        public void Dispose()
+        {            
         }
     }
 }
