@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Linq;
-
 using PinionCore.Remote.Gateway.Protocols;
 
 using PinionCore.Remote.Ghost;
@@ -58,8 +57,7 @@ namespace PinionCore.Remote.Gateway.Hosts
                 {
                     continue;
                 }
-
-                Agents.Collection.Remove(user.Agent);
+                
                 user.Agent.Disable();
                 
                 _users.RemoveAt(i);
@@ -69,15 +67,15 @@ namespace PinionCore.Remote.Gateway.Hosts
         private void _Create(IClientConnection session)
         {
             var agent = PinionCore.Remote.Standalone.Provider.CreateAgent(_gameProtocol);
-            
-            //agent.Enable(stream);
+
+            agent.Enable(new SessionAdapter(session));
             var user = new User
             {
                 Agent = agent,
                 Session = session,                
             };
             _users.Add(user);
-            Agents.Collection.Add(user.Agent);
+            
         }
         public void Dispose()
         {
@@ -85,7 +83,7 @@ namespace PinionCore.Remote.Gateway.Hosts
             for (var i = _users.Count - 1; i >= 0; i--)
             {
                 var user = _users[i];
-                Agents.Collection.Remove(user.Agent);
+                
                 user.Agent.Disable();
                 
                 _users.RemoveAt(i);

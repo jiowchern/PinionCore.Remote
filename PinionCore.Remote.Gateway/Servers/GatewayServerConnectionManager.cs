@@ -9,6 +9,7 @@ namespace PinionCore.Remote.Gateway.Servers
     {
         readonly IdProvider _idProvider;
         readonly System.Collections.Concurrent.ConcurrentDictionary<uint, IClientConnection> _clients = new System.Collections.Concurrent.ConcurrentDictionary<uint, IClientConnection>();
+        readonly NotifiableCollection<IClientConnection> _Connections;
         readonly Notifier<IClientConnection> _clientNotifier;
         
 
@@ -16,7 +17,8 @@ namespace PinionCore.Remote.Gateway.Servers
         {
             _idProvider = new IdProvider();
             _clients = new System.Collections.Concurrent.ConcurrentDictionary<uint, IClientConnection>();
-            _clientNotifier = new Notifier<IClientConnection>();
+            _Connections = new NotifiableCollection<IClientConnection>();
+            _clientNotifier = new Notifier<IClientConnection>(_Connections);
         }
 
         
@@ -58,7 +60,7 @@ namespace PinionCore.Remote.Gateway.Servers
             {
                 throw new InvalidOperationException("Failed to add new client.");
             }
-            _clientNotifier.Collection.Add(client);
+            _Connections.Items.Add(client);
             
             _streamableEnterEvent?.Invoke(client);
             return id;
@@ -69,7 +71,7 @@ namespace PinionCore.Remote.Gateway.Servers
             var code = ResponseStatus.NotFound;
             if (_clients.TryRemove(clientId, out var u))
             {
-                _clientNotifier.Collection.Remove(u);
+                _Connections.Items.Remove(u);
                 
                 if (u is IStreamable streamable)
                 {

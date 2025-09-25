@@ -3,8 +3,9 @@ using System.Linq;
 using System.Reactive.Linq;
 using NUnit.Framework;
 using PinionCore.Network;
-using PinionCore.Remote.Gateway.Servers;
+using PinionCore.Remote.Gateway.Hosts;
 using PinionCore.Remote.Gateway.Protocols;
+using PinionCore.Remote.Gateway.Servers;
 using PinionCore.Remote.Ghost;
 using PinionCore.Remote.Reactive;
 using PinionCore.Remote.Soul;
@@ -90,13 +91,8 @@ namespace PinionCore.Remote.Gateway.Tests
         }
 
         private IStreamable _ToStream(IClientConnection user)
-        {
-            if (user is IStreamable directStream)
-            {
-                throw new Exception("");
-            }
-            throw new NotImplementedException();
-            //return new GatewayServerSessionAdapter(user);
+        {                        
+            return new SessionAdapter(user);
         }
     }
 }

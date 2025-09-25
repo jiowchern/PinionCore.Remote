@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using PinionCore.Remote;
 using PinionCore.Remote.Gateway.Protocols;
@@ -11,13 +11,15 @@ namespace PinionCore.Remote.Gateway.Hosts
         private readonly Dictionary<uint, IClientConnection> _sessionsByGroup;
         private readonly Dictionary<IClientConnection, int> _sessionRefCounts;
         private readonly Notifier<IClientConnection> _sessions;
+        private readonly NotifiableCollection<IClientConnection> _sessionColl;
 
         public GatewayHostConnectionManager()
         {
             _syncRoot = new object();
             _sessionsByGroup = new Dictionary<uint, IClientConnection>();
             _sessionRefCounts = new Dictionary<IClientConnection, int>();
-            _sessions = new Notifier<IClientConnection>();
+            _sessionColl = new NotifiableCollection<IClientConnection>();
+            _sessions = new Notifier<IClientConnection>(_sessionColl);
         }
 
         Notifier<IClientConnection> IConnectionManager.Connections => _sessions;
@@ -47,7 +49,7 @@ namespace PinionCore.Remote.Gateway.Hosts
                 {
                     _sessionRefCounts[user] = 1;
                     // Notify when a session first gains a connection
-                    _sessions.Collection.Add(user);
+                    _sessionColl.Items.Add(user);
                 }
 
                 return true;
@@ -71,7 +73,7 @@ namespace PinionCore.Remote.Gateway.Hosts
                     if (count <= 0)
                     {
                         _sessionRefCounts.Remove(user);
-                        _sessions.Collection.Remove(user);
+                        _sessionColl.Items.Remove(user);
                     }
                     else
                     {
