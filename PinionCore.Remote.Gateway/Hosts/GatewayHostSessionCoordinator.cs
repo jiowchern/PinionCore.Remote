@@ -26,12 +26,12 @@ namespace PinionCore.Remote.Gateway.Hosts
             throw new NotImplementedException();
         }
 
-        void IServiceRegistry.Register(uint group, IGameLobby service)
+        void IServiceRegistry.Register(uint group, ClientConnectionDisposer service)
         {
             throw new NotImplementedException();
         }
 
-        void IServiceRegistry.Unregister(IGameLobby service)
+        void IServiceRegistry.Unregister(ClientConnectionDisposer service)
         {
             throw new NotImplementedException();
         }

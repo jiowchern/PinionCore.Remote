@@ -21,8 +21,8 @@ namespace PinionCore.Remote.Gateway.Tests
             ISessionMembership membership = coordinator;
 
             var m1 = new GatewayServerConnectionManager();
-
-            registry.Register(1, m1);
+            var m1Disposer = new ClientConnectionDisposer(new RoundRobinGameLobbySelectionStrategy());
+            registry.Register(1, m1Disposer);
 
             var conn1 = new GatewayHostConnectionManager();
             IConnectionManager connectionManager = conn1;
@@ -37,7 +37,8 @@ namespace PinionCore.Remote.Gateway.Tests
             var c1 = await supplyObs.FirstAsync();
             Assert.AreEqual(1, c1.Id.Value);
 
-            registry.Unregister(m1);
+            m1Disposer.Remove(m1);
+            registry.Unregister(m1Disposer);
             var c2 = await unsupplyObs.FirstAsync();
 
             Assert.AreEqual(1, c2.Id.Value);

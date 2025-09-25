@@ -44,7 +44,7 @@ namespace PinionCore.Remote.Gateway.Tests
                     m1.Set();
             };
             clientConnectionDisposer.Remove(lobby1);
-            m1.WaitOne(5000);
+            m1.WaitOne(1000);
             Assert.AreEqual(2, conns.Count);
 
             clientConnectionDisposer.Dispose();

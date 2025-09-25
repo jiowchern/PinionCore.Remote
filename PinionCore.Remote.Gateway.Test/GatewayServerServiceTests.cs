@@ -60,7 +60,9 @@ namespace PinionCore.Remote.Gateway.Tests
             var lobby1Obs = from lobby in userAgent1.QueryNotifier<IGameLobby>().SupplyEvent()
                             select lobby;
             var lobby1 = await lobby1Obs.FirstAsync();
-            hostHub.Registry.Register(1, lobby1);
+            var disposer1 = new ClientConnectionDisposer(new RoundRobinGameLobbySelectionStrategy());
+            disposer1.Add(lobby1);
+            hostHub.Registry.Register(1, disposer1);
 
             // Connect Gateway Host to Game Service 2
             var userAgent2 = PinionCore.Remote.Gateway.Provider.CreateAgent();
@@ -72,7 +74,9 @@ namespace PinionCore.Remote.Gateway.Tests
             var lobby2Obs = from lobby in userAgent2.QueryNotifier<IGameLobby>().SupplyEvent()
                             select lobby;
             var lobby2 = await lobby2Obs.FirstAsync();
-            hostHub.Registry.Register(2, lobby2);
+            var disposer2 = new ClientConnectionDisposer(new RoundRobinGameLobbySelectionStrategy());
+            disposer2.Add(lobby2);
+            hostHub.Registry.Register(2, disposer2);
 
 
             // Client connections to Gateway Host
@@ -149,8 +153,10 @@ namespace PinionCore.Remote.Gateway.Tests
             client1.Agent.Disable();
 
             // Unregister from host hub before disposing
-            hostHub.Registry.Unregister(lobby2);
-            hostHub.Registry.Unregister(lobby1);
+            disposer2.Remove(lobby2);
+            hostHub.Registry.Unregister(disposer2);
+            disposer1.Remove(lobby1);
+            hostHub.Registry.Unregister(disposer1);
 
             // Disconnect event handlers for host listener
             hostListener.StreamableLeaveEvent -= streamable => hostHub.Service.Leave(streamable);
