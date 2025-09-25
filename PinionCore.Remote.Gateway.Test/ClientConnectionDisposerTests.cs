@@ -1,4 +1,5 @@
 ﻿using System.Threading;
+using NSubstitute;
 using NUnit.Framework;
 using PinionCore.Remote.Gateway.Servers;
 
@@ -9,9 +10,13 @@ namespace PinionCore.Remote.Gateway.Tests
     public class ClientConnectionDisposerTests
     {
         [NUnit.Framework.Test, Timeout(10000)]
-        public async System.Threading.Tasks.Task RecycledConnectionIdTest()
+        public async System.Threading.Tasks.Task ConnectionIdRecyclingTest()
         {
             var clientConnectionDisposer = new PinionCore.Remote.Gateway.Hosts.ClientConnectionDisposer(new Hosts.RoundRobinGameLobbySelectionStrategy());
+            clientConnectionDisposer.ClientReleasedEvent += c =>
+            {
+
+            };
 
             var lobby1 = new GatewayServerConnectionManager();
 
@@ -29,8 +34,23 @@ namespace PinionCore.Remote.Gateway.Tests
             var c4 = await clientConnectionDisposer.Require(); // 再次要求連線，應該會拿到剛剛歸還的連線 1
             Assert.AreEqual(1, c4.Id.Value); // 確認拿到的連線 ID 是 1
 
+
+            var m1 = new System.Threading.ManualResetEvent(false);
+            var conns = new System.Collections.Generic.List<Protocols.IClientConnection>();
+            clientConnectionDisposer.ClientReleasedEvent += c =>
+            {
+                conns.Add(c);
+                if (conns.Count == 2)   
+                    m1.Set();
+            };
             clientConnectionDisposer.Remove(lobby1);
+            m1.WaitOne(5000);
+            Assert.AreEqual(2, conns.Count);
+
+            clientConnectionDisposer.Dispose();
         }
+
+       
     }
 }
 
