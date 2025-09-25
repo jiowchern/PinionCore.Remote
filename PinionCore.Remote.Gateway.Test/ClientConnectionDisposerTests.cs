@@ -10,6 +10,27 @@ namespace PinionCore.Remote.Gateway.Tests
     public class ClientConnectionDisposerTests
     {
         [NUnit.Framework.Test, Timeout(10000)]
+        public async System.Threading.Tasks.Task MultipleLobbyConnectionIdTest()
+        {
+            var clientConnectionDisposer = new PinionCore.Remote.Gateway.Hosts.ClientConnectionDisposer(new Hosts.RoundRobinGameLobbySelectionStrategy());
+            clientConnectionDisposer.ClientReleasedEvent += c =>
+            {
+
+            };
+
+            var lobby1 = new GatewayServerConnectionManager();
+            var lobby2 = new GatewayServerConnectionManager();
+
+            clientConnectionDisposer.Add(lobby1);
+            clientConnectionDisposer.Add(lobby2);
+            var c1 = await clientConnectionDisposer.Require();
+            Assert.AreEqual(1, c1.Id.Value); // 1 是 lobby1 的第一個連線 ID
+            var c2 = await clientConnectionDisposer.Require();
+            Assert.AreEqual(1, c2.Id.Value); // 1 是 lobby2 的第一個連線 ID
+
+
+        }
+        [NUnit.Framework.Test, Timeout(10000)]
         public async System.Threading.Tasks.Task ConnectionIdRecyclingTest()
         {
             var clientConnectionDisposer = new PinionCore.Remote.Gateway.Hosts.ClientConnectionDisposer(new Hosts.RoundRobinGameLobbySelectionStrategy());
