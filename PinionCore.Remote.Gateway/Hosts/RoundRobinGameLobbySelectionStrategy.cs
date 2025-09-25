@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using PinionCore.Remote.Gateway.Protocols;
 
@@ -11,8 +11,9 @@ namespace PinionCore.Remote.Gateway.Hosts
     {
         private readonly Dictionary<uint, int> _nextIndexByGroup = new Dictionary<uint, int>();
 
-        public IEnumerable<IGameLobby> OrderLobbies(uint group, IReadOnlyList<IGameLobby> lobbies)
+        public IEnumerable<IGameLobby> OrderLobbies(IReadOnlyList<IGameLobby> lobbies)
         {
+            uint group = 0;
             if (lobbies == null)
             {
                 throw new ArgumentNullException(nameof(lobbies));

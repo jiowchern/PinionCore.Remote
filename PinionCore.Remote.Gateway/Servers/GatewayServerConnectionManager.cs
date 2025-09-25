@@ -8,7 +8,7 @@ namespace PinionCore.Remote.Gateway.Servers
     class GatewayServerConnectionManager : IGameLobby , IListenable 
     {
         readonly IdProvider _idProvider;
-        readonly System.Collections.Concurrent.ConcurrentDictionary<uint, IClientConnection> _clients = new System.Collections.Concurrent.ConcurrentDictionary<uint, IClientConnection>();
+        readonly System.Collections.Concurrent.ConcurrentDictionary<uint, GatewayServerClientChannel> _clients = new System.Collections.Concurrent.ConcurrentDictionary<uint, GatewayServerClientChannel>();
         readonly NotifiableCollection<IClientConnection> _Connections;
         readonly Notifier<IClientConnection> _clientNotifier;
         
@@ -16,7 +16,7 @@ namespace PinionCore.Remote.Gateway.Servers
         public GatewayServerConnectionManager()
         {
             _idProvider = new IdProvider();
-            _clients = new System.Collections.Concurrent.ConcurrentDictionary<uint, IClientConnection>();
+            _clients = new System.Collections.Concurrent.ConcurrentDictionary<uint, GatewayServerClientChannel>();
             _Connections = new NotifiableCollection<IClientConnection>();
             _clientNotifier = new Notifier<IClientConnection>(_Connections);
         }
@@ -73,10 +73,8 @@ namespace PinionCore.Remote.Gateway.Servers
             {
                 _Connections.Items.Remove(u);
                 _idProvider.Landlord.Return(clientId);
-                if (u is IStreamable streamable)
-                {
-                    _streamableLeaveEvent?.Invoke(streamable);
-                }
+                _streamableLeaveEvent?.Invoke(u);
+                
                 code = ResponseStatus.Success;
             }
             return code;

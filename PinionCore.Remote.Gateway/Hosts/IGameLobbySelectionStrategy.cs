@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using PinionCore.Remote.Gateway.Protocols;
 
 namespace PinionCore.Remote.Gateway.Hosts
@@ -16,6 +16,6 @@ namespace PinionCore.Remote.Gateway.Hosts
         /// <param name="group">The group identifier for the requested lobby.</param>
         /// <param name="lobbies">The current lobbies registered for the group.</param>
         /// <returns>An ordered enumerable of lobbies to try for binding.</returns>
-        IEnumerable<IGameLobby> OrderLobbies(uint group, IReadOnlyList<IGameLobby> lobbies);
+        IEnumerable<IGameLobby> OrderLobbies(IReadOnlyList<IGameLobby> lobbies);
     }
 }

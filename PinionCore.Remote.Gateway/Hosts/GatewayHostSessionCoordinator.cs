@@ -5,6 +5,8 @@ using PinionCore.Remote.Gateway.Protocols;
 
 namespace PinionCore.Remote.Gateway.Hosts
 {
+
+
     internal class GatewayHostSessionCoordinator : ISessionMembership, IServiceRegistry , IDisposable
     {
         private readonly IGameLobbySelectionStrategy _SelectionStrategy;
