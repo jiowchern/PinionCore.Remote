@@ -5,8 +5,8 @@ namespace PinionCore.Remote.Gateway.Hosts
     
     interface IServiceRegistry
     {
-        void Register(uint group, ClientConnectionDisposer disposer);
-        void Unregister(ClientConnectionDisposer disposer);
+        void Register(uint group, IGameLobby lobby);
+        void Unregister(uint group, IGameLobby lobby);
     }
 }
 

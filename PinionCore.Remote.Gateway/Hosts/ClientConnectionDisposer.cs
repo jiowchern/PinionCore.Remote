@@ -266,5 +266,13 @@ namespace PinionCore.Remote.Gateway.Hosts
                 throw new ObjectDisposedException(nameof(ClientConnectionDisposer));
             }
         }
+
+        internal bool IsEmpty()
+        {
+            lock (_sync)
+            {
+                return _lobbyStates.Count == 0;
+            }
+        }
     }
 }

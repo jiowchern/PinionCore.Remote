@@ -53,10 +53,8 @@ namespace PinionCore.Remote.Gateway.Tests
             // Create the gateway host hub
             var gatewayHost = new PinionCore.Remote.Gateway.Hosts.GatewayHostServiceHub();
 
-            // Register the game lobby with the gateway host
-            var gameDisposer = new ClientConnectionDisposer(new RoundRobinGameLobbySelectionStrategy());
-            gameDisposer.Add(game);
-            gatewayHost.Registry.Register(1, gameDisposer);
+            // Register the game lobby with the gateway host            
+            gatewayHost.Registry.Register(1, game);
 
             // Register the game lobby with the gateway host
             var gatewayAgent = new PinionCore.Remote.Gateway.Hosts.GatewayHostClientAgentPool(gameProtocol);
@@ -82,7 +80,7 @@ namespace PinionCore.Remote.Gateway.Tests
             await gameAgentWorker.StopAsync();
             await gatewayAgentWorker.StopAsync();
 
-            gatewayHost.Registry.Unregister(gameDisposer);
+            gatewayHost.Registry.Unregister(1, game);
             gatewayHost.Service.Dispose();
             await userAgentWorker.StopAsync();
 
