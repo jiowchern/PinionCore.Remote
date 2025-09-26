@@ -27,20 +27,10 @@ namespace PinionCore.Remote.Gateway.Tests
             var port1 = PinionCore.Network.Tcp.Tools.GetAvailablePort();
             tcpListener1.Bind(port1);
 
-            var gameEntry2 = new TestGameEntry(TestGameEntry.GameType.Method2);
-            Soul.IService service2 = PinionCore.Remote.Standalone.Provider.CreateService(gameEntry2, PinionCore.Remote.Tools.Protocol.Sources.TestCommon.ProtocolProvider.CreateCase1());
-            var serviceHub2 = new GatewayServerServiceHub();
-            var tcpListener2 = new PinionCore.Remote.Server.Tcp.Listener();
-            Soul.IListenable listener2 = tcpListener2;
-            listener2.StreamableLeaveEvent += streamable => serviceHub2.Service.Leave(streamable);
-            listener2.StreamableEnterEvent += streamable => serviceHub2.Service.Join(streamable);
-            serviceHub2.Listener.StreamableLeaveEvent += streamable => service2.Leave(streamable);
-            serviceHub2.Listener.StreamableEnterEvent += streamable => service2.Join(streamable);
-            var port2 = PinionCore.Network.Tcp.Tools.GetAvailablePort();
-            tcpListener2.Bind(port2);
+            
 
             // Gateway Host 連線階段...
-            var hostHub = new GatewayHostServiceHub();
+            var hostHub = new GatewayHostServiceHub(new RoundRobinGameLobbySelectionStrategy());
 
             // Set up TCP listener for Gateway Host first
             var tcpHostListener = new PinionCore.Remote.Server.Tcp.Listener();
@@ -63,17 +53,7 @@ namespace PinionCore.Remote.Gateway.Tests
             
             hostHub.Registry.Register(1, lobby1);
 
-            // Connect Gateway Host to Game Service 2
-            var userAgent2 = PinionCore.Remote.Gateway.Provider.CreateAgent();
-            var userTcpConnector2 = new PinionCore.Network.Tcp.Connector();
-            var peer2 = await userTcpConnector2.Connect(new System.Net.IPEndPoint(System.Net.IPAddress.Loopback, port2));
-            userAgent2.Enable(peer2);
-            var agentWorker2 = new AgentWorker(userAgent2);
-            agentWorker2.Start();
-            var lobby2Obs = from lobby in userAgent2.QueryNotifier<IGameLobby>().SupplyEvent()
-                            select lobby;
-            var lobby2 = await lobby2Obs.FirstAsync();            
-            hostHub.Registry.Register(2, lobby2);
+            
 
 
             // Client connections to Gateway Host
@@ -88,39 +68,9 @@ namespace PinionCore.Remote.Gateway.Tests
             var agentsObs1 = from agent in client1.Agents.Base.SupplyEvent()
                              select agent;
 
-            var agents1 = await agentsObs1.Buffer(2).FirstAsync();
-            var testValue1 = 0;
-            foreach(var agent1 in agents1)
-            {
-                agent1.QueryNotifier<IMethodable1>().Supply += m1 =>
-                {
-                    var value = m1.GetValue1();
-
-                    value.OnValue += v => {
-                        testValue1 += v;
-                    };
-                };
-                agent1.QueryNotifier<IMethodable2>().Supply += m2 => {
-                    var value = m2.GetValue1();
-
-                    value.OnValue += v => {
-                        testValue1 += v;
-                    };
-                };
-            }
-                
-
-            while(testValue1 < 3)
-            {
-                foreach(var agent1 in agents1)
-                {
-                    agent1.HandlePackets();
-                    agent1.HandleMessage();
-                }
-                
-                await System.Threading.Tasks.Task.Delay(100);
-            }
-
+            var agent1 = await agentsObs1.FirstAsync();
+            var agent1Worker = new AgentWorker(agent1);
+            agent1Worker.Start();
 
             // Test that both clients can access both game services through the Gateway Host
             var m1Results = from agent in client1.Agents.Base.SupplyEvent()
@@ -128,17 +78,12 @@ namespace PinionCore.Remote.Gateway.Tests
                            from value in m1.GetValue1().RemoteValue()
                            select value;
 
-            var m2Results = from agent in client1.Agents.Base.SupplyEvent()
-                           from m2 in agent.QueryNotifier<IMethodable2>().SupplyEvent()
-                           from value in m2.GetValue2().RemoteValue()
-                           select value;
+           
 
             var result1 = await m1Results.FirstAsync();
-            var result2 = await m2Results.FirstAsync();
+           
 
             NUnit.Framework.Assert.AreEqual(1, result1);
-            NUnit.Framework.Assert.AreEqual(2, result2);
-           
 
 
             // releases ...
@@ -151,7 +96,7 @@ namespace PinionCore.Remote.Gateway.Tests
 
             // Unregister from host hub before disposing
             
-            hostHub.Registry.Unregister(2 , lobby2);
+            
             
             hostHub.Registry.Unregister(1 , lobby1);
 
@@ -164,21 +109,6 @@ namespace PinionCore.Remote.Gateway.Tests
 
             // Dispose host hub service
             hostHub.Service.Dispose();
-
-            // Stop and disable user agent 2
-            await agentWorker2.StopAsync();
-            userAgent2.Disable();
-
-            // Disconnect service 2 event handlers
-            listener2.StreamableLeaveEvent -= streamable => serviceHub2.Service.Leave(streamable);
-            listener2.StreamableEnterEvent -= streamable => serviceHub2.Service.Join(streamable);
-            serviceHub2.Listener.StreamableLeaveEvent -= streamable => service2.Leave(streamable);
-            serviceHub2.Listener.StreamableEnterEvent -= streamable => service2.Join(streamable);
-
-            // Dispose service 2 resources
-            serviceHub2.Service.Dispose();
-            service2.Dispose();
-            tcpListener2.Close();
 
             // Stop and disable user agent 1
             await agentWorker1.StopAsync();

@@ -51,7 +51,7 @@ namespace PinionCore.Remote.Gateway.Tests
             var game = await gameObs.FirstAsync();
 
             // Create the gateway host hub
-            var gatewayHost = new PinionCore.Remote.Gateway.Hosts.GatewayHostServiceHub();
+            var gatewayHost = new PinionCore.Remote.Gateway.Hosts.GatewayHostServiceHub(new RoundRobinGameLobbySelectionStrategy());
 
             // Register the game lobby with the gateway host            
             gatewayHost.Registry.Register(1, game);

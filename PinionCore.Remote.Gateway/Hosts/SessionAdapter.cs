@@ -8,9 +8,12 @@ namespace PinionCore.Remote.Gateway.Hosts
     {
         readonly IClientConnection _client;
         readonly PinionCore.Network.BufferRelay _bufferRelay;
+        readonly PinionCore.Network.IStreamable _Streamable;
         public SessionAdapter(IClientConnection client)
         {
             _bufferRelay = new PinionCore.Network.BufferRelay();
+            _client = client;
+            _Streamable = _bufferRelay;
             _client.ResponseEvent += _client_ResponseEvent;
         }
 
@@ -26,7 +29,8 @@ namespace PinionCore.Remote.Gateway.Hosts
 
         IAwaitableSource<int> IStreamable.Receive(byte[] buffer, int offset, int count)
         {
-            return _bufferRelay.Pop(buffer, offset, count);
+            
+            return _Streamable.Receive(buffer, offset, count);
         }
 
         IAwaitableSource<int> IStreamable.Send(byte[] buffer, int offset, int count)

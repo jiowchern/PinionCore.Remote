@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using PinionCore.Remote.Soul;
 
 namespace PinionCore.Remote.Gateway.Hosts
@@ -10,7 +10,7 @@ namespace PinionCore.Remote.Gateway.Hosts
         public readonly IService Service;
         public readonly IServiceRegistry Registry;
 
-        public GatewayHostServiceHub(IGameLobbySelectionStrategy selectionStrategy = null)
+        public GatewayHostServiceHub(IGameLobbySelectionStrategy selectionStrategy )
         {
             _sessionCoordinator = new GatewayHostSessionCoordinator(selectionStrategy);
             Registry = _sessionCoordinator;

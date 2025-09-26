@@ -36,6 +36,7 @@ namespace PinionCore.Remote.Gateway.Tests
             {
                 while (!token.IsCancellationRequested)
                 {
+                    var ping = _agent.Ping;
                     _agent.HandlePackets();
                     _agent.HandleMessage();
                     if (_sleepInterval > TimeSpan.Zero)
