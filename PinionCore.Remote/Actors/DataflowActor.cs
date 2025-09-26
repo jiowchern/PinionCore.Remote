@@ -10,6 +10,7 @@ namespace PinionCore.Remote.Actors
         private readonly ActionBlock<TMessage> _actionBlock;
         private readonly CancellationTokenSource _internalCancellation;
         private readonly TimeSpan _disposeTimeout;
+        private readonly AsyncLocal<bool> _isInsideHandler = new AsyncLocal<bool>();
         private bool _disposed;
 
         public DataflowActor(Func<TMessage, CancellationToken, Task> handler)
@@ -37,13 +38,10 @@ namespace PinionCore.Remote.Actors
                 MaxDegreeOfParallelism = 1
             };
 
-            if (effectiveOptions.TaskScheduler != null)
-            {
-                executionOptions.TaskScheduler = effectiveOptions.TaskScheduler;
-            }
+            executionOptions.TaskScheduler = effectiveOptions.TaskScheduler ?? TaskScheduler.Default;
 
             _actionBlock = new ActionBlock<TMessage>(
-                message => handler(message, _internalCancellation.Token),
+                message => ExecuteHandlerAsync(handler, message),
                 executionOptions);
         }
 
@@ -105,29 +103,86 @@ namespace PinionCore.Remote.Actors
             _internalCancellation.Cancel();
             _actionBlock.Complete();
 
-            try
+            var completion = _actionBlock.Completion;
+
+            if (_isInsideHandler.Value)
             {
-                if (_disposeTimeout == Timeout.InfiniteTimeSpan)
-                {
-                    _actionBlock.Completion.GetAwaiter().GetResult();
-                }
-                else if (_disposeTimeout >= TimeSpan.Zero)
-                {
-                    _actionBlock.Completion.Wait(_disposeTimeout);
-                }
+                ObserveCompletionAsync(completion);
+                return;
             }
-            catch (OperationCanceledException)
+
+            if (_disposeTimeout != Timeout.InfiniteTimeSpan && _disposeTimeout >= TimeSpan.Zero)
             {
-            }
-            catch (Exception)
-            {
-                if (_actionBlock.Completion.IsFaulted)
+                try
                 {
-                    _ = _actionBlock.Completion.Exception;
+                    if (completion.Wait(_disposeTimeout))
+                    {
+                        FinalizeCompletion(completion);
+                        return;
+                    }
+                }
+                catch (OperationCanceledException)
+                {
+                    FinalizeCompletion(completion);
+                    return;
+                }
+                catch (AggregateException)
+                {
+                    if (completion.IsFaulted)
+                    {
+                        _ = completion.Exception;
+                    }
+
+                    FinalizeCompletion(completion);
+                    return;
                 }
             }
 
-            _internalCancellation.Dispose();
+            ObserveCompletionAsync(completion);
+        }
+
+        private async Task ExecuteHandlerAsync(Func<TMessage, CancellationToken, Task> handler, TMessage message)
+        {
+            _isInsideHandler.Value = true;
+
+            try
+            {
+                await handler(message, _internalCancellation.Token).ConfigureAwait(false);
+            }
+            finally
+            {
+                _isInsideHandler.Value = false;
+            }
+        }
+
+        private void ObserveCompletionAsync(Task completion)
+        {
+            if (completion.IsCompleted)
+            {
+                FinalizeCompletion(completion);
+                return;
+            }
+
+            completion.ContinueWith(
+                FinalizeCompletion,
+                CancellationToken.None,
+                TaskContinuationOptions.ExecuteSynchronously,
+                TaskScheduler.Default);
+        }
+
+        private void FinalizeCompletion(Task completion)
+        {
+            try
+            {
+                if (completion.IsFaulted)
+                {
+                    _ = completion.Exception;
+                }
+            }
+            finally
+            {
+                _internalCancellation.Dispose();
+            }
         }
 
         private static Func<TMessage, CancellationToken, Task> CreateHandler(Action<TMessage> handler)

@@ -81,7 +81,9 @@ namespace PinionCore.Remote.Gateway.Hosts
         }
 
         public void Dispose()
-        {            
+        {
+            
+            _DataflowActor.Dispose();
         }
 
         private async Task _HandleCommand(IActotCommand command, CancellationToken token)

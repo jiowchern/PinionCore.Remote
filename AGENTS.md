@@ -1,10 +1,10 @@
-﻿# AGENTS.md
+﻿# CLAUDE.md
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## 專案概述
 
-PinionCore Remote 是一個 C# 伺服器-客戶端通訊框架，支援 Unity 與 .NET Standard 2.0+ 環境。透過介面進行物件導向的遠端通訊，降低協議維護成本。
+PinionCore Remote 是一個 C# 伺服器-客戶端通訊框架，支援 Unity 與 .NET Standard 2.1+ 環境。透過介面進行物件導向的遠端通訊，降低協議維護成本。
 
 ## 常用指令
 
@@ -41,6 +41,7 @@ dotnet test [項目路徑].csproj
 - **PinionCore.Network**: 底層網路抽象，定義 IStreamable 等介面
 - **PinionCore.Serialization**: 序列化框架，處理資料轉換
 - **PinionCore.Remote.Tools.Protocol.Sources**: 程式碼產生器，自動生成 IProtocol
+- **PinionCore.Remote.Gateway**: API 閘道服務
 
 ### 關鍵設計模式
 
@@ -100,3 +101,4 @@ static partial void _Create(ref PinionCore.Remote.IProtocol protocol);
 - IL2CPP 與 AOT 環境下序列化型別需預先註冊
 - Standalone 模式適合開發階段除錯，生產環境應使用網路模式
 - 英文思考，結論用中文撰寫
+- 這是一個網路通訊框架所以開發功能嚴禁使用 static class 
