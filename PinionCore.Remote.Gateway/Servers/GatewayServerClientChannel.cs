@@ -1,20 +1,18 @@
 ﻿using System;
-using System.Diagnostics;
-using System.Runtime.Serialization;
 using System.Threading;
-using System.Threading.Tasks;
 using PinionCore.Network;
 using PinionCore.Remote.Gateway.Protocols;
-using static PinionCore.Network.Tcp.SockerTransactor;
 
 namespace PinionCore.Remote.Gateway.Servers 
 {
-    class GatewayServerClientChannel : IClientConnection ,IStreamable
+    class GatewayServerClientChannel : IClientConnection, IStreamable
     {
         readonly PinionCore.Network.Stream _stream;
         readonly PinionCore.Network.IStreamable _Streamable;
         readonly Property<uint> _id;
         int _Hoard;
+        Action<byte[]> _responseEvent;
+        int _sending;
         public GatewayServerClientChannel(uint id)
         {
             _stream = new PinionCore.Network.Stream();
@@ -24,23 +22,27 @@ namespace PinionCore.Remote.Gateway.Servers
         
         }
 
-        
-
         Property<uint> IClientConnection.Id => _id;
 
-        event Action<byte[]> _responseEvent;
         event Action<byte[]> IClientConnection.ResponseEvent
         {
             add
             {
-                _Send(value);
-                _responseEvent += value;                
+                if (value == null)
+                {
+                    throw new ArgumentNullException(nameof(value));
+                }
+
+                if (Interlocked.CompareExchange(ref _responseEvent, value, null) != null)
+                {
+                    throw new InvalidOperationException("GatewayServerClientChannel.ResponseEvent already registered.");
+                }
+                _Send();
             }
 
             remove
             {
-                _responseEvent -= value;
-                
+                Interlocked.CompareExchange(ref _responseEvent, null, value);
             }
         }
 
@@ -58,23 +60,110 @@ namespace PinionCore.Remote.Gateway.Servers
 
         IAwaitableSource<int> IStreamable.Send(byte[] buffer, int offset, int count)
         {
-            
             var sendTask = _Streamable.Send(buffer, offset, count);
-            System.Threading.Interlocked.Add(ref _Hoard, count);
+            Interlocked.Add(ref _Hoard, count);
+            _Send();
             
-            if (_responseEvent!= null)
-            {
-                _Send(_responseEvent);
-            }
             return sendTask;
         }
 
-        private void _Send(Action<byte[]> action)
+        private void _Send()
         {
-            var buf = new byte[_Hoard];
-            System.Threading.Interlocked.Exchange(ref _Hoard, 0);            
-            _stream.Pop(buf, 0, buf.Length);
-            action(buf);
+            if (Volatile.Read(ref _responseEvent) == null)
+            {
+                return;
+            }
+            if (Interlocked.CompareExchange(ref _sending, 1, 0) != 0)
+            {
+                return;
+            }
+
+            try
+            {
+                while (true)
+                {
+                    var handler = Volatile.Read(ref _responseEvent);
+                    if (handler == null)
+                    {
+                        break;
+                    }
+
+                    var bytesToSend = Interlocked.Exchange(ref _Hoard, 0);
+                    if (bytesToSend == 0)
+                    {
+                        break;
+                    }
+
+                    var buffer = new byte[bytesToSend];
+                    var read = WaitForResult(_stream.Pop(buffer, 0, bytesToSend));
+
+                    if (read < 0)
+                    {
+                        throw new InvalidOperationException("Stream returned a negative read length.");
+                    }
+
+                    if (read == 0)
+                    {
+                        continue;
+                    }
+
+                    if (read != bytesToSend)
+                    {
+                        var remainder = bytesToSend - read;
+                        if (remainder > 0)
+                        {
+                            Interlocked.Add(ref _Hoard, remainder);
+                        }
+
+                        if (read != buffer.Length)
+                        {
+                            var trimmed = new byte[read];
+                            Buffer.BlockCopy(buffer, 0, trimmed, 0, read);
+                            buffer = trimmed;
+                        }
+                    }
+
+                    handler = Volatile.Read(ref _responseEvent);
+                    if (handler == null)
+                    {
+                        _stream.Push(buffer, 0, buffer.Length);
+                        Interlocked.Add(ref _Hoard, buffer.Length);
+                        break;
+                    }
+
+                    handler(buffer);
+                }
+            }
+            finally
+            {
+                Interlocked.Exchange(ref _sending, 0);
+                if (Volatile.Read(ref _Hoard) > 0 && Volatile.Read(ref _responseEvent) != null)
+                {
+                    _Send();
+                }
+            }
+        }
+
+        static int WaitForResult(IAwaitableSource<int> awaitableSource)
+        {
+            if (awaitableSource == null)
+            {
+                throw new ArgumentNullException(nameof(awaitableSource));
+            }
+
+            var awaiter = awaitableSource.GetAwaiter();
+            if (awaiter.IsCompleted)
+            {
+                return awaiter.GetResult();
+            }
+
+            using (var waitHandle = new ManualResetEventSlim(false))
+            {
+                awaiter.OnCompleted(waitHandle.Set);
+                waitHandle.Wait();
+            }
+
+            return awaiter.GetResult();
         }
     }
 }
