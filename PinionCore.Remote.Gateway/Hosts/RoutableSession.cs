@@ -21,15 +21,15 @@ namespace PinionCore.Remote.Gateway.Hosts
             _Session = session;
             _Groups = new Dictionary<uint, GroupState>();
             Groups = _Groups;
-            _Conns = new Dictionary<uint, IClientConnection>();
+            _Conns = new Dictionary<uint, IConnection>();
         }
 
 
         readonly Dictionary<uint, GroupState> _Groups;
-        readonly Dictionary<uint, IClientConnection> _Conns;
+        readonly Dictionary<uint, IConnection> _Conns;
         public readonly IReadOnlyDictionary<uint, GroupState> Groups;
 
-        internal void Borrow(uint group, IClientConnection value)
+        internal void Borrow(uint group, IConnection value)
         {
             if(!_Conns.TryAdd(group, value))
             {
@@ -41,7 +41,7 @@ namespace PinionCore.Remote.Gateway.Hosts
 
         }
 
-        internal IClientConnection Return(uint group)
+        internal IConnection Return(uint group)
         {
             if(_Conns.TryGetValue(group , out var conn))
             {
@@ -55,7 +55,7 @@ namespace PinionCore.Remote.Gateway.Hosts
             throw new Exception("");
         }
 
-        internal bool Release(IClientConnection connection)
+        internal bool Release(IConnection connection)
         {
             var removeGroups = new List<uint>();
             foreach (var pair in _Conns)

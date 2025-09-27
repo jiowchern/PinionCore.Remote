@@ -5,7 +5,7 @@ using PinionCore.Remote.Gateway.Protocols;
 
 namespace PinionCore.Remote.Gateway.Servers 
 {
-    class GatewayServerClientChannel : IClientConnection, IStreamable
+    class GatewayServerClientChannel : IConnection, IStreamable
     {
         readonly PinionCore.Network.Stream _stream;
         readonly PinionCore.Network.IStreamable _Streamable;
@@ -22,9 +22,9 @@ namespace PinionCore.Remote.Gateway.Servers
         
         }
 
-        Property<uint> IClientConnection.Id => _id;
+        Property<uint> IConnection.Id => _id;
 
-        event Action<byte[]> IClientConnection.ResponseEvent
+        event Action<byte[]> IConnection.ResponseEvent
         {
             add
             {
@@ -46,7 +46,7 @@ namespace PinionCore.Remote.Gateway.Servers
             }
         }
 
-        void IClientConnection.Request(byte[] payload)
+        void IConnection.Request(byte[] payload)
         {
             _stream.Push(payload, 0, payload.Length);
         }

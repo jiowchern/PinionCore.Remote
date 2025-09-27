@@ -16,7 +16,7 @@ namespace PinionCore.Remote.Gateway.Tests
         public void ResponseEvent_AllowsSingleSubscriptionOnly()
         {
             var channel = new GatewayServerClientChannel(1);
-            var connection = (IClientConnection)channel;
+            var connection = (IConnection)channel;
             Action<byte[]> handler = _ => { };
 
             connection.ResponseEvent += handler;
@@ -28,7 +28,7 @@ namespace PinionCore.Remote.Gateway.Tests
         public void ResponseEvent_AllowsResubscribeAfterRemoval()
         {
             var channel = new GatewayServerClientChannel(2);
-            var connection = (IClientConnection)channel;
+            var connection = (IConnection)channel;
             Action<byte[]> handler = _ => { };
 
             connection.ResponseEvent += handler;
@@ -41,7 +41,7 @@ namespace PinionCore.Remote.Gateway.Tests
         public void Send_DeliversQueuedDataAfterSubscription()
         {
             var channel = new GatewayServerClientChannel(3);
-            var connection = (IClientConnection)channel;
+            var connection = (IConnection)channel;
             var streamable = (IStreamable)channel;
             var payload = new byte[] { 1, 2, 3 };
             var received = new ManualResetEventSlim();
@@ -64,7 +64,7 @@ namespace PinionCore.Remote.Gateway.Tests
         public void Send_ReentrantSendFlushesAllData()
         {
             var channel = new GatewayServerClientChannel(4);
-            var connection = (IClientConnection)channel;
+            var connection = (IConnection)channel;
             var streamable = (IStreamable)channel;
             var payload1 = new byte[] { 0, 1, 2, 3 };
             var payload2 = new byte[] { 4, 5, 6, 7 };
@@ -111,7 +111,7 @@ namespace PinionCore.Remote.Gateway.Tests
         {
             const int messageCount = 64;
             var channel = new GatewayServerClientChannel(5);
-            var connection = (IClientConnection)channel;
+            var connection = (IConnection)channel;
             var streamable = (IStreamable)channel;
             var expected = new List<byte>();
             foreach (var i in Enumerable.Range(0, messageCount))

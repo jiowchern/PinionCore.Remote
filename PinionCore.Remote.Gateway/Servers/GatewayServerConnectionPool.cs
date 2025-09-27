@@ -5,23 +5,23 @@ using PinionCore.Remote.Soul;
 
 namespace PinionCore.Remote.Gateway.Servers 
 {
-    class GatewayServerConnectionPool : IConnectionLobby , IListenable 
+    class GatewayServerConnectionPool : IConnectionProvider , IListenable 
     {
         readonly IdProvider _idProvider;
         readonly System.Collections.Concurrent.ConcurrentDictionary<uint, GatewayServerClientChannel> _clients = new System.Collections.Concurrent.ConcurrentDictionary<uint, GatewayServerClientChannel>();
-        readonly NotifiableCollection<IClientConnection> _Connections;
-        readonly Notifier<IClientConnection> _clientNotifier;        
+        readonly NotifiableCollection<IConnection> _Connections;
+        readonly Notifier<IConnection> _clientNotifier;        
 
         public GatewayServerConnectionPool()
         {
             _idProvider = new IdProvider();
             _clients = new System.Collections.Concurrent.ConcurrentDictionary<uint, GatewayServerClientChannel>();
-            _Connections = new NotifiableCollection<IClientConnection>();
-            _clientNotifier = new Notifier<IClientConnection>(_Connections);
+            _Connections = new NotifiableCollection<IConnection>();
+            _clientNotifier = new Notifier<IConnection>(_Connections);
         }
 
         
-        Notifier<IClientConnection> IConnectionLobby.ClientNotifier => _clientNotifier;
+        Notifier<IConnection> IConnectionProvider.ConnectionNotifier => _clientNotifier;
 
         event Action<IStreamable> _streamableEnterEvent;
         event Action<IStreamable> IListenable.StreamableEnterEvent
@@ -51,7 +51,7 @@ namespace PinionCore.Remote.Gateway.Servers
             }
         }
 
-        Value<uint> IConnectionLobby.Join()
+        Value<uint> IConnectionProvider.Join()
         {
             var id = _idProvider.Landlord.Rent();
             var client = new GatewayServerClientChannel(id);
@@ -65,7 +65,7 @@ namespace PinionCore.Remote.Gateway.Servers
             return id;
         }
 
-        Value<ResponseStatus> IConnectionLobby.Leave(uint clientId)
+        Value<ResponseStatus> IConnectionProvider.Leave(uint clientId)
         {
             var code = ResponseStatus.NotFound;
             if (_clients.TryRemove(clientId, out var u))

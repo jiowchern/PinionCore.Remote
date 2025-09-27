@@ -57,7 +57,7 @@ namespace PinionCore.Remote.Gateway.Tests
 
 
             var m1 = new System.Threading.ManualResetEvent(false);
-            var conns = new System.Collections.Generic.List<Protocols.IClientConnection>();
+            var conns = new System.Collections.Generic.List<Protocols.IConnection>();
             clientConnectionDisposer.ClientReleasedEvent += c =>
             {
                 conns.Add(c);

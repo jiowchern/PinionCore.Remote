@@ -11,7 +11,7 @@ namespace PinionCore.Remote.Gateway.Hosts
     {
         private readonly Dictionary<uint, int> _nextIndexByGroup = new Dictionary<uint, int>();
 
-        public IEnumerable<IConnectionLobby> OrderLobbies(IReadOnlyList<IConnectionLobby> lobbies)
+        public IEnumerable<IConnectionProvider> OrderLobbies(IReadOnlyList<IConnectionProvider> lobbies)
         {
             uint group = 0;
             if (lobbies == null)
@@ -22,7 +22,7 @@ namespace PinionCore.Remote.Gateway.Hosts
             if (lobbies.Count == 0)
             {
                 _nextIndexByGroup.Remove(group);
-                return Array.Empty<IConnectionLobby>();
+                return Array.Empty<IConnectionProvider>();
             }
 
             if (!_nextIndexByGroup.TryGetValue(group, out var startIndex))
@@ -35,7 +35,7 @@ namespace PinionCore.Remote.Gateway.Hosts
                 startIndex %= lobbies.Count;
             }
 
-            var ordered = new IConnectionLobby[lobbies.Count];
+            var ordered = new IConnectionProvider[lobbies.Count];
             for (var i = 0; i < lobbies.Count; i++)
             {
                 ordered[i] = lobbies[(startIndex + i) % lobbies.Count];

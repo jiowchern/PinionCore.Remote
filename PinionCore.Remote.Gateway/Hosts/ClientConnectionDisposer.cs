@@ -11,21 +11,21 @@ namespace PinionCore.Remote.Gateway.Hosts
     {
         private sealed class LobbyState
         {
-            private readonly Queue<Value<IClientConnection>> _pendingRequests = new Queue<Value<IClientConnection>>();
-            private readonly HashSet<IClientConnection> _leasedClients = new HashSet<IClientConnection>();
+            private readonly Queue<Value<IConnection>> _pendingRequests = new Queue<Value<IConnection>>();
+            private readonly HashSet<IConnection> _leasedClients = new HashSet<IConnection>();
             private readonly ClientConnectionDisposer _owner;
             private readonly object _sync = new object();
 
-            public LobbyState(ClientConnectionDisposer owner, IConnectionLobby lobby)
+            public LobbyState(ClientConnectionDisposer owner, IConnectionProvider lobby)
             {
                 _owner = owner ?? throw new ArgumentNullException(nameof(owner));
                 Lobby = lobby ?? throw new ArgumentNullException(nameof(lobby));
             }
 
-            public IConnectionLobby Lobby { get; }
-            public Action<IClientConnection> SupplyHandler => OnClientSupplied;
+            public IConnectionProvider Lobby { get; }
+            public Action<IConnection> SupplyHandler => OnClientSupplied;
 
-            public void Enqueue(Value<IClientConnection> request)
+            public void Enqueue(Value<IConnection> request)
             {
                 if (request == null)
                 {
@@ -38,7 +38,7 @@ namespace PinionCore.Remote.Gateway.Hosts
                 }
             }
 
-            public IReadOnlyCollection<IClientConnection> DrainLeased()
+            public IReadOnlyCollection<IConnection> DrainLeased()
             {
                 lock (_sync)
                 {
@@ -48,13 +48,13 @@ namespace PinionCore.Remote.Gateway.Hosts
                 }
             }
 
-            public IReadOnlyCollection<Value<IClientConnection>> DrainPending()
+            public IReadOnlyCollection<Value<IConnection>> DrainPending()
             {
                 lock (_sync)
                 {
                     if (_pendingRequests.Count == 0)
                     {
-                        return Array.Empty<Value<IClientConnection>>();
+                        return Array.Empty<Value<IConnection>>();
                     }
 
                     var snapshot = _pendingRequests.ToArray();
@@ -63,7 +63,7 @@ namespace PinionCore.Remote.Gateway.Hosts
                 }
             }
 
-            public void ReleaseLease(IClientConnection client)
+            public void ReleaseLease(IConnection client)
             {
                 lock (_sync)
                 {
@@ -71,14 +71,14 @@ namespace PinionCore.Remote.Gateway.Hosts
                 }
             }
 
-            private void OnClientSupplied(IClientConnection client)
+            private void OnClientSupplied(IConnection client)
             {
                 if (client == null)
                 {
                     return;
                 }
 
-                Value<IClientConnection> pending = null;
+                Value<IConnection> pending = null;
 
                 lock (_sync)
                 {
@@ -104,19 +104,19 @@ namespace PinionCore.Remote.Gateway.Hosts
 
         private readonly object _sync = new object();
         private readonly IGameLobbySelectionStrategy _selectionStrategy;
-        private readonly List<IConnectionLobby> _lobbies = new List<IConnectionLobby>();
-        private readonly Dictionary<IConnectionLobby, LobbyState> _lobbyStates = new Dictionary<IConnectionLobby, LobbyState>();
-        private readonly ConcurrentDictionary<IClientConnection, LobbyState> _clientToLobby = new ConcurrentDictionary<IClientConnection, LobbyState>();
+        private readonly List<IConnectionProvider> _lobbies = new List<IConnectionProvider>();
+        private readonly Dictionary<IConnectionProvider, LobbyState> _lobbyStates = new Dictionary<IConnectionProvider, LobbyState>();
+        private readonly ConcurrentDictionary<IConnection, LobbyState> _clientToLobby = new ConcurrentDictionary<IConnection, LobbyState>();
         private bool _disposed;
 
-        public event Action<IClientConnection> ClientReleasedEvent;
+        public event Action<IConnection> ClientReleasedEvent;
 
         public ClientConnectionDisposer(IGameLobbySelectionStrategy selectionStrategy)
         {
             _selectionStrategy = selectionStrategy ?? throw new ArgumentNullException(nameof(selectionStrategy));
         }
 
-        public void Add(IConnectionLobby info)
+        public void Add(IConnectionProvider info)
         {
             if (info == null)
             {
@@ -134,11 +134,11 @@ namespace PinionCore.Remote.Gateway.Hosts
                 var state = new LobbyState(this, info);
                 _lobbyStates.Add(info, state);
                 _lobbies.Add(info);
-                info.ClientNotifier.Base.Supply += state.SupplyHandler;
+                info.ConnectionNotifier.Base.Supply += state.SupplyHandler;
             }
         }
 
-        public void Remove(IConnectionLobby lobby)
+        public void Remove(IConnectionProvider lobby)
         {
             if (lobby == null)
             {
@@ -155,13 +155,13 @@ namespace PinionCore.Remote.Gateway.Hosts
 
                 _lobbyStates.Remove(lobby);
                 _lobbies.Remove(lobby);
-                lobby.ClientNotifier.Base.Supply -= state.SupplyHandler;
+                lobby.ConnectionNotifier.Base.Supply -= state.SupplyHandler;
             }
 
             ReleaseLobby(state);
         }
 
-        public Value<IClientConnection> Require()
+        public Value<IConnection> Require()
         {
             ThrowIfDisposed();
 
@@ -183,13 +183,13 @@ namespace PinionCore.Remote.Gateway.Hosts
                 throw new InvalidOperationException("No available lobby could be selected.");
             }
 
-            var request = new Value<IClientConnection>();
+            var request = new Value<IConnection>();
             lobbyState.Enqueue(request);
             lobbyState.Lobby.Join();
             return request;
         }
 
-        public void Return(IClientConnection client)
+        public void Return(IConnection client)
         {
             if (client == null)
             {
@@ -224,7 +224,7 @@ namespace PinionCore.Remote.Gateway.Hosts
                 states = _lobbyStates.Values.ToList();
                 foreach (var pair in _lobbyStates)
                 {
-                    pair.Key.ClientNotifier.Base.Supply -= pair.Value.SupplyHandler;
+                    pair.Key.ConnectionNotifier.Base.Supply -= pair.Value.SupplyHandler;
                 }
 
                 _lobbyStates.Clear();
@@ -237,7 +237,7 @@ namespace PinionCore.Remote.Gateway.Hosts
             }
         }
 
-        private void RegisterLease(IClientConnection client, LobbyState state)
+        private void RegisterLease(IConnection client, LobbyState state)
         {
             _clientToLobby[client] = state;
         }

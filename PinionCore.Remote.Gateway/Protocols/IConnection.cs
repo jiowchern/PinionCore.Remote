@@ -1,6 +1,6 @@
 ﻿namespace PinionCore.Remote.Gateway.Protocols
 {
-    public interface IClientConnection
+    public interface IConnection
     {
         PinionCore.Remote.Property<uint> Id { get; }
         event System.Action<byte[]> ResponseEvent;

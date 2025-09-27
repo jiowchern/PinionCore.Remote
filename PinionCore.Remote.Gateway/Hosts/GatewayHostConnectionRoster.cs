@@ -8,23 +8,23 @@ namespace PinionCore.Remote.Gateway.Hosts
     internal class GatewayHostConnectionRoster : IRoutableSession, IConnectionRoster
     {
         private readonly object _syncRoot;
-        private readonly Dictionary<uint, IClientConnection> _sessionsByGroup;
-        private readonly Dictionary<IClientConnection, int> _sessionRefCounts;
-        private readonly Notifier<IClientConnection> _sessions;
-        private readonly NotifiableCollection<IClientConnection> _sessionColl;
+        private readonly Dictionary<uint, IConnection> _sessionsByGroup;
+        private readonly Dictionary<IConnection, int> _sessionRefCounts;
+        private readonly Notifier<IConnection> _sessions;
+        private readonly NotifiableCollection<IConnection> _sessionColl;
 
         public GatewayHostConnectionRoster()
         {
             _syncRoot = new object();
-            _sessionsByGroup = new Dictionary<uint, IClientConnection>();
-            _sessionRefCounts = new Dictionary<IClientConnection, int>();
-            _sessionColl = new NotifiableCollection<IClientConnection>();
-            _sessions = new Notifier<IClientConnection>(_sessionColl);
+            _sessionsByGroup = new Dictionary<uint, IConnection>();
+            _sessionRefCounts = new Dictionary<IConnection, int>();
+            _sessionColl = new NotifiableCollection<IConnection>();
+            _sessions = new Notifier<IConnection>(_sessionColl);
         }
 
-        Notifier<IClientConnection> IConnectionRoster.Connections => _sessions;
+        Notifier<IConnection> IConnectionRoster.Connections => _sessions;
 
-        bool IRoutableSession.Set(uint group, IClientConnection user)
+        bool IRoutableSession.Set(uint group, IConnection user)
         {
             // Validate arguments
             if (user == null)

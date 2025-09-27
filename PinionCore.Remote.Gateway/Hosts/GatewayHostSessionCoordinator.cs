@@ -22,19 +22,19 @@ namespace PinionCore.Remote.Gateway.Hosts
         private readonly IGameLobbySelectionStrategy _Strategy;
         readonly List<RoutableSession> _RoutableSessions;
         readonly System.Collections.Generic.Dictionary<uint, ClientConnectionDisposer> _Disposers;
-        readonly HashSet<IClientConnection> _Removeds;
+        readonly HashSet<IConnection> _Removeds;
 
         struct LobbyCommand : IActotCommand
         {
             public uint Group;
-            public IConnectionLobby Lobby;
+            public IConnectionProvider Lobby;
             public bool Register;
         }
 
         struct DisposerRequierCommand : IActotCommand
         {
             public uint Group;
-            public IClientConnection ClientConnection;
+            public IConnection ClientConnection;
             public RoutableSession RoutableSession;
         }
 
@@ -50,7 +50,7 @@ namespace PinionCore.Remote.Gateway.Hosts
         {
             _Strategy = strategy;
             _RoutableSessions = new List<RoutableSession>();
-            _Removeds = new HashSet<IClientConnection>();
+            _Removeds = new HashSet<IConnection>();
             _DataflowActor = new DataflowActor<IActotCommand>(_HandleCommand);            
             _Disposers = new Dictionary<uint, ClientConnectionDisposer>();
         }
@@ -69,12 +69,12 @@ namespace PinionCore.Remote.Gateway.Hosts
             
         }
 
-        void IServiceRegistry.Register(uint group, IConnectionLobby lobby)
+        void IServiceRegistry.Register(uint group, IConnectionProvider lobby)
         {
             _DataflowActor.Post(new LobbyCommand { Lobby = lobby, Group = group, Register = true });            
         }
 
-        void IServiceRegistry.Unregister(uint group, IConnectionLobby lobby)
+        void IServiceRegistry.Unregister(uint group, IConnectionProvider lobby)
         {
             _DataflowActor.Post(new LobbyCommand { Group = group, Lobby = lobby, Register = false });            
         }
@@ -120,7 +120,7 @@ namespace PinionCore.Remote.Gateway.Hosts
             }
         }
 
-        private void _Borrow(RoutableSession routableSession, IClientConnection clientConnection, uint group)
+        private void _Borrow(RoutableSession routableSession, IConnection clientConnection, uint group)
         {
             if(!_RoutableSessions.Contains(routableSession))
             {
@@ -191,7 +191,7 @@ namespace PinionCore.Remote.Gateway.Hosts
             };
         }
 
-        private void _LeaveLobby(uint group, IConnectionLobby lobby)
+        private void _LeaveLobby(uint group, IConnectionProvider lobby)
         {
             if (_Disposers.TryGetValue(group, out var disposer))
             {
@@ -208,7 +208,7 @@ namespace PinionCore.Remote.Gateway.Hosts
         }
 
       
-        private void _JoinLobby(uint group, IConnectionLobby lobby)
+        private void _JoinLobby(uint group, IConnectionProvider lobby)
         {
             if (_Disposers.TryGetValue(group, out var disposer))
             {
@@ -225,7 +225,7 @@ namespace PinionCore.Remote.Gateway.Hosts
             _UpdateSessionGroup(group);
         }
 
-        private void _ReleaseSession(IClientConnection connection)
+        private void _ReleaseSession(IConnection connection)
         {
             _Removeds.Add(connection);
             foreach (var rs in _RoutableSessions)

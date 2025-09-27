@@ -6,10 +6,10 @@ namespace PinionCore.Remote.Gateway.Hosts
 {
     class SessionAdapter : IStreamable ,IDisposable
     {
-        readonly IClientConnection _client;
+        readonly IConnection _client;
         readonly PinionCore.Network.BufferRelay _bufferRelay;
         readonly PinionCore.Network.IStreamable _Streamable;
-        public SessionAdapter(IClientConnection client)
+        public SessionAdapter(IConnection client)
         {
             _bufferRelay = new PinionCore.Network.BufferRelay();
             _client = client;

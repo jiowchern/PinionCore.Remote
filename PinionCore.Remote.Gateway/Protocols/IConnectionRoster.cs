@@ -2,7 +2,7 @@
 {
     public interface IConnectionRoster
     {
-        PinionCore.Remote.Notifier<IClientConnection> Connections { get; }
+        PinionCore.Remote.Notifier<IConnection> Connections { get; }
     }
 }
 

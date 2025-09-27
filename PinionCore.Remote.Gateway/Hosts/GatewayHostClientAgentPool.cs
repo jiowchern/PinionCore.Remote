@@ -13,7 +13,7 @@ namespace PinionCore.Remote.Gateway.Hosts
         class User
         {
             public IAgent Agent;
-            public IClientConnection Session;            
+            public IConnection Session;            
         }
 
 
@@ -53,7 +53,7 @@ namespace PinionCore.Remote.Gateway.Hosts
             owner.Connections.Base.Unsupply += _Destroy;
         }
 
-        private void _Destroy(IClientConnection session)
+        private void _Destroy(IConnection session)
         {
             
             for (var i = _Users.Count - 1; i >= 0; i--)
@@ -70,7 +70,7 @@ namespace PinionCore.Remote.Gateway.Hosts
             }
         }
 
-        private void _Create(IClientConnection session)
+        private void _Create(IConnection session)
         {
             var agent = PinionCore.Remote.Standalone.Provider.CreateAgent(_gameProtocol);
 

@@ -47,9 +47,9 @@ namespace PinionCore.Remote.Gateway.Tests
                     userAgent.HandlePackets();
                 }                
             });
-            var userObs = from gpi in userAgent.QueryNotifier<IConnectionLobby>().SupplyEvent()
+            var userObs = from gpi in userAgent.QueryNotifier<IConnectionProvider>().SupplyEvent()
                           from joinId in gpi.Join().RemoteValue()
-                          from user_ in gpi.ClientNotifier.Base.SupplyEvent()
+                          from user_ in gpi.ConnectionNotifier.Base.SupplyEvent()
                           where user_.Id == joinId
                           select user_;
             var user = await userObs.FirstAsync();
@@ -90,7 +90,7 @@ namespace PinionCore.Remote.Gateway.Tests
             Assert.AreEqual(1, gameGetValue);
         }
 
-        private IStreamable _ToStream(IClientConnection user)
+        private IStreamable _ToStream(IConnection user)
         {                        
             return new SessionAdapter(user);
         }

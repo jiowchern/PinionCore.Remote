@@ -12,9 +12,9 @@ namespace PinionCore.Remote.Gateway.Servers
             public ISoul Soul;
         }
 
-        readonly IConnectionLobby _listener;
+        readonly IConnectionProvider _listener;
         readonly System.Collections.Generic.List<BinderInfo> _bindings;
-        public GatewayServerClientEntry(IConnectionLobby gatewayClientListener)
+        public GatewayServerClientEntry(IConnectionProvider gatewayClientListener)
         {
             _bindings = new List<BinderInfo>();
             _listener = gatewayClientListener;
@@ -24,7 +24,7 @@ namespace PinionCore.Remote.Gateway.Servers
             _bindings.Add(new BinderInfo
             {
                 Binder = binder,
-                Soul = binder.Bind<IConnectionLobby>(_listener)
+                Soul = binder.Bind<IConnectionProvider>(_listener)
             });
         }
 
