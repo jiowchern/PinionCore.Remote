@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,13 +16,13 @@ namespace PinionCore.Remote.Gateway.Hosts
             private readonly ClientConnectionDisposer _owner;
             private readonly object _sync = new object();
 
-            public LobbyState(ClientConnectionDisposer owner, IGameLobby lobby)
+            public LobbyState(ClientConnectionDisposer owner, IConnectionLobby lobby)
             {
                 _owner = owner ?? throw new ArgumentNullException(nameof(owner));
                 Lobby = lobby ?? throw new ArgumentNullException(nameof(lobby));
             }
 
-            public IGameLobby Lobby { get; }
+            public IConnectionLobby Lobby { get; }
             public Action<IClientConnection> SupplyHandler => OnClientSupplied;
 
             public void Enqueue(Value<IClientConnection> request)
@@ -104,8 +104,8 @@ namespace PinionCore.Remote.Gateway.Hosts
 
         private readonly object _sync = new object();
         private readonly IGameLobbySelectionStrategy _selectionStrategy;
-        private readonly List<IGameLobby> _lobbies = new List<IGameLobby>();
-        private readonly Dictionary<IGameLobby, LobbyState> _lobbyStates = new Dictionary<IGameLobby, LobbyState>();
+        private readonly List<IConnectionLobby> _lobbies = new List<IConnectionLobby>();
+        private readonly Dictionary<IConnectionLobby, LobbyState> _lobbyStates = new Dictionary<IConnectionLobby, LobbyState>();
         private readonly ConcurrentDictionary<IClientConnection, LobbyState> _clientToLobby = new ConcurrentDictionary<IClientConnection, LobbyState>();
         private bool _disposed;
 
@@ -116,7 +116,7 @@ namespace PinionCore.Remote.Gateway.Hosts
             _selectionStrategy = selectionStrategy ?? throw new ArgumentNullException(nameof(selectionStrategy));
         }
 
-        public void Add(IGameLobby info)
+        public void Add(IConnectionLobby info)
         {
             if (info == null)
             {
@@ -138,7 +138,7 @@ namespace PinionCore.Remote.Gateway.Hosts
             }
         }
 
-        public void Remove(IGameLobby lobby)
+        public void Remove(IConnectionLobby lobby)
         {
             if (lobby == null)
             {

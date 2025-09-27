@@ -22,7 +22,7 @@ namespace PinionCore.Remote.Gateway.Servers
         
         public GatewayServerServiceHub()
         {
-            var clientListener = new PinionCore.Remote.Gateway.Servers.GatewayServerConnectionManager();
+            var clientListener = new PinionCore.Remote.Gateway.Servers.GatewayServerConnectionPool();
             var clientEntry = new GatewayServerClientEntry(clientListener);
             var clientProtocol = Protocols.ProtocolProvider.Create();
             Source = Standalone.Provider.CreateService(clientEntry, clientProtocol);

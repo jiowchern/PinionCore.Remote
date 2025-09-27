@@ -32,22 +32,22 @@ namespace PinionCore.Remote.Gateway.Hosts
             _Agents = new NotifiableCollection<IAgent>();
             Agents = new Notifier<IAgent>(_Agents);
 
-            Agent.QueryNotifier<IConnectionManager>().Supply += _Create;
-            Agent.QueryNotifier<IConnectionManager>().Unsupply += _Destroy;
+            Agent.QueryNotifier<IConnectionRoster>().Supply += _Create;
+            Agent.QueryNotifier<IConnectionRoster>().Unsupply += _Destroy;
 
             _disable = () => {
-                Agent.QueryNotifier<IConnectionManager>().Supply -= _Create;
-                Agent.QueryNotifier<IConnectionManager>().Unsupply -= _Destroy;
+                Agent.QueryNotifier<IConnectionRoster>().Supply -= _Create;
+                Agent.QueryNotifier<IConnectionRoster>().Unsupply -= _Destroy;
             };
         }
 
-        private void _Destroy(IConnectionManager owner)
+        private void _Destroy(IConnectionRoster owner)
         {
             owner.Connections.Base.Supply -= _Create;
             owner.Connections.Base.Unsupply -= _Destroy;
         }        
 
-        private void _Create(IConnectionManager owner)
+        private void _Create(IConnectionRoster owner)
         {
             owner.Connections.Base.Supply += _Create;
             owner.Connections.Base.Unsupply += _Destroy;

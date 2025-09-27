@@ -5,15 +5,14 @@ using PinionCore.Remote.Soul;
 
 namespace PinionCore.Remote.Gateway.Servers 
 {
-    class GatewayServerConnectionManager : IGameLobby , IListenable 
+    class GatewayServerConnectionPool : IConnectionLobby , IListenable 
     {
         readonly IdProvider _idProvider;
         readonly System.Collections.Concurrent.ConcurrentDictionary<uint, GatewayServerClientChannel> _clients = new System.Collections.Concurrent.ConcurrentDictionary<uint, GatewayServerClientChannel>();
         readonly NotifiableCollection<IClientConnection> _Connections;
-        readonly Notifier<IClientConnection> _clientNotifier;
-        
+        readonly Notifier<IClientConnection> _clientNotifier;        
 
-        public GatewayServerConnectionManager()
+        public GatewayServerConnectionPool()
         {
             _idProvider = new IdProvider();
             _clients = new System.Collections.Concurrent.ConcurrentDictionary<uint, GatewayServerClientChannel>();
@@ -22,7 +21,7 @@ namespace PinionCore.Remote.Gateway.Servers
         }
 
         
-        Notifier<IClientConnection> IGameLobby.ClientNotifier => _clientNotifier;
+        Notifier<IClientConnection> IConnectionLobby.ClientNotifier => _clientNotifier;
 
         event Action<IStreamable> _streamableEnterEvent;
         event Action<IStreamable> IListenable.StreamableEnterEvent
@@ -52,7 +51,7 @@ namespace PinionCore.Remote.Gateway.Servers
             }
         }
 
-        Value<uint> IGameLobby.Join()
+        Value<uint> IConnectionLobby.Join()
         {
             var id = _idProvider.Landlord.Rent();
             var client = new GatewayServerClientChannel(id);
@@ -66,7 +65,7 @@ namespace PinionCore.Remote.Gateway.Servers
             return id;
         }
 
-        Value<ResponseStatus> IGameLobby.Leave(uint clientId)
+        Value<ResponseStatus> IConnectionLobby.Leave(uint clientId)
         {
             var code = ResponseStatus.NotFound;
             if (_clients.TryRemove(clientId, out var u))

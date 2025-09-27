@@ -46,7 +46,7 @@ namespace PinionCore.Remote.Gateway.Tests
             userAgentWorker.Start();
 
             // Retrieve the game lobby from the user agent
-            var gameObs = from _game in userAgent.QueryNotifier<IGameLobby>().SupplyEvent()
+            var gameObs = from _game in userAgent.QueryNotifier<IConnectionLobby>().SupplyEvent()
                           select _game;
             var game = await gameObs.FirstAsync();
 

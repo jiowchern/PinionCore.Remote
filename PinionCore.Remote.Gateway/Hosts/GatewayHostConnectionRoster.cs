@@ -5,7 +5,7 @@ using PinionCore.Remote.Gateway.Protocols;
 
 namespace PinionCore.Remote.Gateway.Hosts
 {
-    internal class GatewayHostConnectionManager : IRoutableSession, IConnectionManager
+    internal class GatewayHostConnectionRoster : IRoutableSession, IConnectionRoster
     {
         private readonly object _syncRoot;
         private readonly Dictionary<uint, IClientConnection> _sessionsByGroup;
@@ -13,7 +13,7 @@ namespace PinionCore.Remote.Gateway.Hosts
         private readonly Notifier<IClientConnection> _sessions;
         private readonly NotifiableCollection<IClientConnection> _sessionColl;
 
-        public GatewayHostConnectionManager()
+        public GatewayHostConnectionRoster()
         {
             _syncRoot = new object();
             _sessionsByGroup = new Dictionary<uint, IClientConnection>();
@@ -22,7 +22,7 @@ namespace PinionCore.Remote.Gateway.Hosts
             _sessions = new Notifier<IClientConnection>(_sessionColl);
         }
 
-        Notifier<IClientConnection> IConnectionManager.Connections => _sessions;
+        Notifier<IClientConnection> IConnectionRoster.Connections => _sessions;
 
         bool IRoutableSession.Set(uint group, IClientConnection user)
         {

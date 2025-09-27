@@ -27,7 +27,7 @@ namespace PinionCore.Remote.Gateway.Hosts
         struct LobbyCommand : IActotCommand
         {
             public uint Group;
-            public IGameLobby Lobby;
+            public IConnectionLobby Lobby;
             public bool Register;
         }
 
@@ -69,12 +69,12 @@ namespace PinionCore.Remote.Gateway.Hosts
             
         }
 
-        void IServiceRegistry.Register(uint group, IGameLobby lobby)
+        void IServiceRegistry.Register(uint group, IConnectionLobby lobby)
         {
             _DataflowActor.Post(new LobbyCommand { Lobby = lobby, Group = group, Register = true });            
         }
 
-        void IServiceRegistry.Unregister(uint group, IGameLobby lobby)
+        void IServiceRegistry.Unregister(uint group, IConnectionLobby lobby)
         {
             _DataflowActor.Post(new LobbyCommand { Group = group, Lobby = lobby, Register = false });            
         }
@@ -191,7 +191,7 @@ namespace PinionCore.Remote.Gateway.Hosts
             };
         }
 
-        private void _LeaveLobby(uint group, IGameLobby lobby)
+        private void _LeaveLobby(uint group, IConnectionLobby lobby)
         {
             if (_Disposers.TryGetValue(group, out var disposer))
             {
@@ -208,7 +208,7 @@ namespace PinionCore.Remote.Gateway.Hosts
         }
 
       
-        private void _JoinLobby(uint group, IGameLobby lobby)
+        private void _JoinLobby(uint group, IConnectionLobby lobby)
         {
             if (_Disposers.TryGetValue(group, out var disposer))
             {

@@ -47,7 +47,7 @@ namespace PinionCore.Remote.Gateway.Tests
             userAgent1.Enable(peer1);
             var agentWorker1 = new AgentWorker(userAgent1);
             agentWorker1.Start();
-            var lobby1Obs = from lobby in userAgent1.QueryNotifier<IGameLobby>().SupplyEvent()
+            var lobby1Obs = from lobby in userAgent1.QueryNotifier<IConnectionLobby>().SupplyEvent()
                             select lobby;
             var lobby1 = await lobby1Obs.FirstAsync();
             

@@ -1,6 +1,6 @@
 ﻿namespace PinionCore.Remote.Gateway.Protocols
 {
-    public interface IConnectionManager
+    public interface IConnectionRoster
     {
         PinionCore.Remote.Notifier<IClientConnection> Connections { get; }
     }

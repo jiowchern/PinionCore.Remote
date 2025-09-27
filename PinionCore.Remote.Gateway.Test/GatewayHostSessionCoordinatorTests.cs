@@ -20,12 +20,12 @@ namespace PinionCore.Remote.Gateway.Tests
             IServiceRegistry registry = coordinator;
             ISessionMembership membership = coordinator;
 
-            var m1 = new GatewayServerConnectionManager();
+            var m1 = new GatewayServerConnectionPool();
             
             registry.Register(1, m1);
 
-            var conn1 = new GatewayHostConnectionManager();
-            IConnectionManager connectionManager = conn1;
+            var conn1 = new GatewayHostConnectionRoster();
+            IConnectionRoster connectionManager = conn1;
             var supplyObs = from c in connectionManager.Connections.Base.SupplyEvent()                      
                       select c;
 

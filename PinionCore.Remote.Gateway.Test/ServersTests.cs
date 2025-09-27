@@ -47,7 +47,7 @@ namespace PinionCore.Remote.Gateway.Tests
                     userAgent.HandlePackets();
                 }                
             });
-            var userObs = from gpi in userAgent.QueryNotifier<IGameLobby>().SupplyEvent()
+            var userObs = from gpi in userAgent.QueryNotifier<IConnectionLobby>().SupplyEvent()
                           from joinId in gpi.Join().RemoteValue()
                           from user_ in gpi.ClientNotifier.Base.SupplyEvent()
                           where user_.Id == joinId

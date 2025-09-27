@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Text;
 using PinionCore.Remote.Gateway.Protocols;
 
@@ -12,9 +12,9 @@ namespace PinionCore.Remote.Gateway.Servers
             public ISoul Soul;
         }
 
-        readonly IGameLobby _listener;
+        readonly IConnectionLobby _listener;
         readonly System.Collections.Generic.List<BinderInfo> _bindings;
-        public GatewayServerClientEntry(IGameLobby gatewayClientListener)
+        public GatewayServerClientEntry(IConnectionLobby gatewayClientListener)
         {
             _bindings = new List<BinderInfo>();
             _listener = gatewayClientListener;
@@ -24,7 +24,7 @@ namespace PinionCore.Remote.Gateway.Servers
             _bindings.Add(new BinderInfo
             {
                 Binder = binder,
-                Soul = binder.Bind<IGameLobby>(_listener)
+                Soul = binder.Bind<IConnectionLobby>(_listener)
             });
         }
 

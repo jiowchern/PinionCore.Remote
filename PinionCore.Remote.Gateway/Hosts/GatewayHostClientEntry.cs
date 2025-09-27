@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Net.Http.Headers;
 using PinionCore.Network;
 using PinionCore.Remote.Gateway.Protocols;
@@ -12,7 +12,7 @@ namespace PinionCore.Remote.Gateway.Hosts
         {
             public ISoul Soul;
             
-            public GatewayHostConnectionManager ConnectionManager;
+            public GatewayHostConnectionRoster ConnectionManager;
         }
 
         private readonly ISessionMembership _sessionMembership;
@@ -31,10 +31,10 @@ namespace PinionCore.Remote.Gateway.Hosts
             {
                 throw new ArgumentException("Binder already registered.", nameof(binder));
             }
-            user.ConnectionManager = new GatewayHostConnectionManager();
+            user.ConnectionManager = new GatewayHostConnectionRoster();
             // 3. Join the sessionMembership session
             _sessionMembership.Join(user.ConnectionManager);
-            user.Soul = binder.Bind<IConnectionManager>(user.ConnectionManager);
+            user.Soul = binder.Bind<IConnectionRoster>(user.ConnectionManager);
             
         }
 

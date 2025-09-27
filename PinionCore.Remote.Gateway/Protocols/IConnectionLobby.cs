@@ -1,7 +1,7 @@
 ﻿namespace PinionCore.Remote.Gateway.Protocols
 {
 
-    public interface IGameLobby
+    public interface IConnectionLobby
     {
         PinionCore.Remote.Value<uint> Join();
         PinionCore.Remote.Value<ResponseStatus> Leave(uint clientId);
