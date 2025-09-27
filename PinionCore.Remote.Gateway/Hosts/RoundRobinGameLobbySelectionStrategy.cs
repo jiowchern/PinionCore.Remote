@@ -9,7 +9,7 @@ namespace PinionCore.Remote.Gateway.Hosts
     /// </summary>
     public sealed class RoundRobinGameLobbySelectionStrategy : IGameLobbySelectionStrategy
     {
-        private readonly Dictionary<uint, int> _nextIndexByGroup = new Dictionary<uint, int>();
+        private readonly List<int> _nextIndexByGroup = new List<int>();
 
         public IEnumerable<IConnectionProvider> OrderLobbies(IReadOnlyList<IConnectionProvider> lobbies)
         {
@@ -21,14 +21,11 @@ namespace PinionCore.Remote.Gateway.Hosts
 
             if (lobbies.Count == 0)
             {
-                _nextIndexByGroup.Remove(group);
+                ResetGroupIndex(group);
                 return Array.Empty<IConnectionProvider>();
             }
 
-            if (!_nextIndexByGroup.TryGetValue(group, out var startIndex))
-            {
-                startIndex = 0;
-            }
+            var startIndex = GetStartIndex(group);
 
             if (startIndex >= lobbies.Count)
             {
@@ -41,9 +38,47 @@ namespace PinionCore.Remote.Gateway.Hosts
                 ordered[i] = lobbies[(startIndex + i) % lobbies.Count];
             }
 
-            _nextIndexByGroup[group] = (startIndex + 1) % lobbies.Count;
+            SetNextIndex(group, (startIndex + 1) % lobbies.Count);
 
             return ordered;
+        }
+
+        private int GetStartIndex(uint group)
+        {
+            EnsureGroupIndex(group);
+            return _nextIndexByGroup[(int)group];
+        }
+
+        private void SetNextIndex(uint group, int nextIndex)
+        {
+            EnsureGroupIndex(group);
+            _nextIndexByGroup[(int)group] = nextIndex;
+        }
+
+        private void ResetGroupIndex(uint group)
+        {
+            if (group > int.MaxValue)
+            {
+                throw new ArgumentOutOfRangeException(nameof(group));
+            }
+
+            if (_nextIndexByGroup.Count > group)
+            {
+                _nextIndexByGroup[(int)group] = 0;
+            }
+        }
+
+        private void EnsureGroupIndex(uint group)
+        {
+            if (group > int.MaxValue)
+            {
+                throw new ArgumentOutOfRangeException(nameof(group));
+            }
+
+            while (_nextIndexByGroup.Count <= group)
+            {
+                _nextIndexByGroup.Add(0);
+            }
         }
     }
 }
