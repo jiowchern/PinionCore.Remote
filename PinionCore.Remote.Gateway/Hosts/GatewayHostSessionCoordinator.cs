@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http.Headers;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -21,7 +22,7 @@ namespace PinionCore.Remote.Gateway.Hosts
         private readonly IGameLobbySelectionStrategy _Strategy;
         readonly List<RoutableSession> _RoutableSessions;
         readonly System.Collections.Generic.Dictionary<uint, ClientConnectionDisposer> _Disposers;
-        
+        readonly HashSet<IClientConnection> _Removeds;
 
         struct LobbyCommand : IActotCommand
         {
@@ -49,9 +50,10 @@ namespace PinionCore.Remote.Gateway.Hosts
         {
             _Strategy = strategy;
             _RoutableSessions = new List<RoutableSession>();
+            _Removeds = new HashSet<IClientConnection>();
             _DataflowActor = new DataflowActor<IActotCommand>(_HandleCommand);
             
-            _Disposers = new Dictionary<uint, ClientConnectionDisposer>();
+               _Disposers = new Dictionary<uint, ClientConnectionDisposer>();
         }
 
         
@@ -126,6 +128,13 @@ namespace PinionCore.Remote.Gateway.Hosts
         {
             if(!_RoutableSessions.Contains(routableSession))
             {
+                return;
+            }
+            if(_Removeds.Contains(clientConnection))
+            {
+                _Removeds.Remove(clientConnection);
+                routableSession.Reset(group);
+                _PostRequier(routableSession , group);
                 return;
             }
             routableSession.Borrow(group, clientConnection);
@@ -223,9 +232,13 @@ namespace PinionCore.Remote.Gateway.Hosts
 
         private void _ReleaseSession(IClientConnection connection)
         {
+            _Removeds.Add(connection);
             foreach (var rs in _RoutableSessions)
             {
-                rs.Release(connection);
+                if(rs.Release(connection))
+                {
+                    _Removeds.Remove(connection);
+                }
             }
         }
 

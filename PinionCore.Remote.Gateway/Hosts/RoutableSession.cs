@@ -55,7 +55,7 @@ namespace PinionCore.Remote.Gateway.Hosts
             throw new Exception("");
         }
 
-        internal void Release(IClientConnection connection)
+        internal bool Release(IClientConnection connection)
         {
             var removeGroups = new List<uint>();
             foreach (var pair in _Conns)
@@ -72,12 +72,25 @@ namespace PinionCore.Remote.Gateway.Hosts
                 _Groups.Remove(g);
                 _Session.Unset(g);
             }
-
+            return removeGroups.Count > 0;
         }
 
         internal void SetRequiering(uint group)
         {
             _Groups.Add(group, GroupState.Requiering);
+        }
+
+        internal void Reset(uint group)
+        {
+            if(_Groups.ContainsKey(group))
+            {
+                _Groups.Remove(group);                
+            }
+            if(_Conns.ContainsKey(group))
+            {
+                _Conns.Remove(group);
+                _Session.Unset(group);
+            }
         }
     }
 }
