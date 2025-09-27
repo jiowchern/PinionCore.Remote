@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Net;
 using System.Runtime.Serialization;
 using PinionCore.Memorys;
@@ -11,10 +11,13 @@ namespace PinionCore.Remote.Gateway.Servers
     class GatewayServerServiceHub 
     {
         readonly System.Action _dispose;
-        
-        public readonly IService Service;
 
-        public readonly IListenable Listener;
+        // 接收來自 Gateway 的連線請求
+        public readonly IService Source;
+
+
+        // 發送來自 Gateway 的連線請求
+        public readonly IListenable Sink;
 
         
         public GatewayServerServiceHub()
@@ -22,12 +25,12 @@ namespace PinionCore.Remote.Gateway.Servers
             var clientListener = new PinionCore.Remote.Gateway.Servers.GatewayServerConnectionManager();
             var clientEntry = new GatewayServerClientEntry(clientListener);
             var clientProtocol = Protocols.ProtocolProvider.Create();
-            Service = Standalone.Provider.CreateService(clientEntry, clientProtocol);
+            Source = Standalone.Provider.CreateService(clientEntry, clientProtocol);
             
-            Listener = clientListener;
+            Sink = clientListener;
             _dispose = () =>
             {
-                Service.Dispose();                
+                Source.Dispose();                
             };
         }
    

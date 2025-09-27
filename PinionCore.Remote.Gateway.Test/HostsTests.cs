@@ -36,12 +36,12 @@ namespace PinionCore.Remote.Gateway.Tests
             var connectionService = new PinionCore.Remote.Gateway.Servers.GatewayServerServiceHub();
 
             // Bridge Join/Leave events to the actual game service
-            connectionService.Listener.StreamableEnterEvent += streamable => actualGameService.Join(streamable);
-            connectionService.Listener.StreamableLeaveEvent += streamable => actualGameService.Leave(streamable);
+            connectionService.Sink.StreamableEnterEvent += streamable => actualGameService.Join(streamable);
+            connectionService.Sink.StreamableLeaveEvent += streamable => actualGameService.Leave(streamable);
 
             // Connect host agent to the gateway hub
             var userAgent = Protocols.Provider.CreateAgent();
-            var userAgentDisconnect = userAgent.Connect(connectionService.Service);
+            var userAgentDisconnect = userAgent.Connect(connectionService.Source);
             var userAgentWorker = new AgentWorker(userAgent);
             userAgentWorker.Start();
 
@@ -54,12 +54,12 @@ namespace PinionCore.Remote.Gateway.Tests
             var gatewayHost = new PinionCore.Remote.Gateway.Hosts.GatewayHostServiceHub(new RoundRobinGameLobbySelectionStrategy());
 
             // Register the game lobby with the gateway host            
-            gatewayHost.Registry.Register(1, game);
+            gatewayHost.Sink.Register(1, game);
 
             // Register the game lobby with the gateway host
             var gatewayAgent = new PinionCore.Remote.Gateway.Hosts.GatewayHostClientAgentPool(gameProtocol);
             // Connect the gateway agent pool to the host
-            gatewayAgent.Agent.Connect(gatewayHost.Service);
+            gatewayAgent.Agent.Connect(gatewayHost.Source);
             var gatewayAgentWorker = new AgentWorker(gatewayAgent.Agent);
             gatewayAgentWorker.Start();
 
@@ -75,18 +75,18 @@ namespace PinionCore.Remote.Gateway.Tests
                            select _value;
             var value = await valueObs.FirstAsync();
             Assert.AreEqual(1, value);
-
+            gatewayAgent.Dispose();
 
             await gameAgentWorker.StopAsync();
             await gatewayAgentWorker.StopAsync();
 
-            gatewayHost.Registry.Unregister(1, game);
-            gatewayHost.Service.Dispose();
+            gatewayHost.Sink.Unregister(1, game);
+            gatewayHost.Source.Dispose();
             await userAgentWorker.StopAsync();
 
             // Connect the gateway agent pool to the host
-            connectionService.Listener.StreamableEnterEvent -= streamable => actualGameService.Join(streamable);
-            connectionService.Listener.StreamableLeaveEvent -= streamable => actualGameService.Leave(streamable);
+            connectionService.Sink.StreamableEnterEvent -= streamable => actualGameService.Join(streamable);
+            connectionService.Sink.StreamableLeaveEvent -= streamable => actualGameService.Leave(streamable);
 
             userAgentDisconnect();
             connectionService.Dispose();

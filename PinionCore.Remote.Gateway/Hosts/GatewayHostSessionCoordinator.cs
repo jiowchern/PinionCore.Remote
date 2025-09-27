@@ -51,9 +51,8 @@ namespace PinionCore.Remote.Gateway.Hosts
             _Strategy = strategy;
             _RoutableSessions = new List<RoutableSession>();
             _Removeds = new HashSet<IClientConnection>();
-            _DataflowActor = new DataflowActor<IActotCommand>(_HandleCommand);
-            
-               _Disposers = new Dictionary<uint, ClientConnectionDisposer>();
+            _DataflowActor = new DataflowActor<IActotCommand>(_HandleCommand);            
+            _Disposers = new Dictionary<uint, ClientConnectionDisposer>();
         }
 
         
@@ -72,19 +71,16 @@ namespace PinionCore.Remote.Gateway.Hosts
 
         void IServiceRegistry.Register(uint group, IGameLobby lobby)
         {
-            _DataflowActor.Post(new LobbyCommand { Lobby = lobby, Group = group, Register = true });
-            
+            _DataflowActor.Post(new LobbyCommand { Lobby = lobby, Group = group, Register = true });            
         }
 
         void IServiceRegistry.Unregister(uint group, IGameLobby lobby)
         {
-            _DataflowActor.Post(new LobbyCommand { Group = group, Lobby = lobby, Register = false });
-            
+            _DataflowActor.Post(new LobbyCommand { Group = group, Lobby = lobby, Register = false });            
         }
 
         public void Dispose()
-        {
-            
+        {            
             _DataflowActor.Dispose();
         }
 
@@ -162,7 +158,6 @@ namespace PinionCore.Remote.Gateway.Hosts
                     disposer.Return(session);
                 }
             }
-
 
         }
 

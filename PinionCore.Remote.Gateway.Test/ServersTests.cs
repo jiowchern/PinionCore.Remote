@@ -32,11 +32,11 @@ namespace PinionCore.Remote.Gateway.Tests
             var connectionService = new PinionCore.Remote.Gateway.Servers.GatewayServerServiceHub();
 
             // Bridge Join/Leave events to the game service
-            connectionService.Listener.StreamableEnterEvent += streamable => gameService.Join(streamable);
-            connectionService.Listener.StreamableLeaveEvent += streamable => gameService.Leave(streamable);
+            connectionService.Sink.StreamableEnterEvent += streamable => gameService.Join(streamable);
+            connectionService.Sink.StreamableLeaveEvent += streamable => gameService.Leave(streamable);
 
             var userAgent = Protocols.Provider.CreateAgent();
-            var userAgentDisconnect = userAgent.Connect(connectionService.Service);
+            var userAgentDisconnect = userAgent.Connect(connectionService.Source);
             var userUpdateTaskEnable = true;
             var userUpdateTask = System.Threading.Tasks.Task.Run( ()=> {
                 while (userUpdateTaskEnable)
@@ -78,8 +78,8 @@ namespace PinionCore.Remote.Gateway.Tests
             gameUpdateTaskEnable = false;
             await gameUpdateTask;
             // Cleanup event subscriptions and resources
-            connectionService.Listener.StreamableEnterEvent -= streamable => gameService.Join(streamable);
-            connectionService.Listener.StreamableLeaveEvent -= streamable => gameService.Leave(streamable);
+            connectionService.Sink.StreamableEnterEvent -= streamable => gameService.Join(streamable);
+            connectionService.Sink.StreamableLeaveEvent -= streamable => gameService.Leave(streamable);
 
             userAgentDisconnect();
             gameAgent.Disable();

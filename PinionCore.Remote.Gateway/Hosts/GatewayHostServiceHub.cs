@@ -7,16 +7,18 @@ namespace PinionCore.Remote.Gateway.Hosts
     {
         private readonly GatewayHostSessionCoordinator _sessionCoordinator;
         private readonly GatewayHostClientEntry _clientEntry;
-        public readonly IService Service;
-        public readonly IServiceRegistry Registry;
+
+
+        public readonly IService Source;
+        public readonly IServiceRegistry Sink;
 
         public GatewayHostServiceHub(IGameLobbySelectionStrategy selectionStrategy )
         {
             _sessionCoordinator = new GatewayHostSessionCoordinator(selectionStrategy);
-            Registry = _sessionCoordinator;
+            Sink = _sessionCoordinator;
             _clientEntry = new GatewayHostClientEntry(_sessionCoordinator);
             var protocol = PinionCore.Remote.Gateway.Protocols.ProtocolProvider.Create();
-            Service = PinionCore.Remote.Standalone.Provider.CreateService(_clientEntry, protocol);
+            Source = PinionCore.Remote.Standalone.Provider.CreateService(_clientEntry, protocol);
         }
         
     }

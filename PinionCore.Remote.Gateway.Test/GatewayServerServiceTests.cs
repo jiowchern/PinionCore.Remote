@@ -20,10 +20,10 @@ namespace PinionCore.Remote.Gateway.Tests
             var serviceHub1 = new GatewayServerServiceHub();            
             var tcpListener1 = new PinionCore.Remote.Server.Tcp.Listener();
             Soul.IListenable listener1 = tcpListener1;
-            listener1.StreamableLeaveEvent += streamable => serviceHub1.Service.Leave(streamable);
-            listener1.StreamableEnterEvent += streamable => serviceHub1.Service.Join(streamable);
-            serviceHub1.Listener.StreamableLeaveEvent += streamable => service1.Leave(streamable);
-            serviceHub1.Listener.StreamableEnterEvent += streamable => service1.Join(streamable);
+            listener1.StreamableLeaveEvent += streamable => serviceHub1.Source.Leave(streamable);
+            listener1.StreamableEnterEvent += streamable => serviceHub1.Source.Join(streamable);
+            serviceHub1.Sink.StreamableLeaveEvent += streamable => service1.Leave(streamable);
+            serviceHub1.Sink.StreamableEnterEvent += streamable => service1.Join(streamable);
             var port1 = PinionCore.Network.Tcp.Tools.GetAvailablePort();
             tcpListener1.Bind(port1);
 
@@ -37,8 +37,8 @@ namespace PinionCore.Remote.Gateway.Tests
             var tcpHostPort = PinionCore.Network.Tcp.Tools.GetAvailablePort();
             tcpHostListener.Bind(tcpHostPort);
             Soul.IListenable hostListener = tcpHostListener;
-            hostListener.StreamableLeaveEvent += streamable => hostHub.Service.Leave(streamable);
-            hostListener.StreamableEnterEvent += streamable => hostHub.Service.Join(streamable);
+            hostListener.StreamableLeaveEvent += streamable => hostHub.Source.Leave(streamable);
+            hostListener.StreamableEnterEvent += streamable => hostHub.Source.Join(streamable);
 
             // Connect Gateway Host to Game Service 1
             var userAgent1 = Provider.CreateAgent();
@@ -51,7 +51,7 @@ namespace PinionCore.Remote.Gateway.Tests
                             select lobby;
             var lobby1 = await lobby1Obs.FirstAsync();
             
-            hostHub.Registry.Register(1, lobby1);
+            hostHub.Sink.Register(1, lobby1);
 
             
 
@@ -93,35 +93,35 @@ namespace PinionCore.Remote.Gateway.Tests
 
             // Disable client agents            
             client1.Agent.Disable();
-
+            client1.Dispose();
             // Unregister from host hub before disposing
-            
-            
-            
-            hostHub.Registry.Unregister(1 , lobby1);
+
+
+
+            hostHub.Sink.Unregister(1 , lobby1);
 
             // Disconnect event handlers for host listener
-            hostListener.StreamableLeaveEvent -= streamable => hostHub.Service.Leave(streamable);
-            hostListener.StreamableEnterEvent -= streamable => hostHub.Service.Join(streamable);
+            hostListener.StreamableLeaveEvent -= streamable => hostHub.Source.Leave(streamable);
+            hostListener.StreamableEnterEvent -= streamable => hostHub.Source.Join(streamable);
 
             // Close TCP host listener
             tcpHostListener.Close();
 
             // Dispose host hub service
-            hostHub.Service.Dispose();
+            hostHub.Source.Dispose();
 
             // Stop and disable user agent 1
             await agentWorker1.StopAsync();
             userAgent1.Disable();
 
             // Disconnect service 1 event handlers
-            listener1.StreamableLeaveEvent -= streamable => serviceHub1.Service.Leave(streamable);
-            listener1.StreamableEnterEvent -= streamable => serviceHub1.Service.Join(streamable);
-            serviceHub1.Listener.StreamableLeaveEvent -= streamable => service1.Leave(streamable);
-            serviceHub1.Listener.StreamableEnterEvent -= streamable => service1.Join(streamable);
+            listener1.StreamableLeaveEvent -= streamable => serviceHub1.Source.Leave(streamable);
+            listener1.StreamableEnterEvent -= streamable => serviceHub1.Source.Join(streamable);
+            serviceHub1.Sink.StreamableLeaveEvent -= streamable => service1.Leave(streamable);
+            serviceHub1.Sink.StreamableEnterEvent -= streamable => service1.Join(streamable);
 
             // Dispose service 1 resources
-            serviceHub1.Service.Dispose();
+            serviceHub1.Source.Dispose();
             service1.Dispose();
             tcpListener1.Close();
         }
