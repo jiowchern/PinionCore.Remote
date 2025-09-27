@@ -28,7 +28,7 @@ namespace PinionCore.Remote.Gateway.Hosts
             
             _gameProtocol = gameProtocol;
             _Users = new System.Collections.Generic.List<User>();
-            Agent = PinionCore.Remote.Gateway.Provider.CreateAgent();
+            Agent = Provider.CreateAgent();
             _Agents = new NotifiableCollection<IAgent>();
             Agents = new Notifier<IAgent>(_Agents);
 

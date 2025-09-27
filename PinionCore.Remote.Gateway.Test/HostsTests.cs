@@ -40,7 +40,7 @@ namespace PinionCore.Remote.Gateway.Tests
             connectionService.Listener.StreamableLeaveEvent += streamable => actualGameService.Leave(streamable);
 
             // Connect host agent to the gateway hub
-            var userAgent = PinionCore.Remote.Gateway.Provider.CreateAgent();
+            var userAgent = Protocols.Provider.CreateAgent();
             var userAgentDisconnect = userAgent.Connect(connectionService.Service);
             var userAgentWorker = new AgentWorker(userAgent);
             userAgentWorker.Start();

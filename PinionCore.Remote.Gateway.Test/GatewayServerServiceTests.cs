@@ -41,7 +41,7 @@ namespace PinionCore.Remote.Gateway.Tests
             hostListener.StreamableEnterEvent += streamable => hostHub.Service.Join(streamable);
 
             // Connect Gateway Host to Game Service 1
-            var userAgent1 = PinionCore.Remote.Gateway.Provider.CreateAgent();
+            var userAgent1 = Provider.CreateAgent();
             var userTcpConnector1 = new PinionCore.Network.Tcp.Connector();
             var peer1 = await userTcpConnector1.Connect(new System.Net.IPEndPoint(System.Net.IPAddress.Loopback, port1));
             userAgent1.Enable(peer1);

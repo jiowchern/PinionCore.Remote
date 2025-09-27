@@ -35,7 +35,7 @@ namespace PinionCore.Remote.Gateway.Tests
             connectionService.Listener.StreamableEnterEvent += streamable => gameService.Join(streamable);
             connectionService.Listener.StreamableLeaveEvent += streamable => gameService.Leave(streamable);
 
-            var userAgent = Provider.CreateAgent();
+            var userAgent = Protocols.Provider.CreateAgent();
             var userAgentDisconnect = userAgent.Connect(connectionService.Service);
             var userUpdateTaskEnable = true;
             var userUpdateTask = System.Threading.Tasks.Task.Run( ()=> {
