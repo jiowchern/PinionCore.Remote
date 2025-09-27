@@ -40,8 +40,7 @@ namespace PinionCore.Consoles.Chat1.Client
         }
 
         protected override void _Update()
-        {
-            var ping = Agent.Ping;
+        {            
             Agent.HandleMessage();
             Agent.HandlePackets();
             _machine.Update();

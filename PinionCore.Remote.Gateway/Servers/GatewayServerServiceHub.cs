@@ -8,7 +8,7 @@ using PinionCore.Remote.Soul;
 
 namespace PinionCore.Remote.Gateway.Servers 
 {
-    class GatewayServerServiceHub 
+    public class GatewayServerServiceHub 
     {
         readonly System.Action _dispose;
 

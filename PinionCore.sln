@@ -96,6 +96,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PinionCore.Consoles.Chat1.S
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PinionCore.Consoles.Chat1.Bot", "PinionCore.Consoles.Chat1.Bot\PinionCore.Consoles.Chat1.Bot.csproj", "{0E75ADE7-175C-4FD9-A073-D6DCE4789701}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PinionCore.Consoles.Chat1.Gateway", "PinionCore.Consoles.Chat1.Gateway\PinionCore.Consoles.Chat1.Gateway.csproj", "{744EBDD8-4501-4B44-8A68-F9925AD411AF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -490,6 +492,18 @@ Global
 		{0E75ADE7-175C-4FD9-A073-D6DCE4789701}.Release|x64.Build.0 = Release|Any CPU
 		{0E75ADE7-175C-4FD9-A073-D6DCE4789701}.Release|x86.ActiveCfg = Release|Any CPU
 		{0E75ADE7-175C-4FD9-A073-D6DCE4789701}.Release|x86.Build.0 = Release|Any CPU
+		{744EBDD8-4501-4B44-8A68-F9925AD411AF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{744EBDD8-4501-4B44-8A68-F9925AD411AF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{744EBDD8-4501-4B44-8A68-F9925AD411AF}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{744EBDD8-4501-4B44-8A68-F9925AD411AF}.Debug|x64.Build.0 = Debug|Any CPU
+		{744EBDD8-4501-4B44-8A68-F9925AD411AF}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{744EBDD8-4501-4B44-8A68-F9925AD411AF}.Debug|x86.Build.0 = Debug|Any CPU
+		{744EBDD8-4501-4B44-8A68-F9925AD411AF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{744EBDD8-4501-4B44-8A68-F9925AD411AF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{744EBDD8-4501-4B44-8A68-F9925AD411AF}.Release|x64.ActiveCfg = Release|Any CPU
+		{744EBDD8-4501-4B44-8A68-F9925AD411AF}.Release|x64.Build.0 = Release|Any CPU
+		{744EBDD8-4501-4B44-8A68-F9925AD411AF}.Release|x86.ActiveCfg = Release|Any CPU
+		{744EBDD8-4501-4B44-8A68-F9925AD411AF}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -530,6 +544,7 @@ Global
 		{469A485B-8397-4B46-A751-B412DC6AEFFB} = {576302CE-EF3C-C1AA-A2D0-94A48E1CFC77}
 		{F5AFCFE9-4ED9-4615-9829-5C72A3556F97} = {576302CE-EF3C-C1AA-A2D0-94A48E1CFC77}
 		{0E75ADE7-175C-4FD9-A073-D6DCE4789701} = {576302CE-EF3C-C1AA-A2D0-94A48E1CFC77}
+		{744EBDD8-4501-4B44-8A68-F9925AD411AF} = {576302CE-EF3C-C1AA-A2D0-94A48E1CFC77}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {5F361C65-F7E7-4579-84BF-3D8DB0C9DABA}

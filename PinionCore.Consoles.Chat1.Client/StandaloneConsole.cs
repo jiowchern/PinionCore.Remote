@@ -1,4 +1,4 @@
-namespace PinionCore.Consoles.Chat1.Client
+﻿namespace PinionCore.Consoles.Chat1.Client
 {
     internal sealed class StandaloneConsole : Console
     {

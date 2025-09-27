@@ -1,4 +1,4 @@
-namespace PinionCore.Consoles.Chat1.Common
+﻿namespace PinionCore.Consoles.Chat1.Common
 {
     public interface IPlayer 
     {        
@@ -9,7 +9,7 @@ namespace PinionCore.Consoles.Chat1.Common
 
         PinionCore.Remote.Notifier<IChatter> Chatters { get; }
         void Send(string message);
-        void Quit();
+        void Quit(); 
     }
     
 }
