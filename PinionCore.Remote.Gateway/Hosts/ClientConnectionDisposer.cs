@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -244,18 +244,44 @@ namespace PinionCore.Remote.Gateway.Hosts
 
         private void ReleaseLobby(LobbyState state)
         {
+            List<Exception> exceptions = null;
+
             var leased = state.DrainLeased();
             foreach (var client in leased)
             {
                 _clientToLobby.TryRemove(client, out _);
                 state.Lobby.Leave(client.Id.Value);
-                ClientReleasedEvent?.Invoke(client);
+
+                var handler = ClientReleasedEvent;
+                if (handler == null)
+                {
+                    continue;
+                }
+
+                try
+                {
+                    handler(client);
+                }
+                catch (Exception ex)
+                {
+                    if (exceptions == null)
+                    {
+                        exceptions = new List<Exception>();
+                    }
+
+                    exceptions.Add(ex);
+                }
             }
 
             var pending = state.DrainPending();
             foreach (var request in pending)
             {
                 request.SetValue(null);
+            }
+
+            if (exceptions != null)
+            {
+                throw new AggregateException("One or more ClientReleasedEvent handlers threw exceptions.", exceptions);
             }
         }
 
@@ -276,3 +302,4 @@ namespace PinionCore.Remote.Gateway.Hosts
         }
     }
 }
+
