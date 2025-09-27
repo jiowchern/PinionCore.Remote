@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\PinionCore.Consoles.Chat1.Common\PinionCore.Consoles.Chat1.Common.csproj" />
+    <ProjectReference Include="..\PinionCore.Consoles.Chat1\PinionCore.Consoles.Chat1.csproj" />
+    <ProjectReference Include="..\..\PinionCore.Remote\PinionCore.Remote.csproj" />
+    <ProjectReference Include="..\..\PinionCore.Remote.Client\PinionCore.Remote.Client.csproj" />
+    <ProjectReference Include="..\..\PinionCore.Remote.Reactive\PinionCore.Remote.Reactive.csproj" />
+    <ProjectReference Include="..\..\PinionCore.Remote.Standalone\PinionCore.Remote.Standalone.csproj" />
+    <ProjectReference Include="..\..\PinionCore.Utility\PinionCore.Utility\PinionCore.Utility.csproj" />
+  </ItemGroup>
+</Project>
