@@ -12,4 +12,7 @@
     <ProjectReference Include="..\..\PinionCore.Remote.Server\PinionCore.Remote.Server.csproj" />
     <ProjectReference Include="..\..\PinionCore.Utility\PinionCore.Utility\PinionCore.Utility.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="System.CommandLine" Version="2.0.0-rc.1.25451.107" />
+  </ItemGroup>
 </Project>

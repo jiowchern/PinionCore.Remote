@@ -3,7 +3,7 @@
 namespace PinionCore.Remote.Gateway.Hosts
 {
     
-    interface IServiceRegistry
+    public interface IServiceRegistry
     {
         void Register(uint group, IConnectionProvider lobby);
         void Unregister(uint group, IConnectionProvider lobby);

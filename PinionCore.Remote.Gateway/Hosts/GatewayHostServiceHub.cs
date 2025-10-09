@@ -3,7 +3,7 @@ using PinionCore.Remote.Soul;
 
 namespace PinionCore.Remote.Gateway.Hosts
 {
-    internal class GatewayHostServiceHub
+    public class GatewayHostServiceHub
     {
         private readonly GatewayHostSessionCoordinator _sessionCoordinator;
         private readonly GatewayHostClientEntry _clientEntry;

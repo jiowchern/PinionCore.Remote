@@ -3,10 +3,11 @@ using PinionCore.Remote.Ghost;
 
 namespace PinionCore.Consoles.Chat1.Client
 {
-    internal abstract class Console : PinionCore.Utility.WindowConsole
+
+    internal abstract class GameConsole : PinionCore.Utility.WindowConsole
     {
         private readonly PinionCore.Utility.StatusMachine _machine;
-        protected Console(PinionCore.Remote.Ghost.IAgent agent)
+        protected GameConsole(PinionCore.Remote.Ghost.IAgent agent)
         {
             Agent = agent;
             _machine = new PinionCore.Utility.StatusMachine();

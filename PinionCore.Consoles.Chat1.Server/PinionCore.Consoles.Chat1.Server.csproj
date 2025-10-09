@@ -7,10 +7,13 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\PinionCore.Consoles.Chat1.Common\PinionCore.Consoles.Chat1.Common.csproj" />
+    <ProjectReference Include="..\PinionCore.Consoles.Chat1.Gateway\PinionCore.Consoles.Chat1.Gateway.csproj" />
     <ProjectReference Include="..\PinionCore.Consoles.Chat1\PinionCore.Consoles.Chat1.csproj" />
     <ProjectReference Include="..\\PinionCore.Remote\PinionCore.Remote.csproj" />
     <ProjectReference Include="..\\PinionCore.Remote.Server\PinionCore.Remote.Server.csproj" />
     <ProjectReference Include="..\\PinionCore.Utility\PinionCore.Utility\PinionCore.Utility.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="System.CommandLine" Version="2.0.0-rc.1.25451.107" />
+  </ItemGroup>
 </Project>
-

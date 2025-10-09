@@ -1,5 +1,6 @@
-﻿using System;
-using System.Globalization;
+using System;
+using System.CommandLine;
+using System.CommandLine.Parsing;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -10,17 +11,55 @@ namespace PinionCore.Consoles.Chat1.Client
 {
     internal static class Program
     {
-        private const string StandaloneSwitch = "--standalone";
-
-        static void Main(string[] args)
+        internal static int Main(string[] args)
         {
-            if (args.Length >= 2 && string.Equals(args[0], StandaloneSwitch, StringComparison.OrdinalIgnoreCase))
+            var standaloneOption = new Option<FileInfo?>("--standalone")
             {
-                RunStandalone(new FileInfo(args[1]));
-                return;
+                Description = "Run in standalone mode with the specified service assembly.",
+                HelpName = "service.dll"
+            };
+
+            var hostArgument = new Argument<string?>("host")
+            {
+                Arity = ArgumentArity.ZeroOrOne,
+                Description = "Remote host name."
+            };
+
+            var portArgument = new Argument<int?>("port")
+            {
+                Arity = ArgumentArity.ZeroOrOne,
+                Description = "Remote host port.",
+                DefaultValueFactory = _ => null
+            };
+
+            var rootCommand = new RootCommand("PinionCore Chat1 client");
+            rootCommand.Add(standaloneOption);
+            rootCommand.Add(hostArgument);
+            rootCommand.Add(portArgument);
+
+            var parseResult = CommandLineParser.Parse(rootCommand, args, new ParserConfiguration());
+            if (parseResult.Errors.Count > 0)
+            {
+                foreach (var error in parseResult.Errors)
+                {
+                    System.Console.Error.WriteLine(error.Message);
+                }
+
+                return 1;
             }
 
-            RunRemote(args);
+            var standaloneAssembly = parseResult.GetValue(standaloneOption);
+            var host = parseResult.GetValue(hostArgument);
+            var port = parseResult.GetValue(portArgument);
+
+            if (standaloneAssembly != null)
+            {
+                RunStandalone(standaloneAssembly);
+                return 0;
+            }
+
+            RunRemote(host, port);
+            return 0;
         }
 
         private static void RunStandalone(FileInfo serviceFile)
@@ -56,16 +95,16 @@ namespace PinionCore.Consoles.Chat1.Client
             }
         }
 
-        private static void RunRemote(string[] args)
+        private static void RunRemote(string? host, int? port)
         {
             System.Console.WriteLine("Remote mode.");
             var protocol = ProtocolCreator.Create();
             var set = PinionCore.Remote.Client.Provider.CreateTcpAgent(protocol);
             var console = new RemoteConsole(set);
 
-            if (args?.Length == 2 && int.TryParse(args[1], NumberStyles.Integer, CultureInfo.InvariantCulture, out var port))
+            if (!string.IsNullOrWhiteSpace(host) && port.HasValue)
             {
-                console.Connect(args[0], port);
+                console.Connect(host, port.Value);
             }
 
             console.Run();

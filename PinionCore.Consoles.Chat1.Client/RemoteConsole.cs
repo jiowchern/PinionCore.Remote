@@ -3,7 +3,7 @@ using System.Net;
 
 namespace PinionCore.Consoles.Chat1.Client
 {
-    internal sealed class RemoteConsole : Console
+    internal sealed class RemoteConsole : GameConsole
     {
         private readonly PinionCore.Network.Tcp.Connector _connector;
         private bool _connected;
