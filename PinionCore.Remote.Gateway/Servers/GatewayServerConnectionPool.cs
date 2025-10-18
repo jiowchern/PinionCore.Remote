@@ -60,8 +60,9 @@ namespace PinionCore.Remote.Gateway.Servers
                 throw new InvalidOperationException("Failed to add new client.");
             }
             _Connections.Items.Add(client);
-            
-            _streamableEnterEvent?.Invoke(client);
+
+            // 傳遞反向視角給 gameService（模仿 Standalone 模式）
+            _streamableEnterEvent?.Invoke(client.GetReverseView());
             return id;
         }
 

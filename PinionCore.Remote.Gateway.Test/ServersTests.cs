@@ -55,7 +55,7 @@ namespace PinionCore.Remote.Gateway.Tests
             var user = await userObs.FirstAsync();
 
             var gameAgent = new PinionCore.Remote.Ghost.Agent(gameProtocol, new Remote.Serializer(gameProtocol.SerializeTypes), new PinionCore.Remote.InternalSerializer(), pool) as IAgent;
-            gameAgent.Enable(_ToStream(user));
+            gameAgent.Enable(user);
             var gameUpdateTaskEnable = true;
             var gameUpdateTask = System.Threading.Tasks.Task.Run(() => {
                 while (gameUpdateTaskEnable)
@@ -88,11 +88,6 @@ namespace PinionCore.Remote.Gateway.Tests
 
 
             Assert.AreEqual(1, gameGetValue);
-        }
-
-        private IStreamable _ToStream(IConnection user)
-        {                        
-            return new SessionAdapter(user);
         }
     }
 }

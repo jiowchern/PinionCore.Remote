@@ -1,10 +1,10 @@
-﻿namespace PinionCore.Remote.Gateway.Protocols
+﻿using PinionCore.Network;
+
+namespace PinionCore.Remote.Gateway.Protocols
 {
-    public interface IConnection
+    public interface IConnection : IStreamable
     {
         PinionCore.Remote.Property<uint> Id { get; }
-        event System.Action<byte[]> ResponseEvent;
-        void Request(byte[] payload);
     }
 }
 

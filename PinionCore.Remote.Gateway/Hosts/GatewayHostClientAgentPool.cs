@@ -10,10 +10,22 @@ namespace PinionCore.Remote.Gateway.Hosts
 {
     class GatewayHostClientAgentPool : IDisposable
     {
-        class User
+        class User : PinionCore.Network.IStreamable
         {
             public IAgent Agent;
-            public IConnection Session;            
+            public IConnection Session;
+
+            IAwaitableSource<int> PinionCore.Network.IStreamable.Send(byte[] buffer, int offset, int count)
+            {
+                // 直接轉發
+                return Session.Send(buffer, offset, count);
+            }
+
+            IAwaitableSource<int> PinionCore.Network.IStreamable.Receive(byte[] buffer, int offset, int count)
+            {
+                // 直接轉發
+                return Session.Receive(buffer, offset, count);
+            }
         }
 
 
@@ -74,12 +86,12 @@ namespace PinionCore.Remote.Gateway.Hosts
         {
             var agent = PinionCore.Remote.Standalone.Provider.CreateAgent(_gameProtocol);
 
-            agent.Enable(new SessionAdapter(session));
             var user = new User
             {
                 Agent = agent,
-                Session = session,                
+                Session = session,
             };
+            agent.Enable(user);
             _Users.Add(user);
             _Agents.Items.Add(agent);
 
