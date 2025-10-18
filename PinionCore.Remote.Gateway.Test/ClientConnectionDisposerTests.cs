@@ -18,8 +18,8 @@ namespace PinionCore.Remote.Gateway.Tests
 
             };
 
-            var lobby1 = new GatewayServerConnectionPool();
-            var lobby2 = new GatewayServerConnectionPool();
+            var lobby1 = new ConnectionPool();
+            var lobby2 = new ConnectionPool();
 
             clientConnectionDisposer.Add(lobby1);
             clientConnectionDisposer.Add(lobby2);
@@ -39,7 +39,7 @@ namespace PinionCore.Remote.Gateway.Tests
 
             };
 
-            var lobby1 = new GatewayServerConnectionPool();
+            var lobby1 = new ConnectionPool();
 
             clientConnectionDisposer.Add(lobby1);
             

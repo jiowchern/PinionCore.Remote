@@ -6,9 +6,9 @@ using PinionCore.Network;
 using PinionCore.Remote.Ghost;
 using PinionCore.Remote.Soul;
 
-namespace PinionCore.Remote.Gateway.Servers 
+namespace PinionCore.Remote.Gateway.Servers
 {
-    public class GatewayServerServiceHub 
+    public class ServiceHub
     {
         readonly System.Action _dispose;
 
@@ -19,10 +19,10 @@ namespace PinionCore.Remote.Gateway.Servers
         // 發送來自 Gateway 的連線請求
         public readonly IListenable Sink;
 
-        
-        public GatewayServerServiceHub()
+
+        public ServiceHub()
         {
-            var clientListener = new PinionCore.Remote.Gateway.Servers.GatewayServerConnectionPool();
+            var clientListener = new ConnectionPool();
             var clientEntry = new GatewayServerClientEntry(clientListener);
             var clientProtocol = Protocols.ProtocolProvider.Create();
             Source = Standalone.Provider.CreateService(clientEntry, clientProtocol);

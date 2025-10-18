@@ -20,7 +20,7 @@ namespace PinionCore.Remote.Gateway.Tests
             IServiceRegistry registry = coordinator;
             ISessionMembership membership = coordinator;
 
-            var m1 = new GatewayServerConnectionPool();
+            var m1 = new ConnectionPool();
             
             registry.Register(1, m1);
 

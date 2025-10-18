@@ -33,7 +33,7 @@ namespace PinionCore.Remote.Gateway.Tests
             PinionCore.Remote.Soul.IService actualGameService = Standalone.Provider.CreateService(gameEntry, gameProtocol);
 
             // Create the gateway-facing service hub
-            var connectionService = new PinionCore.Remote.Gateway.Servers.GatewayServerServiceHub();
+            var connectionService = new PinionCore.Remote.Gateway.Servers.ServiceHub();
 
             // Bridge Join/Leave events to the actual game service
             connectionService.Sink.StreamableEnterEvent += streamable => actualGameService.Join(streamable);
@@ -57,7 +57,7 @@ namespace PinionCore.Remote.Gateway.Tests
             gatewayHost.Sink.Register(1, game);
 
             // Register the game lobby with the gateway host
-            var gatewayAgent = new PinionCore.Remote.Gateway.Hosts.GatewayHostClientAgentPool(gameProtocol);
+            var gatewayAgent = new PinionCore.Remote.Gateway.Hosts.AgentPool(gameProtocol);
             // Connect the gateway agent pool to the host
             gatewayAgent.Agent.Connect(gatewayHost.Source);
             var gatewayAgentWorker = new AgentWorker(gatewayAgent.Agent);

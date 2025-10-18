@@ -3,19 +3,19 @@ using PinionCore.Network;
 using PinionCore.Remote.Gateway.Protocols;
 using PinionCore.Remote.Soul;
 
-namespace PinionCore.Remote.Gateway.Servers 
+namespace PinionCore.Remote.Gateway.Servers
 {
-    class GatewayServerConnectionPool : IConnectionProvider , IListenable 
+    class ConnectionPool : IConnectionProvider, IListenable
     {
         readonly IdProvider _idProvider;
-        readonly System.Collections.Concurrent.ConcurrentDictionary<uint, GatewayServerClientChannel> _clients = new System.Collections.Concurrent.ConcurrentDictionary<uint, GatewayServerClientChannel>();
+        readonly System.Collections.Concurrent.ConcurrentDictionary<uint, ClientChannel> _clients = new System.Collections.Concurrent.ConcurrentDictionary<uint, ClientChannel>();
         readonly NotifiableCollection<IConnection> _Connections;
-        readonly Notifier<IConnection> _clientNotifier;        
+        readonly Notifier<IConnection> _clientNotifier;
 
-        public GatewayServerConnectionPool()
+        public ConnectionPool()
         {
             _idProvider = new IdProvider();
-            _clients = new System.Collections.Concurrent.ConcurrentDictionary<uint, GatewayServerClientChannel>();
+            _clients = new System.Collections.Concurrent.ConcurrentDictionary<uint, ClientChannel>();
             _Connections = new NotifiableCollection<IConnection>();
             _clientNotifier = new Notifier<IConnection>(_Connections);
         }
@@ -54,7 +54,7 @@ namespace PinionCore.Remote.Gateway.Servers
         Value<uint> IConnectionProvider.Join()
         {
             var id = _idProvider.Landlord.Rent();
-            var client = new GatewayServerClientChannel(id);
+            var client = new ClientChannel(id);
             if(!_clients.TryAdd(id, client))
             {
                 throw new InvalidOperationException("Failed to add new client.");

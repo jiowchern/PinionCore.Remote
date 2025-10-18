@@ -17,7 +17,7 @@ namespace PinionCore.Remote.Gateway.Tests
             // 遊戲服務建立階段...
             var gameEntry1 = new TestGameEntry(TestGameEntry.GameType.Method1);
             Soul.IService service1 = PinionCore.Remote.Standalone.Provider.CreateService(gameEntry1, PinionCore.Remote.Tools.Protocol.Sources.TestCommon.ProtocolProvider.CreateCase1());
-            var serviceHub1 = new GatewayServerServiceHub();            
+            var serviceHub1 = new ServiceHub();            
             var tcpListener1 = new PinionCore.Remote.Server.Tcp.Listener();
             Soul.IListenable listener1 = tcpListener1;
             listener1.StreamableLeaveEvent += streamable => serviceHub1.Source.Leave(streamable);
@@ -57,7 +57,7 @@ namespace PinionCore.Remote.Gateway.Tests
 
 
             // Client connections to Gateway Host
-            var client1 = new GatewayHostClientAgentPool(PinionCore.Remote.Tools.Protocol.Sources.TestCommon.ProtocolProvider.CreateCase1());
+            var client1 = new AgentPool(PinionCore.Remote.Tools.Protocol.Sources.TestCommon.ProtocolProvider.CreateCase1());
             var tcpClientConnector1 = new PinionCore.Network.Tcp.Connector();
             var clientPeer1 = await tcpClientConnector1.Connect(new System.Net.IPEndPoint(System.Net.IPAddress.Loopback, tcpHostPort));
             client1.Agent.Enable(clientPeer1);

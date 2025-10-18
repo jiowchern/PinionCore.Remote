@@ -8,9 +8,9 @@ using PinionCore.Remote.Soul;
 
 namespace PinionCore.Remote.Gateway.Hosts
 {
-    class GatewayHostClientAgentPool : IDisposable
+    class AgentPool : IDisposable
     {
-        class User : PinionCore.Network.IStreamable
+        class AgentSession : PinionCore.Network.IStreamable
         {
             public IAgent Agent;
             public IConnection Session;
@@ -29,17 +29,18 @@ namespace PinionCore.Remote.Gateway.Hosts
         }
 
 
-        readonly System.Collections.Generic.List<User> _Users;
+        readonly System.Collections.Generic.List<AgentSession> _Sessions;
         readonly IProtocol _gameProtocol;
         System.Action _disable;
         public readonly Notifier<IAgent> Agents;
         readonly NotifiableCollection<IAgent> _Agents;
         public readonly IAgent Agent;
-        public GatewayHostClientAgentPool(IProtocol gameProtocol) {
-            
-            
+        public AgentPool(IProtocol gameProtocol)
+        {
+
+
             _gameProtocol = gameProtocol;
-            _Users = new System.Collections.Generic.List<User>();
+            _Sessions = new System.Collections.Generic.List<AgentSession>();
             Agent = Provider.CreateAgent();
             _Agents = new NotifiableCollection<IAgent>();
             Agents = new Notifier<IAgent>(_Agents);
@@ -67,18 +68,18 @@ namespace PinionCore.Remote.Gateway.Hosts
 
         private void _Destroy(IConnection session)
         {
-            
-            for (var i = _Users.Count - 1; i >= 0; i--)
+
+            for (var i = _Sessions.Count - 1; i >= 0; i--)
             {
-                var user = _Users[i];
-                if (user.Session != session)
+                var agentSession = _Sessions[i];
+                if (agentSession.Session != session)
                 {
                     continue;
                 }
-                
-                user.Agent.Disable();
-                _Agents.Items.Remove(user.Agent);
-                _Users.RemoveAt(i);
+
+                agentSession.Agent.Disable();
+                _Agents.Items.Remove(agentSession.Agent);
+                _Sessions.RemoveAt(i);
             }
         }
 
@@ -86,26 +87,26 @@ namespace PinionCore.Remote.Gateway.Hosts
         {
             var agent = PinionCore.Remote.Standalone.Provider.CreateAgent(_gameProtocol);
 
-            var user = new User
+            var agentSession = new AgentSession
             {
                 Agent = agent,
                 Session = session,
             };
-            agent.Enable(user);
-            _Users.Add(user);
+            agent.Enable(agentSession);
+            _Sessions.Add(agentSession);
             _Agents.Items.Add(agent);
 
         }
         public void Dispose()
         {
             // Dispose all tracked agents and unsubscribe from connection manager events
-            for (var i = _Users.Count - 1; i >= 0; i--)
+            for (var i = _Sessions.Count - 1; i >= 0; i--)
             {
-                var user = _Users[i];
-                
-                user.Agent.Disable();
-                _Agents.Items.Remove(user.Agent);
-                _Users.RemoveAt(i);
+                var agentSession = _Sessions[i];
+
+                agentSession.Agent.Disable();
+                _Agents.Items.Remove(agentSession.Agent);
+                _Sessions.RemoveAt(i);
             }
 
             _disable();

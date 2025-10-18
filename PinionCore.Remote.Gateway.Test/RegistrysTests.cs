@@ -12,7 +12,7 @@ namespace PinionCore.Remote.Gateway.Tests
         public async System.Threading.Tasks.Task ProviderRegistry_Connect_EventHandling_Test()
         {
 
-            var hub1 = new GatewayServerServiceHub();
+            var hub1 = new ServiceHub();
             var tcpListener = new PinionCore.Remote.Server.Tcp.Listener();
             var port1 = PinionCore.Network.Tcp.Tools.GetAvailablePort();
             IListenable listenable = tcpListener;

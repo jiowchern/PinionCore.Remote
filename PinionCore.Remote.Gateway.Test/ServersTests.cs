@@ -29,7 +29,7 @@ namespace PinionCore.Remote.Gateway.Tests
             PinionCore.Remote.Soul.IService gameService = Standalone.Provider.CreateService(gameEntry, gameProtocol);
 
             // Create the gateway service hub
-            var connectionService = new PinionCore.Remote.Gateway.Servers.GatewayServerServiceHub();
+            var connectionService = new PinionCore.Remote.Gateway.Servers.ServiceHub();
 
             // Bridge Join/Leave events to the game service
             connectionService.Sink.StreamableEnterEvent += streamable => gameService.Join(streamable);

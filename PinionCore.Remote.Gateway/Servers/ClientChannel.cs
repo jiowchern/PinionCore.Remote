@@ -3,16 +3,16 @@ using System.Threading;
 using PinionCore.Network;
 using PinionCore.Remote.Gateway.Protocols;
 
-namespace PinionCore.Remote.Gateway.Servers 
+namespace PinionCore.Remote.Gateway.Servers
 {
-    class GatewayServerClientChannel : IConnection, IStreamable
+    class ClientChannel : IConnection, IStreamable
     {
         readonly PinionCore.Network.Stream _stream;
         readonly PinionCore.Network.IStreamable _Streamable;
         readonly PinionCore.Network.IStreamable _reverseView;
         readonly Property<uint> _id;
 
-        public GatewayServerClientChannel(uint id)
+        public ClientChannel(uint id)
         {
             _stream = new PinionCore.Network.Stream();
             _Streamable = _stream;
