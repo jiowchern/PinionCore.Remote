@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Linq;
+using System.Reactive;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
 using NUnit.Framework;
+using PinionCore.Network;
 using PinionCore.Remote.Reactive;
 using PinionCore.Remote.Tools.Protocol.Sources.TestCommon.MultipleNotices;
 
@@ -47,7 +49,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
             IProtocol protocol = PinionCore.Remote.Tools.Protocol.Sources.TestCommon.ProtocolProvider.CreateCase1();
             NUnit.Framework.Assert.IsTrue(protocol.SerializeTypes.Any(t => t == typeof(int)));
 
-            NUnit.Framework.Assert.AreEqual(14, protocol.SerializeTypes.Length);
+            NUnit.Framework.Assert.AreEqual(16, protocol.SerializeTypes.Length);
 
 
         }
@@ -461,21 +463,28 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
         [Timeout(Timeout)]
         public async Task StreamableMethodTest()
         {
-            var tester = new MethodTester();
-            var env = new TestEnv<Entry<IMethodable>, IMethodable>(new Entry<IMethodable>(tester), TimeSpan.FromSeconds(Timeout));
-            
-            IObservable<IMethodable> gpiObs = from g in env.Queryable.QueryNotifier<IMethodable>().SupplyEvent()
-                                              select g;
-            var gpi = gpiObs.FirstAsync().Wait();
             var buf = new byte[100];
             int offset = 10;
             int count = 20;
+            var tester = new MethodTester();
+            var env = new TestEnv<Entry<IMethodable>, IMethodable>(new Entry<IMethodable>(tester), TimeSpan.FromSeconds(Timeout));
+            
+            IObservable<IMethodable> gpiObs = from g in env.Queryable.QueryNotifier<IMethodable>().SupplyEvent()                                              
+                                              select g;
+            var gpi = gpiObs.FirstAsync().Wait();
+            
 
             try
             {
-                var t = gpi.StreamableMethod(buf, offset, count);
-                var processCount = await t;
-                env.Dispose();
+                var waiter = gpi.StreamableMethod(buf, offset, count).GetAwaiter();
+                while(!waiter.IsCompleted)
+                {
+
+                }
+
+                var processCount = waiter.GetResult();
+                
+                
                 Assert.AreEqual(count, processCount);
                 for (int i = 0; i < count; i++)
                 {

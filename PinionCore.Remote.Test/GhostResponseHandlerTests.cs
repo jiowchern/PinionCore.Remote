@@ -74,6 +74,19 @@ namespace PinionCore.Remote.Tests
                 }
             }
 
+            event StreamMethodCallback IGhost.CallStreamMethodEvent
+            {
+                add
+                {
+                    throw new NotImplementedException();
+                }
+
+                remove
+                {
+                    throw new NotImplementedException();
+                }
+            }
+
             private readonly Property<int> _PinionCore_Remote_Tests_GhostResponseHandlerTests_IA_Property1 = new Property<int>();
             Property<int> IA.Property1 => _PinionCore_Remote_Tests_GhostResponseHandlerTests_IA_Property1;
 

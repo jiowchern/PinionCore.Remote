@@ -47,7 +47,18 @@
             }
         }
 
+        event StreamMethodCallback IGhost.CallStreamMethodEvent
+        {
+            add
+            {
+                
+            }
 
+            remove
+            {
+                
+            }
+        }
 
         long IGhost.GetID()
         {

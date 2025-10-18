@@ -117,6 +117,9 @@ namespace Client
   - Notifier
   詳見 `document/communications-*.md`。
 
+**串流方法（Streamable Method）**  
+當介面定義方法簽名為 `PinionCore.Remote.IAwaitableSource<int> AnyName(byte[] buffer, int offset, int count)` 時，Source Generator 會自動將其視為串流呼叫。傳送至伺服器的資料僅限於 `buffer` 由 `offset` 與 `count` 所描述的區段，伺服器回覆的處理長度與資料會原地寫回 `offset` 起始的位置。適用於需要雙向資料流、又不希望每次都複製整個緩衝區的情境。
+
 - 序列化：可序列化型別與說明見 `PinionCore.Serialization/README.md`。
 
 ---

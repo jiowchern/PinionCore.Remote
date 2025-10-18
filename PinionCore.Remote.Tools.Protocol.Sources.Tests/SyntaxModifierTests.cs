@@ -319,6 +319,31 @@ interface IA {
             NUnit.Framework.Assert.AreEqual(0, modifier.TypesOfSerialization.Count());
             NUnit.Framework.Assert.True(builder.Expression.IsEquivalentTo(exp));
         }
+
+        [Test]
+        public void MethodStreamable()
+        {
+            var source = @"
+interface IA {
+    PinionCore.Remote.IAwaitableSource<System.Int32> StreamableMethod(System.Byte[] buffer, System.Int32 offset, System.Int32 count);
+}
+";
+            SyntaxTree tree = Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(source);
+            CSharpCompilation com = tree.Compilation();
+            SyntaxNode root = com.SyntaxTrees[0].GetRoot();
+            var builder = new PinionCore.Remote.Tools.Protocol.Sources.InterfaceInheritor(root.DescendantNodes().OfType<InterfaceDeclarationSyntax>().Single());
+
+            ClassDeclarationSyntax cia = SyntaxFactory.ClassDeclaration("CIA");
+            cia = builder.Inherite(cia);
+
+            ModResult modifier = SyntaxModifier.Create(com).Mod(cia);
+            cia = modifier.Type;
+
+            BlockSyntax exp = cia.DescendantNodes().OfType<BlockSyntax>().Single();
+            NUnit.Framework.Assert.AreEqual(2, modifier.TypesOfSerialization.Count());
+            NUnit.Framework.Assert.False(builder.Expression.IsEquivalentTo(exp));
+            NUnit.Framework.Assert.IsTrue(exp.ToFullString().Contains("_CallStreamMethodEvent"));
+        }
         [Test]
         public void MethodVoid()
         {

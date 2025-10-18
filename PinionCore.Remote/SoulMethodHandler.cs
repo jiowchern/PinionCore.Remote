@@ -38,11 +38,13 @@ namespace PinionCore.Remote
             _InternalSerializable = internalSerializable;
 
             _Peer.InvokeMethodEvent += _InvokeMethod;
+            _Peer.InvokeStreamMethodEvent += _InvokeStreamMethod;
         }
 
         public void Dispose()
         {
             _Peer.InvokeMethodEvent -= _InvokeMethod;
+            _Peer.InvokeStreamMethodEvent -= _InvokeStreamMethod;
         }
 
         private void _InvokeMethod(long entity_id, int method_id, long returnId, byte[][] args)
@@ -139,6 +141,116 @@ namespace PinionCore.Remote
                 Message = message
             };
             _Queue.Push(ServerToClientOpCode.ErrorMethod, _InternalSerializable.Serialize(package));
+        }
+
+        private void _InvokeStreamMethod(long entity_id, int method_id, long returnId, byte[] buffer, int count)
+        {
+            if (!_Souls.TryGetValue(entity_id, out SoulProxy soul))
+            {
+                throw new Exception($"Soul not found entity_id:{entity_id}");
+            }
+
+            MethodInfo info = _Protocol.GetMemberMap().GetMethod(method_id);
+            if (info == null)
+            {
+                throw new Exception($"Stream method not found method_id:{method_id}");
+            }
+
+            try
+            {
+                var args = new object[] { buffer, 0, count };
+                var returnValue = info.Invoke(soul.ObjectInstance, args);
+                if (returnValue is IAwaitableSource<int> awaitable)
+                {
+                    _HandleStreamReturn(method_id, returnId, buffer, awaitable);
+                }
+                else
+                {
+                    throw new Exception($"Method {info.Name} must return IAwaitableSource<int>.");
+                }
+            }
+            catch (TargetInvocationException tie)
+            {
+                var inner = tie.InnerException ?? tie;
+                _ErrorDeserialize(info.Name, returnId, inner.Message);
+            }
+            catch (Exception e)
+            {
+                _ErrorDeserialize(info.Name, returnId, e.Message);
+            }
+        }
+
+        private void _HandleStreamReturn(int methodId, long returnId, byte[] buffer, IAwaitableSource<int> awaitable)
+        {
+            if (awaitable == null)
+            {
+                _ErrorDeserialize(methodId.ToString(), returnId, "Stream method returned null awaitable.");
+                return;
+            }
+
+            IAwaitable<int> awaiter;
+            try
+            {
+                awaiter = awaitable.GetAwaiter();
+            }
+            catch (Exception e)
+            {
+                _ErrorDeserialize(methodId.ToString(), returnId, e.Message);
+                return;
+            }
+
+            void Complete()
+            {
+                try
+                {
+                    int processCount = awaiter.GetResult();
+                    _ReturnStreamValue(returnId, buffer, processCount);
+                }
+                catch (Exception e)
+                {
+                    _ErrorDeserialize(methodId.ToString(), returnId, e.Message);
+                }
+            }
+
+            if (awaiter.IsCompleted)
+            {
+                Complete();
+            }
+            else
+            {
+                awaiter.OnCompleted(Complete);
+            }
+        }
+
+        private void _ReturnStreamValue(long returnId, byte[] buffer, int processCount)
+        {
+            var length = processCount;
+            if (length < 0)
+            {
+                length = 0;
+            }
+            if (buffer == null)
+            {
+                buffer = Array.Empty<byte>();
+            }
+            if (length > buffer.Length)
+            {
+                length = buffer.Length;
+            }
+
+            var data = new byte[length];
+            if (length > 0)
+            {
+                System.Buffer.BlockCopy(buffer, 0, data, 0, length);
+            }
+
+            var package = new PackageReturnStreamMethod
+            {
+                ReturnTarget = returnId,
+                ProcessCount = processCount,
+                Buffer = data
+            };
+            _Queue.Push(ServerToClientOpCode.ReturnStreamMethod, _InternalSerializable.Serialize(package));
         }
     }
 

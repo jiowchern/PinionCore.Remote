@@ -15,6 +15,7 @@ namespace PinionCore.Remote.Soul
 
 
         private event InvokeMethodCallback _InvokeMethodEvent;
+        private event InvokeStreamMethodCallback _InvokeStreamMethodEvent;
 
         private class MethodRequest
         {
@@ -117,6 +118,11 @@ namespace PinionCore.Remote.Soul
             remove { _InvokeMethodEvent -= value; }
         }
 
+        event InvokeStreamMethodCallback IRequestQueue.InvokeStreamMethodEvent
+        {
+            add { _InvokeStreamMethodEvent += value; }
+            remove { _InvokeStreamMethodEvent -= value; }
+        }
 
 
         void IResponseQueue.Push(ServerToClientOpCode cmd, PinionCore.Memorys.Buffer buffer)
@@ -145,6 +151,11 @@ namespace PinionCore.Remote.Soul
                 var data = (PinionCore.Remote.Packages.PackageCallMethod)_InternalSerializer.Deserialize(package.Data.AsBuffer());
                 MethodRequest request = _ToRequest(data.EntityId, data.MethodId, data.ReturnId, data.MethodParams);
                 _InvokeMethodEvent(request.EntityId, request.MethodId, request.ReturnId, request.MethodParams);
+            }
+            else if (package.Code == ClientToServerOpCode.CallStreamMethod)
+            {
+                var data = (PinionCore.Remote.Packages.PackageCallStreamMethod)_InternalSerializer.Deserialize(package.Data.AsBuffer());
+                _InvokeStreamMethodEvent?.Invoke(data.EntityId, data.MethodId, data.ReturnId, data.Buffer, data.Count);
             }
             else if (package.Code == ClientToServerOpCode.AddEvent)
             {

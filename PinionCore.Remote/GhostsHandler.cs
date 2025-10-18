@@ -63,6 +63,7 @@ namespace PinionCore.Remote
 
                 var gm = new GhostMethodHandler(ghost.GetID(), _ReturnValueHandler, _Protocol, _Serializer, _InternalSerializer);
                 ghost.CallMethodEvent += gm.Run;
+                ghost.CallStreamMethodEvent += gm.RunStream;
                 ClientExchangeable gmec = gm;
                 gmec.ResponseEvent += _ResponseEvent;
 

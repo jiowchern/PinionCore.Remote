@@ -20,6 +20,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
         {
             return new SyntaxModifier(
                     new BlockModifiers.MethodVoid(com, memberIdProvider),
+                    new BlockModifiers.MethodPinionCoreRemoteStreamable(com, memberIdProvider),
                     new BlockModifiers.MethodPinionCoreRemoteValue1(com, memberIdProvider),
                     new BlockModifiers.MethodPinionCoreRemoteValue0(com, memberIdProvider),
                     new BlockModifiers.EventSystemAction(com, memberIdProvider),
@@ -29,6 +30,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
                 );
         }
         private readonly BlockModifiers.MethodVoid _MethodVoid;
+        private readonly BlockModifiers.MethodPinionCoreRemoteStreamable _MethodPinionCoreRemoteStreamable;
         private readonly BlockModifiers.MethodPinionCoreRemoteValue1 _MethodPinionCoreRemoteValue1;
         private readonly BlockModifiers.MethodPinionCoreRemoteValue0 _MethodPinionCoreRemoteValue0;
         private readonly BlockModifiers.EventSystemAction _EventSystemAction;
@@ -38,6 +40,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
 
         public SyntaxModifier(
             BlockModifiers.MethodVoid method_void,
+            BlockModifiers.MethodPinionCoreRemoteStreamable method_pinioncore_remote_streamable,
             BlockModifiers.MethodPinionCoreRemoteValue1 method_regulus_remote_value1,
             BlockModifiers.MethodPinionCoreRemoteValue0 method_regulus_remote_value0,
             BlockModifiers.EventSystemAction event_system_action,
@@ -47,6 +50,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
             )
         {
             _MethodVoid = method_void;
+            _MethodPinionCoreRemoteStreamable = method_pinioncore_remote_streamable;
             _MethodPinionCoreRemoteValue1 = method_regulus_remote_value1;
             _MethodPinionCoreRemoteValue0 = method_regulus_remote_value0;
             _EventSystemAction = event_system_action;
@@ -87,6 +91,14 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
                 {
                     typesOfSerialization.AddRange(methodVoid.Types);
                     replaceBlocks.Add(block, methodVoid.Block);
+                    continue;
+                }
+
+                BlockModifiers.BlockAndTypes streamable = _MethodPinionCoreRemoteStreamable.Mod(nodes);
+                if (streamable != null)
+                {
+                    typesOfSerialization.AddRange(streamable.Types);
+                    replaceBlocks.Add(block, streamable.Block);
                     continue;
                 }
 

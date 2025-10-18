@@ -3,6 +3,7 @@
     public enum ClientToServerOpCode : byte
     {
         CallMethod = 1,
+        CallStreamMethod,
 
         Ping,
 
@@ -22,6 +23,7 @@
         UnloadSoul,
 
         ReturnValue,
+        ReturnStreamMethod,
 
         LoadSoulCompile,
 

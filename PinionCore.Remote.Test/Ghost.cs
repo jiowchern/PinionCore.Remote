@@ -57,7 +57,18 @@ namespace PinionCore.Remote.Test
             }
         }
 
+        event StreamMethodCallback IGhost.CallStreamMethodEvent
+        {
+            add
+            {
+                throw new NotImplementedException();
+            }
 
+            remove
+            {
+                throw new NotImplementedException();
+            }
+        }
 
         bool IGhost.IsReturnType()
         {

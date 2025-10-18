@@ -39,6 +39,13 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.Codes
                             ),
                             IdentifierName("CallMethodCallback")
                         );
+        public static readonly QualifiedNameSyntax _PinionCoreRemoteStreamMethodCallback = QualifiedName(
+                            QualifiedName(
+                                IdentifierName("PinionCore"),
+                                IdentifierName("Remote")
+                            ),
+                            IdentifierName("StreamMethodCallback")
+                        );
         public static readonly QualifiedNameSyntax _PinionCoreRemoteIGhost = QualifiedName
                         (
                             QualifiedName(

@@ -74,6 +74,49 @@ namespace PinionCore.Remote
             _ResponseEvent(ClientToServerOpCode.CallMethod, _InternalSerializable.Serialize(package));
         }
 
+        public void RunStream(int method_id, byte[] buffer, int offset, int count, Value<int> return_value)
+        {
+            if (return_value == null)
+            {
+                throw new ArgumentNullException(nameof(return_value));
+            }
+
+            if (buffer == null)
+            {
+                throw new ArgumentNullException(nameof(buffer));
+            }
+
+            if (offset < 0 || count < 0 || offset > buffer.Length || count > buffer.Length - offset)
+            {
+                throw new ArgumentOutOfRangeException(nameof(count), "Invalid buffer segment.");
+            }
+
+            MemberMap map = _Protocol.GetMemberMap();
+            var info = map.GetMethod(method_id);
+            if (info == null)
+            {
+                PinionCore.Utility.Log.Instance.WriteInfoImmediate($"stream method {method_id} not found");
+                return;
+            }
+
+            var package = new PinionCore.Remote.Packages.PackageCallStreamMethod
+            {
+                EntityId = _Ghost,
+                MethodId = method_id,
+                Count = count
+            };
+
+            var bufferSegment = new byte[count];
+            if (count > 0)
+            {
+                System.Buffer.BlockCopy(buffer, offset, bufferSegment, 0, count);
+            }
+            package.Buffer = bufferSegment;
+            package.ReturnId = _ReturnValueQueue.PushStreamReturn(return_value, buffer, offset);
+
+            _ResponseEvent(ClientToServerOpCode.CallStreamMethod, _InternalSerializable.Serialize(package));
+        }
+
 
     }
 }

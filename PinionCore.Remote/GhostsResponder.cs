@@ -60,6 +60,11 @@ namespace PinionCore.Remote
                         _ReturnValueHandler.SetReturnValue(returnValueData.ReturnTarget, returnValueData.ReturnValue);
                         break;
 
+                    case ServerToClientOpCode.ReturnStreamMethod:
+                        var returnStreamData = (PackageReturnStreamMethod)_InternalSerializer.Deserialize(args);
+                        _ReturnValueHandler.CompleteStreamReturn(returnStreamData.ReturnTarget, returnStreamData.ProcessCount, returnStreamData.Buffer);
+                        break;
+
                     case ServerToClientOpCode.LoadSoulCompile:
                         var loadSoulCompileData = (PackageLoadSoulCompile)_InternalSerializer.Deserialize(args);
                         LoadSoulCompile(loadSoulCompileData.TypeId, loadSoulCompileData.EntityId, loadSoulCompileData.ReturnId);

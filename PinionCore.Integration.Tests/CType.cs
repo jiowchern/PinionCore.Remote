@@ -50,7 +50,18 @@ namespace PinionCore.Integration.Tests
             }
         }
 
+        event StreamMethodCallback IGhost.CallStreamMethodEvent
+        {
+            add
+            {
+                throw new NotImplementedException();
+            }
 
+            remove
+            {
+                throw new NotImplementedException();
+            }
+        }
 
         long IGhost.GetID()
         {

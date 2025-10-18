@@ -170,6 +170,9 @@ In addition to the above example ``IGreeter.SayHello``, there are a total of fou
 * [```Property```](document/communications-property.md)
 * [```Notifier```](document/communications-notifier.md)
 
+**Streamable Method**
+If an interface declares a method with the signature `PinionCore.Remote.IAwaitableSource<int> MethodName(byte[] buffer, int offset, int count)`, the source generator will wire it as a streamable call. Only the slice described by `offset` and `count` is sent to the server, and the server response returns both the processed byte count and the updated data so the client buffer is filled back starting at `offset`. Use this pattern when you need bidirectional streaming without shipping the entire byte array over the network.
+
 **Serialization**  
 For the types that can be serialized, see [```PinionCore.Serialization```](PinionCore.Serialization/README.md) instructions.
 <!-- > Serialization supports the following types...  

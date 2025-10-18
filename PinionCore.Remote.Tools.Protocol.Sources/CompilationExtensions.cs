@@ -46,16 +46,68 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
                 {
                     typeSyntax = arrayType.ElementType;
                 }
+
+                if (typeSyntax is PredefinedTypeSyntax predefined)
+                {
+                    SpecialType? specialType = _ToSpecialType(predefined.Keyword.Kind());
+                    if (specialType == null)
+                    {
+                        return false;
+                    }
+                    var symbol = compilation.GetSpecialType(specialType.Value);
+                    if (symbol == null || symbol.Kind == SymbolKind.ErrorType)
+                    {
+                        return false;
+                    }
+                    continue;
+                }
+
                 var typeName = typeSyntax.ToString();
-                INamedTypeSymbol symbol = compilation.GetTypeByMetadataName(typeName);
+                INamedTypeSymbol symbolByName = compilation.GetTypeByMetadataName(typeName);
 
-                if (symbol == null)
-                    return false;
-
-                if (symbol.IsAbstract)
+                if (symbolByName == null || symbolByName.IsAbstract)
                     return false;
             }
             return true;
+        }
+
+        private static SpecialType? _ToSpecialType(SyntaxKind kind)
+        {
+            switch (kind)
+            {
+                case SyntaxKind.BoolKeyword:
+                    return SpecialType.System_Boolean;
+                case SyntaxKind.SByteKeyword:
+                    return SpecialType.System_SByte;
+                case SyntaxKind.ByteKeyword:
+                    return SpecialType.System_Byte;
+                case SyntaxKind.ShortKeyword:
+                    return SpecialType.System_Int16;
+                case SyntaxKind.UShortKeyword:
+                    return SpecialType.System_UInt16;
+                case SyntaxKind.IntKeyword:
+                    return SpecialType.System_Int32;
+                case SyntaxKind.UIntKeyword:
+                    return SpecialType.System_UInt32;
+                case SyntaxKind.LongKeyword:
+                    return SpecialType.System_Int64;
+                case SyntaxKind.ULongKeyword:
+                    return SpecialType.System_UInt64;
+                case SyntaxKind.FloatKeyword:
+                    return SpecialType.System_Single;
+                case SyntaxKind.DoubleKeyword:
+                    return SpecialType.System_Double;
+                case SyntaxKind.DecimalKeyword:
+                    return SpecialType.System_Decimal;
+                case SyntaxKind.StringKeyword:
+                    return SpecialType.System_String;
+                case SyntaxKind.CharKeyword:
+                    return SpecialType.System_Char;
+                case SyntaxKind.ObjectKeyword:
+                    return SpecialType.System_Object;
+                default:
+                    return null;
+            }
         }
 
 

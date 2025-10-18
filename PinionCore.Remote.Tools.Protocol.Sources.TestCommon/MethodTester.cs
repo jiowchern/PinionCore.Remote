@@ -45,6 +45,9 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon
             {
                 buffer[offset + i] = (byte)i;
             }
+            //return new PinionCore.Network.TaskWaitableValue<int>(System.Threading.Tasks.Task<int>.Factory.StartNew(
+            //    () => count
+            //    ));
             return new PinionCore.Network.NoWaitValue<int>(count);
         }
     }
