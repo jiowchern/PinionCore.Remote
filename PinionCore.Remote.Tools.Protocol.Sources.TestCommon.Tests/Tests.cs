@@ -406,6 +406,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
             Assert.AreEqual(1, value);
         }
 
+        
         [Test]
         public void MethodSayHelloTest()
         {
@@ -456,7 +457,42 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
 
 
         }
+        [Test]
+        [Timeout(Timeout)]
+        public async Task StreamableMethodTest()
+        {
+            var tester = new MethodTester();
+            var env = new TestEnv<Entry<IMethodable>, IMethodable>(new Entry<IMethodable>(tester), TimeSpan.FromSeconds(Timeout));
+            
+            IObservable<IMethodable> gpiObs = from g in env.Queryable.QueryNotifier<IMethodable>().SupplyEvent()
+                                              select g;
+            var gpi = gpiObs.FirstAsync().Wait();
+            var buf = new byte[100];
+            int offset = 10;
+            int count = 20;
 
+            try
+            {
+                var t = gpi.StreamableMethod(buf, offset, count);
+                var processCount = await t;
+                env.Dispose();
+                Assert.AreEqual(count, processCount);
+                for (int i = 0; i < count; i++)
+                {
+                    Assert.AreEqual((byte)i, buf[i + offset]);
+                }
+            }
+            catch (Exception ex)
+            {
+                
+                Assert.Fail(ex.ToString());
+            }
+            finally
+            {
+                env.Dispose();
+            }
+
+        }
 
     }
 }

@@ -18,6 +18,8 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
         TimeSpan _NowMessage;
         TimeSpan _NowPackage;
 
+        public event Action<Exception> ExceptionEvent;
+
         public TestEnv(T entry, TimeSpan expiry)
         {
             _CounterMessage = Stopwatch.StartNew();
@@ -40,6 +42,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
                 _CounterMessage.Restart();
                 if (_NowMessage > expiry)
                 {
+                    ExceptionEvent?.Invoke(new TimeoutException("Message processing timed out"));
                     throw new TimeoutException("Message processing timed out");
                 }
             });
@@ -52,6 +55,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
                 _CounterPackage.Restart();
                 if (_NowPackage > expiry)
                 {
+                    ExceptionEvent?.Invoke(new TimeoutException("Message processing timed out"));
                     throw new TimeoutException("Package processing timed out");
                 }
             });

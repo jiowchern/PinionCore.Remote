@@ -14,5 +14,7 @@
         PinionCore.Remote.Value<IMethodable> GetValueSelf();
 
         PinionCore.Remote.Value MethodNoValue(TestStruct arg1);
+
+        IAwaitableSource<int> StreamableMethod(byte[] buffer, int offset, int count);
     }
 }
