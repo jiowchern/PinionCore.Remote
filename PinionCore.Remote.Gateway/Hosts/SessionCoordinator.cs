@@ -15,7 +15,7 @@ namespace PinionCore.Remote.Gateway.Hosts
     {
 
     }
-    internal class GatewayHostSessionCoordinator : ISessionMembership, IServiceRegistry , IDisposable
+    internal class SessionCoordinator : ISessionMembership, IServiceRegistry, IDisposable
     {
         
 
@@ -46,7 +46,7 @@ namespace PinionCore.Remote.Gateway.Hosts
 
         readonly DataflowActor<IActotCommand> _DataflowActor;
 
-        public GatewayHostSessionCoordinator(IGameLobbySelectionStrategy strategy)
+        public SessionCoordinator(IGameLobbySelectionStrategy strategy)
         {
             _Strategy = strategy;
             _RoutableSessions = new List<RoutableSession>();

@@ -2,9 +2,9 @@
 using System.Text;
 using PinionCore.Remote.Gateway.Protocols;
 
-namespace PinionCore.Remote.Gateway.Servers 
+namespace PinionCore.Remote.Gateway.Servers
 {
-    internal class GatewayServerClientEntry : IEntry
+    internal class ClientEntry : IEntry
     {
         struct BinderInfo
         {
@@ -14,7 +14,7 @@ namespace PinionCore.Remote.Gateway.Servers
 
         readonly IConnectionProvider _listener;
         readonly System.Collections.Generic.List<BinderInfo> _bindings;
-        public GatewayServerClientEntry(IConnectionProvider gatewayClientListener)
+        public ClientEntry(IConnectionProvider gatewayClientListener)
         {
             _bindings = new List<BinderInfo>();
             _listener = gatewayClientListener;

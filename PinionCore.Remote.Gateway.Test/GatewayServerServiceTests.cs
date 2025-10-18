@@ -17,7 +17,7 @@ namespace PinionCore.Remote.Gateway.Tests
             // 遊戲服務建立階段...
             var gameEntry1 = new TestGameEntry(TestGameEntry.GameType.Method1);
             Soul.IService service1 = PinionCore.Remote.Standalone.Provider.CreateService(gameEntry1, PinionCore.Remote.Tools.Protocol.Sources.TestCommon.ProtocolProvider.CreateCase1());
-            var serviceHub1 = new ServiceHub();            
+            var serviceHub1 = new Servers.ServiceHub();            
             var tcpListener1 = new PinionCore.Remote.Server.Tcp.Listener();
             Soul.IListenable listener1 = tcpListener1;
             listener1.StreamableLeaveEvent += streamable => serviceHub1.Source.Leave(streamable);
@@ -30,7 +30,7 @@ namespace PinionCore.Remote.Gateway.Tests
             
 
             // Gateway Host 連線階段...
-            var hostHub = new GatewayHostServiceHub(new RoundRobinGameLobbySelectionStrategy());
+            var hostHub = new Hosts.ServiceHub(new RoundRobinGameLobbySelectionStrategy());
 
             // Set up TCP listener for Gateway Host first
             var tcpHostListener = new PinionCore.Remote.Server.Tcp.Listener();

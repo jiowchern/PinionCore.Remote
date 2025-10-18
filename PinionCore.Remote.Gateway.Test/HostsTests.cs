@@ -24,7 +24,7 @@ namespace PinionCore.Remote.Gateway.Tests
         
 
         [NUnit.Framework.Test, Timeout(10000)]
-        public async System.Threading.Tasks.Task GatewayHostServiceHubAgentWorkflowTest()
+        public async System.Threading.Tasks.Task ServiceHubAgentWorkflowTest()
         {
             var gameEntry = new TestGameEntry(TestGameEntry.GameType.Method1);
             var gameProtocol = PinionCore.Remote.Tools.Protocol.Sources.TestCommon.ProtocolProvider.CreateCase1();
@@ -51,7 +51,7 @@ namespace PinionCore.Remote.Gateway.Tests
             var game = await gameObs.FirstAsync();
 
             // Create the gateway host hub
-            var gatewayHost = new PinionCore.Remote.Gateway.Hosts.GatewayHostServiceHub(new RoundRobinGameLobbySelectionStrategy());
+            var gatewayHost = new PinionCore.Remote.Gateway.Hosts.ServiceHub(new RoundRobinGameLobbySelectionStrategy());
 
             // Register the game lobby with the gateway host            
             gatewayHost.Sink.Register(1, game);

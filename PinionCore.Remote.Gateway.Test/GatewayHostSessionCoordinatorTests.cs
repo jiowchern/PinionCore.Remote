@@ -11,12 +11,12 @@ using System.Reactive.Linq;
 
 namespace PinionCore.Remote.Gateway.Tests
 {
-    public class GatewayHostSessionCoordinatorTests
+    public class SessionCoordinatorTests
     {
         [NUnit.Framework.Test, Timeout(10000)]
         public async System.Threading.Tasks.Task SessionCoordinator_ConnectionRegisterJoinUnregister_Succeeds()
         {
-            var coordinator = new PinionCore.Remote.Gateway.Hosts.GatewayHostSessionCoordinator(new RoundRobinGameLobbySelectionStrategy());
+            var coordinator = new PinionCore.Remote.Gateway.Hosts.SessionCoordinator(new RoundRobinGameLobbySelectionStrategy());
             IServiceRegistry registry = coordinator;
             ISessionMembership membership = coordinator;
 
@@ -24,7 +24,7 @@ namespace PinionCore.Remote.Gateway.Tests
             
             registry.Register(1, m1);
 
-            var conn1 = new GatewayHostConnectionRoster();
+            var conn1 = new ConnectionRoster();
             IConnectionRoster connectionManager = conn1;
             var supplyObs = from c in connectionManager.Connections.Base.SupplyEvent()                      
                       select c;

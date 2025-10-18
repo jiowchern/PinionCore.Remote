@@ -5,21 +5,21 @@ using PinionCore.Remote.Gateway.Protocols;
 
 namespace PinionCore.Remote.Gateway.Hosts
 {
-    internal class GatewayHostClientEntry : IEntry
+    internal class ClientEntry : IEntry
     {
 
         class User
         {
             public ISoul Soul;
-            
-            public GatewayHostConnectionRoster ConnectionManager;
+
+            public ConnectionRoster ConnectionManager;
         }
 
         private readonly ISessionMembership _sessionMembership;
         readonly System.Collections.Generic.Dictionary<IBinder, User> _Users;
 
 
-        public GatewayHostClientEntry(ISessionMembership sessionMembership)
+        public ClientEntry(ISessionMembership sessionMembership)
         {
             _sessionMembership = sessionMembership;
             _Users = new System.Collections.Generic.Dictionary<IBinder, User>();
@@ -31,7 +31,7 @@ namespace PinionCore.Remote.Gateway.Hosts
             {
                 throw new ArgumentException("Binder already registered.", nameof(binder));
             }
-            user.ConnectionManager = new GatewayHostConnectionRoster();
+            user.ConnectionManager = new ConnectionRoster();
             // 3. Join the sessionMembership session
             _sessionMembership.Join(user.ConnectionManager);
             user.Soul = binder.Bind<IConnectionRoster>(user.ConnectionManager);
