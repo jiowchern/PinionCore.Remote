@@ -9,12 +9,14 @@ namespace PinionCore.Remote.Gateway.Servers
     {
         readonly PinionCore.Network.Stream _stream;
         readonly PinionCore.Network.IStreamable _Streamable;
+        readonly PinionCore.Network.IStreamable _reverseView;
         readonly Property<uint> _id;
 
         public GatewayServerClientChannel(uint id)
         {
             _stream = new PinionCore.Network.Stream();
             _Streamable = _stream;
+            _reverseView = new PinionCore.Network.ReverseStream(_stream);
             _id = new Property<uint>(id);
         }
 
@@ -22,7 +24,7 @@ namespace PinionCore.Remote.Gateway.Servers
 
         public PinionCore.Network.IStreamable GetReverseView()
         {
-            return new PinionCore.Network.ReverseStream(_stream);
+            return _reverseView;
         }
 
         IAwaitableSource<int> IStreamable.Receive(byte[] buffer, int offset, int count)

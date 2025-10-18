@@ -73,8 +73,8 @@ namespace PinionCore.Remote.Gateway.Servers
             {
                 _Connections.Items.Remove(u);
                 _idProvider.Landlord.Return(clientId);
-                _streamableLeaveEvent?.Invoke(u);
-                
+                _streamableLeaveEvent?.Invoke(u.GetReverseView());
+
                 code = ResponseStatus.Success;
             }
             return code;
