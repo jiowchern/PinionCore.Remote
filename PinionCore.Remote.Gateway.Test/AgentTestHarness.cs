@@ -7,6 +7,7 @@ using PinionCore.Remote.Ghost;
 
 namespace PinionCore.Remote.Gateway.Tests
 {
+
     public sealed class AgentWorker : IDisposable
     {
         private readonly IAgent _agent;
