@@ -6,11 +6,4 @@ namespace PinionCore.Remote.Gateway.Protocols
     {
         PinionCore.Remote.Value Login(uint group);
     }
-
-    public interface IRegisterable
-    {
-        Notifier<ILoginable> LoginNotifier { get; }
-        Notifier<IStreamProviable> StreamsNotifier { get; }
-
-    }
 }

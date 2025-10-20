@@ -17,9 +17,9 @@ namespace PinionCore.Remote.Gateway
         // 接收前端用戶
         public readonly IService HubService;
         System.Action _Dispose;
-        public Host()
+        public Host(ISessionSelectionStrategy strategy )
         {
-            var hub = new Hosts.ServiceHub(new Hosts.RoundRobinGameLobbySelectionStrategy());
+            var hub = new Hosts.ServiceHub(strategy);
             var server = new Registrys.Server();
 
             _Hub = hub;            

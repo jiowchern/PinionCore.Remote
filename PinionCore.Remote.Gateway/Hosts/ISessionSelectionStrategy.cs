@@ -7,7 +7,7 @@ namespace PinionCore.Remote.Gateway.Hosts
     /// Defines the contract for selecting which <see cref="ILineAllocatable"/> should handle an incoming
     /// <see cref="IRoutableSession"/> for a particular group.
     /// </summary>
-    public interface IGameLobbySelectionStrategy
+    public interface ISessionSelectionStrategy
     {
         /// <summary>
         /// Orders the available lobbies for the given session and group according to the strategy.

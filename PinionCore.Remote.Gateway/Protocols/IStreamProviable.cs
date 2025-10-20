@@ -2,7 +2,7 @@
 
 namespace PinionCore.Remote.Gateway.Protocols
 {    
-    public interface ITest : IStreamable
+    public interface IConnection : IStreamable
     {
 
     }

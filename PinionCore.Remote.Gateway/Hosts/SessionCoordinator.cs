@@ -33,12 +33,12 @@ namespace PinionCore.Remote.Gateway.Hosts
         }
 
         private readonly object _gate = new object();
-        private readonly IGameLobbySelectionStrategy _strategy;
+        private readonly ISessionSelectionStrategy _strategy;
         private readonly Dictionary<uint, List<ILineAllocatable>> _allocatorsByGroup;
         private readonly Dictionary<IRoutableSession, SessionState> _sessions;
         private bool _disposed;
 
-        public SessionCoordinator(IGameLobbySelectionStrategy strategy)
+        public SessionCoordinator(ISessionSelectionStrategy strategy)
         {
             _strategy = strategy ?? throw new ArgumentNullException(nameof(strategy));
             _allocatorsByGroup = new Dictionary<uint, List<ILineAllocatable>>();

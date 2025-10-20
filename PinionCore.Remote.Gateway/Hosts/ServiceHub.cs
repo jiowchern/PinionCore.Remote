@@ -12,7 +12,7 @@ namespace PinionCore.Remote.Gateway.Hosts
         public readonly IService Source;
         public readonly IServiceRegistry Sink;
 
-        public ServiceHub(IGameLobbySelectionStrategy selectionStrategy)
+        public ServiceHub(ISessionSelectionStrategy selectionStrategy)
         {
             _sessionCoordinator = new SessionCoordinator(selectionStrategy);
             Sink = _sessionCoordinator;
