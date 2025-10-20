@@ -29,12 +29,12 @@ jobs:
       with:
         dotnet-version: '8.0.x'
     - name: Install dependencies
-      run: dotnet restore
+      run: dotnet restore PinionCore.sln
     - name: Build
-      run: dotnet build --configuration Release --no-restore
+      run: dotnet build PinionCore.sln --configuration Release --no-restore
     - name: Test
-      run: |        
-        dotnet test /p:CollectCoverage=true  /p:CoverletOutput=../CoverageResults/ /p:MergeWith="../CoverageResults/coverage.json" /p:CoverletOutputFormat="lcov%2cjson" -m:1
+      run: |
+        dotnet test PinionCore.sln /p:CollectCoverage=true  /p:CoverletOutput=../CoverageResults/ /p:MergeWith="../CoverageResults/coverage.json" /p:CoverletOutputFormat="lcov%2cjson" -m:1
         cp CoverageResults/coverage.info .
     - name: Coveralls GitHub Action
       uses: coverallsapp/github-action@master
@@ -55,11 +55,11 @@ jobs:
       with:
         dotnet-version: '8.0.x'
     - name: Install dependencies
-      run: dotnet restore
+      run: dotnet restore PinionCore.sln
     - name: Build
-      run: dotnet build --configuration Release --no-restore    
+      run: dotnet build PinionCore.sln --configuration Release --no-restore
     - name: Pack
-      run: dotnet pack --configuration Release --output ./nupkgs
+      run: dotnet pack PinionCore.sln --configuration Release --output ./nupkgs
     - name: List Package Files
       run: dir ./nupkgs
 
