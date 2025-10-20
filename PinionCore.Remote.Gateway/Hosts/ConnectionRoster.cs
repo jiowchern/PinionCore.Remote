@@ -1,5 +1,6 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+using PinionCore.Network;
 using PinionCore.Remote;
 using PinionCore.Remote.Gateway.Protocols;
 
@@ -8,48 +9,45 @@ namespace PinionCore.Remote.Gateway.Hosts
     internal class ConnectionRoster : IRoutableSession, IConnectionRoster
     {
         private readonly object _syncRoot;
-        private readonly Dictionary<uint, IConnection> _sessionsByGroup;
-        private readonly Dictionary<IConnection, int> _sessionRefCounts;
-        private readonly Notifier<IConnection> _sessions;
-        private readonly NotifiableCollection<IConnection> _sessionColl;
+        private readonly Dictionary<uint, IStreamable> _streamsByGroup;
+        private readonly Dictionary<IStreamable, int> _streamRefCounts;
+        private readonly NotifiableCollection<IStreamable> _streamCollection;
+        private readonly Notifier<IStreamable> _streams;
 
         public ConnectionRoster()
         {
             _syncRoot = new object();
-            _sessionsByGroup = new Dictionary<uint, IConnection>();
-            _sessionRefCounts = new Dictionary<IConnection, int>();
-            _sessionColl = new NotifiableCollection<IConnection>();
-            _sessions = new Notifier<IConnection>(_sessionColl);
+            _streamsByGroup = new Dictionary<uint, IStreamable>();
+            _streamRefCounts = new Dictionary<IStreamable, int>();
+            _streamCollection = new NotifiableCollection<IStreamable>();
+            _streams = new Notifier<IStreamable>(_streamCollection);
         }
 
-        Notifier<IConnection> IConnectionRoster.Connections => _sessions;
+        Notifier<IStreamable> IConnectionRoster.Connections => _streams;
 
-        bool IRoutableSession.Set(uint group, IConnection user)
+        bool IRoutableSession.Set(uint group, IStreamable stream)
         {
-            // Validate arguments
-            if (user == null)
+            if (stream == null)
             {
-                throw new ArgumentNullException(nameof(user));
+                throw new ArgumentNullException(nameof(stream));
             }
 
             lock (_syncRoot)
             {
-                if (_sessionsByGroup.ContainsKey(group))
+                if (_streamsByGroup.ContainsKey(group))
                 {
                     return false;
                 }
 
-                _sessionsByGroup[group] = user;
-
-                if (_sessionRefCounts.TryGetValue(user, out var count))
+                _streamsByGroup[group] = stream;
+                if (_streamRefCounts.TryGetValue(stream, out var refCount))
                 {
-                    _sessionRefCounts[user] = count + 1;
+                    _streamRefCounts[stream] = refCount + 1;
                 }
                 else
                 {
-                    _sessionRefCounts[user] = 1;
-                    // Notify when a session first gains a connection
-                    _sessionColl.Items.Add(user);
+                    _streamRefCounts[stream] = 1;
+                    _streamCollection.Items.Add(stream);
                 }
 
                 return true;
@@ -60,24 +58,24 @@ namespace PinionCore.Remote.Gateway.Hosts
         {
             lock (_syncRoot)
             {
-                if (!_sessionsByGroup.TryGetValue(group, out var user))
+                if (!_streamsByGroup.TryGetValue(group, out var stream))
                 {
                     return false;
                 }
 
-                _sessionsByGroup.Remove(group);
+                _streamsByGroup.Remove(group);
 
-                if (_sessionRefCounts.TryGetValue(user, out var count))
+                if (_streamRefCounts.TryGetValue(stream, out var refCount))
                 {
-                    count--;
-                    if (count <= 0)
+                    refCount--;
+                    if (refCount <= 0)
                     {
-                        _sessionRefCounts.Remove(user);
-                        _sessionColl.Items.Remove(user);
+                        _streamRefCounts.Remove(stream);
+                        _streamCollection.Items.Remove(stream);
                     }
                     else
                     {
-                        _sessionRefCounts[user] = count;
+                        _streamRefCounts[stream] = refCount;
                     }
                 }
 
@@ -86,5 +84,4 @@ namespace PinionCore.Remote.Gateway.Hosts
         }
     }
 }
-
 

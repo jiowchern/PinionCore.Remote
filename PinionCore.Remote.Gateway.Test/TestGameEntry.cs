@@ -1,4 +1,5 @@
-﻿using PinionCore.Remote.Tools.Protocol.Sources.TestCommon;
+﻿using PinionCore.Remote.Soul;
+using PinionCore.Remote.Tools.Protocol.Sources.TestCommon;
 
 namespace PinionCore.Remote.Gateway.Tests
 {
@@ -50,6 +51,11 @@ namespace PinionCore.Remote.Gateway.Tests
         void IEntry.Update()
         {
             
+        }
+
+        public IService ToService()
+        {            
+            return PinionCore.Remote.Standalone.Provider.CreateService(this, PinionCore.Remote.Tools.Protocol.Sources.TestCommon.ProtocolProvider.CreateCase1());
         }
     }
 }

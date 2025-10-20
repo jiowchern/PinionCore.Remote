@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using PinionCore.Network;
+using PinionCore.Remote.Gateway.Hosts;
 using PinionCore.Remote.Ghost;
-using PinionCore.Utility;
 
-namespace PinionCore.Remote.Gateway.Hosts
+
+namespace PinionCore.Remote.Gateway
 {
     class Agent : IAgent
     {

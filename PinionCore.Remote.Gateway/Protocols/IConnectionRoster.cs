@@ -1,8 +1,10 @@
-﻿namespace PinionCore.Remote.Gateway.Protocols
+using PinionCore.Network;
+
+namespace PinionCore.Remote.Gateway.Protocols
 {
     public interface IConnectionRoster
     {
-        PinionCore.Remote.Notifier<IConnection> Connections { get; }
+        PinionCore.Remote.Notifier<IStreamable> Connections { get; }
     }
 }
 

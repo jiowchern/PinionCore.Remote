@@ -4,7 +4,7 @@ using PinionCore.Remote.Gateway.Protocols;
 namespace PinionCore.Remote.Gateway.Hosts
 {
     /// <summary>
-    /// Defines the contract for selecting which <see cref="IConnectionProvider"/> should handle an incoming
+    /// Defines the contract for selecting which <see cref="ILineAllocatable"/> should handle an incoming
     /// <see cref="IRoutableSession"/> for a particular group.
     /// </summary>
     public interface IGameLobbySelectionStrategy
@@ -16,6 +16,7 @@ namespace PinionCore.Remote.Gateway.Hosts
         /// <param name="group">The group identifier for the requested lobby.</param>
         /// <param name="lobbies">The current lobbies registered for the group.</param>
         /// <returns>An ordered enumerable of lobbies to try for binding.</returns>
-        IEnumerable<IConnectionProvider> OrderLobbies(IReadOnlyList<IConnectionProvider> lobbies);
+        IEnumerable<Registrys.ILineAllocatable> OrderLobbies(uint group, IReadOnlyList<Registrys.ILineAllocatable> lobbies);
     }
 }
+

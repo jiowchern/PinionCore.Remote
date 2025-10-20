@@ -9,11 +9,10 @@ namespace PinionCore.Remote.Gateway.Hosts
     /// </summary>
     public sealed class RoundRobinGameLobbySelectionStrategy : IGameLobbySelectionStrategy
     {
-        private readonly List<int> _nextIndexByGroup = new List<int>();
+        private readonly Dictionary<uint, int> _nextIndexByGroup = new Dictionary<uint, int>();
 
-        public IEnumerable<IConnectionProvider> OrderLobbies(IReadOnlyList<IConnectionProvider> lobbies)
+        public IEnumerable<Registrys.ILineAllocatable> OrderLobbies(uint group, IReadOnlyList<Registrys.ILineAllocatable> lobbies)
         {
-            uint group = 0;
             if (lobbies == null)
             {
                 throw new ArgumentNullException(nameof(lobbies));
@@ -21,64 +20,37 @@ namespace PinionCore.Remote.Gateway.Hosts
 
             if (lobbies.Count == 0)
             {
-                ResetGroupIndex(group);
-                return Array.Empty<IConnectionProvider>();
+                _nextIndexByGroup[group] = 0;
+                return Array.Empty<Registrys.ILineAllocatable>();
             }
 
-            var startIndex = GetStartIndex(group);
-
-            if (startIndex >= lobbies.Count)
-            {
-                startIndex %= lobbies.Count;
-            }
-
-            var ordered = new IConnectionProvider[lobbies.Count];
+            var startIndex = GetStartIndex(group, lobbies.Count);
+            var ordered = new Registrys.ILineAllocatable[lobbies.Count];
             for (var i = 0; i < lobbies.Count; i++)
             {
                 ordered[i] = lobbies[(startIndex + i) % lobbies.Count];
             }
 
-            SetNextIndex(group, (startIndex + 1) % lobbies.Count);
-
+            _nextIndexByGroup[group] = (startIndex + 1) % lobbies.Count;
             return ordered;
         }
 
-        private int GetStartIndex(uint group)
+        private int GetStartIndex(uint group, int lobbyCount)
         {
-            EnsureGroupIndex(group);
-            return _nextIndexByGroup[(int)group];
-        }
-
-        private void SetNextIndex(uint group, int nextIndex)
-        {
-            EnsureGroupIndex(group);
-            _nextIndexByGroup[(int)group] = nextIndex;
-        }
-
-        private void ResetGroupIndex(uint group)
-        {
-            if (group > int.MaxValue)
+            if (!_nextIndexByGroup.TryGetValue(group, out var index))
             {
-                throw new ArgumentOutOfRangeException(nameof(group));
+                index = 0;
+                _nextIndexByGroup[group] = index;
             }
 
-            if (_nextIndexByGroup.Count > group)
+            if (index >= lobbyCount)
             {
-                _nextIndexByGroup[(int)group] = 0;
-            }
-        }
-
-        private void EnsureGroupIndex(uint group)
-        {
-            if (group > int.MaxValue)
-            {
-                throw new ArgumentOutOfRangeException(nameof(group));
+                index %= lobbyCount;
+                _nextIndexByGroup[group] = index;
             }
 
-            while (_nextIndexByGroup.Count <= group)
-            {
-                _nextIndexByGroup.Add(0);
-            }
+            return index;
         }
     }
 }
+

@@ -1,55 +1,55 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
-using System.Security.Cryptography;
 using PinionCore.Network;
 using PinionCore.Remote.Gateway.Protocols;
 
 namespace PinionCore.Remote.Gateway.Registrys
 {
-    class LineAllocator : System.IDisposable , ILineAllocatable
+    class LineAllocator : System.IDisposable, ILineAllocatable
     {
-        
-        readonly List<Line> _Lines;
+        private readonly List<Line> _lines;
+        private readonly NotifiableCollection<IStreamable> _streams;
+
         public LineAllocator(uint id)
         {
             Group = id;
-            _Lines = new List<Line>();
-            
-            _Streams = new NotifiableCollection<IStreamable>();
-            StreamsNotifier = new Notifier<IStreamable>(_Streams);
+            _lines = new List<Line>();
+            _streams = new NotifiableCollection<IStreamable>();
+            StreamsNotifier = new Notifier<IStreamable>(_streams);
         }
 
-        readonly NotifiableCollection<IStreamable> _Streams;
-        public readonly Notifier<IStreamable> StreamsNotifier;
-        
-
         public uint Group { get; }
-        
+        public Notifier<IStreamable> StreamsNotifier { get; }
 
         public IStreamable Alloc()
         {
-            var line = new Line();            
-            _Streams.Items.Add(line.Backend);
+            Console.WriteLine($"Allocating line for group {Group}");
+            var line = new Line();
+            _lines.Add(line);
+            _streams.Items.Add(line.Backend);
+            Console.WriteLine($"Backend supplied for group {Group}");
             return line.Frontend;
         }
+
         public void Free(IStreamable stream)
         {
-            for(int i = 0; i < _Lines.Count; i++)
+            for (var i = 0; i < _lines.Count; i++)
             {
-                if(_Lines[i].Frontend == stream)
+                if (_lines[i].Frontend != stream)
                 {
-                    _Streams.Items.Remove(_Lines[i].Backend);
-                    _Lines.RemoveAt(i);
-                    return;
+                    continue;
                 }
+
+                _streams.Items.Remove(_lines[i].Backend);
+                _lines.RemoveAt(i);
+                return;
             }
         }
 
         public void Dispose()
         {
-            // free all
-            _Lines.Clear();
-            _Streams.Items.Clear();
+            _lines.Clear();
+            _streams.Items.Clear();
         }
     }
 }

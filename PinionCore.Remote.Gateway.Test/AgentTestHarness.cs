@@ -19,11 +19,13 @@ namespace PinionCore.Remote.Gateway.Tests
         {
             _agent = agent ?? throw new ArgumentNullException(nameof(agent));
             _sleepInterval = sleepInterval ?? TimeSpan.FromMilliseconds(1);
+
+            Start();
         }
 
         public bool IsRunning => _loopTask is { IsCompleted: false };
 
-        public void Start()
+        void Start()
         {
             if (IsRunning)
             {
@@ -48,7 +50,7 @@ namespace PinionCore.Remote.Gateway.Tests
             }, token);
         }
 
-        public async Task StopAsync()
+        async Task StopAsync()
         {
             if (_cts == null || _loopTask == null)
             {
@@ -70,9 +72,9 @@ namespace PinionCore.Remote.Gateway.Tests
             _loopTask = null;
         }
 
-        public void Dispose()
+        public async void Dispose()
         {
-            StopAsync().GetAwaiter().GetResult();
+            await StopAsync();
         }
     }
 }

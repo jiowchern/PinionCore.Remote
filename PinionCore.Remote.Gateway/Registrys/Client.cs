@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Reactive.Linq;
 using PinionCore.Network;
 using PinionCore.Remote.Gateway.Protocols;
@@ -38,10 +38,13 @@ namespace PinionCore.Remote.Gateway.Registrys
 
         private void _Set(IStreamProviable proviable)
         {
+            Console.WriteLine("Client received stream provider");
+
             if(_Streams.Items.Count > 0)
                 throw new Exception("Already registered stream provider.");
             
             proviable.Streams.Base.Supply += _Streams.Items.Add;
+            proviable.Streams.Base.Supply += s => Console.WriteLine("Client stream supplied");
             proviable.Streams.Base.Unsupply += (s) => { _Streams.Items.Remove(s); };
         }
         
@@ -53,4 +56,7 @@ namespace PinionCore.Remote.Gateway.Registrys
         }
     }
 }
+
+
+
 

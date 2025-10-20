@@ -2,12 +2,10 @@
 
 namespace PinionCore.Remote.Gateway.Hosts
 {
-    
     interface IServiceRegistry
     {
-        void Register(uint group, IConnectionProvider lobby);
-        void Unregister(uint group, IConnectionProvider lobby);
+        void Register(uint group, Registrys.ILineAllocatable allocatable);
+        void Unregister(uint group, Registrys.ILineAllocatable allocatable);
     }
 }
-
 

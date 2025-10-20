@@ -1,114 +1,107 @@
-﻿using System;
-using System.ComponentModel;
-using System.Linq;
+using System;
+using PinionCore.Network;
+using PinionCore.Remote;
 using PinionCore.Remote.Gateway.Protocols;
-
 using PinionCore.Remote.Ghost;
-using PinionCore.Remote.Soul;
 
 namespace PinionCore.Remote.Gateway.Hosts
 {
     class AgentPool : IDisposable
     {
-        class AgentSession : PinionCore.Network.IStreamable
+        private sealed class AgentSession : IStreamable
         {
-            public IAgent Agent;
-            public IConnection Session;
+            public IAgent Agent { get; set; }
+            public IStreamable Stream { get; set; }
 
-            IAwaitableSource<int> PinionCore.Network.IStreamable.Send(byte[] buffer, int offset, int count)
+            public IAwaitableSource<int> Send(byte[] buffer, int offset, int count)
             {
-                // 直接轉發
-                return Session.Send(buffer, offset, count);
+                return Stream.Send(buffer, offset, count);
             }
 
-            IAwaitableSource<int> PinionCore.Network.IStreamable.Receive(byte[] buffer, int offset, int count)
+            public IAwaitableSource<int> Receive(byte[] buffer, int offset, int count)
             {
-                // 直接轉發
-                return Session.Receive(buffer, offset, count);
+                return Stream.Receive(buffer, offset, count);
             }
         }
 
+        private readonly System.Collections.Generic.List<AgentSession> _sessions;
+        private readonly IProtocol _gameProtocol;
+        private readonly NotifiableCollection<IAgent> _agentsCollection;
+        private readonly Action _disable;
 
-        readonly System.Collections.Generic.List<AgentSession> _Sessions;
-        readonly IProtocol _gameProtocol;
-        System.Action _disable;
-        public readonly Notifier<IAgent> Agents;
-        readonly NotifiableCollection<IAgent> _Agents;
-        public readonly IAgent Agent;
         public AgentPool(IProtocol gameProtocol)
         {
-
-
             _gameProtocol = gameProtocol;
-            _Sessions = new System.Collections.Generic.List<AgentSession>();
+            _sessions = new System.Collections.Generic.List<AgentSession>();
             Agent = Provider.CreateAgent();
-            _Agents = new NotifiableCollection<IAgent>();
-            Agents = new Notifier<IAgent>(_Agents);
+            _agentsCollection = new NotifiableCollection<IAgent>();
+            Agents = new Notifier<IAgent>(_agentsCollection);
 
-            Agent.QueryNotifier<IConnectionRoster>().Supply += _Create;
-            Agent.QueryNotifier<IConnectionRoster>().Unsupply += _Destroy;
+            Agent.QueryNotifier<IConnectionRoster>().Supply += OnRosterSupply;
+            Agent.QueryNotifier<IConnectionRoster>().Unsupply += OnRosterUnsupply;
 
-            _disable = () => {
-                Agent.QueryNotifier<IConnectionRoster>().Supply -= _Create;
-                Agent.QueryNotifier<IConnectionRoster>().Unsupply -= _Destroy;
+            _disable = () =>
+            {
+                Agent.QueryNotifier<IConnectionRoster>().Supply -= OnRosterSupply;
+                Agent.QueryNotifier<IConnectionRoster>().Unsupply -= OnRosterUnsupply;
             };
         }
 
-        private void _Destroy(IConnectionRoster owner)
-        {
-            owner.Connections.Base.Supply -= _Create;
-            owner.Connections.Base.Unsupply -= _Destroy;
-        }        
+        public Notifier<IAgent> Agents { get; }
+        public IAgent Agent { get; }
 
-        private void _Create(IConnectionRoster owner)
+        private void OnRosterSupply(IConnectionRoster roster)
         {
-            owner.Connections.Base.Supply += _Create;
-            owner.Connections.Base.Unsupply += _Destroy;
+            roster.Connections.Base.Supply += OnConnectionSupply;
+            roster.Connections.Base.Unsupply += OnConnectionUnsupply;
         }
 
-        private void _Destroy(IConnection session)
+        private void OnRosterUnsupply(IConnectionRoster roster)
         {
+            roster.Connections.Base.Supply -= OnConnectionSupply;
+            roster.Connections.Base.Unsupply -= OnConnectionUnsupply;
+        }
 
-            for (var i = _Sessions.Count - 1; i >= 0; i--)
+        private void OnConnectionSupply(IStreamable stream)
+        {
+            var agent = PinionCore.Remote.Standalone.Provider.CreateAgent(_gameProtocol);
+            var wrapper = new AgentSession
             {
-                var agentSession = _Sessions[i];
-                if (agentSession.Session != session)
+                Agent = agent,
+                Stream = stream,
+            };
+
+            agent.Enable(wrapper);
+            _sessions.Add(wrapper);
+            _agentsCollection.Items.Add(agent);
+        }
+
+        private void OnConnectionUnsupply(IStreamable stream)
+        {
+            for (var i = _sessions.Count - 1; i >= 0; i--)
+            {
+                var session = _sessions[i];
+                if (!ReferenceEquals(session.Stream, stream))
                 {
                     continue;
                 }
 
-                agentSession.Agent.Disable();
-                _Agents.Items.Remove(agentSession.Agent);
-                _Sessions.RemoveAt(i);
+                session.Agent.Disable();
+                _agentsCollection.Items.Remove(session.Agent);
+                _sessions.RemoveAt(i);
             }
         }
 
-        private void _Create(IConnection session)
-        {
-            var agent = PinionCore.Remote.Standalone.Provider.CreateAgent(_gameProtocol);
-
-            var agentSession = new AgentSession
-            {
-                Agent = agent,
-                Session = session,
-            };
-            agent.Enable(agentSession);
-            _Sessions.Add(agentSession);
-            _Agents.Items.Add(agent);
-
-        }
         public void Dispose()
         {
-            // Dispose all tracked agents and unsubscribe from connection manager events
-            for (var i = _Sessions.Count - 1; i >= 0; i--)
+            for (var i = _sessions.Count - 1; i >= 0; i--)
             {
-                var agentSession = _Sessions[i];
-
-                agentSession.Agent.Disable();
-                _Agents.Items.Remove(agentSession.Agent);
-                _Sessions.RemoveAt(i);
+                var session = _sessions[i];
+                session.Agent.Disable();
+                _agentsCollection.Items.Remove(session.Agent);
             }
 
+            _sessions.Clear();
             _disable();
         }
     }

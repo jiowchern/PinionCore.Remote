@@ -1,8 +1,11 @@
-﻿namespace PinionCore.Remote.Gateway.Hosts
+using PinionCore.Network;
+
+namespace PinionCore.Remote.Gateway.Hosts
 {
     interface IRoutableSession
     {
-        bool Set(uint group, PinionCore.Remote.Gateway.Protocols.IConnection clientConnection);
+        bool Set(uint group, IStreamable stream);
         bool Unset(uint group);
     }
 }
+

@@ -1,252 +1,257 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.Http.Headers;
-using System.Text.RegularExpressions;
-using System.Threading;
-using System.Threading.Tasks;
-
-using PinionCore.Remote.Actors;
+using PinionCore.Network;
 using PinionCore.Remote.Gateway.Protocols;
+using PinionCore.Remote.Gateway.Registrys;
 
 namespace PinionCore.Remote.Gateway.Hosts
 {
-    public interface IActotCommand
+    internal sealed class SessionCoordinator : ISessionMembership, IServiceRegistry, IDisposable
     {
-
-    }
-    internal class SessionCoordinator : ISessionMembership, IServiceRegistry, IDisposable
-    {
-        
-
-        private readonly IGameLobbySelectionStrategy _Strategy;
-        readonly List<RoutableSession> _RoutableSessions;
-        readonly System.Collections.Generic.Dictionary<uint, ClientConnectionDisposer> _Disposers;
-        readonly HashSet<IConnection> _Removeds;
-
-        struct LobbyCommand : IActotCommand
+        private sealed class SessionState
         {
-            public uint Group;
-            public IConnectionProvider Lobby;
-            public bool Register;
+            public SessionState(IRoutableSession session)
+            {
+                Session = session ?? throw new ArgumentNullException(nameof(session));
+            }
+
+            public IRoutableSession Session { get; }
+            public Dictionary<uint, Allocation> Allocations { get; } = new Dictionary<uint, Allocation>();
         }
 
-        struct DisposerRequierCommand : IActotCommand
+        private readonly struct Allocation
         {
-            public uint Group;
-            public IConnection ClientConnection;
-            public RoutableSession RoutableSession;
+            public Allocation(ILineAllocatable allocator, IStreamable stream)
+            {
+                Allocator = allocator;
+                Stream = stream;
+            }
+
+            public ILineAllocatable Allocator { get; }
+            public IStreamable Stream { get; }
         }
 
-        struct SessionCommand : IActotCommand
-        {
-            public IRoutableSession Session;
-            public bool Join;
-        }
-
-        readonly DataflowActor<IActotCommand> _DataflowActor;
+        private readonly object _gate = new object();
+        private readonly IGameLobbySelectionStrategy _strategy;
+        private readonly Dictionary<uint, List<ILineAllocatable>> _allocatorsByGroup;
+        private readonly Dictionary<IRoutableSession, SessionState> _sessions;
+        private bool _disposed;
 
         public SessionCoordinator(IGameLobbySelectionStrategy strategy)
         {
-            _Strategy = strategy;
-            _RoutableSessions = new List<RoutableSession>();
-            _Removeds = new HashSet<IConnection>();
-            _DataflowActor = new DataflowActor<IActotCommand>(_HandleCommand);            
-            _Disposers = new Dictionary<uint, ClientConnectionDisposer>();
+            _strategy = strategy ?? throw new ArgumentNullException(nameof(strategy));
+            _allocatorsByGroup = new Dictionary<uint, List<ILineAllocatable>>();
+            _sessions = new Dictionary<IRoutableSession, SessionState>();
         }
 
-        
-
-        void ISessionMembership.Join(IRoutableSession session)
+        public void Register(uint group, ILineAllocatable allocatable)
         {
-            _DataflowActor.Post(new SessionCommand { Session = session, Join = true });
-            
+            if (allocatable == null)
+            {
+                throw new ArgumentNullException(nameof(allocatable));
+            }
+
+            lock (_gate)
+            {
+                ThrowIfDisposed();
+                var list = GetOrCreateAllocators(group);
+                if (!list.Contains(allocatable))
+                {
+                    list.Add(allocatable);
+                }
+
+                foreach (var session in _sessions.Values)
+                {
+                    TryAssign(session, group);
+                }
+            }
         }
 
-        void ISessionMembership.Leave(IRoutableSession session)
+        public void Unregister(uint group, ILineAllocatable allocatable)
         {
-            _DataflowActor.Post(new SessionCommand { Session = session, Join = false });
-            
+            if (allocatable == null)
+            {
+                throw new ArgumentNullException(nameof(allocatable));
+            }
+
+            lock (_gate)
+            {
+                ThrowIfDisposed();
+                if (!_allocatorsByGroup.TryGetValue(group, out var list))
+                {
+                    return;
+                }
+
+                list.Remove(allocatable);
+                if (list.Count == 0)
+                {
+                    _allocatorsByGroup.Remove(group);
+                }
+
+                foreach (var session in _sessions.Values)
+                {
+                    if (!session.Allocations.TryGetValue(group, out var allocation))
+                    {
+                        continue;
+                    }
+
+                    if (!ReferenceEquals(allocation.Allocator, allocatable))
+                    {
+                        continue;
+                    }
+
+                    ReleaseAllocation(session, group, allocation);
+                    TryAssign(session, group);
+                }
+            }
         }
 
-        void IServiceRegistry.Register(uint group, IConnectionProvider lobby)
+        public void Join(IRoutableSession session)
         {
-            _DataflowActor.Post(new LobbyCommand { Lobby = lobby, Group = group, Register = true });            
+            if (session == null)
+            {
+                throw new ArgumentNullException(nameof(session));
+            }
+
+            lock (_gate)
+            {
+                ThrowIfDisposed();
+                if (_sessions.ContainsKey(session))
+                {
+                    return;
+                }
+
+                var state = new SessionState(session);
+                _sessions.Add(session, state);
+
+                foreach (var group in _allocatorsByGroup.Keys.ToList())
+                {
+                    TryAssign(state, group);
+                }
+            }
         }
 
-        void IServiceRegistry.Unregister(uint group, IConnectionProvider lobby)
+        public void Leave(IRoutableSession session)
         {
-            _DataflowActor.Post(new LobbyCommand { Group = group, Lobby = lobby, Register = false });            
+            if (session == null)
+            {
+                throw new ArgumentNullException(nameof(session));
+            }
+
+            lock (_gate)
+            {
+                if (!_sessions.Remove(session, out var state))
+                {
+                    return;
+                }
+
+                foreach (var pair in state.Allocations.ToArray())
+                {
+                    ReleaseAllocation(state, pair.Key, pair.Value);
+                }
+            }
         }
 
         public void Dispose()
-        {            
-            _DataflowActor.Dispose();
-        }
-
-        private async Task _HandleCommand(IActotCommand command, CancellationToken token)
         {
-            switch (command)
+            lock (_gate)
             {
-                case LobbyCommand dc:
-                    {
-                        if (dc.Register)
-                        {
-                            _JoinLobby(dc.Group, dc.Lobby);
-                        }
-                        else
-                        {
-                            _LeaveLobby(dc.Group, dc.Lobby);
-                        }
-                    }
-                    break;
-                case SessionCommand sc:
-                    {
-                        if (sc.Join)
-                        {
-                            _JoinSession(sc.Session);
-                        }
-                        else
-                        {
-                            _LeaveSession(sc.Session);
-                        }
-                    }
-                    break;
-                case DisposerRequierCommand disposerRequierCommand:
-                    {
-                        _Borrow(disposerRequierCommand.RoutableSession, disposerRequierCommand.ClientConnection, disposerRequierCommand.Group);
-                    }
-                    break;
-            }
-        }
-
-        private void _Borrow(RoutableSession routableSession, IConnection clientConnection, uint group)
-        {
-            if(!_RoutableSessions.Contains(routableSession))
-            {
-                return;
-            }
-            if(_Removeds.Contains(clientConnection))
-            {
-                _Removeds.Remove(clientConnection);
-                routableSession.Reset(group);
-                _PostRequier(routableSession , group);
-                return;
-            }
-            routableSession.Borrow(group, clientConnection);
-        }
-
-        private void _LeaveSession(IRoutableSession session)
-        {
-            var rs = _RoutableSessions.FirstOrDefault(s => s == session);
-            if (rs != null)
-            {
-                _RoutableSessions.Remove(rs);
-                _RetuenDisposers(rs);
-            }
-        }
-
-        private void _RetuenDisposers(RoutableSession rs)
-        {
-            var needReturns = rs.Groups;
-            foreach (var group in needReturns)
-            {
-                
-                var session = rs.Return(group.Key);
-                if (_Disposers.TryGetValue(group.Key, out var disposer))
-                {                    
-                    disposer.Return(session);
-                }
-            }
-
-        }
-
-        private void _JoinSession(IRoutableSession session)
-        {
-            var rs = new RoutableSession(session);
-            _RoutableSessions.Add(rs);
-            _RequierDisposers(rs);
-        }
-
-        private void _RequierDisposers(RoutableSession rs)
-        {
-            var needRequires =  _Disposers.Keys.Except(rs.Groups.Select(g=>g.Key));
-            foreach(var group in needRequires)
-            {
-                _PostRequier(rs, group);
-            }
-        }
-
-        private void _PostRequier(RoutableSession rs, uint group)
-        {
-            if(rs.Groups.Any( g=>g.Key == group))
-            {
-                return;
-            }
-            rs.SetRequiering(group);
-            var val = _Disposers[group].Require();
-            val.OnValue += (s) =>
-            {
-                _DataflowActor.Post(new DisposerRequierCommand { RoutableSession = rs, ClientConnection = s, Group = group });
-            };
-        }
-
-        private void _LeaveLobby(uint group, IConnectionProvider lobby)
-        {
-            if (_Disposers.TryGetValue(group, out var disposer))
-            {
-                disposer.Remove(lobby);
-                if (disposer.IsEmpty())
-                {                    
-                    _Disposers.Remove(group);                    
-                    disposer.Dispose();
-                    disposer.ClientReleasedEvent -= _ReleaseSession;
-                }                
-                
-            }
-            
-        }
-
-      
-        private void _JoinLobby(uint group, IConnectionProvider lobby)
-        {
-            if (_Disposers.TryGetValue(group, out var disposer))
-            {
-                disposer.Add(lobby);
-            }
-            else
-            {
-                disposer = new ClientConnectionDisposer(_Strategy);
-                disposer.ClientReleasedEvent += _ReleaseSession;
-                _Disposers.Add(group, disposer);
-                disposer.Add(lobby);
-            }
-
-            _UpdateSessionGroup(group);
-        }
-
-        private void _ReleaseSession(IConnection connection)
-        {
-            _Removeds.Add(connection);
-            foreach (var rs in _RoutableSessions)
-            {
-                if(rs.Release(connection))
+                if (_disposed)
                 {
-                    _Removeds.Remove(connection);
+                    return;
+                }
+
+                _disposed = true;
+                foreach (var state in _sessions.Values)
+                {
+                    foreach (var pair in state.Allocations.ToArray())
+                    {
+                        ReleaseAllocation(state, pair.Key, pair.Value);
+                    }
+                }
+
+                _sessions.Clear();
+                _allocatorsByGroup.Clear();
+            }
+        }
+
+        private void TryAssign(SessionState state, uint group)
+        {
+            if (state.Allocations.ContainsKey(group))
+            {
+                return;
+            }
+
+            if (!_allocatorsByGroup.TryGetValue(group, out var list) || list.Count == 0)
+            {
+                return;
+            }
+
+            foreach (var allocator in _strategy.OrderLobbies(group, list))
+            {
+                IStreamable stream = null;
+                try
+                {
+                    stream = allocator.Alloc();
+                    if (stream == null)
+                    {
+                        continue;
+                    }
+
+                    if (!state.Session.Set(group, stream))
+                    {
+                        allocator.Free(stream);
+                        continue;
+                    }
+
+                    state.Allocations[group] = new Allocation(allocator, stream);
+                    return;
+                }
+                catch
+                {
+                    if (stream != null)
+                    {
+                        try
+                        {
+                            allocator.Free(stream);
+                        }
+                        catch
+                        {
+                            // ignore
+                        }
+                    }
                 }
             }
         }
 
-        private void _UpdateSessionGroup(uint group)
+        private void ReleaseAllocation(SessionState state, uint group, Allocation allocation)
         {
-            foreach (var rs in _RoutableSessions)
+            if (state.Session.Unset(group))
             {
-                _PostRequier(rs, group);                
+                allocation.Allocator.Free(allocation.Stream);
             }
+
+            state.Allocations.Remove(group);
         }
 
-       
+        private List<ILineAllocatable> GetOrCreateAllocators(uint group)
+        {
+            if (!_allocatorsByGroup.TryGetValue(group, out var list))
+            {
+                list = new List<ILineAllocatable>();
+                _allocatorsByGroup.Add(group, list);
+            }
+
+            return list;
+        }
+
+        private void ThrowIfDisposed()
+        {
+            if (_disposed)
+            {
+                throw new ObjectDisposedException(nameof(SessionCoordinator));
+            }
+        }
     }
 }
-
-
