@@ -1,5 +1,4 @@
-﻿
-using System;
+﻿using System;
 using System.Reactive.Linq;
 using NUnit.Framework;
 using PinionCore.Remote.Gateway.Hosts;
@@ -51,16 +50,19 @@ namespace PinionCore.Remote.Gateway.Tests
             var serverStream2 = alloc2.Alloc();
 
 
-            var client1ResponseObs = from s in client1.Notifier.Base.SupplyEvent()
-                                     select s;
+            // 修正 CS0079 和 CS1525：使用 Observable.FromEvent 需正確指定事件的訂閱與解除訂閱方式
+            var client1ResponseObs = System.Reactive.Linq.Observable.FromEvent<Network.IStreamable>(
+                handler => client1.Listener.StreamableEnterEvent += handler,
+                handler => client1.Listener.StreamableEnterEvent -= handler);
             TestContext.Progress.WriteLine("Awaiting client stream 1...");
             var clientStream1 = await client1ResponseObs.FirstAsync();
             TestContext.Progress.WriteLine("Client stream 1 supplied.");
 
 
 
-            var client2ResponseObs = from s in client2.Notifier.Base.SupplyEvent()
-                                     select s;
+            var client2ResponseObs = System.Reactive.Linq.Observable.FromEvent<Network.IStreamable>(
+                handler => client2.Listener.StreamableEnterEvent += handler,
+                handler => client2.Listener.StreamableEnterEvent -= handler); 
             TestContext.Progress.WriteLine("Awaiting client stream 2...");
             var clientStream2 = await client2ResponseObs.FirstAsync();
             TestContext.Progress.WriteLine("Client stream 2 supplied.");

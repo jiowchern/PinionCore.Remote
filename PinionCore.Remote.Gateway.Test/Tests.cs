@@ -24,8 +24,8 @@ namespace PinionCore.Remote.Gateway.Tests
 
             // step.4: 註冊遊戲服務
             // gameService 接收來自用戶的連線
-            registry.Notifier.Base.Supply += gameService.Join;
-            registry.Notifier.Base.Unsupply += gameService.Leave;
+            registry.Listener.StreamableEnterEvent += gameService.Join;
+            registry.Listener.StreamableLeaveEvent += gameService.Leave;
 
             // step.5: 連線Host (單機)
             registry.Agent.Connect(host.RegistryService);
@@ -43,15 +43,15 @@ namespace PinionCore.Remote.Gateway.Tests
 
             // release ...
 
-            registry.Notifier.Base.Supply -= gameService.Join;
-            registry.Notifier.Base.Unsupply -= gameService.Leave;
+            registry.Listener.StreamableEnterEvent -= gameService.Join;
+            registry.Listener.StreamableLeaveEvent -= gameService.Leave;
 
 
 
 
 
 
-            
+
         }
     }
 }

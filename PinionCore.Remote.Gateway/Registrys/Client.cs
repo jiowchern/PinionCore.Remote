@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Reactive.Linq;
 using PinionCore.Network;
 using PinionCore.Remote.Gateway.Protocols;
@@ -13,15 +13,16 @@ namespace PinionCore.Remote.Gateway.Registrys
         readonly INotifierQueryable _Queryer;
 
         readonly NotifiableCollection<IStreamable> _Streams;
-        public readonly Notifier<IStreamable> Notifier;
+        readonly Notifier<IStreamable> _Notifier;
+        public readonly PinionCore.Remote.Soul.IListenable Listener;
         public readonly IAgent Agent;
         private readonly IDisposable _Dispose;
 
         public Client(uint group)
         {
             _Streams = new NotifiableCollection<IStreamable>();
-            Notifier = new Notifier<IStreamable>(_Streams);
-
+            _Notifier = new Notifier<IStreamable>(_Streams);
+            Listener = new PinionCore.Remote.Gateway.Misc.NotifierListener(_Notifier);
             Group = group;            
             Agent = Protocols.Provider.CreateAgent();
             _Queryer = Agent;
