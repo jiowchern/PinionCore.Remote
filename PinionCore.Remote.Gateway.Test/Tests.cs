@@ -34,8 +34,8 @@ namespace PinionCore.Remote.Gateway.Tests
             // Host 提供兩個服務端點：
             // - RegistryService: 供遊戲服務註冊使用
             // - HubService: 供玩家客戶端連接使用
-            // Host 內部使用 RoundRobin 策略將客戶端路由到不同的遊戲服務
-            using var host = new Host(new Hosts.RoundRobinGameLobbySelectionStrategy());
+            // Host 使用 RoundRobin 策略將客戶端路由到不同的遊戲服務
+            using var host = new Host(new Hosts.RoundRobinLobbySelector());
 
             //// ========================================
             //// 階段 2: 建立遊戲服務 (Game Services)

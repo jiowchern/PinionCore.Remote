@@ -12,7 +12,7 @@ namespace PinionCore.Remote.Gateway.Tests
         [Test]
         public void RegisterAndJoin_AssignsStream()
         {
-            var coordinator = new SessionCoordinator(new RoundRobinGameLobbySelectionStrategy());
+            var coordinator = new SessionCoordinator(new RoundRobinLobbySelector());
             var roster = new ConnectionRoster();
             var rosterView = (IConnectionRoster)roster;
             var supplied = new List<IStreamable>();
@@ -30,7 +30,7 @@ namespace PinionCore.Remote.Gateway.Tests
         [Test]
         public void Unregister_ReleasesStream()
         {
-            var coordinator = new SessionCoordinator(new RoundRobinGameLobbySelectionStrategy());
+            var coordinator = new SessionCoordinator(new RoundRobinLobbySelector());
             var roster = new ConnectionRoster();
             var allocator = new StubAllocator(2);
 

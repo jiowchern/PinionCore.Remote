@@ -7,7 +7,7 @@ namespace PinionCore.Remote.Gateway.Hosts
     /// <summary>
     /// Provides a round-robin strategy for selecting lobbies within the same group.
     /// </summary>
-    public sealed class RoundRobinGameLobbySelectionStrategy : ISessionSelectionStrategy
+    public sealed class RoundRobinLobbySelector : ISessionSelectionStrategy
     {
         private readonly Dictionary<uint, int> _nextIndexByGroup = new Dictionary<uint, int>();
 
