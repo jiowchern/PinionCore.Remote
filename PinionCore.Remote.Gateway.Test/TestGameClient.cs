@@ -21,10 +21,18 @@ namespace PinionCore.Remote.Gateway.Tests
         {            
         }
 
-        internal async Task<int> GetMethod()
+        internal async Task<int> GetMethod1()
         {
             var obs = from m in _Agent.QueryNotifier<IMethodable1>().SupplyEvent()
                       from v in m.GetValue1().RemoteValue()
+                      select v;
+            return await obs.FirstAsync();
+        }
+
+        internal async Task<int> GetMethod2()
+        {
+            var obs = from m in _Agent.QueryNotifier<IMethodable2>().SupplyEvent()
+                      from v in m.GetValue2().RemoteValue()
                       select v;
             return await obs.FirstAsync();
         }
