@@ -3,7 +3,7 @@ using PinionCore.Remote.Soul;
 
 namespace PinionCore.Remote.Gateway.Hosts
 {
-    internal class ServiceHub
+    internal class SessionHub
     {
         private readonly SessionCoordinator _sessionCoordinator;
         private readonly ClientEntry _clientEntry;
@@ -12,7 +12,7 @@ namespace PinionCore.Remote.Gateway.Hosts
         public readonly IService Source;
         public readonly IServiceRegistry Sink;
 
-        public ServiceHub(ISessionSelectionStrategy selectionStrategy)
+        public SessionHub(ISessionSelectionStrategy selectionStrategy)
         {
             _sessionCoordinator = new SessionCoordinator(selectionStrategy);
             Sink = _sessionCoordinator;

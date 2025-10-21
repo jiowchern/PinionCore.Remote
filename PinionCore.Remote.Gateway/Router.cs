@@ -7,31 +7,31 @@ using PinionCore.Remote.Soul;
 
 namespace PinionCore.Remote.Gateway
 {
-    class Host : IDisposable
+    class Router : IDisposable
     {
-        private readonly ServiceHub _Hub;
+        private readonly SessionHub _Hub;
         private readonly Registrys.Server _Registry;
         // 接收遊戲服務 
-        public readonly IService RegistryService;
+        public readonly IService Registry;
 
         // 接收前端用戶
-        public readonly IService HubService;
+        public readonly IService Session;
         System.Action _Dispose;
-        public Host(ISessionSelectionStrategy strategy )
+        public Router(ISessionSelectionStrategy strategy )
         {
-            var hub = new Hosts.ServiceHub(strategy);
+            var hub = new Hosts.SessionHub(strategy);
             var server = new Registrys.Server();
 
             _Hub = hub;            
             _Registry = server;
-            RegistryService = _Registry.ToService();
-            HubService = _Hub.Source;
+            Registry = _Registry.ToService();
+            Session = _Hub.Source;
             _Registry.LinesNotifier.Base.Supply += _Supply;
             _Registry.LinesNotifier.Base.Unsupply += _Unsupply;
 
             _Dispose = () => {
-                RegistryService.Dispose();
-                HubService.Dispose();
+                Registry.Dispose();
+                Session.Dispose();
                 _Registry.LinesNotifier.Base.Supply -= _Supply;
                 _Registry.LinesNotifier.Base.Unsupply -= _Unsupply;
             };

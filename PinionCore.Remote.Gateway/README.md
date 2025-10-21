@@ -8,22 +8,22 @@ PinionCore.Remote.Gateway 是一個分散式遊戲服務閘道系統，提供客
 
 Gateway 系統由三個主要組件組成：
 
-### 1. Host (閘道服務)
+### 1. Router (路由閘道)
 作為中央協調者，負責：
-- 接收遊戲服務的註冊（透過 RegistryService）
-- 接收客戶端連線（透過 HubService）
+- 接收遊戲服務的註冊（透過 Registry 端點）
+- 接收客戶端連線（透過 Session 端點）
 - 根據策略將客戶端路由到對應的遊戲服務
 - 管理多個遊戲服務的生命週期
 
 ### 2. Registry (註冊中心)
 作為遊戲服務的註冊代理，負責：
-- 向 Host 註冊自己的 Group ID
+- 向 Router 註冊自己的 Group ID
 - 提供 Listener 給遊戲服務，用於接收玩家連線
-- 管理遊戲服務與 Host 之間的通訊
+- 管理遊戲服務與 Router 之間的通訊
 
 ### 3. Agent (客戶端代理)
 作為玩家客戶端，負責：
-- 連接到 Host 的 HubService
+- 連接到 Router 的 Session 端點
 - 透過 AgentPool 管理多個遊戲服務的連線
 - 使用 CompositeNotifier 整合多個遊戲服務的介面
 - 提供統一的 API 給上層應用
@@ -31,23 +31,277 @@ Gateway 系統由三個主要組件組成：
 ## 架構圖
 
 ### 整體架構
-![整體架構](https://www.plantuml.com/plantuml/svg/b5F1Qjmm4BthAwO-jCqX5EbOQ6bObarW2M7JMzs3ueoDg2qPIKvOIlwzqaXn7U4DYI-MPjvxCsya_N1UMZyDFVjmZwtI28VjvkV5zMw_XQQNpZ4sokQFx12gdVJuA8zmQPolu2-3y3Lc68r6xU5N3Fy6wIYVqmNa5ks3Ql1okYDW-A-X3jWfv-qH8XmjGKCixOZmnEYdj4VRoWQX2b9PlDQVMsDXqwiWviwgN2XdIzvphPVadHmGSYXB160EKEqe2UVdtqlfkKzABaXFYq4kvO6lZF9ggqDFjRuQnXw7499U6Ks3Y5pEJasC1mCxQwRn6pzxdXilFUy35ZLQuEGiRJdP8ZordgCKp6kAKttu2hVUeXpaNO_RgFnbZ_BX5PVY_Ix5IPTYTYbcb-AaIx5mAMQNOk4oSVDwTYdUv3BTinLt5rtuKNS9GliCMuFU6DCJF2xMK9kuTChZjV6gLVbXpD7yC0fID98RgFNUTAgPvvkYD12g6OqNSelEARkWXHby2cYjiOcdvbYwETFuujg74LOP11zhdKuGRQtf-81NaIRUInCLOulMY9vVOaaFI7gfz-PHfn8yPWzcyWWtlJn6rVysgX8jNaSpRKB6gkxVCaeKyjEW1TgJlVkVJrdnVEsqvrENFbknyEcUVg2WnfDztK-NDLaf00tBImdAJyhCqmGAFzkuw-cwMI-shty-PUFpsUkUhPZ9bPgNeW0o5cfuKdv9INuko7GaBmDrlcpeVzdOztJQkYSx6XHWWaydz3oRsVIYe_tfabbF6xfVDdOzwzZqR4xlq-wPBnjclLZHXJ3T0SW2bli0)
+
+```mermaid
+%%{init: {'theme':'base', 'themeVariables': { 'primaryColor':'#1e3a5f', 'primaryTextColor':'#e0e0e0', 'primaryBorderColor':'#4a90e2', 'lineColor':'#4a90e2', 'secondaryColor':'#2d5016', 'tertiaryColor':'#5d3a1a', 'background':'#0d1117', 'mainBkg':'#1e3a5f', 'secondBkg':'#2d5016', 'tertiaryBkg':'#5d3a1a', 'textColor':'#e0e0e0', 'border1':'#4a90e2', 'border2':'#6aa84f', 'fontSize':'16px'}}}%%
+graph TB
+    subgraph Client["客戶端層"]
+        ClientApp[客戶端應用]
+        Agent[Agent<br/>客戶端代理]
+        AgentPool[AgentPool<br/>代理池]
+    end
+
+    subgraph Router["路由閘道層 - Router"]
+        Session[Session 端點<br/>客戶端連線]
+        Registry[Registry 端點<br/>服務註冊]
+        SessionHub[SessionHub<br/>會話中心]
+        SessionCoordinator[SessionCoordinator<br/>會話協調器]
+    end
+
+    subgraph RegistryLayer["註冊層"]
+        Reg1[Registry 1<br/>Group ID = 1]
+        Reg2[Registry 2<br/>Group ID = 2]
+    end
+
+    subgraph GameServices["遊戲服務層"]
+        GS1[Game Service 1<br/>IMethodable1]
+        GS2[Game Service 2<br/>IMethodable2]
+    end
+
+    ClientApp --> Agent
+    Agent --> AgentPool
+    AgentPool --> Session
+    Session --> SessionHub
+    SessionHub --> SessionCoordinator
+
+    Reg1 --> Registry
+    Reg2 --> Registry
+    Registry --> SessionCoordinator
+
+    SessionCoordinator -.路由決策.-> Reg1
+    SessionCoordinator -.路由決策.-> Reg2
+
+    Reg1 --> GS1
+    Reg2 --> GS2
+
+    AgentPool -.遊戲通訊.-> GS1
+    AgentPool -.遊戲通訊.-> GS2
+
+    classDef routerStyle fill:#1e3a5f,stroke:#4a90e2,stroke-width:2px,color:#e0e0e0
+    classDef clientStyle fill:#5d1e3a,stroke:#e24a90,stroke-width:2px,color:#e0e0e0
+    classDef registryStyle fill:#2d5016,stroke:#6aa84f,stroke-width:2px,color:#e0e0e0
+    classDef serviceStyle fill:#5d3a1a,stroke:#e2a84a,stroke-width:2px,color:#e0e0e0
+
+    class ClientApp,Agent,AgentPool clientStyle
+    class Session,Registry,SessionHub,SessionCoordinator routerStyle
+    class Reg1,Reg2 registryStyle
+    class GS1,GS2 serviceStyle
+```
 
 ### 組件詳細架構
-![組件詳細架構](https://www.plantuml.com/plantuml/svg/fLH1Rjim4Bpx5KHETclb0O9X97MBH43GkdPo3cXfBH2Hk0P9fJ2Qd8gUUkalqW_qIMtHNvGKHMWZEMg0w69wPyYT7UxoH1kkJ5KMenrFRtWExEWSjM6_lZxy_VBZpy_lln--7R7F8sQ_jE1QCmSt0VUzNa4kj57xDQXRaKBCacRLKiwhpTDeT6tXc3LXkoP8EDl3e6heVaJKjDkefZLMwh2KjP0tRJoSJr9gq5gWN22gJ4XkKBdatHZPa1O2f7adQvcBzizXhQ2epWiXGRz78xO2R9wmcYKEE2qAJBdXcmBc95-z9t0TkC2YWDHOWOFxhZGek--jgAbSxMV96o4pK5Fce7bFRxzifvqwrQHT6yKDvBRyv8oNS86RpNxT1RiD0sgSAwnsKyPRlPEMTINL48-85TAIjZo5eVJKTG_wO_KaPbtN-awii9BP2ZT23XJe-7uwNaKHxMSQ9urCA1uvt6NzC8kY-N-j7l9YTdTy_BoQxaVjkn26PU1j21JgzcaEqbYJwr_Q-jg016KHlsoSzrzqvYudPfMGfdyTVifUdkJQrWcyV7AQFEoYT3hQAgFeRjw8UUHKhMB09eyJ-KiXyvXj2-I6g5iY5h4dkoL1wfYLxOgQ-QBfg8TtvCCdsPtvo_qEfYoXZAQ-eELZ1MeVyDdbVEmcXFplNKUhy1at4fI70udwpWiSoglnPWWeBUSbB1KQJ9rBILWUw1OiTwY50LB48wLP5f0nTyaczAqgyHOwC14X6oI8fKPHfxn7RipfVT9uNwPjgHEGMLKM_m00)
+
+```mermaid
+%%{init: {'theme':'base', 'themeVariables': { 'primaryColor':'#1e3a5f', 'primaryTextColor':'#e0e0e0', 'primaryBorderColor':'#4a90e2', 'lineColor':'#4a90e2', 'background':'#0d1117', 'mainBkg':'#1e3a5f', 'secondBkg':'#2d5016', 'tertiaryBkg':'#5d3a1a', 'textColor':'#e0e0e0', 'fontSize':'14px', 'nodeBorder':'#4a90e2', 'clusterBkg':'#161b22', 'clusterBorder':'#30363d', 'titleColor':'#e0e0e0'}}}%%
+classDiagram
+    class Router {
+        +IService Registry
+        +IService Session
+        -SessionHub _Hub
+        -Registrys.Server _Registry
+        +Router(ISessionSelectionStrategy)
+        +Dispose()
+    }
+
+    class SessionHub {
+        +IService Source
+        +IServiceRegistry Sink
+        -SessionCoordinator _sessionCoordinator
+        -ClientEntry _clientEntry
+        +SessionHub(ISessionSelectionStrategy)
+    }
+
+    class SessionCoordinator {
+        -ISessionSelectionStrategy _strategy
+        -Dictionary~uint, List~ILineAllocatable~~ _allocatorsByGroup
+        -Dictionary~IRoutableSession, SessionState~ _sessions
+        +Register(uint group, ILineAllocatable)
+        +Unregister(uint group, ILineAllocatable)
+        +Join(IRoutableSession)
+        +Leave(IRoutableSession)
+    }
+
+    class ClientEntry {
+        -ISessionMembership _sessionMembership
+        -Dictionary~IBinder, User~ _Users
+        +RegisterClientBinder(IBinder)
+        +UnregisterClientBinder(IBinder)
+    }
+
+    class Registry {
+        +IAgent Agent
+        +IListenable Listener
+        -Registrys.Server _server
+        +Registry(uint group)
+        +Dispose()
+    }
+
+    class Agent {
+        -AgentPool _pool
+        +QueryNotifier~T~()
+        +HandleMessage()
+        +HandlePackets()
+        +Connect(IService)
+    }
+
+    class AgentPool {
+        +IAgent Agent
+        +Notifier~IAgent~ Agents
+        -IProtocol _gameProtocol
+        -List~AgentSession~ _sessions
+        +AgentPool(IProtocol)
+        +Dispose()
+    }
+
+    Router --> SessionHub : 包含
+    SessionHub --> SessionCoordinator : 使用
+    SessionHub --> ClientEntry : 使用
+    Registry --> Agent : 使用
+    Agent --> AgentPool : 使用
+    SessionCoordinator ..|> IServiceRegistry : 實作
+    SessionCoordinator ..|> ISessionMembership : 實作
+```
 
 
 ## 時序圖
 
 ### 啟動與註冊流程
-![啟動與註冊流程](https://www.plantuml.com/plantuml/svg/XLD1YnCn5BxdLpnwa8gwCDV2oCgoj4eHiNZpaksy7GDjCcGo8tjJ495TN3suWbNmu6Mzx45G3ug_nfdQV-5BqZHCHJqqJVg-xxtl-nxTBGtNffhF69yQfQ4tv7E42UfQJ16I7l0IXfE45OGIKr5mQQ1t5tDH6dq4oNtP7sfL5MbosK6fieKTgTAuahtyfOqTXpeqyAykT2reL1qu57qpbgQmUdpSFllKldlUdBnfpjut9sUhnMbxyHdIb36I3TUkEqa3aFWGmhn-lfPiFOkQ6_IwxH4PUnfjvKQE9E0IZ8cAadHfD9MMM-r3TMTYY3Rd1pFSbmRrVctPLrAufOJyBsMClCODnRsSpL_dtvgdnz5QKEeo7NY9EtjAIfoQVd2vZYoQz1km1r5Zq0COSPdD4DODX9AH4jV1DjTeuOvMjSWGRlgPgAs966ESC5Qva37sJQKB2v7VAwbog3GCBG6IhTcqV9kUnFAsCk9Gs0YhefWTzUsFqQy5ClfiE45b478L7C5Zkae253EMOQVXFtFmgtHF5uLKnD8YVs0O_565vQlpzlLtghGlNlxyyNPv-h6v-B9wz67vTR5SF04FPoWpi7rOKDBTIuRT_UuIdlxElm40)
 
+```mermaid
+%%{init: {'theme':'base', 'themeVariables': { 'primaryColor':'#1e3a5f', 'primaryTextColor':'#e0e0e0', 'primaryBorderColor':'#4a90e2', 'lineColor':'#58a6ff', 'secondaryColor':'#2d5016', 'tertiaryColor':'#5d3a1a', 'background':'#0d1117', 'mainBkg':'#1e3a5f', 'secondBkg':'#2d5016', 'tertiaryBkg':'#5d3a1a', 'textColor':'#e0e0e0', 'fontSize':'14px', 'actorBkg':'#1e3a5f', 'actorBorder':'#4a90e2', 'actorTextColor':'#e0e0e0', 'actorLineColor':'#4a90e2', 'signalColor':'#e0e0e0', 'signalTextColor':'#e0e0e0', 'labelBoxBkgColor':'#21262d', 'labelBoxBorderColor':'#30363d', 'labelTextColor':'#e0e0e0', 'loopTextColor':'#e0e0e0', 'noteBorderColor':'#30363d', 'noteBkgColor':'#161b22', 'noteTextColor':'#e0e0e0', 'activationBorderColor':'#58a6ff', 'activationBkgColor':'#1e3a5f', 'sequenceNumberColor':'#0d1117'}}}%%
+sequenceDiagram
+    participant Router
+    participant SessionCoordinator
+    participant Registry1 as Registry 1<br/>(Group 1)
+    participant Registry2 as Registry 2<br/>(Group 2)
+    participant GameService1 as Game Service 1
+    participant GameService2 as Game Service 2
+
+    Note over Router: 1. 建立 Router
+    Router->>SessionCoordinator: 創建 SessionCoordinator<br/>(RoundRobin 策略)
+
+    Note over GameService1,GameService2: 2. 建立遊戲服務
+    GameService1->>GameService1: 創建 Game Service 1
+    GameService2->>GameService2: 創建 Game Service 2
+
+    Note over Registry1,Registry2: 3. 建立 Registry
+    Registry1->>Registry1: 創建 Registry(group=1)
+    Registry2->>Registry2: 創建 Registry(group=2)
+
+    Note over Registry1,GameService1: 4. 綁定遊戲服務到 Listener
+    Registry1->>GameService1: Listener.StreamableEnterEvent += Join
+    Registry1->>GameService1: Listener.StreamableLeaveEvent += Leave
+    Registry2->>GameService2: Listener.StreamableEnterEvent += Join
+    Registry2->>GameService2: Listener.StreamableLeaveEvent += Leave
+
+    Note over Registry1,Router: 5. Registry 向 Router 註冊
+    Registry1->>Router: Agent.Connect(router.Registry)
+    Router->>SessionCoordinator: Register(group=1, allocatable)
+    SessionCoordinator->>SessionCoordinator: 將 Registry1 加入 Group 1
+
+    Registry2->>Router: Agent.Connect(router.Registry)
+    Router->>SessionCoordinator: Register(group=2, allocatable)
+    SessionCoordinator->>SessionCoordinator: 將 Registry2 加入 Group 2
+```
 
 ### 客戶端連線與通訊流程
-![客戶端連線與通訊流程](https://www.plantuml.com/plantuml/svg/jLGzRzim4DtrAuXCDj0Q44UX3b8OWPC2QLCRw9I5iIuE0ObKISg1jen5Xqv5XupjKg1eWWnjWFwVnic_A2bIeQJAXj6FXVhWUyTxzuwt8nKHAa-JWCmK5sZhC245Y2r49BAlGQO1T4OpmXJQ6fCKq2YXm9J1kDScvkcysjLldPk7d2SbmBmqz_Uuj5pzqg9EGIpe3FRounAWd-rzAIbd8yv5J1bHtCgeVJVn4vXJgKI1mXAdFyCL05m1S4SrN5ekodWQhi5WXy51C1oYdvSVRzzyNtwvkZ__jBovkBzuTtlv3Gs7GM1BZnvlkm97YC6PBMVleO9zunbT40ML3VPXQ6O_GYC1UjV3odARfGr1b2aGZ2JECW4g5ymzEjAniC68CmOprTDME8LzduF5HAW3v3Eon-dLfxqkUBSItIh-78yfEyWi1gEZH6YFi3YfgbKHA6UUOvegq8kcr1ldeKwknpoX1YezlRkvMhw_lht-iVpweMPe3TOEhMCcEWtqq6svf6oEfahe-FFYYFKcF6VnX1zJrcz7Ahisqklh7AGo920fweq5ppCK-eBPxZQB8UacZHoM72UmQypVNPZcakLFpolxUJprB6cj63pZb5LeroUrWg9TgNHaAayXTgUsLRjKmo26Pf8T2l4gXRYf40TciRdYpHLYhT2p_amXNgaGjnJYbiAgEGy5Nz0OQcT8psmrcYPKryKJzprpmgKMlFRYls0UFispB2cSsB3VFIBi9JtXmbktOKIyQKJiS7vub0yvSE68-GeVeVAfeyRGLEW7YQDFjMsPBbsQSKaLFEUAdb0GHymSgicdTl2Ta1aWLMGGr48QLngVNAhsYVxRgIbdmFtvnTtdjsl7-HZK0QXJ7eUzTMFSoNYPWoYgv9_iMwRfwt2xjtgOElB4jQulGbUSYbRBSRyRsQ6vIjXpoHcX2Z4NmFbdBs3_Y0tio3iWhEYbQBYDqe4ko2kIvA3hqVVnxCofxQ459Rx_sbEgaRwxidx0E9pTBw7MbwY1SVorfk6_CWt_8zFmngRX_smQRfk6lMcuQHh-VV1sc8QRfk4kqt27QJl0uZnDVW40)  
+
+```mermaid
+%%{init: {'theme':'base', 'themeVariables': { 'primaryColor':'#1e3a5f', 'primaryTextColor':'#e0e0e0', 'primaryBorderColor':'#4a90e2', 'lineColor':'#58a6ff', 'secondaryColor':'#2d5016', 'tertiaryColor':'#5d3a1a', 'background':'#0d1117', 'mainBkg':'#1e3a5f', 'secondBkg':'#2d5016', 'tertiaryBkg':'#5d3a1a', 'textColor':'#e0e0e0', 'fontSize':'14px', 'actorBkg':'#1e3a5f', 'actorBorder':'#4a90e2', 'actorTextColor':'#e0e0e0', 'actorLineColor':'#4a90e2', 'signalColor':'#e0e0e0', 'signalTextColor':'#e0e0e0', 'labelBoxBkgColor':'#21262d', 'labelBoxBorderColor':'#30363d', 'labelTextColor':'#e0e0e0', 'loopTextColor':'#e0e0e0', 'noteBorderColor':'#30363d', 'noteBkgColor':'#161b22', 'noteTextColor':'#e0e0e0', 'activationBorderColor':'#58a6ff', 'activationBkgColor':'#1e3a5f', 'sequenceNumberColor':'#0d1117'}}}%%
+sequenceDiagram
+    participant Client as 客戶端應用
+    participant Agent
+    participant AgentPool
+    participant Router
+    participant SessionCoordinator
+    participant Registry1 as Registry 1
+    participant Registry2 as Registry 2
+    participant GS1 as Game Service 1
+    participant GS2 as Game Service 2
+
+    Note over Client,AgentPool: 1. 建立客戶端
+    Client->>AgentPool: 創建 AgentPool(gameProtocol)
+    Client->>Agent: 創建 Agent(agentPool)
+
+    Note over Agent,Router: 2. 連接到 Router
+    Agent->>Router: Connect(router.Session)
+    Router->>SessionCoordinator: Join(session)
+
+    Note over SessionCoordinator: 3. Router 進行路由決策
+    SessionCoordinator->>SessionCoordinator: 查找所有 Group
+    SessionCoordinator->>SessionCoordinator: 使用 RoundRobin 策略選擇
+
+    SessionCoordinator->>Registry1: Alloc() - 分配連線
+    Registry1-->>SessionCoordinator: 返回 IStreamable
+    SessionCoordinator->>Agent: Set(group=1, stream)
+
+    SessionCoordinator->>Registry2: Alloc() - 分配連線
+    Registry2-->>SessionCoordinator: 返回 IStreamable
+    SessionCoordinator->>Agent: Set(group=2, stream)
+
+    Note over AgentPool: 4. AgentPool 處理連線
+    AgentPool->>AgentPool: OnConnectionSupply(stream1)
+    AgentPool->>GS1: 創建 Agent 並連接到 GS1
+
+    AgentPool->>AgentPool: OnConnectionSupply(stream2)
+    AgentPool->>GS2: 創建 Agent 並連接到 GS2
+
+    Note over Client,GS1: 5. 客戶端呼叫遊戲服務
+    Client->>Agent: QueryNotifier<IMethodable1>()
+    Agent-->>Client: Supply(service1)
+    Client->>GS1: service1.GetValue1()
+    GS1-->>Client: 返回結果 1
+
+    Client->>Agent: QueryNotifier<IMethodable2>()
+    Agent-->>Client: Supply(service2)
+    Client->>GS2: service2.GetValue2()
+    GS2-->>Client: 返回結果 2
+```
 
 ### 斷線處理流程
-![斷線處理流程](https://www.plantuml.com/plantuml/svg/ZPAnJiCm48PtFuNLgGmKTOqKL5HGErG2jUe3kCbHMNBio7OYzGqG3y30o8I411iTU1vQU0jokM1XwC1GzvBxxlp_TnavBwol2iNAvbzciXJQyzv45C37IeBsFIvS5yRCsVexYz6Xv9KngWKmYFDJuwWMWpWrXxLqtcxui0MQn-41SGkmjSoWWoQB8MDfoj-V7tOth_kdbztTTh-zvsdA66ddnwUaC-7dqfN60J_1A3DQG-QPoBoiXOVEJ7DI3KflIyHAGQ384SCJ8JIH7Ef6zl103AqapIpnyeMt88e0aaqy6X3j91s1ryv0r71HW_Pzrxuy2dM8ikONgXpDPT3M13o7g227-DuSOi716Bc_r6Fo9OrUQbULfTg4rZ4gS6w3Rbpztzav5AO6VcrDGNDsF3DAKMVsKmRouJbi1LSSFe-FnxVFsoskcERs_pqGjjIsRGMMpwJkL4shLOG5pKi7bX3yyi3-cTa8T5uLwWi0)
+
+```mermaid
+%%{init: {'theme':'base', 'themeVariables': { 'primaryColor':'#1e3a5f', 'primaryTextColor':'#e0e0e0', 'primaryBorderColor':'#4a90e2', 'lineColor':'#58a6ff', 'secondaryColor':'#2d5016', 'tertiaryColor':'#5d3a1a', 'background':'#0d1117', 'mainBkg':'#1e3a5f', 'secondBkg':'#2d5016', 'tertiaryBkg':'#5d3a1a', 'textColor':'#e0e0e0', 'fontSize':'14px', 'actorBkg':'#1e3a5f', 'actorBorder':'#4a90e2', 'actorTextColor':'#e0e0e0', 'actorLineColor':'#4a90e2', 'signalColor':'#e0e0e0', 'signalTextColor':'#e0e0e0', 'labelBoxBkgColor':'#21262d', 'labelBoxBorderColor':'#30363d', 'labelTextColor':'#e0e0e0', 'loopTextColor':'#e0e0e0', 'noteBorderColor':'#30363d', 'noteBkgColor':'#161b22', 'noteTextColor':'#e0e0e0', 'activationBorderColor':'#58a6ff', 'activationBkgColor':'#1e3a5f', 'sequenceNumberColor':'#0d1117', 'altBackground':'#161b22'}}}%%
+sequenceDiagram
+    participant Agent
+    participant Router
+    participant SessionCoordinator
+    participant Registry1 as Registry 1
+    participant Registry2 as Registry 2
+    participant GS1 as Game Service 1
+    participant GS2 as Game Service 2
+
+    Note over Agent: 客戶端斷線
+    Agent->>Router: Disconnect
+    Router->>SessionCoordinator: Leave(session)
+
+    Note over SessionCoordinator: 清理所有分配的連線
+    SessionCoordinator->>SessionCoordinator: 查找 session 的所有 Allocation
+
+    SessionCoordinator->>Registry1: Free(stream1)
+    Registry1->>GS1: StreamableLeaveEvent
+    GS1->>GS1: 清理客戶端資源
+
+    SessionCoordinator->>Registry2: Free(stream2)
+    Registry2->>GS2: StreamableLeaveEvent
+    GS2->>GS2: 清理客戶端資源
+
+    SessionCoordinator->>SessionCoordinator: 移除 session
+
+    Note over Registry1: 或者 Registry 斷線
+    Registry1->>Router: Agent.Disconnect
+    Router->>SessionCoordinator: Unregister(group=1, allocatable)
+
+    SessionCoordinator->>SessionCoordinator: 查找使用此 Registry 的 sessions
+    SessionCoordinator->>SessionCoordinator: 嘗試重新分配到同 Group 的其他 Registry
+
+    alt 有其他可用的 Registry
+        SessionCoordinator->>Registry2: Alloc() - 重新分配
+        SessionCoordinator->>Agent: Set(group=1, new_stream)
+    else 沒有其他可用的 Registry
+        SessionCoordinator->>SessionCoordinator: 移除該 Group 的分配
+        SessionCoordinator->>Agent: Unset(group=1)
+    end
+```
 
 ## 快速開始
 
@@ -59,16 +313,16 @@ Gateway 系統由三個主要組件組成：
 dotnet add package PinionCore.Remote.Gateway
 ```
 
-### 2. 建立 Host
+### 2. 建立 Router
 
 ```csharp
 using PinionCore.Remote.Gateway;
 
-// 建立 Host
-using var host = new Host();
+// 建立 Router
+using var router = new Router();
 
-// host.RegistryService - 供遊戲服務註冊使用
-// host.HubService - 供客戶端連接使用
+// router.Registry - 供遊戲服務註冊使用
+// router.Session - 供客戶端連接使用
 ```
 
 ### 3. 建立遊戲服務與 Registry
@@ -114,8 +368,8 @@ var registryWorker = new AgentWorker(registry.Agent);
 registry.Listener.StreamableEnterEvent += gameService.Join;
 registry.Listener.StreamableLeaveEvent += gameService.Leave;
 
-// 連接到 Host
-registry.Agent.Connect(host.RegistryService);
+// 連接到 Router
+registry.Agent.Connect(router.Registry);
 ```
 
 ### 4. 建立客戶端
@@ -130,8 +384,8 @@ var agent = new Agent(new AgentPool(gameProtocol));
 // 啟動 Agent Worker
 var agentWorker = new AgentWorker(agent);
 
-// 連接到 Host
-agent.Connect(host.HubService);
+// 連接到 Router
+agent.Connect(router.Session);
 
 // 使用 Agent 查詢遊戲服務
 var notifier = agent.QueryNotifier<IMyGameService>();
@@ -152,25 +406,25 @@ agent.HandlePackets();
 
 參考測試檔案 `PinionCore.Remote.Gateway.Test/Tests.cs` 中的 `GatewayRegistryAgentIntegrationTestAsync` 方法，這是一個完整的使用範例，展示了：
 
-1. 如何建立 Host
+1. 如何建立 Router
 2. 如何建立多個遊戲服務
-3. 如何建立多個 Registry 並註冊到 Host
+3. 如何建立多個 Registry 並註冊到 Router
 4. 如何建立客戶端並同時與多個遊戲服務通訊
 
 ## API 說明
 
-### Host
+### Router
 
 ```csharp
-public class Host : IDisposable
+public class Router : IDisposable
 {
     // 供遊戲服務註冊使用的端點
-    public readonly IService RegistryService;
+    public readonly IService Registry;
 
     // 供客戶端連接使用的端點
-    public readonly IService HubService;
+    public readonly IService Session;
 
-    public Host();
+    public Router(ISessionSelectionStrategy strategy);
     public void Dispose();
 }
 ```
@@ -180,13 +434,13 @@ public class Host : IDisposable
 ```csharp
 public class Registry : IDisposable
 {
-    // 用於連接到 Host 的 Agent
+    // 用於連接到 Router 的 Agent
     public readonly IAgent Agent;
 
     // 供遊戲服務監聽玩家連線的 Listener
     public readonly IListenable Listener;
 
-    // group - 用於 Host 路由決策的群組 ID
+    // group - 用於 Router 路由決策的群組 ID
     public Registry(uint group);
 
     public void Dispose();
@@ -220,7 +474,7 @@ public class Agent : IAgent
 ```csharp
 public class AgentPool : IDisposable
 {
-    // 內部 Agent，用於連接到 Host
+    // 內部 Agent，用於連接到 Router
     public IAgent Agent { get; }
 
     // 遊戲服務的 Agent 集合
@@ -237,7 +491,7 @@ public class AgentPool : IDisposable
 
 ### 自訂路由策略
 
-Host 預設使用 `RoundRobinSelector` 進行路由，您可以實作 `ISessionSelectionStrategy` 介面來自訂路由邏輯：
+Router 預設使用 `RoundRobinSelector` 進行路由，您可以實作 `ISessionSelectionStrategy` 介面來自訂路由邏輯：
 
 ```csharp
 public interface ISessionSelectionStrategy
@@ -262,15 +516,15 @@ public class CustomStrategy : ISessionSelectionStrategy
 }
 
 // 使用自訂策略
-var hub = new ServiceHub(new CustomStrategy());
+var router = new Router(new CustomStrategy());
 ```
 
 ### Group ID 的使用
 
 Group ID 是一個重要的概念，用於區分不同的遊戲服務類型或分區：
 
-- **相同 Group ID**: 代表相同類型的服務，Host 會使用策略選擇其中一個
-- **不同 Group ID**: 代表不同類型的服務，Host 會將客戶端路由到所有 Group
+- **相同 Group ID**: 代表相同類型的服務，Router 會使用策略選擇其中一個
+- **不同 Group ID**: 代表不同類型的服務，Router 會將客戶端路由到所有 Group
 
 範例：
 ```csharp

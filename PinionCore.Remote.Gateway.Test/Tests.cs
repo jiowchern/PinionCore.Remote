@@ -11,31 +11,31 @@ namespace PinionCore.Remote.Gateway.Tests
         /// Gateway 整合測試：展示完整的 Gateway、Registry、Agent 三層架構使用範例
         ///
         /// 架構說明：
-        /// 1. Host (閘道服務) - 作為中央協調者，負責路由客戶端連線到對應的遊戲服務
-        /// 2. Registry (註冊中心) - 遊戲服務註冊者，將遊戲服務註冊到 Host，並提供玩家連線的監聽器
-        /// 3. Agent (客戶端代理) - 玩家客戶端，透過 Host 連接到多個遊戲服務
+        /// 1. Router (路由閘道) - 作為中央協調者，負責路由客戶端連線到對應的遊戲服務
+        /// 2. Registry (註冊中心) - 遊戲服務註冊者，將遊戲服務註冊到 Router，並提供玩家連線的監聽器
+        /// 3. Agent (客戶端代理) - 玩家客戶端，透過 Router 連接到多個遊戲服務
         ///
         /// 測試流程：
-        /// 1. 建立 Host，提供 RegistryService 和 HubService 兩個端點
+        /// 1. 建立 Router，提供 Registry 和 Session 兩個端點
         /// 2. 建立兩個遊戲服務，分別提供不同的方法
-        /// 3. 建立兩個 Registry，分別註冊到 Host（使用不同的 Group ID）
+        /// 3. 建立兩個 Registry，分別註冊到 Router（使用不同的 Group ID）
         /// 4. 將遊戲服務綁定到 Registry 的 Listener，以接收玩家連線
-        /// 5. 客戶端連接到 Host 的 HubService
-        /// 6. 客戶端透過 Host 路由，同時與兩個遊戲服務通訊
+        /// 5. 客戶端連接到 Router 的 Session
+        /// 6. 客戶端透過 Router 路由，同時與兩個遊戲服務通訊
         /// </summary>
         [NUnit.Framework.Test, Timeout(10000)]
         public async System.Threading.Tasks.Task GatewayRegistryAgentIntegrationTestAsync()
         {
             //// ========================================
-            //// 階段 1: 建立閘道服務 (Gateway Host)
+            //// 階段 1: 建立路由閘道 (Gateway Router)
             //// ========================================
 
-            // Step 1: 建立 Host - 作為中央閘道服務
-            // Host 提供兩個服務端點：
-            // - RegistryService: 供遊戲服務註冊使用
-            // - HubService: 供玩家客戶端連接使用
-            // Host 使用 RoundRobin 策略將客戶端路由到不同的遊戲服務
-            using var host = new Host(new Hosts.RoundRobinSelector());
+            // Step 1: 建立 Router - 作為中央路由閘道
+            // Router 提供兩個服務端點：
+            // - Registry: 供遊戲服務註冊使用
+            // - Session: 供玩家客戶端連接使用
+            // Router 使用 RoundRobin 策略將客戶端路由到不同的遊戲服務
+            using var host = new Router(new Hosts.RoundRobinSelector());
 
             //// ========================================
             //// 階段 2: 建立遊戲服務 (Game Services)
@@ -54,12 +54,12 @@ namespace PinionCore.Remote.Gateway.Tests
 
             // Step 3: 建立 Registry - 遊戲服務的註冊代理
             // Registry 負責：
-            // 1. 透過 Agent 連接到 Host 的 RegistryService，向 Host 註冊自己的 Group ID
-            // 2. 提供 Listener 給遊戲服務，用於接收 Host 路由過來的玩家連線
+            // 1. 透過 Agent 連接到 Router 的 Registry，向 Router 註冊自己的 Group ID
+            // 2. 提供 Listener 給遊戲服務，用於接收 Router 路由過來的玩家連線
             //
             // registry1 使用 Group ID = 1
             // registry2 使用 Group ID = 2
-            // Group ID 用於 Host 進行路由決策
+            // Group ID 用於 Router 進行路由決策
             using var registry1 = new PinionCore.Remote.Gateway.Registry(1);
             using var registryAgentWorker1 = new AgentWorker(registry1.Agent);
             using var registry2 = new PinionCore.Remote.Gateway.Registry(2);
@@ -70,7 +70,7 @@ namespace PinionCore.Remote.Gateway.Tests
             //// ========================================
 
             // Step 4: 將遊戲服務綁定到 Registry 的 Listener
-            // 當 Host 將玩家路由到此 Registry 時，Registry 會透過 Listener 通知遊戲服務
+            // 當 Router 將玩家路由到此 Registry 時，Registry 會透過 Listener 通知遊戲服務
             // 遊戲服務透過 Join/Leave 事件處理玩家的連入/離開
             //
             // registry1.Listener -> gameService1 (提供 IMethodable1)
@@ -81,15 +81,15 @@ namespace PinionCore.Remote.Gateway.Tests
             registry2.Listener.StreamableLeaveEvent += gameService2.Leave;
 
             //// ========================================
-            //// 階段 5: Registry 向 Host 註冊
+            //// 階段 5: Registry 向 Router 註冊
             //// ========================================
 
-            // Step 5: Registry 連接到 Host 的 RegistryService
-            // 連接後，Registry 會自動向 Host 註冊自己的 Group ID
-            // Host 收到註冊後，會將此 Registry 加入到路由表中
-            // 之後當客戶端連接時，Host 會根據策略選擇 Registry 並建立連線
-            registry1.Agent.Connect(host.RegistryService);
-            registry2.Agent.Connect(host.RegistryService);
+            // Step 5: Registry 連接到 Router 的 Registry
+            // 連接後，Registry 會自動向 Router 註冊自己的 Group ID
+            // Router 收到註冊後，會將此 Registry 加入到路由表中
+            // 之後當客戶端連接時，Router 會根據策略選擇 Registry 並建立連線
+            registry1.Agent.Connect(host.Registry);
+            registry2.Agent.Connect(host.Registry);
 
             //// ========================================
             //// 階段 6: 建立客戶端 (Client Agent)
@@ -97,15 +97,15 @@ namespace PinionCore.Remote.Gateway.Tests
 
             // Step 6: 建立客戶端 Agent
             // Agent 使用 AgentPool 來管理多個遊戲服務的連線
-            // AgentPool 會自動處理 Host 提供的多個連線（對應不同的 Registry）
+            // AgentPool 會自動處理 Router 提供的多個連線（對應不同的 Registry）
             // 並將這些連線整合為統一的介面供客戶端使用
             var agent = new Agent(new Hosts.AgentPool(PinionCore.Remote.Tools.Protocol.Sources.TestCommon.ProtocolProvider.CreateCase1()));
             using var agentWorker = new AgentWorker(agent);
 
-            // Step 7: 客戶端連接到 Host 的 HubService
-            // Host 會根據 RoundRobin 策略，將客戶端路由到註冊的 Registry
+            // Step 7: 客戶端連接到 Router 的 Session
+            // Router 會根據 RoundRobin 策略，將客戶端路由到註冊的 Registry
             // 由於有兩個 Registry，客戶端會同時與兩個遊戲服務建立連線
-            agent.Connect(host.HubService);
+            agent.Connect(host.Session);
             var gameClient = new TestGameClient(agent);
 
             //// ========================================
