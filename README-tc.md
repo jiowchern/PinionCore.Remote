@@ -15,6 +15,17 @@ PinionCore Remote 是以 C# 開發的伺服器－客戶端通訊框架，能在 
 ## 功能
 透過介面在伺服器與客戶端之間傳遞物件，降低協議維護成本並強化可讀性。
 
+### Gateway 模組
+**PinionCore.Remote.Gateway** 模組提供分散式服務閘道架構，實現客戶端與多個後端服務之間的智慧路由與連線管理。主要功能包括：
+
+- **多服務架構**：允許客戶端透過單一進入點連接多個後端服務
+- **智慧路由**：支援可自訂的路由策略（預設：輪詢），在服務實例之間分配客戶端連線
+- **群組化組織**：服務可組織為群組，群組內自動進行負載平衡
+- **透明代理**：客戶端透過統一介面與遠端服務互動，無需管理個別連線
+- **單機模式支援**：包含單機測試模式，開發時無需網路基礎設施
+
+詳細文件請參閱 [PinionCore.Remote.Gateway/README.md](PinionCore.Remote.Gateway/README.md)。
+
 ![plantUML](http://www.plantuml.com/plantuml/svg/ZP31JiCm38RlUGeVGMXzWAcg9kq0ko4g7Y1aVql1IIR7GqAZxqvRLGdiD5zgsVw_ViekgHKzUpOdwpvj3tgMgD55fhf-WLCRUaRJN0nDDGI5TDQ13ey2A8IcnLeFhVr-0dEykrzcencDoTWMyWNv3rt3ZcrAT1EmyFOy8EYrPC6rqMC_TuLtwGRmSIpk_VejzBpQR9g2s6xpPJweVwegEvCn8Ig8qId5himNyi6V67wspMc3SAGviWPbwD_dvDK_Yzrh0iMt3pYbJgAdj3ndzOUpczgpvry0)
 
 ## 支援

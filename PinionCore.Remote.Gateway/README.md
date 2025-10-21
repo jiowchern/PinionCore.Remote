@@ -237,27 +237,27 @@ public class AgentPool : IDisposable
 
 ### 自訂路由策略
 
-Host 預設使用 `RoundRobinGameLobbySelectionStrategy` 進行路由，您可以實作 `IGameLobbySelectionStrategy` 介面來自訂路由邏輯：
+Host 預設使用 `RoundRobinSelector` 進行路由，您可以實作 `ISessionSelectionStrategy` 介面來自訂路由邏輯：
 
 ```csharp
-public interface IGameLobbySelectionStrategy
+public interface ISessionSelectionStrategy
 {
-    ILineAllocatable Select(IEnumerable<ILineAllocatable> groups);
+    IEnumerable<Registrys.ILineAllocatable> OrderAllocators(uint group, IReadOnlyList<Registrys.ILineAllocatable> allocators);
 }
 ```
 
 範例：
 
 ```csharp
-public class CustomStrategy : IGameLobbySelectionStrategy
+public class CustomStrategy : ISessionSelectionStrategy
 {
-    public ILineAllocatable Select(IEnumerable<ILineAllocatable> groups)
+    public IEnumerable<Registrys.ILineAllocatable> OrderAllocators(uint group, IReadOnlyList<Registrys.ILineAllocatable> allocators)
     {
         // 自訂選擇邏輯，例如：
         // - 基於負載
         // - 基於地理位置
         // - 基於玩家偏好
-        return groups.First();
+        return allocators.OrderBy(a => a.AllocatedCount);
     }
 }
 
@@ -274,13 +274,13 @@ Group ID 是一個重要的概念，用於區分不同的遊戲服務類型或�
 
 範例：
 ```csharp
-// 遊戲大廳服務 (Group 1)
-var lobbyRegistry = new Registry(1);
+// 服務類型 A (Group 1)
+var registryA = new Registry(1);
 
-// 戰鬥服務 (Group 2)
-var battleRegistry = new Registry(2);
+// 服務類型 B (Group 2)
+var registryB = new Registry(2);
 
-// 客戶端連接後，會同時與大廳服務和戰鬥服務建立連線
+// 客戶端連接後，會同時與類型 A 服務和類型 B 服務建立連線
 ```
 
 ### 使用 Reactive Extensions (Rx)

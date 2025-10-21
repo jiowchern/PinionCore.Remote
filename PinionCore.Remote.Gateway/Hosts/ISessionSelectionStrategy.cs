@@ -10,13 +10,13 @@ namespace PinionCore.Remote.Gateway.Hosts
     public interface ISessionSelectionStrategy
     {
         /// <summary>
-        /// Orders the available lobbies for the given session and group according to the strategy.
+        /// Orders the available allocators for the given session and group according to the strategy.
         /// The coordinator will attempt to bind the session following the returned order.
         /// </summary>
-        /// <param name="group">The group identifier for the requested lobby.</param>
-        /// <param name="lobbies">The current lobbies registered for the group.</param>
-        /// <returns>An ordered enumerable of lobbies to try for binding.</returns>
-        IEnumerable<Registrys.ILineAllocatable> OrderLobbies(uint group, IReadOnlyList<Registrys.ILineAllocatable> lobbies);
+        /// <param name="group">The group identifier for the requested allocator.</param>
+        /// <param name="allocators">The current allocators registered for the group.</param>
+        /// <returns>An ordered enumerable of allocators to try for binding.</returns>
+        IEnumerable<Registrys.ILineAllocatable> OrderAllocators(uint group, IReadOnlyList<Registrys.ILineAllocatable> allocators);
     }
 }
 

@@ -34,6 +34,17 @@ If you want to know the details of the system architecture you can refer to Ask 
 
 ## Feature
 Server and client transfer through the interface, reducing the maintenance cost of the protocol.
+
+### Gateway Module
+The **PinionCore.Remote.Gateway** module provides a distributed service gateway architecture that enables intelligent routing and connection management between clients and multiple backend services. Key features include:
+
+- **Multi-Service Architecture**: Allows clients to connect to multiple backend services through a single entry point
+- **Intelligent Routing**: Supports customizable routing strategies (default: Round-Robin) to distribute client connections across service instances
+- **Group-Based Organization**: Services can be organized into groups, with automatic load balancing within groups
+- **Transparent Proxy**: Clients interact with remote services through unified interfaces without managing individual connections
+- **Standalone Mode Support**: Includes standalone testing mode for development without network infrastructure
+
+For detailed documentation, see [PinionCore.Remote.Gateway/README.md](PinionCore.Remote.Gateway/README.md).
 <!-- 
 @startuml
 package Protocol <<Rectangle>>{

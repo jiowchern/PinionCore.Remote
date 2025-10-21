@@ -188,7 +188,7 @@ namespace PinionCore.Remote.Gateway.Hosts
                 return;
             }
 
-            foreach (var allocator in _strategy.OrderLobbies(group, list))
+            foreach (var allocator in _strategy.OrderAllocators(group, list))
             {
                 IStreamable stream = null;
                 try
