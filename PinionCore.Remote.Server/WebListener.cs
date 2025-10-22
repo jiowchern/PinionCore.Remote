@@ -8,11 +8,11 @@ namespace PinionCore.Remote.Server.Web
     {
 
         readonly PinionCore.Network.Web.Listener _Listener;
-        readonly PinionCore.Remote.NotifiableCollection<IStreamable> _NotifiableCollection;
+        readonly PinionCore.Remote.Depot<IStreamable> _NotifiableCollection;
         public Listener()
         {
 
-            _NotifiableCollection = new NotifiableCollection<IStreamable>();
+            _NotifiableCollection = new Depot<IStreamable>();
             _Listener = new Network.Web.Listener();
 
             _Listener.AcceptEvent += _Join;

@@ -12,24 +12,26 @@ namespace PinionCore.Remote.Gateway.Registrys
         readonly uint Group;
         readonly INotifierQueryable _Queryer;
 
-        readonly NotifiableCollection<IStreamable> _Streams;
+        readonly Depot<IStreamable> _Streams;
         readonly Notifier<IStreamable> _Notifier;
         public readonly PinionCore.Remote.Soul.IListenable Listener;
         public readonly IAgent Agent;
         private readonly IDisposable _Dispose;
 
-        public Client(uint group)
+        public Client(uint group, byte[] version)
         {
-            _Streams = new NotifiableCollection<IStreamable>();
+            _Streams = new Depot<IStreamable>();
             _Notifier = new Notifier<IStreamable>(_Streams);
             Listener = new PinionCore.Remote.Gateway.Misc.NotifierListener(_Notifier);
             Group = group;            
             Agent = Protocols.Provider.CreateAgent();
             _Queryer = Agent;
 
+
+
             var obs = from r in _Queryer.QueryNotifier<IRegisterable>().SupplyEvent()
                       from l in r.LoginNotifier.SupplyEvent()
-                      from ret in l.Login(Group).RemoteValue()
+                      from ret in l.Login(Group, version).RemoteValue()
                       from s in r.StreamsNotifier.SupplyEvent()
                       select s;
 

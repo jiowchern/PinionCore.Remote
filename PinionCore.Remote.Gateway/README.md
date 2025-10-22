@@ -14,16 +14,17 @@ Gateway 系統由三個主要組件組成：
 - 接收客戶端連線（透過 Session 端點）
 - 根據策略將客戶端路由到對應的遊戲服務
 - 管理多個遊戲服務的生命週期
+- **支援多協議版本並存**：自動識別並隔離不同協議版本的客戶端與服務
 
 ### 2. Registry (註冊中心)
 作為遊戲服務的註冊代理，負責：
-- 向 Router 註冊自己的 Group ID
+- 向 Router 註冊自己的 Group ID 與協議版本
 - 提供 Listener 給遊戲服務，用於接收玩家連線
 - 管理遊戲服務與 Router 之間的通訊
 
 ### 3. Agent (客戶端代理)
 作為玩家客戶端，負責：
-- 連接到 Router 的 Session 端點
+- 連接到 Router 的 Session 端點並提供協議版本資訊
 - 透過 AgentPool 管理多個遊戲服務的連線
 - 使用 CompositeNotifier 整合多個遊戲服務的介面
 - 提供統一的 API 給上層應用
@@ -536,6 +537,53 @@ var registryB = new Registry(2);
 
 // 客戶端連接後，會同時與類型 A 服務和類型 B 服務建立連線
 ```
+
+### 協議版本管理
+
+Gateway 支援多個協議版本同時運行，這對於需要逐步升級的系統特別重要：
+
+#### 版本隔離機制
+
+Router 會根據 `IProtocol.VersionCode` 自動隔離不同版本的客戶端與服務：
+
+```csharp
+// 舊版本服務
+var oldProtocol = OldProtocolCreator.Create(); // VersionCode = [1, 0, 0]
+var registryV1 = new Registry(oldProtocol, groupId: 1);
+
+// 新版本服務
+var newProtocol = NewProtocolCreator.Create(); // VersionCode = [2, 0, 0]
+var registryV2 = new Registry(newProtocol, groupId: 1);
+
+// 兩者可同時向同一個 Router 註冊
+registryV1.Agent.Connect(router.Registry);
+registryV2.Agent.Connect(router.Registry);
+
+// 使用舊版本協議的客戶端只會路由到 registryV1
+// 使用新版本協議的客戶端只會路由到 registryV2
+```
+
+#### 版本升級策略
+
+1. **藍綠部署**：
+   - 同時部署新舊版本服務
+   - 逐步將客戶端升級到新版本
+   - 確認穩定後移除舊版本服務
+
+2. **金絲雀發布**：
+   - 新版本服務使用不同的 Group ID
+   - 部分客戶端連接到新版本進行測試
+   - 驗證無誤後全面切換
+
+3. **版本相容性檢查**：
+   ```csharp
+   // 在 Registry 建立時指定協議版本
+   var protocol = ProtocolCreator.Create();
+   var registry = new Registry(protocol, groupId: 1);
+
+   // Router 會自動使用 protocol.VersionCode 進行版本隔離
+   // 確保只有相同版本的客戶端能連接到對應的服務
+   ```
 
 ### 使用 Reactive Extensions (Rx)
 

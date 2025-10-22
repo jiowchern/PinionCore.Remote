@@ -39,12 +39,12 @@ namespace PinionCore.Remote.Gateway
 
         private void _Unsupply(ILineAllocatable allocatable)
         {
-            _Hub.Sink.Unregister(allocatable.Group, allocatable);
+            _Hub.Sink.Unregister(allocatable);
         }
 
         private void _Supply(ILineAllocatable allocatable)
         {
-            _Hub.Sink.Register(allocatable.Group, allocatable);
+            _Hub.Sink.Register(allocatable);
         }
 
         public void Dispose()

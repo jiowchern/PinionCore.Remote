@@ -2,39 +2,37 @@
 using System.Net.Http.Headers;
 using PinionCore.Network;
 using PinionCore.Remote.Gateway.Protocols;
+using PinionCore.Utility;
 
 namespace PinionCore.Remote.Gateway.Hosts
 {
-    internal class ClientEntry : IEntry
+    internal class Entry : IEntry  ,IDisposable
     {
 
-        class User
-        {
-            public ISoul Soul;
-
-            public ConnectionRoster ConnectionManager;
-        }
-
-        private readonly ISessionMembership _sessionMembership;
+        private readonly ISessionMembershipProvider _provider;
         readonly System.Collections.Generic.Dictionary<IBinder, User> _Users;
+        readonly PinionCore.Utility.Updater _Updater;
 
-
-        public ClientEntry(ISessionMembership sessionMembership)
+        public Entry(ISessionMembershipProvider provider)
         {
-            _sessionMembership = sessionMembership;
+            _Updater = new PinionCore.Utility.Updater();
+            _provider = provider;
             _Users = new System.Collections.Generic.Dictionary<IBinder, User>();
         }
+
+        public void Dispose()
+        {
+            _Updater.Shutdown();
+        }
+
         void IBinderProvider.RegisterClientBinder(IBinder binder)
         {
-            var user = new User();            
+            var user = new User(binder,_provider);            
             if (!_Users.TryAdd(binder, user))
             {
                 throw new ArgumentException("Binder already registered.", nameof(binder));
             }
-            user.ConnectionManager = new ConnectionRoster();
-            // 3. Join the sessionMembership session
-            _sessionMembership.Join(user.ConnectionManager);
-            user.Soul = binder.Bind<IConnectionRoster>(user.ConnectionManager);
+            _Updater.Add(user);
             
         }
 
@@ -42,9 +40,10 @@ namespace PinionCore.Remote.Gateway.Hosts
         {
             if(_Users.TryGetValue(binder, out User user))
             {
+                _Updater.Remove(user);
                 _Users.Remove(binder);
-                _sessionMembership.Leave(user.ConnectionManager);
-                binder.Unbind(user.Soul);                
+                //_sessionMembership.Leave(user.ConnectionManager);
+                
             }
             else
             {
@@ -54,7 +53,7 @@ namespace PinionCore.Remote.Gateway.Hosts
 
         void IEntry.Update()
         {
-            
+            _Updater.Working();
         }
     }
 }

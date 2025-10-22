@@ -4,8 +4,8 @@ namespace PinionCore.Remote.Gateway.Hosts
 {
     interface IServiceRegistry
     {
-        void Register(uint group, Registrys.ILineAllocatable allocatable);
-        void Unregister(uint group, Registrys.ILineAllocatable allocatable);
+        void Register(Registrys.ILineAllocatable allocatable);
+        void Unregister(Registrys.ILineAllocatable allocatable);
     }
 }
 

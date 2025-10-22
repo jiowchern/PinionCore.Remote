@@ -5,12 +5,13 @@ using PinionCore.Utility;
 
 namespace PinionCore.Remote.Gateway.Registrys
 {
+
     class UserLoginState : PinionCore.Utility.IStatus , ILoginable
     {
         private ICollection<ILoginable> _Logins;
 
 
-        public event Action<uint> DoneEvent;
+        public event Action<uint, byte[]> DoneEvent;
         public UserLoginState(ICollection<ILoginable> logins)
         {
             _Logins = logins;
@@ -26,9 +27,9 @@ namespace PinionCore.Remote.Gateway.Registrys
             _Logins.Remove(this);
         }
 
-        PinionCore.Remote.Value ILoginable.Login(uint group)
+        PinionCore.Remote.Value ILoginable.Login(uint group, byte[] version)
         {
-            DoneEvent(group);
+            DoneEvent(group, version);
 
             return new PinionCore.Remote.Value(false);
         }

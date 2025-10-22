@@ -2,7 +2,7 @@
 {
     class Registry : PinionCore.Remote.Gateway.Registrys.Client
     {
-        public Registry(uint group) : base(group)
+        public Registry(IProtocol protocol, uint group) : base(group,protocol.VersionCode)
         {
         }
     }

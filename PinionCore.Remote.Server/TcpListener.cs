@@ -8,14 +8,14 @@ namespace PinionCore.Remote.Server.Tcp
     {
 
         PinionCore.Network.Tcp.Listener _Listener;
-        readonly PinionCore.Remote.NotifiableCollection<IStreamable> _NotifiableCollection;
+        readonly PinionCore.Remote.Depot<IStreamable> _NotifiableCollection;
 
         public event System.Action<int> DataReceivedEvent;
         public event System.Action<int> DataSentEvent;
 
         public Listener()
         {
-            _NotifiableCollection = new NotifiableCollection<IStreamable>();
+            _NotifiableCollection = new Depot<IStreamable>();
             DataReceivedEvent += (size) => { };
             DataSentEvent += (size) => { };
         }

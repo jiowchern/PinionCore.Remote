@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using PinionCore.Network;
 using PinionCore.Remote;
 using PinionCore.Remote.Gateway.Protocols;
@@ -25,26 +25,33 @@ namespace PinionCore.Remote.Gateway.Hosts
         }
 
         private readonly System.Collections.Generic.List<AgentSession> _sessions;
-        private readonly IProtocol _gameProtocol;
-        private readonly NotifiableCollection<IAgent> _agentsCollection;
+        private readonly IProtocol _Protocol;
+        private readonly Depot<IAgent> _agentsCollection;
         private readonly Action _disable;
 
         public AgentPool(IProtocol gameProtocol)
         {
-            _gameProtocol = gameProtocol;
+            _Protocol = gameProtocol;
             _sessions = new System.Collections.Generic.List<AgentSession>();
             Agent = Provider.CreateAgent();
-            _agentsCollection = new NotifiableCollection<IAgent>();
+            _agentsCollection = new Depot<IAgent>();
             Agents = new Notifier<IAgent>(_agentsCollection);
 
+            Agent.QueryNotifier<IVerisable>().Supply += _OnVersionableSupply;
             Agent.QueryNotifier<IConnectionRoster>().Supply += OnRosterSupply;
             Agent.QueryNotifier<IConnectionRoster>().Unsupply += OnRosterUnsupply;
 
             _disable = () =>
             {
+                Agent.QueryNotifier<IVerisable>().Supply -= _OnVersionableSupply;
                 Agent.QueryNotifier<IConnectionRoster>().Supply -= OnRosterSupply;
                 Agent.QueryNotifier<IConnectionRoster>().Unsupply -= OnRosterUnsupply;
             };
+        }
+
+        private void _OnVersionableSupply(IVerisable verisable)
+        {
+            verisable.Set(_Protocol.VersionCode);
         }
 
         public Notifier<IAgent> Agents { get; }
@@ -64,7 +71,7 @@ namespace PinionCore.Remote.Gateway.Hosts
 
         private void OnConnectionSupply(IStreamable stream)
         {
-            var agent = PinionCore.Remote.Standalone.Provider.CreateAgent(_gameProtocol);
+            var agent = PinionCore.Remote.Standalone.Provider.CreateAgent(_Protocol);
             var wrapper = new AgentSession
             {
                 Agent = agent,

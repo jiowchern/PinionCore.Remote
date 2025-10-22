@@ -1,4 +1,4 @@
-using PinionCore.Network;
+﻿using PinionCore.Network;
 
 namespace PinionCore.Remote.Gateway.Protocols
 {

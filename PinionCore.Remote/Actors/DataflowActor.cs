@@ -15,7 +15,7 @@ namespace PinionCore.Remote.Actors
 
         public DataflowActor(Func<TMessage, CancellationToken, Task> handler)
             : this(handler, ActorOptions.Default)
-        {
+        {            
         }
 
         public DataflowActor(Func<TMessage, CancellationToken, Task> handler, ActorOptions options)

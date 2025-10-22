@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Linq;
 using PinionCore.Consoles.Chat1.Common;
 
@@ -9,7 +9,7 @@ namespace PinionCore.Consoles.Chat1
         private readonly PinionCore.Remote.IBinder _binder;
         private readonly Room _room;
         private readonly string _name;
-        private readonly PinionCore.Remote.NotifiableCollection<IChatter> _chatters;
+        private readonly PinionCore.Remote.Depot<IChatter> _chatters;
 
         private PinionCore.Remote.ISoul _selfSoul;
         private Chatter _chatter;
@@ -22,7 +22,7 @@ namespace PinionCore.Consoles.Chat1
             _binder = binder;
             _room = room;
             _name = name;
-            _chatters = new PinionCore.Remote.NotifiableCollection<IChatter>();
+            _chatters = new PinionCore.Remote.Depot<IChatter>();
         }
 
         public event Action DoneEvent = delegate { };

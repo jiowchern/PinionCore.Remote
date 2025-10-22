@@ -15,11 +15,11 @@ namespace PinionCore.Remote.Gateway.Registrys
         readonly StatusMachine _StatusMachine ;
         readonly ISoul _Soul;
 
-        readonly NotifiableCollection<ILoginable> _Logins;
+        readonly Depot<ILoginable> _Logins;
         readonly Notifier<ILoginable> _LoginNotifier;
         Notifier<ILoginable> IRegisterable.LoginNotifier => _LoginNotifier;
 
-        readonly NotifiableCollection<IStreamProviable> _Streams;
+        readonly Depot<IStreamProviable> _Streams;
         readonly Notifier<IStreamProviable> _StreamsNotifier ;
         Notifier<IStreamProviable> IRegisterable.StreamsNotifier => _StreamsNotifier;
 
@@ -31,10 +31,10 @@ namespace PinionCore.Remote.Gateway.Registrys
             _LineAllocators = lineAllocators;
             
 
-            _Logins = new NotifiableCollection<ILoginable>();
+            _Logins = new Depot<ILoginable>();
             _LoginNotifier = new Notifier<ILoginable>(_Logins);
 
-            _Streams = new NotifiableCollection<IStreamProviable>();
+            _Streams = new Depot<IStreamProviable>();
             _StreamsNotifier = new Notifier<IStreamProviable>(_Streams);
 
             _StatusMachine = new StatusMachine();
@@ -62,14 +62,14 @@ namespace PinionCore.Remote.Gateway.Registrys
 
         private void _ToLogin()
         {
-            var state = new UserLoginState(_Logins);
+            var state = new UserLoginState(_Logins);            
             state.DoneEvent += _ToAlloc;
             _StatusMachine.Push(state);
         }
 
-        void _ToAlloc(uint group)
+        void _ToAlloc(uint group, byte[] version)
         {
-            var state = new UserAllocState(group,_Streams, _LineAllocators);
+            var state = new UserAllocState(version,group, _Streams, _LineAllocators);
             state.DoneEvent += _ToLogin;
             _StatusMachine.Push(state);
         }

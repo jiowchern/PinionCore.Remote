@@ -26,6 +26,10 @@ namespace PinionCore.Remote.Gateway.Tests
         [NUnit.Framework.Test, Timeout(10000)]
         public async System.Threading.Tasks.Task GatewayRegistryAgentIntegrationTestAsync()
         {
+
+            var testCommonProtocol = PinionCore.Remote.Tools.Protocol.Sources.TestCommon.ProtocolProvider.CreateCase1();
+            var testChatProtocol = PinionCore.Consoles.Chat1.Common.ProtocolCreator.Create();
+
             //// ========================================
             //// 階段 1: 建立路由閘道 (Gateway Router)
             //// ========================================
@@ -48,6 +52,8 @@ namespace PinionCore.Remote.Gateway.Tests
             using var gameService1 = (new TestGameEntry(gameType: TestGameEntry.GameType.Method1)).ToService();
             using var gameService2 = (new TestGameEntry(gameType: TestGameEntry.GameType.Method2)).ToService();
 
+            using var gameService3 = (new TestChatEntry()).ToService();
+
             //// ========================================
             //// 階段 3: 建立註冊中心 (Registry)
             //// ========================================
@@ -60,10 +66,13 @@ namespace PinionCore.Remote.Gateway.Tests
             // registry1 使用 Group ID = 1
             // registry2 使用 Group ID = 2
             // Group ID 用於 Router 進行路由決策
-            using var registry1 = new PinionCore.Remote.Gateway.Registry(1);
+            using var registry1 = new PinionCore.Remote.Gateway.Registry(testCommonProtocol,1);
             using var registryAgentWorker1 = new AgentWorker(registry1.Agent);
-            using var registry2 = new PinionCore.Remote.Gateway.Registry(2);
+            using var registry2 = new PinionCore.Remote.Gateway.Registry(testCommonProtocol, 2);
             using var registryAgentWorker2 = new AgentWorker(registry2.Agent);
+
+            using var registry3 = new PinionCore.Remote.Gateway.Registry(testChatProtocol, 1);
+            using var registryAgentWorker3 = new AgentWorker(registry3.Agent);
 
             //// ========================================
             //// 階段 4: 綁定遊戲服務到 Registry
@@ -79,6 +88,8 @@ namespace PinionCore.Remote.Gateway.Tests
             registry1.Listener.StreamableLeaveEvent += gameService1.Leave;
             registry2.Listener.StreamableEnterEvent += gameService2.Join;
             registry2.Listener.StreamableLeaveEvent += gameService2.Leave;
+            registry3.Listener.StreamableEnterEvent += gameService3.Join;
+            registry3.Listener.StreamableLeaveEvent += gameService3.Leave;
 
             //// ========================================
             //// 階段 5: Registry 向 Router 註冊
@@ -90,38 +101,48 @@ namespace PinionCore.Remote.Gateway.Tests
             // 之後當客戶端連接時，Router 會根據策略選擇 Registry 並建立連線
             registry1.Agent.Connect(host.Registry);
             registry2.Agent.Connect(host.Registry);
+            registry3.Agent.Connect(host.Registry);
 
             //// ========================================
             //// 階段 6: 建立客戶端 (Client Agent)
             //// ========================================
 
-            // Step 6: 建立客戶端 Agent
-            // Agent 使用 AgentPool 來管理多個遊戲服務的連線
-            // AgentPool 會自動處理 Router 提供的多個連線（對應不同的 Registry）
-            // 並將這些連線整合為統一的介面供客戶端使用
-            var agent = new Agent(new Hosts.AgentPool(PinionCore.Remote.Tools.Protocol.Sources.TestCommon.ProtocolProvider.CreateCase1()));
-            using var agentWorker = new AgentWorker(agent);
-
-            // Step 7: 客戶端連接到 Router 的 Session
+            // Step 6: 客戶端連接到 Router 的 Session
             // Router 會根據 RoundRobin 策略，將客戶端路由到註冊的 Registry
-            // 由於有兩個 Registry，客戶端會同時與兩個遊戲服務建立連線
-            agent.Connect(host.Session);
-            var gameClient = new TestGameClient(agent);
+            // 由於有兩個 Registry，客戶端會同時與兩個遊戲服務建立連線            
+            var gameClient1 = new TestClient(testCommonProtocol);
+            var agent1 = gameClient1.Agent;
+
+            // 連接到 Router 的 Session 端點 (單機)
+            agent1.Connect(host.Session);
+            using var agentWorker1 = new AgentWorker(agent1);
+
+            var gameClient2 = new TestClient(testChatProtocol);
+            var agent2 = gameClient2.Agent;
+
+            // 連接到 Router 的 Session 端點 (單機)
+            agent2.Connect(host.Session);
+            using var agentWorker2 = new AgentWorker(agent2);
+
+
 
             //// ========================================
             //// 階段 7: 測試客戶端與遊戲服務的通訊
             //// ========================================
 
-            // Step 8: 客戶端透過 Agent 呼叫遊戲服務的方法
+            // Step 7: 客戶端透過 Agent 呼叫遊戲服務的方法
             // GetMethod1() 會透過 IMethodable1 介面，與 gameService1 通訊
             // GetMethod2() 會透過 IMethodable2 介面，與 gameService2 通訊
             //
             // 重點：客戶端只需要透過一個 Agent，就能同時與多個遊戲服務通訊
             // Agent 內部的 CompositeNotifier 會自動處理多個連線的整合
-            var value1 = await gameClient.GetMethod1();
+            var value1 = await gameClient1.GetMethod1();
             Assert.AreEqual(1,value1);
-            var value2 = await gameClient.GetMethod2();
+            var value2 = await gameClient1.GetMethod2();
             Assert.AreEqual(2, value2);
+
+            var loginResult = await gameClient2.GetLogin();
+            Assert.IsTrue(loginResult);
 
             //// ========================================
             //// 階段 8: 清理資源
@@ -133,12 +154,9 @@ namespace PinionCore.Remote.Gateway.Tests
             registry1.Listener.StreamableLeaveEvent -= gameService1.Leave;
             registry2.Listener.StreamableEnterEvent -= gameService2.Join;
             registry2.Listener.StreamableLeaveEvent -= gameService2.Leave;
-
-
-
-
-
-
+            registry3.Listener.StreamableEnterEvent -= gameService3.Join;
+            registry3.Listener.StreamableLeaveEvent -= gameService3.Leave;
+            
 
         }
     }

@@ -9,12 +9,13 @@ using PinionCore.Remote.Tools.Protocol.Sources.TestCommon;
 
 namespace PinionCore.Remote.Gateway.Tests
 {
-    class TestGameClient : IDisposable
+    class TestClient : IDisposable
     {
-        readonly IAgent _Agent;
-        public TestGameClient(IAgent agent)
+        public readonly IAgent Agent;
+        public TestClient(IProtocol protocol)
         {
-            _Agent = agent;
+            var agent = new Agent(new Hosts.AgentPool(protocol));
+            Agent = agent;
 
         }
         public void Dispose()
@@ -23,7 +24,7 @@ namespace PinionCore.Remote.Gateway.Tests
 
         internal async Task<int> GetMethod1()
         {
-            var obs = from m in _Agent.QueryNotifier<IMethodable1>().SupplyEvent()
+            var obs = from m in Agent.QueryNotifier<IMethodable1>().SupplyEvent()
                       from v in m.GetValue1().RemoteValue()
                       select v;
             return await obs.FirstAsync();
@@ -31,8 +32,16 @@ namespace PinionCore.Remote.Gateway.Tests
 
         internal async Task<int> GetMethod2()
         {
-            var obs = from m in _Agent.QueryNotifier<IMethodable2>().SupplyEvent()
+            var obs = from m in Agent.QueryNotifier<IMethodable2>().SupplyEvent()
                       from v in m.GetValue2().RemoteValue()
+                      select v;
+            return await obs.FirstAsync();
+        }
+
+        internal async Task<bool> GetLogin()
+        {
+            var obs = from m in Agent.QueryNotifier<Consoles.Chat1.Common.ILogin>().SupplyEvent()
+                      from v in m.Login("TestUser").RemoteValue()
                       select v;
             return await obs.FirstAsync();
         }

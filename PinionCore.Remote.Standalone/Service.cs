@@ -21,11 +21,11 @@ namespace PinionCore.Remote.Standalone
         internal readonly IProtocol Protocol;
         internal readonly ISerializable Serializer;
         private readonly IPool _Pool;
-        readonly NotifiableCollection<IStreamable> _NotifiableCollection;
+        readonly Depot<IStreamable> _NotifiableCollection;
         public Service(IEntry entry, IProtocol protocol, ISerializable serializable, PinionCore.Remote.IInternalSerializable internal_serializable, Memorys.IPool pool)
         {
             _Pool = pool;
-            _NotifiableCollection = new NotifiableCollection<IStreamable>();
+            _NotifiableCollection = new Depot<IStreamable>();
             Protocol = protocol;
             Serializer = serializable;
             

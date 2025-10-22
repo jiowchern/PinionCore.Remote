@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using PinionCore.Network;
 using PinionCore.Remote;
@@ -11,7 +11,7 @@ namespace PinionCore.Remote.Gateway.Hosts
         private readonly object _syncRoot;
         private readonly Dictionary<uint, IStreamable> _streamsByGroup;
         private readonly Dictionary<IStreamable, int> _streamRefCounts;
-        private readonly NotifiableCollection<IStreamable> _streamCollection;
+        private readonly Depot<IStreamable> _streamCollection;
         private readonly Notifier<IStreamable> _streams;
 
         public ConnectionRoster()
@@ -19,7 +19,7 @@ namespace PinionCore.Remote.Gateway.Hosts
             _syncRoot = new object();
             _streamsByGroup = new Dictionary<uint, IStreamable>();
             _streamRefCounts = new Dictionary<IStreamable, int>();
-            _streamCollection = new NotifiableCollection<IStreamable>();
+            _streamCollection = new Depot<IStreamable>();
             _streams = new Notifier<IStreamable>(_streamCollection);
         }
 

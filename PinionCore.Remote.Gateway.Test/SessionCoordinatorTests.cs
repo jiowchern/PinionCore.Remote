@@ -58,6 +58,8 @@ namespace PinionCore.Remote.Gateway.Tests
 
             public uint Group => _group;
 
+            byte[] ILineAllocatable.Version => new byte[1] { 1};
+
             public IStreamable Alloc()
             {
                 AllocatedCount++;

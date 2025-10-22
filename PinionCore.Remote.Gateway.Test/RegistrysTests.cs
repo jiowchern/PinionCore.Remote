@@ -17,11 +17,12 @@ namespace PinionCore.Remote.Gateway.Tests
         [NUnit.Framework.Test, Timeout(10000)]
         public async System.Threading.Tasks.Task Server_AllocatesStreamsPerGroupAsync()
         {
+            var version = PinionCore.Remote.Gateway.Protocols.ProtocolProvider.Create().VersionCode;
             var server = new PinionCore.Remote.Gateway.Registrys.Server();
             using var service = server.ToService();
 
-            var client1 = new PinionCore.Remote.Gateway.Registrys.Client(1);
-            var client2 = new PinionCore.Remote.Gateway.Registrys.Client(2);
+            var client1 = new PinionCore.Remote.Gateway.Registrys.Client(1, version);
+            var client2 = new PinionCore.Remote.Gateway.Registrys.Client(2, version);
             var dispose1 = client1.Agent.Connect(service);
             var dispose2 = client2.Agent.Connect(service);
 
@@ -32,16 +33,15 @@ namespace PinionCore.Remote.Gateway.Tests
             
 
 
-            TestContext.Progress.WriteLine("Awaiting server allocator for group 1...");
+            
             var serverRequire1Obs = from s in server.LinesNotifier.SupplyEvent()
                                     where s.Group == 1
                                     select s;
 
             var alloc1 = await serverRequire1Obs.FirstAsync();
-            TestContext.Progress.WriteLine("Allocator 1 received.");
+            
             var serverStream1 = alloc1.Alloc();
-            TestContext.Progress.WriteLine($"Server streams count: {(alloc1 as PinionCore.Remote.Gateway.Registrys.LineAllocator)?.StreamsNotifier.Base}");
-            TestContext.Progress.WriteLine("Server stream 1 allocated.");
+            
 
             var serverRequire2Obs = from s in server.LinesNotifier.SupplyEvent()
                                     where s.Group == 2
@@ -49,23 +49,22 @@ namespace PinionCore.Remote.Gateway.Tests
             var alloc2 = await serverRequire2Obs.FirstAsync();
             var serverStream2 = alloc2.Alloc();
 
-
-            // 修正 CS0079 和 CS1525：使用 Observable.FromEvent 需正確指定事件的訂閱與解除訂閱方式
+            
             var client1ResponseObs = System.Reactive.Linq.Observable.FromEvent<Network.IStreamable>(
                 handler => client1.Listener.StreamableEnterEvent += handler,
                 handler => client1.Listener.StreamableEnterEvent -= handler);
-            TestContext.Progress.WriteLine("Awaiting client stream 1...");
+            
             var clientStream1 = await client1ResponseObs.FirstAsync();
-            TestContext.Progress.WriteLine("Client stream 1 supplied.");
+            
 
 
 
             var client2ResponseObs = System.Reactive.Linq.Observable.FromEvent<Network.IStreamable>(
                 handler => client2.Listener.StreamableEnterEvent += handler,
                 handler => client2.Listener.StreamableEnterEvent -= handler); 
-            TestContext.Progress.WriteLine("Awaiting client stream 2...");
+            
             var clientStream2 = await client2ResponseObs.FirstAsync();
-            TestContext.Progress.WriteLine("Client stream 2 supplied.");
+            //TestContext.Progress.WriteLine("Client stream 2 supplied.");
 
 
             var sendData1 = new byte[] { 1, 2, 3, 4, 5 };

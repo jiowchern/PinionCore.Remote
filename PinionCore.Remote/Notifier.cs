@@ -9,22 +9,22 @@ namespace PinionCore.Remote
         public readonly INotifier<T> Base;
         readonly System.Collections.Generic.ICollection<T> _Collection;
         
-        readonly PinionCore.Remote.NotifiableCollection<TypeObject> _TypeObjects;
+        readonly PinionCore.Remote.Depot<TypeObject> _TypeObjects;
 
         public Notifier(INotifier<T> notifier, System.Collections.Generic.ICollection<T> collection)
         {
-            _TypeObjects = new NotifiableCollection<TypeObject>();
+            _TypeObjects = new Depot<TypeObject>();
             _Collection = collection;        
             Base = notifier;
             Base.Supply += _OnSupply;
             Base.Unsupply += _OnUnsupply;
         }
-        public Notifier(NotifiableCollection<T> collection) : this(collection, collection)
+        public Notifier(Depot<T> collection) : this(collection, collection)
         {
 
         }
 
-        public Notifier() : this(new NotifiableCollection<T>())
+        public Notifier() : this(new Depot<T>())
         {
         }
 

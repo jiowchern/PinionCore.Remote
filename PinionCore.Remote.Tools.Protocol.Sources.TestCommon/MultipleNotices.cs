@@ -5,8 +5,8 @@
         public class MultipleNotices : IMultipleNotices
         {
 
-            public readonly NotifiableCollection<INumber> Numbers1;
-            public readonly NotifiableCollection<INumber> Numbers2;
+            public readonly Depot<INumber> Numbers1;
+            public readonly Depot<INumber> Numbers2;
 
             Value<int> IMultipleNotices.GetNumber1Count()
             {
@@ -27,8 +27,8 @@
             public MultipleNotices()
             {
 
-                Numbers1 = new NotifiableCollection<INumber>();
-                Numbers2 = new NotifiableCollection<INumber>();
+                Numbers1 = new Depot<INumber>();
+                Numbers2 = new Depot<INumber>();
             }
         }
     }

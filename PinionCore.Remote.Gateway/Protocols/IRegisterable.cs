@@ -2,7 +2,7 @@
 {
     public interface IRegisterable
     {
-        Notifier<ILoginable> LoginNotifier { get; }
+        Notifier<ILoginable> LoginNotifier { get; } 
         Notifier<IStreamProviable> StreamsNotifier { get; }
 
     }

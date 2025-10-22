@@ -41,6 +41,7 @@ The **PinionCore.Remote.Gateway** module provides a distributed service gateway 
 - **Multi-Service Architecture**: Allows clients to connect to multiple backend services through a single Router entry point
 - **Intelligent Routing**: Supports customizable routing strategies (default: Round-Robin) to distribute client connections across service instances
 - **Group-Based Organization**: Services can be organized into groups, with automatic load balancing within groups
+- **Protocol Versioning Support**: Supports multiple protocol versions simultaneously, enabling seamless coexistence of different client/service versions within the same system
 - **Transparent Proxy**: Clients interact with remote services through unified interfaces without managing individual connections
 - **Standalone Mode Support**: Includes standalone testing mode for development without network infrastructure
 

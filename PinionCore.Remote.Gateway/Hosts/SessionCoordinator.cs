@@ -7,7 +7,7 @@ using PinionCore.Remote.Gateway.Registrys;
 
 namespace PinionCore.Remote.Gateway.Hosts
 {
-    internal sealed class SessionCoordinator : ISessionMembership, IServiceRegistry, IDisposable
+    internal sealed class SessionCoordinator : ISessionMembership, IDisposable
     {
         private sealed class SessionState
         {

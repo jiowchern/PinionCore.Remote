@@ -8,14 +8,14 @@ namespace PinionCore.Remote.Gateway.Registrys
     class Server : PinionCore.Remote.IEntry, System.IDisposable
     {
         readonly PinionCore.Utility.Updater _Updater;
-        readonly NotifiableCollection<ILineAllocatable> _Lines;
+        readonly Depot<ILineAllocatable> _Lines;
         public readonly Notifier<ILineAllocatable> LinesNotifier;
 
         readonly Dictionary<IBinder, User> _Users;
         public Server()
         {
             _Updater = new Updater();
-            _Lines = new NotifiableCollection<ILineAllocatable>();
+            _Lines = new Depot<ILineAllocatable>();
             LinesNotifier = new Notifier<ILineAllocatable>(_Lines);
             _Users = new Dictionary<IBinder, User>();
         }
