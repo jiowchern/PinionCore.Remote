@@ -3,7 +3,7 @@ using PinionCore.Network;
 
 namespace PinionCore.Remote.Soul
 {
-    class ListenableAggregator : Remote.Soul.IListenable
+    public class ListenableAggregator : Remote.Soul.IListenable
     {
 
         readonly System.Collections.Generic.List<Remote.Soul.IListenable> _Listenables;

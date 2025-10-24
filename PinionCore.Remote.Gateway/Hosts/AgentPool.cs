@@ -6,7 +6,7 @@ using PinionCore.Remote.Ghost;
 
 namespace PinionCore.Remote.Gateway.Hosts
 {
-    class AgentPool : IDisposable
+    public class AgentPool : IDisposable
     {
         private sealed class AgentSession : IStreamable
         {

@@ -7,7 +7,7 @@ using PinionCore.Remote.Reactive;
 
 namespace PinionCore.Remote.Gateway.Registrys
 {
-    class Client : IDisposable
+    public class Client : IDisposable
     {
         readonly uint Group;
         readonly INotifierQueryable _Queryer;

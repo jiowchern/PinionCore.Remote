@@ -7,7 +7,7 @@ using PinionCore.Remote.Ghost;
 
 namespace PinionCore.Remote.Gateway
 {
-    class Agent : IAgent
+    public class Agent : IAgent
     {
         readonly Dictionary<Type, INotifierOwneable> _NotifierOwners;
         readonly List<IAgent> _Agents;

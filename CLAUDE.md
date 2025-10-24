@@ -69,6 +69,68 @@ static partial void _Create(ref PinionCore.Remote.IProtocol protocol);
 - 預設支援基礎型別與陣列
 - IProtocol.SerializeTypes 提供需序列化的型別清單
 
+#### 5. IDisposable 資源釋放模式
+
+**使用 `_Dispose` 閉包模式處理延遲初始化資源**：
+
+```csharp
+public class MyService : IDisposable
+{
+    private bool _disposed = false;
+    private System.Action _Dispose;  // 閉包捕獲清理邏輯
+
+    public MyService()
+    {
+        _Dispose = () => { };  // 安全的預設空操作
+    }
+
+    public void Start(...)
+    {
+        // 創建具體類型的區域變數
+        var concreteResource = new ConcreteType();
+        concreteResource.Initialize();
+
+        // 訂閱事件
+        _interfaceField.SomeEvent += handler;
+
+        // 設置清理邏輯（閉包捕獲區域變數）
+        _Dispose = () =>
+        {
+            _interfaceField.SomeEvent -= handler;  // 取消訂閱
+            concreteResource.Close();              // 調用具體方法
+        };
+    }
+
+    public void Dispose()
+    {
+        if (_disposed) return;
+
+        try
+        {
+            _Dispose();  // 統一調用清理邏輯
+        }
+        catch (Exception ex)
+        {
+            // 記錄錯誤
+        }
+
+        _disposed = true;
+    }
+}
+```
+
+**適用場景**：
+- ✅ 資源在 `Start()` 等方法中延遲初始化（非建構子）
+- ✅ 欄位類型是介面,但需要調用具體類型的方法（如 `Close()`）
+- ✅ 需要取消事件訂閱,事件處理器引用需要保存
+- ✅ 多個相關資源需要協調清理
+
+**核心優點**：
+- 閉包捕獲區域變數的具體類型,無需將其存為欄位
+- 清理邏輯緊鄰初始化邏輯,便於維護
+- 預設空操作確保安全性
+- 簡化 `Dispose()` 實作,無需多重 null 檢查
+
 ## 開發流程
 
 ### 新增通訊介面

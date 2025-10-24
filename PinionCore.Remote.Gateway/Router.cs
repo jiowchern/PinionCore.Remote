@@ -7,7 +7,7 @@ using PinionCore.Remote.Soul;
 
 namespace PinionCore.Remote.Gateway
 {
-    class Router : IDisposable
+    public class Router : IDisposable
     {
         private readonly SessionHub _Hub;
         private readonly Registrys.Server _Registry;
