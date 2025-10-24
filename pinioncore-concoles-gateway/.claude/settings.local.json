@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//d/develop/PinionCore.Remote/PinionCore.Network/**)",
+      "Read(//d/develop/PinionCore.Remote/PinionCore.Remote.Gateway/**)",
+      "Read(//d/develop/PinionCore.Remote/PinionCore.Consoles.Chat1.Server/**)",
+      "Read(//d/develop/PinionCore.Remote/PinionCore.Consoles.Chat1.Client/**)",
+      "Read(//d/develop/PinionCore.Remote/PinionCore.Network.Test/**)",
+      "Read(//d/develop/PinionCore.Remote/PinionCore.Consoles.Chat1.Common/**)",
+      "Read(//d/develop/PinionCore.Remote/PinionCore.Consoles.Chat1/**)",
+      "Read(//d/develop/PinionCore.Remote/PinionCore.Utility/PinionCore.Utility/Utility/**)",
+      "Read(//d/develop/PinionCore.Remote/PinionCore.Utility/**)",
+      "Read(//d/develop/PinionCore.Remote/**)",
+      "Bash(.specify/scripts/bash/create-new-feature.sh:*)",
+      "Bash(cat:*)",
+      "Bash(git checkout:*)",
+      "Bash(git branch:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

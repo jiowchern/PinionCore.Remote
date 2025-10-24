@@ -98,6 +98,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PinionCore.Consoles.Chat1.B
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PinionCore.Consoles.Chat1.Gateway", "PinionCore.Consoles.Chat1.Gateway\PinionCore.Consoles.Chat1.Gateway.csproj", "{744EBDD8-4501-4B44-8A68-F9925AD411AF}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "gateway", "gateway", "{E7BDDBC6-9FD1-D1D7-ACD8-2C4F8E3D2461}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PinionCore.Consoles.Gateway.Router", "PinionCore.Consoles.Gateway.Router\PinionCore.Consoles.Gateway.Router.csproj", "{34A5C286-CAF6-4614-BCEC-E4382283CDB5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -504,6 +508,18 @@ Global
 		{744EBDD8-4501-4B44-8A68-F9925AD411AF}.Release|x64.Build.0 = Release|Any CPU
 		{744EBDD8-4501-4B44-8A68-F9925AD411AF}.Release|x86.ActiveCfg = Release|Any CPU
 		{744EBDD8-4501-4B44-8A68-F9925AD411AF}.Release|x86.Build.0 = Release|Any CPU
+		{34A5C286-CAF6-4614-BCEC-E4382283CDB5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{34A5C286-CAF6-4614-BCEC-E4382283CDB5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{34A5C286-CAF6-4614-BCEC-E4382283CDB5}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{34A5C286-CAF6-4614-BCEC-E4382283CDB5}.Debug|x64.Build.0 = Debug|Any CPU
+		{34A5C286-CAF6-4614-BCEC-E4382283CDB5}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{34A5C286-CAF6-4614-BCEC-E4382283CDB5}.Debug|x86.Build.0 = Debug|Any CPU
+		{34A5C286-CAF6-4614-BCEC-E4382283CDB5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{34A5C286-CAF6-4614-BCEC-E4382283CDB5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{34A5C286-CAF6-4614-BCEC-E4382283CDB5}.Release|x64.ActiveCfg = Release|Any CPU
+		{34A5C286-CAF6-4614-BCEC-E4382283CDB5}.Release|x64.Build.0 = Release|Any CPU
+		{34A5C286-CAF6-4614-BCEC-E4382283CDB5}.Release|x86.ActiveCfg = Release|Any CPU
+		{34A5C286-CAF6-4614-BCEC-E4382283CDB5}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -545,6 +561,7 @@ Global
 		{F5AFCFE9-4ED9-4615-9829-5C72A3556F97} = {576302CE-EF3C-C1AA-A2D0-94A48E1CFC77}
 		{0E75ADE7-175C-4FD9-A073-D6DCE4789701} = {576302CE-EF3C-C1AA-A2D0-94A48E1CFC77}
 		{744EBDD8-4501-4B44-8A68-F9925AD411AF} = {576302CE-EF3C-C1AA-A2D0-94A48E1CFC77}
+		{34A5C286-CAF6-4614-BCEC-E4382283CDB5} = {E7BDDBC6-9FD1-D1D7-ACD8-2C4F8E3D2461}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {5F361C65-F7E7-4579-84BF-3D8DB0C9DABA}
