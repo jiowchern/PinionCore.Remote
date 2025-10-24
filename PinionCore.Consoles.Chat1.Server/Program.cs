@@ -1,18 +1,29 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+using System.Net;
+using System.Threading.Tasks;
 using PinionCore.Remote.Soul;
 using PinionCore.Utility.WindowConsoleAppliction;
+using PinionCore.Consoles.Chat1.Server.Configuration;
+using PinionCore.Consoles.Chat1.Server.Services;
 
 namespace PinionCore.Consoles.Chat1.Server
 {
     internal static class Program
     {
-        private static readonly string[] TcpSwitches = { "--tcp", "--tcpport" };
-        private static readonly string[] WebSwitches = { "--web", "--webport" };
-
         static void Main(string[] args)
         {
-            var (tcpPort, webPort) = ParsePorts(args);
+            // T029: 解析命令列參數
+            var options = CommandLineParser.Parse(args);
+
+            // 驗證參數有效性
+            if (!options.Validate(out var error))
+            {
+                System.Console.WriteLine($"錯誤: {error}");
+                System.Console.WriteLine(ChatServerOptions.GetUsageString());
+                Environment.Exit(1);
+                return;
+            }
 
             var protocol = PinionCore.Consoles.Chat1.Common.ProtocolCreator.Create();
             var entry = new PinionCore.Consoles.Chat1.Entry();
@@ -20,32 +31,116 @@ namespace PinionCore.Consoles.Chat1.Server
             var listeners = new CompositeListenable();
             var shutdownTasks = new List<Action>();
 
-            if (tcpPort != 0)
+            // 直連 TCP 監聽器
+            if (options.TcpPort.HasValue)
             {
                 var tcp = new PinionCore.Remote.Server.Tcp.Listener();
                 listeners.Add(tcp);
-                tcp.Bind(tcpPort);
+                tcp.Bind(options.TcpPort.Value);
                 shutdownTasks.Add(() => tcp.Close());
-                System.Console.WriteLine($"TCP listener started on port {tcpPort}.");
+                System.Console.WriteLine($"TCP listener started on port {options.TcpPort.Value}.");
             }
 
-            if (webPort != 0)
+            // 直連 WebSocket 監聽器
+            if (options.WebPort.HasValue)
             {
                 var web = new PinionCore.Remote.Server.Web.Listener();
                 listeners.Add(web);
-                web.Bind($"http://*:{webPort}/");
+                web.Bind($"http://*:{options.WebPort.Value}/");
                 shutdownTasks.Add(() => web.Close());
-                System.Console.WriteLine($"Web listener started on port {webPort}.");
+                System.Console.WriteLine($"Web listener started on port {options.WebPort.Value}.");
             }
 
+            // T030: Registry Client 初始化 (當提供 router-host 時)
+            PinionCore.Remote.Gateway.Registry registry = null;
+            RegistryConnectionManager registryConnectionManager = null;
+            Action registryWorkerDispose = null;
+
+            if (options.HasGatewayMode)
+            {
+                System.Console.WriteLine($"Gateway mode enabled: connecting to Router {options.RouterHost}:{options.RouterPort} (Group: {options.Group})");
+
+                // 建立 Registry Client
+                registry = new PinionCore.Remote.Gateway.Registry(protocol, options.Group);
+
+                // T031: 建立 Registry Agent 連接邏輯 (使用 Tcp.Connector)
+                var connector = new PinionCore.Network.Tcp.Connector();
+                var endpoint = new IPEndPoint(IPAddress.Parse(options.RouterHost), options.RouterPort.Value);
+
+                // 嘗試連接
+                try
+                {
+                    var peer = connector.Connect(endpoint).Result; // 同步等待連接
+                    registry.Agent.Enable(peer);
+
+                    System.Console.WriteLine($"Successfully connected to Router at {options.RouterHost}:{options.RouterPort}");
+
+                    // T032: 啟動 AgentWorker (持續處理 registry.Agent.HandlePackets/HandleMessage)
+                    var agentWorkerRunning = true;
+                    var agentWorkerTask = Task.Run(() =>
+                    {
+                        while (agentWorkerRunning)
+                        {
+                            registry.Agent.HandlePackets();
+                            registry.Agent.HandleMessage();
+                            System.Threading.Thread.Sleep(1); // 短暫休眠避免忙等待
+                        }
+                    });
+
+                    registryWorkerDispose = () =>
+                    {
+                        agentWorkerRunning = false;
+                        agentWorkerTask.Wait(TimeSpan.FromSeconds(2));
+                    };
+
+                    // 添加 Registry.Listener 到 CompositeListenable
+                    listeners.Add(registry.Listener);
+
+                    // 建立 RegistryConnectionManager (用於斷線偵測與重連)
+                    var log = PinionCore.Utility.Log.Instance;
+                    registryConnectionManager = new RegistryConnectionManager(
+                        registry,
+                        options.RouterHost,
+                        options.RouterPort.Value,
+                        log
+                    );
+
+                    registryConnectionManager.Start();
+
+                    shutdownTasks.Add(() =>
+                    {
+                        registryWorkerDispose?.Invoke();
+                        registryConnectionManager?.Dispose();
+                        registry?.Dispose();
+                    });
+                }
+                catch (Exception ex)
+                {
+                    System.Console.WriteLine($"Failed to connect to Router: {ex.Message}");
+                    System.Console.WriteLine("Chat Server will only use direct connection modes.");
+                }
+            }
+
+            // 顯示啟用的模式
+            var modeDescription = options.IsMaxCompatibilityMode
+                ? "Maximum Compatibility (3 connection sources)"
+                : options.HasGatewayMode
+                    ? "Gateway Mode Only"
+                    : "Direct Connection Mode Only";
+            System.Console.WriteLine($"Chat Server started: {modeDescription}");
 
             var service = PinionCore.Remote.Server.Provider.CreateService(entry, protocol, listeners);
             IListenable listenable = listeners;
             listenable.StreamableEnterEvent += service.Join;
             listenable.StreamableLeaveEvent += service.Leave;
             var console = new Console(entry.Announcement);
-            console.Run(() => entry.Update());
+            console.Run(() =>
+            {
+                entry.Update();
+                registryConnectionManager?.Update(); // 更新 RegistryConnectionManager 狀態機
+            });
 
+            // 優雅關閉
             foreach (var shutdown in shutdownTasks)
             {
                 shutdown();
@@ -55,82 +150,5 @@ namespace PinionCore.Consoles.Chat1.Server
             listenable.StreamableLeaveEvent -= service.Leave;
             service.Dispose();
         }
-
-        private static (int tcpPort, int webPort) ParsePorts(string[] args)
-        {
-            var tcpPort = 0;
-            var webPort = 0;
-
-            if (args == null || args.Length == 0)
-            {
-                return (tcpPort, webPort);
-            }
-
-            var numericArgs = new System.Collections.Generic.List<int>();
-
-            for (var i = 0; i < args.Length; i++)
-            {
-                var current = args[i];
-                if (MatchesSwitch(current, TcpSwitches) && TryReadPort(args, ref i, out var parsedTcp))
-                {
-                    tcpPort = parsedTcp;
-                    continue;
-                }
-
-                if (MatchesSwitch(current, WebSwitches) && TryReadPort(args, ref i, out var parsedWeb))
-                {
-                    webPort = parsedWeb;
-                    continue;
-                }
-
-                if (!string.IsNullOrWhiteSpace(current) && !current.StartsWith("-", StringComparison.Ordinal) && int.TryParse(current, out var numeric))
-                {
-                    numericArgs.Add(numeric);
-                }
-            }
-
-            if (tcpPort == 0 && numericArgs.Count > 0)
-            {
-                tcpPort = numericArgs[0];
-            }
-
-            if (webPort == 0 && numericArgs.Count > 1)
-            {
-                webPort = numericArgs[1];
-            }
-
-            return (tcpPort, webPort);
-        }
-
-        private static bool TryReadPort(string[] args, ref int index, out int port)
-        {
-            port = 0;
-            if (index + 1 >= args.Length)
-            {
-                return false;
-            }
-
-            if (int.TryParse(args[index + 1], out port))
-            {
-                index++;
-                return true;
-            }
-
-            return false;
-        }
-
-        private static bool MatchesSwitch(string value, string[] candidates)
-        {
-            foreach (var candidate in candidates)
-            {
-                if (string.Equals(value, candidate, StringComparison.OrdinalIgnoreCase))
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
     }
 }
-
