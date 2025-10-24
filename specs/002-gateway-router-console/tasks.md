@@ -151,8 +151,8 @@ start /B .\PinionCore.Consoles.Gateway.Router.exe
 ### 實作任務
 
 - [ ] T026 [P] [US2] 實作 RegistryClientService 在 PinionCore.Consoles.Chat1.Server/Services/RegistryClientService.cs (封裝 Gateway.Registry，提供連線管理)
-- [ ] T027 [P] [US2] 實作 ExponentialBackoffReconnector 在 PinionCore.Consoles.Chat1.Server/Services/ExponentialBackoffReconnector.cs (指數退避重連，1s-60s)
-- [ ] T028 [P] [US2] 實作 RegistryConnectionManager 在 PinionCore.Consoles.Chat1.Server/Services/RegistryConnectionManager.cs (管理連線狀態，偵測斷線)
+- [X] T027 [P] [US2] 實作 ExponentialBackoffReconnector 在 PinionCore.Consoles.Chat1.Server/Services/ExponentialBackoffReconnector.cs (指數退避重連，1s-60s)
+- [X] T028 [P] [US2] 實作 RegistryConnectionManager 在 PinionCore.Consoles.Chat1.Server/Services/RegistryConnectionManager.cs (管理連線狀態，偵測斷線)
 - [ ] T029 [US2] 在 Chat1.Server Program.cs 添加命令列參數解析 (router-host, router-port, group)
 - [ ] T030 [US2] 在 Chat1.Server Program.cs 實作 Registry Client 初始化 (當提供 router-host 時)
 - [ ] T031 [US2] 實作 Registry Agent 連接邏輯 (使用 Tcp.Connector 連接到 Router Registry 端點，FR-031)

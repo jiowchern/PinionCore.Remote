@@ -69,7 +69,118 @@ static partial void _Create(ref PinionCore.Remote.IProtocol protocol);
 - 預設支援基礎型別與陣列
 - IProtocol.SerializeTypes 提供需序列化的型別清單
 
-#### 5. IDisposable 資源釋放模式
+#### 5. StatusMachine 狀態管理模式
+
+**使用 `PinionCore.Utility.StatusMachine` 管理複雜狀態轉換**：
+
+```csharp
+// 定義狀態類別，實作 IStatus 介面
+public class ConnectedState : PinionCore.Utility.IStatus
+{
+    private readonly SomeService _service;
+
+    public event Action OnDisconnected;  // 狀態轉換事件
+
+    public ConnectedState(SomeService service)
+    {
+        _service = service;
+    }
+
+    void IStatus.Enter()
+    {
+        // 進入狀態時執行：註冊資源、訂閱事件
+        _service.ConnectionLost += HandleConnectionLost;
+        Console.WriteLine("Connected state entered");
+    }
+
+    void IStatus.Update()
+    {
+        // 每次循環更新：檢查狀態、處理邏輯
+        // 可為空（如果不需要持續更新）
+    }
+
+    void IStatus.Leave()
+    {
+        // 離開狀態時執行：清理資源、取消訂閱
+        _service.ConnectionLost -= HandleConnectionLost;
+        Console.WriteLine("Connected state left");
+    }
+
+    private void HandleConnectionLost()
+    {
+        OnDisconnected?.Invoke();  // 觸發狀態轉換
+    }
+}
+
+// 使用 StatusMachine 管理狀態
+public class ConnectionManager
+{
+    private readonly PinionCore.Utility.StatusMachine _machine;
+
+    public ConnectionManager()
+    {
+        _machine = new PinionCore.Utility.StatusMachine();
+    }
+
+    public void Start()
+    {
+        var connectedState = new ConnectedState(_service);
+        connectedState.OnDisconnected += HandleDisconnected;
+        _machine.Push(connectedState);  // Push 新狀態到佇列
+    }
+
+    private void HandleDisconnected()
+    {
+        var reconnectingState = new ReconnectingState(_service);
+        _machine.Push(reconnectingState);  // 轉換到重連狀態
+    }
+
+    public void Update()
+    {
+        _machine.Update();  // 驅動狀態機：處理狀態轉換與更新
+    }
+
+    public void Shutdown()
+    {
+        _machine.Termination();  // 終止狀態機，呼叫當前狀態的 Leave()
+    }
+}
+```
+
+**核心概念**：
+- **IStatus 介面**：定義狀態生命週期
+  - `Enter()`: 進入狀態時執行（註冊、訂閱）
+  - `Update()`: 每次循環更新（可為空）
+  - `Leave()`: 離開狀態時執行（清理、取消訂閱）
+- **StatusMachine**：管理狀態佇列與轉換
+  - `Push(IStatus)`: 添加新狀態到佇列
+  - `Update()`: 處理狀態轉換（Leave -> Enter）並更新當前狀態
+  - `Termination()`: 終止並清理當前狀態
+
+**狀態轉換機制**：
+- 使用事件驅動轉換（狀態類別定義事件，外部訂閱並 Push 新狀態）
+- StatusMachine 自動處理 `Leave()` -> `Enter()` 轉換
+- 每次 `Update()` 先檢查佇列，再更新當前狀態
+
+**適用場景**：
+- ✅ **凡是要用 enum 來控制程序走向的代碼都可以用此模式**（避免大量 switch/if 判斷）
+- ✅ 複雜的連線狀態管理（Disconnected -> Connecting -> Connected -> Reconnecting）
+- ✅ 使用者互動流程（Login -> Chatroom -> Lobby）
+- ✅ 需要清晰的狀態進入/離開邏輯
+- ✅ 狀態之間有資源註冊/取消訂閱需求
+
+**核心優點**：
+- 清晰的狀態生命週期管理（Enter/Update/Leave）
+- 自動處理狀態轉換，避免手動管理複雜性
+- 資源管理集中在狀態類別，避免洩漏
+- 事件驅動設計，解耦狀態之間的依賴
+- 取代 enum + switch 模式，提高可維護性
+
+**參考範例**：
+- `PinionCore.Remote.Gateway/Hosts/User.cs`: 版本驗證 -> Roster 狀態轉換
+- `PinionCore.Consoles.Chat1.Client/Console.cs`: Login -> Chatroom 狀態轉換
+
+#### 6. IDisposable 資源釋放模式
 
 **使用 `_Dispose` 閉包模式處理延遲初始化資源**：
 

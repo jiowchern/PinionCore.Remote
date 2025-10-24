@@ -11,6 +11,9 @@
     <ProjectReference Include="..\\PinionCore.Remote\PinionCore.Remote.csproj" />
     <ProjectReference Include="..\\PinionCore.Remote.Server\PinionCore.Remote.Server.csproj" />
     <ProjectReference Include="..\\PinionCore.Utility\PinionCore.Utility\PinionCore.Utility.csproj" />
+    <ProjectReference Include="..\PinionCore.Remote.Gateway\PinionCore.Remote.Gateway.csproj" />
+    <ProjectReference Include="..\PinionCore.Network\PinionCore.Network.csproj" />
+    <ProjectReference Include="..\PinionCore.Remote.Ghost\PinionCore.Remote.Ghost.csproj" />
   </ItemGroup>
 </Project>
 
