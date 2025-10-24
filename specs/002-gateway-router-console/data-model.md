@@ -367,67 +367,6 @@ public enum AgentState
 
 ---
 
-### 3.3 AgentWorker 資料結構
-
-**類別**: `AgentWorker` (應用程式層實作)
-
-**職責**: 管理單一 Agent 的訊息循環生命週期
-
-**結構**:
-```csharp
-public class AgentWorker : IDisposable
-{
-    private readonly IAgent _agent;                      // 關聯的 Agent 實例
-    private readonly CancellationTokenSource _cts;       // 取消令牌
-    private readonly Task _loopTask;                     // 訊息循環執行緒
-
-    public string Id { get; }                            // Worker 唯一識別
-    public DateTime CreatedAt { get; }                   // 建立時間
-}
-```
-
-**訊息循環邏輯**:
-```csharp
-private void MessageLoop()
-{
-    while (!_cts.Token.IsCancellationRequested && _agent.Ping)
-    {
-        _agent.HandlePackets();   // 處理接收封包
-        _agent.HandleMessage();   // 處理訊息佇列
-        Thread.Sleep(1);          // 避免 CPU 100%
-    }
-}
-```
-
----
-
-### 3.4 AgentWorkerPool 資料結構
-
-**類別**: `AgentWorkerPool` (應用程式層實作)
-
-**職責**: 集中管理所有 AgentWorker,支援批次關閉
-
-**結構**:
-```csharp
-public class AgentWorkerPool : IDisposable
-{
-    private readonly List<AgentWorker> _workers = new List<AgentWorker>();
-    private readonly object _lock = new object();
-
-    public int Count { get; }  // 當前 Worker 數量
-
-    public void Add(AgentWorker worker);
-    public void Remove(AgentWorker worker);
-    public Task DisposeAllAsync(CancellationToken cancellationToken);
-}
-```
-
-**使用場景**:
-- Router Console:管理所有連入的 Agent 與 Registry 連線
-- Enhanced Chat Client:管理單一 Agent 連線 (Pool 僅包含 1 個 Worker)
-
----
-
 ## 4. 最大相容性連線模型
 
 ### 4.1 連線來源類型
@@ -521,8 +460,8 @@ public interface IStreamable
 ```
 
 **實作來源**:
-- **Tcp.Peer**: 來自 `Tcp.Listener.AcceptEvent` 的 TCP 連線
-- **Web.Peer**: 來自 `Web.Listener.AcceptEvent` 的 WebSocket 連線
+- **Tcp.Peer**: 來自 `Server.Tcp.Listener` 的 TCP 連線,透過 `StreamableEnterEvent` 事件傳遞
+- **Web.Peer**: 來自 `Web.Listener` 的 WebSocket 連線,透過 `StreamableEnterEvent` 事件傳遞
 - **Line.Frontend/Backend**: 來自 Gateway Router 的虛擬 Stream
 
 **統一處理**:
@@ -810,15 +749,15 @@ Agent → Router → Registry.Listener → Listenable → CompositeListenable �
 ### 9.2 資源估算
 
 **記憶體使用**:
-- 每個 AgentWorker: ~1-2 MB (執行緒 + Agent 實例 + 緩衝)
 - Router 實例: ~5-10 MB (狀態追蹤 + 協調器)
-- 預估總記憶體: 50 * 1.5MB + 10MB ≈ 85 MB
+- 每個 Agent 連線: ~100-200 KB (Agent 實例 + 緩衝)
+- 預估總記憶體: 50 * 0.15MB + 10MB ≈ 17.5 MB
 
 **執行緒數**:
-- 每個 AgentWorker: 1 個執行緒
-- 監聽器: 3 個執行緒 (Agent TCP, Agent Web, Registry TCP)
-- Router 內部: ~5 個執行緒 (非同步處理)
-- 預估總執行緒: 50 + 3 + 5 ≈ 58 個
+- Router 內部自動管理 Agent 生命週期與訊息循環,無需額外執行緒開銷
+- 監聽器: 3 個 Listener (Registry TCP, Session TCP, Session WebSocket)
+- Router 內部: ~5-10 個執行緒 (非同步處理、事件分發)
+- 預估總執行緒: ~8-13 個
 
 ---
 

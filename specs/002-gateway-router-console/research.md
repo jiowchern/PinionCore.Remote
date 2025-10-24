@@ -102,73 +102,82 @@ webListener.AcceptEvent += (peer) =>
 
 ### 1.3 Listener 與 Router 服務整合
 
-**整合模式** (來自測試範例 D:\develop\PinionCore.Remote\PinionCore.Remote.Gateway.Test\Tests.cs):
+**整合模式** (基於 PinionCore.Remote.Gateway 事件驅動架構):
+
+#### ✅ 正確的整合方式
+
+Router 暴露兩個 `IService` 端點,每個端點提供 `Join` 與 `Leave` 方法:
+
+```csharp
+// 來自 PinionCore.Remote.Soul.IService
+public interface IService : IDisposable
+{
+    void Join(IStreamable user);   // 處理連線進入
+    void Leave(IStreamable user);  // 處理連線離開
+}
+```
+
+整合時透過 `IListenable` 事件訂閱機制連接到 `IService`:
 
 ```csharp
 // 1. 建立 Router
 using var router = new Router(new Hosts.RoundRobinSelector());
 
-// 2. 建立 TCP Listener (Agent 端點)
-var agentTcpListener = new PinionCore.Network.Tcp.Listener();
-agentTcpListener.Bind(8001, 100);
+// 2. Registry 監聽器 - 接收 Chat Server 連線
+var registryTcpListener = new PinionCore.Remote.Server.Tcp.Listener();
+registryTcpListener.Bind(8003);
+Soul.IListenable registryListener = registryTcpListener;
+registryListener.StreamableEnterEvent += router.Registry.Join;   // 連線進入
+registryListener.StreamableLeaveEvent += router.Registry.Leave;  // 連線離開
 
-// 3. 將新連線導向 Router 的 Session 服務
-agentTcpListener.AcceptEvent += (peer) =>
-{
-    // 建立 Agent 處理該連線
-    var agent = PinionCore.Remote.Standalone.Provider.CreateAgent(protocol);
-    agent.Enable(peer);  // 綁定到 IStreamable
-    agent.Connect(router.Session);  // 連接到 Router 的 Session 端點
+// 3. Session 監聽器 - TCP + WebSocket 合併
+var sessionTcpListener = new PinionCore.Remote.Server.Tcp.Listener();
+sessionTcpListener.Bind(8001);
 
-    // 需要持續呼叫 HandlePackets() 與 HandleMessage()
-    StartAgentWorker(agent);
-};
+var sessionWebListener = new PinionCore.Remote.Web.Listener();
+sessionWebListener.Bind(8002);
 
-// 4. Registry Listener 同理
-var registryTcpListener = new PinionCore.Network.Tcp.Listener();
-registryTcpListener.Bind(8003, 100);
-registryTcpListener.AcceptEvent += (peer) =>
-{
-    // 類似處理,連接到 router.Registry
-};
+// 使用 ListenableAggregator 合併多個監聽器
+var sessionAggregator = new Soul.ListenableAggregator();
+sessionAggregator.Add(sessionTcpListener);
+sessionAggregator.Add(sessionWebListener);
+
+Soul.IListenable sessionListener = sessionAggregator;
+sessionListener.StreamableEnterEvent += router.Session.Join;   // 連線進入
+sessionListener.StreamableLeaveEvent += router.Session.Leave;  // 連線離開
 ```
 
-**挑戰**: 每個連線需要持續呼叫 `agent.HandlePackets()` 與 `agent.HandleMessage()` 維持通訊。
+#### 關鍵設計原則
 
-**解決方案**: 使用類似測試中的 `AgentWorker` 模式,建立背景執行緒池處理 Agent 訊息循環:
+1. **事件驅動整合**:
+   - `Server.Tcp.Listener` 與 `Web.Listener` 實作 `Soul.IListenable` 介面
+   - `IListenable.StreamableEnterEvent` 與 `StreamableLeaveEvent` 可直接訂閱 `IService` 的 `Join` 與 `Leave` 方法
+   - 當連線建立/中斷時,事件自動觸發並將 `IStreamable` 傳遞給 Router 處理
 
-```csharp
-public class AgentWorker : IDisposable
-{
-    private readonly IAgent _agent;
-    private readonly CancellationTokenSource _cts;
-    private readonly Task _loopTask;
+2. **Join/Leave 成對對接**:
+   - 每個 listener 必須同時訂閱 `StreamableEnterEvent` (對接 `Join`) 和 `StreamableLeaveEvent` (對接 `Leave`)
+   - `Leave` 事件確保連線斷開時 Router 正確清理資源
 
-    public AgentWorker(IAgent agent)
-    {
-        _agent = agent;
-        _cts = new CancellationTokenSource();
-        _loopTask = Task.Run(() =>
-        {
-            while (!_cts.Token.IsCancellationRequested)
-            {
-                _agent.HandlePackets();
-                _agent.HandleMessage();
-                Thread.Sleep(1);  // 避免 CPU 100%
-            }
-        }, _cts.Token);
-    }
+3. **ListenableAggregator 合併同端點監聽器**:
+   - Session 端點同時支援 TCP (8001) 與 WebSocket (8002)
+   - 使用 `Soul.ListenableAggregator` 將兩個監聽器合併為一個 `IListenable`
+   - Router 只需對接一個 sessionListener,無需關心底層協議差異
 
-    public void Dispose()
-    {
-        _cts.Cancel();
-        _loopTask.Wait(TimeSpan.FromSeconds(5));
-        _cts.Dispose();
-    }
-}
-```
+4. **無需手動 Agent 管理**:
+   - Router 內部自動處理 Agent 生命週期與訊息循環
+   - 開發者只需訂閱事件,無需自行呼叫 `HandlePackets()` 或 `HandleMessage()`
 
-**決策**: Router Console 將實作 AgentWorkerPool 管理所有連入的 Agent,確保訊息循環持續運行。
+#### Listener 數量統計
+
+| 元件類型 | 實際數量 | 說明 |
+|---------|---------|------|
+| **原始 Listener** | **3 個** | Registry TCP, Session TCP, Session WebSocket |
+| **聚合後的 IListenable** | **2 個** | Registry Listener, Session Aggregator |
+| **Router 端點** | **2 個** | router.Registry, router.Session |
+| **Connector** | **0 個** | Router 是純被動服務,不主動連接 |
+
+**決策**: Router Console 採用**事件驅動整合模式**,透過 `IListenable` 事件訂閱機制與 `ListenableAggregator` 合併多協議監聽器,簡化連線處理邏輯並確保資源正確清理。
+
 
 ---
 
