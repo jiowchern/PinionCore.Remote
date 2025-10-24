@@ -11,7 +11,6 @@ namespace PinionCore.Consoles.Gateway.Router
 {
     class Program
     {
-        private static CancellationTokenSource? _shutdownCts;
 
         static async Task<int> Main(string[] args)
         {
@@ -20,7 +19,6 @@ namespace PinionCore.Consoles.Gateway.Router
             var log = loggingConfig.Log;
 
             // 設置優雅關閉處理器
-            _shutdownCts = new CancellationTokenSource();
             var shutdownHandler = new GracefulShutdownHandler(TimeSpan.FromSeconds(20));
             shutdownHandler.Register(log);
 
@@ -95,7 +93,7 @@ namespace PinionCore.Consoles.Gateway.Router
 
                 // T023: 使用事件驅動架構，無需 Update 迴圈
                 // 只需保持主執行緒運行，等待關閉訊號
-                await Task.Delay(Timeout.Infinite, _shutdownCts.Token);
+                await Task.Delay(Timeout.Infinite, shutdownHandler.ShutdownToken);
 
                 return 0;
             }

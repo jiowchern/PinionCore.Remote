@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Linq.Expressions;
 
 namespace PinionCore.Consoles.Gateway.Router.Infrastructure
@@ -8,6 +8,7 @@ namespace PinionCore.Consoles.Gateway.Router.Infrastructure
     /// </summary>
     public class LoggingConfiguration : IDisposable
     {
+        private bool _disposed;
         private readonly PinionCore.Utility.Log _log;
         private readonly PinionCore.Utility.LogFileRecorder _fileRecorder;
 
@@ -67,17 +68,23 @@ namespace PinionCore.Consoles.Gateway.Router.Infrastructure
 
         /// <summary>
         /// 關閉日誌系統
+        /// 正確順序: 取消訂閱 → 關閉 Log → 關閉 FileRecorder
         /// </summary>
         public void Shutdown()
         {
+            if (_disposed) return;
+            // 1. 先取消訂閱檔案記錄事件，避免在 Shutdown 時寫入已關閉的 Stream
+            _log.RecordEvent -= _fileRecorder.Record;
+
+            // 2. 關閉 Log，此時剩餘訊息只會寫入 stdout
+            _log.Shutdown();  // 等待非同步佇列清空
+
+            // 3. 最後關閉 FileRecorder
             _fileRecorder.Save();
             _fileRecorder.Close();
-            _log.Shutdown();  // 等待非同步佇列清空
+            _disposed = true;
         }
 
-        public void Dispose()
-        {
-            Shutdown();
-        }
+        public void Dispose() => Shutdown();
     }
 }

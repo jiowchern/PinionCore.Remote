@@ -97,18 +97,18 @@
 
 ### 實作任務
 
-- [ ] T014 [US1] 實作 RouterService 在 PinionCore.Consoles.Gateway.Router/Services/RouterService.cs (封裝 Gateway.Router 實例，使用 RoundRobinSelector)
-- [ ] T015 [US1] 實作 AgentListenerService 在 PinionCore.Consoles.Gateway.Router/Services/AgentListenerService.cs (管理 Agent TCP + WebSocket 監聽器)
-- [ ] T016 [US1] 實作 RegistryListenerService 在 PinionCore.Consoles.Gateway.Router/Services/RegistryListenerService.cs (管理 Registry TCP 監聽器)
-- [ ] T017 [US1] 在 Program.cs Main 方法實作 Router 初始化邏輯 (建立 RouterService 實例)
-- [ ] T018 [US1] 在 Program.cs 實作監聽器綁定邏輯 (Agent TCP: 8001, Agent WebSocket: 8002, Registry TCP: 8003)
-- [ ] T019 [US1] 實作端口配置驗證 (範圍 1-65535，數字格式，FR-011)
-- [ ] T020 [US1] 實作端口衝突偵測與錯誤處理 (綁定失敗時顯示清晰錯誤訊息並終止，FR-012)
-- [ ] T021 [US1] 實作日誌輸出邏輯 (Log.Instance.RecordEvent += Console.WriteLine，FR-014)
-- [ ] T022 [US1] 實作 LogFileRecorder 配置 (RouterConsole_yyyy_MM_dd_HH_mm_ss.log，FR-015)
-- [ ] T023 [US1] 實作 Router Update 迴圈 (持續呼叫 router.Registry.Update() 與 router.Session.Update())
-- [ ] T024 [US1] 整合 GracefulShutdownHandler 到 Program.cs (捕捉訊號，呼叫關閉流程)
-- [ ] T025 [US1] 實作優雅關閉邏輯 (關閉 Listeners → AgentWorkerPool → Router → Logs，FR-021, FR-022)
+- [X] T014 [US1] 實作 RouterService 在 PinionCore.Consoles.Gateway.Router/Services/RouterService.cs (封裝 Gateway.Router 實例，使用 RoundRobinSelector)
+- [X] T015 [US1] 實作 AgentListenerService 在 PinionCore.Consoles.Gateway.Router/Services/AgentListenerService.cs (管理 Agent TCP + WebSocket 監聽器)
+- [X] T016 [US1] 實作 RegistryListenerService 在 PinionCore.Consoles.Gateway.Router/Services/RegistryListenerService.cs (管理 Registry TCP 監聽器)
+- [X] T017 [US1] 在 Program.cs Main 方法實作 Router 初始化邏輯 (建立 RouterService 實例)
+- [X] T018 [US1] 在 Program.cs 實作監聽器綁定邏輯 (Agent TCP: 8001, Agent WebSocket: 8002, Registry TCP: 8003)
+- [X] T019 [US1] 實作端口配置驗證 (範圍 1-65535，數字格式，FR-011)
+- [X] T020 [US1] 實作端口衝突偵測與錯誤處理 (綁定失敗時顯示清晰錯誤訊息並終止，FR-012)
+- [X] T021 [US1] 實作日誌輸出邏輯 (Log.Instance.RecordEvent += Console.WriteLine，FR-014)
+- [X] T022 [US1] 實作 LogFileRecorder 配置 (RouterConsole_yyyy_MM_dd_HH_mm_ss.log，FR-015)
+- [X] T023 [US1] 實作 Router Update 迴圈 (持續呼叫 router.Registry.Update() 與 router.Session.Update())
+- [X] T024 [US1] 整合 GracefulShutdownHandler 到 Program.cs (捕捉訊號，呼叫關閉流程)
+- [X] T025 [US1] 實作優雅關閉邏輯 (關閉 Listeners → AgentWorkerPool → Router → Logs，FR-021, FR-022)
 
 ### 驗收測試
 

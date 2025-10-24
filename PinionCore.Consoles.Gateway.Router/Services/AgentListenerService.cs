@@ -54,7 +54,7 @@ namespace PinionCore.Consoles.Gateway.Router.Services
 
                 // 建立 WebSocket 監聽器
                 var webListener = new Web.Listener();
-                webListener.Bind($"http://0.0.0.0:{webPort}/");
+                webListener.Bind($"http://localhost:{webPort}/");
                 _webListener = webListener;
                 _log.WriteInfo($"Agent WebSocket 監聽已啟動，端口: {webPort}");
 
