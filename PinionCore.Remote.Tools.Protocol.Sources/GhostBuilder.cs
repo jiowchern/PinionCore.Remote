@@ -102,15 +102,30 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
             }
 
             ClassAndTypess = classAndTypess;
-            Types = new HashSet<TypeSyntax>(_WithOutNamespaceFilter(types), SyntaxNodeComparer.Default);
-            Ghosts = new HashSet<ClassDeclarationSyntax>(ghosts, SyntaxNodeComparer.Default);
-            EventProxys = new HashSet<ClassDeclarationSyntax>(eventProxys, SyntaxNodeComparer.Default);
+            var typeSyntaxComparer = (System.Collections.Generic.IEqualityComparer<TypeSyntax>)SyntaxNodeComparer.Default;
+            var classSyntaxComparer = (System.Collections.Generic.IEqualityComparer<ClassDeclarationSyntax>)SyntaxNodeComparer.Default;
+
+            Types = types
+                .Distinct(typeSyntaxComparer)
+                .OrderBy(t => t.ToFullString(), System.StringComparer.Ordinal)
+                .ToArray();
+            Ghosts = ghosts
+                .Distinct(classSyntaxComparer)
+                .OrderBy(g => g.Identifier.ToFullString(), System.StringComparer.Ordinal)
+                .ToArray();
+            EventProxys = eventProxys
+                .Distinct(classSyntaxComparer)
+                .OrderBy(e => e.Identifier.ToFullString(), System.StringComparer.Ordinal)
+                .ToArray();
 
 
-            var all = string.Join("", Types.Select(t => t.ToFullString()).Union(Ghosts.Select(g => g.Identifier.ToFullString())).Union(EventProxys.Select(e => e.Identifier.ToFullString())));
+            var all = Types.Select(t => t.ToFullString())
+                .Concat(Ghosts.Select(g => g.Identifier.ToFullString()))
+                .Concat(EventProxys.Select(e => e.Identifier.ToFullString()))
+                .OrderBy(v => v, System.StringComparer.Ordinal);
 
 
-            Namespace = $"PinionCoreRemoteProtocol{all.ToMd5().ToMd5String().Replace("-", "")}";
+            Namespace = $"PinionCoreRemoteProtocol{string.Concat(all).ToMd5().ToMd5String().Replace("-", "")}";
 
 
         }

@@ -21,7 +21,8 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
                                                                                 where symbol.IsGenericType == false && symbol.IsAbstract && additional(symbol)
                                                                                 select symbol).SelectMany(s => s.AllInterfaces.Concat(new[] { s }));
 
-            return new System.Collections.Generic.HashSet<INamedTypeSymbol>(symbols, SymbolEqualityComparer.Default);
+            var unique = new System.Collections.Generic.HashSet<INamedTypeSymbol>(symbols, SymbolEqualityComparer.Default);
+            return unique.OrderBy(symbol => symbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat), System.StringComparer.Ordinal);
         }
 
         public static bool AllGhostable(this Compilation compilation, System.Collections.Generic.IEnumerable<TypeSyntax> types)

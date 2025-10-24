@@ -40,8 +40,12 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
                     _Collect(arraySymbol, serializable);
                 }
             }
+            var typeNames = serializable
+                .Select(type => type.ToDisplayString())
+                .Distinct(System.StringComparer.Ordinal)
+                .OrderBy(name => name, System.StringComparer.Ordinal);
 
-            Code = string.Join(",", from type in serializable select $"typeof({type.ToDisplayString()})");
+            Code = string.Join(",", typeNames.Select(name => $"typeof({name})"));
         }
 
         private void _Collect(ITypeSymbol typeSymbol, List<ITypeSymbol> serializables)

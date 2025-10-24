@@ -19,7 +19,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
                                       let namespaceSyntax = classSyntax.Ancestors().OfType<NamespaceDeclarationSyntax>().Single()
                                       select $"new global::{namespaceSyntax.Name}.{classSyntax.Identifier}()";
 
-            Code = string.Join(",", ret);
+            Code = string.Join(",", ret.OrderBy(item => item, System.StringComparer.Ordinal));
 
         }
     }

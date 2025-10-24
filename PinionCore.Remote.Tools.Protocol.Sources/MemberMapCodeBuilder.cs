@@ -26,12 +26,12 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
                          from a in GetMembers<EventFieldDeclarationSyntax>(_interfaces)
                          select _BuildCode(a.Item1, a.Item2, memberIdProvider.GetIdWithSoul(a.Item2));
 
-            EventInfosCode = string.Join(",", events);
+            EventInfosCode = string.Join(",", events.OrderBy(e => e, System.StringComparer.Ordinal));
 
             IEnumerable<string> methods = from a in GetMembers<MethodDeclarationSyntax>(_interfaces)
                                           select _BuildCode(a.Item1, a.Item2, memberIdProvider.GetIdWithSoul(a.Item2));
 
-            MethodInfosCode = string.Join(",", methods);
+            MethodInfosCode = string.Join(",", methods.OrderBy(m => m, System.StringComparer.Ordinal));
 
             /*IEnumerable<string> methods = from interfaceSyntax in _interfaces
                                           from methodSyntax in interfaceSyntax.DescendantNodes().OfType<MethodDeclarationSyntax>()
@@ -43,7 +43,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
                                              from propertySyntax in interfaceSyntax.DescendantNodes().OfType<PropertyDeclarationSyntax>()
                                              select _BuildCode(interfaceSyntax, propertySyntax);
 
-            PropertyInfosCode = string.Join(",", properties);
+            PropertyInfosCode = string.Join(",", properties.OrderBy(p => p, System.StringComparer.Ordinal));
 
 
             IEnumerable<string> interfaces =
@@ -51,7 +51,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
 
                              select _BuildCode(interfaceSyntax);
 
-            InterfacesCode = string.Join(",", interfaces);
+            InterfacesCode = string.Join(",", interfaces.OrderBy(i => i, System.StringComparer.Ordinal));
         }
         public IEnumerable<System.Tuple<InterfaceDeclarationSyntax, T>> GetMembers<T>(IEnumerable<InterfaceDeclarationSyntax> interfaces)
         {
