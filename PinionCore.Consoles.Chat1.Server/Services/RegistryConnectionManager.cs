@@ -1,5 +1,6 @@
-using System;
+﻿using System;
 using PinionCore.Consoles.Chat1.Server.Services.RegistryConnectionStates;
+using PinionCore.Network.Tcp;
 using PinionCore.Utility;
 
 namespace PinionCore.Consoles.Chat1.Server.Services
@@ -62,15 +63,15 @@ namespace PinionCore.Consoles.Chat1.Server.Services
         private void TransitionToConnecting()
         {
             var connectingState = new ConnectingState(_registry, _routerHost, _routerPort, _log);
-            connectingState.OnConnected += () => TransitionToConnected();
+            connectingState.OnConnected += (peer) => TransitionToConnected(peer);
             connectingState.OnConnectFailed += () => TransitionToReconnecting();
             _machine.Push(connectingState);
         }
 
-        private void TransitionToConnected()
+        private void TransitionToConnected(Peer peer)
         {
             _reconnector.ResetRetryCount();  // 連接成功，重置重試計數
-            var connectedState = new ConnectedState(_registry, _log);
+            var connectedState = new ConnectedState(_registry, peer, _log);
             connectedState.OnDisconnected += () => TransitionToReconnecting();
             _machine.Push(connectedState);
         }

@@ -1,6 +1,8 @@
-using System;
+﻿using System;
+using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
+using PinionCore.Network.Tcp;
 using PinionCore.Utility;
 
 namespace PinionCore.Consoles.Chat1.Server.Services.RegistryConnectionStates
@@ -11,6 +13,7 @@ namespace PinionCore.Consoles.Chat1.Server.Services.RegistryConnectionStates
     internal class ConnectedState : IStatus
     {
         private readonly PinionCore.Remote.Gateway.Registry _registry;
+        private readonly Peer _Peer;
         private readonly PinionCore.Utility.Log _log;
         private CancellationTokenSource _monitorCts;
         private Task _monitorTask;
@@ -19,19 +22,28 @@ namespace PinionCore.Consoles.Chat1.Server.Services.RegistryConnectionStates
 
         public ConnectedState(
             PinionCore.Remote.Gateway.Registry registry,
+            Peer peer,
             PinionCore.Utility.Log log)
         {
             _registry = registry;
+            _Peer = peer;
             _log = log;
         }
 
         void IStatus.Enter()
         {
+            _Peer.SocketErrorEvent += _BreakEvent;
             _log.WriteInfo("Registry 狀態: 已連接");
 
             // 啟動斷線監控
             _monitorCts = new CancellationTokenSource();
             _monitorTask = MonitorConnectionAsync(_monitorCts.Token);
+        }
+
+        private void _BreakEvent(SocketError error)
+        {
+            _log.WriteInfo(() => $"Router 連線中斷，錯誤碼: {error}");
+            OnDisconnected?.Invoke();
         }
 
         void IStatus.Update()
@@ -41,32 +53,35 @@ namespace PinionCore.Consoles.Chat1.Server.Services.RegistryConnectionStates
 
         private async Task MonitorConnectionAsync(CancellationToken cancellationToken)
         {
-            try
-            {
-                while (!cancellationToken.IsCancellationRequested)
-                {
-                    if (_registry.Agent.Ping <= 0)  // 偵測斷線 (Ping 為 0 或負數表示斷線)
-                    {
-                        _log.WriteInfo("偵測到 Router 連線中斷");
-                        OnDisconnected?.Invoke();
-                        break;
-                    }
+            // 無法透過 agent.Ping  的狀態檢查是否斷線，改為監聽 SocketErrorEvent 事件處理斷線
+            //try
+            //{
+            //    while (!cancellationToken.IsCancellationRequested)
+            //    {
+            //        if (_registry.Agent.Ping <= 0)  // 偵測斷線 (Ping 為 0 或負數表示斷線)
+            //        {
+            //            _log.WriteInfo("偵測到 Router 連線中斷");
+            //            OnDisconnected?.Invoke();
+            //            break;
+            //        }
 
-                    await Task.Delay(1000, cancellationToken);
-                }
-            }
-            catch (OperationCanceledException)
-            {
-                // 正常取消
-            }
-            catch (Exception ex)
-            {
-                _log.WriteInfo(() => $"斷線監控錯誤: {ex.Message}");
-            }
+            //        await Task.Delay(1000, cancellationToken);
+            //    }
+            //}
+            //catch (OperationCanceledException)
+            //{
+            //    // 正常取消
+            //}
+            //catch (Exception ex)
+            //{
+            //    _log.WriteInfo(() => $"斷線監控錯誤: {ex.Message}");
+            //}
         }
 
         void IStatus.Leave()
         {
+            _Peer.SocketErrorEvent -= _BreakEvent;
+
             // 停止監控
             _monitorCts?.Cancel();
 

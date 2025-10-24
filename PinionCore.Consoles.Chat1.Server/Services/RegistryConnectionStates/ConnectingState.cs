@@ -1,8 +1,9 @@
-using System;
+﻿using System;
 using System.Net;
 using System.Threading.Tasks;
 using PinionCore.Utility;
 using PinionCore.Network;
+using PinionCore.Network.Tcp;
 
 namespace PinionCore.Consoles.Chat1.Server.Services.RegistryConnectionStates
 {
@@ -17,7 +18,7 @@ namespace PinionCore.Consoles.Chat1.Server.Services.RegistryConnectionStates
         private readonly PinionCore.Utility.Log _log;
         private bool _connectAttempted = false;
 
-        public event Action OnConnected;
+        public event Action<Peer> OnConnected;
         public event Action OnConnectFailed;
 
         public ConnectingState(
@@ -57,7 +58,7 @@ namespace PinionCore.Consoles.Chat1.Server.Services.RegistryConnectionStates
                 _registry.Agent.Enable(peer);
 
                 _log.WriteInfo("成功連接到 Router");
-                OnConnected?.Invoke();
+                OnConnected?.Invoke(peer);
             }
             catch (Exception ex)
             {

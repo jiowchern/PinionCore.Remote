@@ -242,6 +242,97 @@ public class MyService : IDisposable
 - 預設空操作確保安全性
 - 簡化 `Dispose()` 實作,無需多重 null 檢查
 
+
+#### 7. 網路斷線檢測模式
+
+**重要原則: 使用 Socket 事件而非 Ping 輪詢檢測斷線**
+
+```csharp
+// ❌ 錯誤做法: 使用 Agent.Ping 輪詢檢測斷線
+private async Task MonitorConnectionAsync(CancellationToken cancellationToken)
+{
+    while (!cancellationToken.IsCancellationRequested)
+    {
+        if (_registry.Agent.Ping <= 0)  // 不可靠: Ping 可能延遲或不準確
+        {
+            OnDisconnected?.Invoke();
+            break;
+        }
+        await Task.Delay(1000, cancellationToken);  // 浪費資源持續輪詢
+    }
+}
+
+// ✅ 正確做法: 訂閱 Peer.SocketErrorEvent 事件
+public class ConnectedState : IStatus
+{
+    private readonly PinionCore.Network.Tcp.Peer _peer;
+
+    public event Action OnDisconnected;
+
+    void IStatus.Enter()
+    {
+        // 訂閱 Socket 層級的錯誤事件
+        _peer.SocketErrorEvent += HandleSocketError;
+    }
+
+    private void HandleSocketError(System.Net.Sockets.SocketError error)
+    {
+        _log.WriteInfo(() => $"Socket 連線中斷，錯誤碼: {error}");
+        OnDisconnected?.Invoke();  // 即時觸發斷線處理
+    }
+
+    void IStatus.Leave()
+    {
+        // 必須取消訂閱，避免記憶體洩漏
+        _peer.SocketErrorEvent -= HandleSocketError;
+    }
+}
+```
+
+**為什麼使用事件而非輪詢**：
+
+| 比較項目 | Ping 輪詢 (❌) | Socket 事件 (✅) |
+|---------|---------------|----------------|
+| **反應速度** | 最多延遲 1 秒（輪詢間隔） | 即時響應（Socket 錯誤立即觸發） |
+| **資源消耗** | 持續佔用背景 Task + CPU | 零開銷（事件驅動） |
+| **準確性** | `Agent.Ping` 可能延遲或不準確 | Socket 層錯誤是最準確的斷線信號 |
+| **複雜度** | 需要 CancellationToken 管理 | 簡單的事件訂閱/取消訂閱 |
+| **記憶體** | Task 持續運行 | 僅事件處理器占用 |
+
+**實作要點**：
+1. **Peer 對象傳遞**: 連接成功時將 `Peer` 傳遞給 `ConnectedState`
+   ```csharp
+   public event Action<Peer> OnConnected;  // 連接事件帶 Peer 參數
+
+   OnConnected?.Invoke(peer);  // 傳遞 peer 對象
+   ```
+
+2. **Enter() 訂閱事件**: 進入連接狀態時訂閱 `SocketErrorEvent`
+   ```csharp
+   void IStatus.Enter()
+   {
+       _peer.SocketErrorEvent += HandleSocketError;
+   }
+   ```
+
+3. **Leave() 取消訂閱**: 離開狀態時必須取消訂閱，避免記憶體洩漏
+   ```csharp
+   void IStatus.Leave()
+   {
+       _peer.SocketErrorEvent -= HandleSocketError;
+   }
+   ```
+
+**常見的 SocketError 類型**：
+- `SocketError.ConnectionReset`: 連線被遠端主機重置
+- `SocketError.ConnectionAborted`: 連線被中止
+- `SocketError.TimedOut`: 連線超時
+- `SocketError.NetworkDown`: 網路不可用
+- `SocketError.HostUnreachable`: 無法連接到主機
+
+**參考實作**：
+- `PinionCore.Consoles.Chat1.Server/Services/RegistryConnectionStates/ConnectedState.cs`: Registry Client 斷線檢測
+- `PinionCore.Consoles.Chat1.Server/Services/RegistryConnectionStates/ConnectingState.cs`: Peer 對象傳遞
 ## 開發流程
 
 ### 新增通訊介面
