@@ -1,4 +1,4 @@
-using PinionCore.Network;
+﻿using PinionCore.Network;
 using PinionCore.Remote.Server;
 using PinionCore.Remote.Soul;
 using PinionCore.Utility;
@@ -15,8 +15,6 @@ namespace PinionCore.Consoles.Gateway.Router.Services
         private readonly Log _log;
         private PinionCore.Remote.Soul.IListenable? _listener;
         private bool _disposed = false;
-        private int _registryCount = 0;
-        private IService? _registryEndpoint;
 
         System.Action _Dispose;
 
@@ -39,26 +37,24 @@ namespace PinionCore.Consoles.Gateway.Router.Services
             if (registryEndpoint == null)
                 throw new ArgumentNullException(nameof(registryEndpoint));
 
-            _registryEndpoint = registryEndpoint;
-
             try
             {
                 // 建立 TCP 監聽器
                 var tcpListener  = new Tcp.Listener();
                 tcpListener.Bind(port, backlog: 100);
-                _listener = tcpListener;
+                _listener = tcpListener;                
                 _log.WriteInfo($"Registry TCP 監聽已啟動，端口: {port}");
 
-                // T033 & T034: 事件驅動整合，添加連接/斷線日誌
-                _listener.StreamableEnterEvent += _OnRegistryConnected;
-                _listener.StreamableLeaveEvent += _OnRegistryDisconnected;
+                // 事件驅動整合：StreamableEnterEvent → Registry.Join
+                _listener.StreamableEnterEvent += registryEndpoint.Join;
+                _listener.StreamableLeaveEvent += registryEndpoint.Leave;
 
                 _log.WriteInfo("Registry 監聽器已成功綁定到 Registry 端點");
 
                 _Dispose = () =>
                 {
-                    _listener.StreamableEnterEvent -= _OnRegistryConnected;
-                    _listener.StreamableLeaveEvent -= _OnRegistryDisconnected;
+                    _listener.StreamableEnterEvent -= registryEndpoint.Join;
+                    _listener.StreamableLeaveEvent -= registryEndpoint.Leave;
                     tcpListener.Close();
                 };
             }
@@ -68,30 +64,6 @@ namespace PinionCore.Consoles.Gateway.Router.Services
                 Dispose();
                 throw;
             }
-        }
-
-        /// <summary>
-        /// T033: 處理 Registry 連接事件
-        /// </summary>
-        private void _OnRegistryConnected(IStreamable streamable)
-        {
-            _registryCount++;
-            _log.WriteInfo(() => $"Registry 連接建立 (當前連接數: {_registryCount})");
-
-            // 將連接傳遞給 Registry 端點處理
-            _registryEndpoint?.Join(streamable);
-        }
-
-        /// <summary>
-        /// T034: 處理 Registry 斷線事件
-        /// </summary>
-        private void _OnRegistryDisconnected(IStreamable streamable)
-        {
-            _registryCount--;
-            _log.WriteInfo(() => $"Registry 連接中斷 (當前連接數: {_registryCount})");
-
-            // 通知 Registry 端點處理斷線
-            _registryEndpoint?.Leave(streamable);
         }
 
         public void Dispose()

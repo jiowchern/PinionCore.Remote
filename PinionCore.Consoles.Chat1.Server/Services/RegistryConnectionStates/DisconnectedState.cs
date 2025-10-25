@@ -9,6 +9,7 @@ namespace PinionCore.Consoles.Chat1.Server.Services.RegistryConnectionStates
     internal class DisconnectedState : IStatus
     {
         private readonly PinionCore.Utility.Log _log;
+        private bool _connectTriggered = false;
 
         public event Action OnStartConnect;
 
@@ -24,8 +25,12 @@ namespace PinionCore.Consoles.Chat1.Server.Services.RegistryConnectionStates
 
         void IStatus.Update()
         {
-            // 觸發連接嘗試
-            OnStartConnect?.Invoke();
+            // 只觸發一次連接嘗試
+            if (!_connectTriggered)
+            {
+                _connectTriggered = true;
+                OnStartConnect?.Invoke();
+            }
         }
 
         void IStatus.Leave()

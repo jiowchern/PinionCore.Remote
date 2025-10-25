@@ -13,6 +13,11 @@ namespace PinionCore.Consoles.Chat1.Server
     {
         static void Main(string[] args)
         {
+            PinionCore.Utility.Log.Instance.RecordEvent += (m) =>
+            {
+                // 在此可加入額外的日誌處理邏輯（如寫入檔案等）
+                System.Console.WriteLine(m);
+            };
             // T029: 解析命令列參數
             var options = CommandLineParser.Parse(args);
 
@@ -63,45 +68,67 @@ namespace PinionCore.Consoles.Chat1.Server
                 // 建立 Registry Client
                 registry = new PinionCore.Remote.Gateway.Registry(protocol, options.Group);
 
-                // T032: 啟動 AgentWorker (持續處理 registry.Agent.HandlePackets/HandleMessage)
-                var agentWorkerRunning = true;
-                var agentWorkerTask = Task.Run(() =>
+                // T031: 建立 Registry Agent 連接邏輯 (使用 Tcp.Connector)
+                var connector = new PinionCore.Network.Tcp.Connector();
+                var endpoint = new IPEndPoint(IPAddress.Parse(options.RouterHost), options.RouterPort.Value);
+
+                // 嘗試連接
+                try
                 {
-                    while (agentWorkerRunning)
+                    var peer = connector.Connect(endpoint).Result; // 同步等待連接
+                    
+                    registry.Agent.VersionCodeErrorEvent += (expected, actual) =>
                     {
-                        registry.Agent.HandlePackets();
-                        registry.Agent.HandleMessage();
-                        System.Threading.Thread.Sleep(1); // 短暫休眠避免忙等待
-                    }
-                });
+                        System.Console.WriteLine($"Version code mismatch: expected {expected}, got {actual}. ");                      
+                    };
+                    registry.Agent.Enable(peer);
 
-                registryWorkerDispose = () =>
+                    System.Console.WriteLine($"Successfully connected to Router at {options.RouterHost}:{options.RouterPort}");
+
+                    // T032: 啟動 AgentWorker (持續處理 registry.Agent.HandlePackets/HandleMessage)
+                    var agentWorkerRunning = true;
+                    var agentWorkerTask = Task.Run(() =>
+                    {
+                        while (agentWorkerRunning)
+                        {
+                            registry.Agent.HandlePackets();
+                            registry.Agent.HandleMessage();
+                            System.Threading.Thread.Sleep(1); // 短暫休眠避免忙等待
+                        }
+                    });
+
+                    registryWorkerDispose = () =>
+                    {
+                        agentWorkerRunning = false;
+                        agentWorkerTask.Wait(TimeSpan.FromSeconds(2));
+                    };
+
+                    // 添加 Registry.Listener 到 CompositeListenable
+                    listeners.Add(registry.Listener);
+
+                    // 建立 RegistryConnectionManager (用於斷線偵測與重連)
+                    var log = PinionCore.Utility.Log.Instance;
+                    registryConnectionManager = new RegistryConnectionManager(
+                        registry,
+                        options.RouterHost,
+                        options.RouterPort.Value,
+                        log
+                    );
+
+                    registryConnectionManager.Start();
+
+                    shutdownTasks.Add(() =>
+                    {
+                        registryWorkerDispose?.Invoke();
+                        registryConnectionManager?.Dispose();
+                        registry?.Dispose();
+                    });
+                }
+                catch (Exception ex)
                 {
-                    agentWorkerRunning = false;
-                    agentWorkerTask.Wait(TimeSpan.FromSeconds(2));
-                };
-
-                // 添加 Registry.Listener 到 CompositeListenable
-                listeners.Add(registry.Listener);
-
-                // T031: 建立 RegistryConnectionManager (負責連接、斷線偵測與重連)
-                var log = PinionCore.Utility.Log.Instance;
-                registryConnectionManager = new RegistryConnectionManager(
-                    registry,
-                    options.RouterHost,
-                    options.RouterPort.Value,
-                    log
-                );
-
-                // 啟動連接管理器 (會自動建立連接)
-                registryConnectionManager.Start();
-
-                shutdownTasks.Add(() =>
-                {
-                    registryWorkerDispose?.Invoke();
-                    registryConnectionManager?.Dispose();
-                    registry?.Dispose();
-                });
+                    System.Console.WriteLine($"Failed to connect to Router: {ex.Message}");
+                    System.Console.WriteLine("Chat Server will only use direct connection modes.");
+                }
             }
 
             // 顯示啟用的模式

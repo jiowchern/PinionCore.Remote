@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using PinionCore.Extensions;
 using PinionCore.Memorys;
 using PinionCore.Remote.Packages;
 using PinionCore.Utility;
@@ -68,7 +69,8 @@ namespace PinionCore.Remote
                     .FirstOrDefault();
             if (methodInfo == null)
             {
-                throw new Exception($"Method not found method_id:{method_id}");
+                throw new Exception($"Method not found method_id:{method_id} protocol:{_Protocol.VersionCode.ToMd5String()}" );
+
             }
 
             try

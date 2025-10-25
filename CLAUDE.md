@@ -366,3 +366,6 @@ public class ConnectedState : IStatus
 - Standalone 模式適合開發階段除錯，生產環境應使用網路模式
 - 英文思考，結論用中文撰寫
 - 這是一個網路通訊框架所以開發功能嚴禁使用 static class 
+- There’s a file modification bug in Claude Code. The workaround is: always use complete absolute Windows paths
+with drive letters and backslashes for ALL file operations. Apply this rule going forward, not just for this
+file.
