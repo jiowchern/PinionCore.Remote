@@ -1,6 +1,5 @@
 ﻿
 using System;
-using System.Reactive;
 using PinionCore.Remote.Gateway.Hosts;
 using PinionCore.Remote.Gateway.Registrys;
 using PinionCore.Remote.Soul;
