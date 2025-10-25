@@ -19,6 +19,11 @@ namespace PinionCore.Consoles.Chat1.Client.Configuration
         /// </summary>
         public int? RouterPort { get; set; }
 
+        /// <summary>
+        /// 使用 WebSocket 協議連接 (預設 false，使用 TCP)
+        /// </summary>
+        public bool UseWebSocket { get; set; }
+
         // ===== 模式判斷屬性 =====
 
         /// <summary>
@@ -76,10 +81,14 @@ Enhanced Chat Client 使用說明:
 Router 模式選項:
   --router-host=HOST          Router 主機位址 (可選)
   --router-port=PORT          Router Agent 端口 (可選)
+  --websocket                 使用 WebSocket 協議 (預設使用 TCP)
 
 範例:
-  # 使用 Router 模式連接
+  # 使用 Router 模式連接 (TCP)
   PinionCore.Consoles.Chat1.Client --router-host=127.0.0.1 --router-port=8001
+
+  # 使用 Router 模式連接 (WebSocket)
+  PinionCore.Consoles.Chat1.Client --router-host=127.0.0.1 --router-port=8002 --websocket
 
   # 使用傳統直連模式 (不提供參數,啟動後互動輸入 Server IP 與端口)
   PinionCore.Consoles.Chat1.Client

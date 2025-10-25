@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Net;
+using System.Net.WebSockets;
 using System.Threading.Tasks;
 using PinionCore.Remote.Gateway;
-
 using PinionCore.Remote.Ghost;
 
 namespace PinionCore.Consoles.Chat1.Client
@@ -10,23 +10,25 @@ namespace PinionCore.Consoles.Chat1.Client
     /// <summary>
     /// Gateway Router 模式的 Chat Client Console
     /// 透過 PinionCore.Remote.Gateway.Agent 連接到 Router
+    /// 支援 TCP 和 WebSocket 兩種協議
     /// </summary>
     internal sealed class GatewayConsole : Console
     {
-        private readonly PinionCore.Network.Tcp.Connector _connector;
         private readonly PinionCore.Remote.Gateway.Agent _RouterAgent;
-        IAgent _Agent => _RouterAgent;
+        private IAgent _Agent => _RouterAgent;
         private bool _connected;
-
+        private object? _connector;
 
         public GatewayConsole(PinionCore.Remote.Gateway.Agent agent)
             : base(agent)
         {
-            _connector = new PinionCore.Network.Tcp.Connector();
             _RouterAgent = agent;
         }
 
-        public bool Connect(string routerHost, int routerPort)
+        /// <summary>
+        /// 使用 TCP 連接到 Router
+        /// </summary>
+        public bool ConnectTcp(string routerHost, int routerPort)
         {
             if (_connected)
             {
@@ -36,14 +38,16 @@ namespace PinionCore.Consoles.Chat1.Client
 
             try
             {
-                System.Console.WriteLine($"Connecting to Router at {routerHost}:{routerPort}...");
+                System.Console.WriteLine($"[TCP] Connecting to Router at {routerHost}:{routerPort}...");
+                var tcpConnector = new PinionCore.Network.Tcp.Connector();
                 var endpoint = new IPEndPoint(IPAddress.Parse(routerHost), routerPort);
-                var peer = _connector.Connect(endpoint).GetAwaiter().GetResult();
+                var peer = tcpConnector.Connect(endpoint).GetAwaiter().GetResult();
 
                 Agent.Enable(peer);
+                _connector = tcpConnector;
                 _connected = true;
 
-                System.Console.WriteLine($"Connected to Router. Waiting for routing allocation...");
+                System.Console.WriteLine($"[TCP] Connected to Router. Waiting for routing allocation...");
                 return true;
             }
             catch (FormatException)
@@ -56,7 +60,52 @@ namespace PinionCore.Consoles.Chat1.Client
             }
             catch (Exception ex)
             {
-                System.Console.WriteLine($"錯誤: 連接失敗 - {ex.Message}");
+                System.Console.WriteLine($"錯誤: TCP 連接失敗 - {ex.Message}");
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// 使用 WebSocket 連接到 Router
+        /// </summary>
+        public bool ConnectWebSocket(string routerHost, int routerPort)
+        {
+            if (_connected)
+            {
+                System.Console.WriteLine("Already connected to Router.");
+                return true;
+            }
+
+            try
+            {
+                System.Console.WriteLine($"[WebSocket] Connecting to Router at ws://{routerHost}:{routerPort}/...");
+                var clientWebSocket = new ClientWebSocket();
+                var webConnector = new PinionCore.Network.Web.Connecter(clientWebSocket);
+                var address = $"ws://{routerHost}:{routerPort}/";
+
+                bool connected = webConnector.ConnectAsync(address).GetAwaiter().GetResult();
+
+                if (!connected)
+                {
+                    System.Console.WriteLine($"錯誤: WebSocket 連接失敗");
+                    return false;
+                }
+
+                Agent.Enable(webConnector);
+                _connector = webConnector;
+                _connected = true;
+
+                System.Console.WriteLine($"[WebSocket] Connected to Router. Waiting for routing allocation...");
+                return true;
+            }
+            catch (WebSocketException ex)
+            {
+                System.Console.WriteLine($"錯誤: WebSocket 連接失敗 - {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                System.Console.WriteLine($"錯誤: WebSocket 連接失敗 - {ex.Message}");
             }
 
             return false;
@@ -98,7 +147,24 @@ namespace PinionCore.Consoles.Chat1.Client
             }
 
             Agent.Disable();
-            _connector.Disconnect().GetAwaiter().GetResult();
+
+            // 處理不同類型的 Connector
+            if (_connector != null)
+            {
+                if (_connector is PinionCore.Network.Tcp.Connector tcpConnector)
+                {
+                    tcpConnector.Disconnect().GetAwaiter().GetResult();
+                }
+                else if (_connector is PinionCore.Network.Web.Connecter webConnector)
+                {
+                    webConnector.DisconnectAsync().GetAwaiter().GetResult();
+                    // Web.Connecter 繼承 Web.Peer，Peer 實作 IDisposable
+                    ((IDisposable)webConnector).Dispose();
+                }
+
+                _connector = null;
+            }
+
             _connected = false;
             System.Console.WriteLine("Disconnected from Router.");
         }

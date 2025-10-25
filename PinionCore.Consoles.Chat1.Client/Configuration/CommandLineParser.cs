@@ -3,12 +3,12 @@ using System;
 namespace PinionCore.Consoles.Chat1.Client.Configuration
 {
     /// <summary>
-    /// }‰√x„êh
+    /// }ÔøΩÔøΩxÔøΩh
     /// </summary>
     public static class CommandLineParser
     {
         /// <summary>
-        /// „ê}‰√x0 ChatClientOptions
+        /// ÔøΩ}ÔøΩÔøΩx0 ChatClientOptions
         /// </summary>
         public static ChatClientOptions Parse(string[] args)
         {
@@ -37,6 +37,14 @@ namespace PinionCore.Consoles.Chat1.Client.Configuration
                     continue;
                 }
 
+                // --websocket
+                if (arg.Equals("--websocket", StringComparison.OrdinalIgnoreCase) ||
+                    arg.Equals("--ws", StringComparison.OrdinalIgnoreCase))
+                {
+                    options.UseWebSocket = true;
+                    continue;
+                }
+
                 // --help
                 if (arg.Equals("--help", StringComparison.OrdinalIgnoreCase) ||
                     arg.Equals("-h", StringComparison.OrdinalIgnoreCase))
@@ -55,7 +63,7 @@ namespace PinionCore.Consoles.Chat1.Client.Configuration
 
             foreach (var name in names)
             {
-                // /Ù --name=value <
+                // /ÔøΩ --name=value <
                 if (arg.StartsWith($"{name}=", StringComparison.OrdinalIgnoreCase))
                 {
                     var valueStr = arg.Substring(name.Length + 1);
@@ -72,7 +80,7 @@ namespace PinionCore.Consoles.Chat1.Client.Configuration
 
             foreach (var name in names)
             {
-                // /Ù --name=value <
+                // /ÔøΩ --name=value <
                 if (arg.StartsWith($"{name}=", StringComparison.OrdinalIgnoreCase))
                 {
                     value = arg.Substring(name.Length + 1);

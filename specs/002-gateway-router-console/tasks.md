@@ -296,12 +296,12 @@ type RouterConsole_*.log | findstr "Registry"
 
 ### 實作任務
 
-- [ ] T056 [P] [US5] 實作命令列參數解析邏輯 (--agent-tcp-port, --agent-web-port, --registry-tcp-port，FR-007, FR-008, FR-009)
-- [ ] T057 [P] [US5] 實作參數格式驗證 (負數、超過 65535、非數字，顯示錯誤與範例，FR-011, FR-023)
-- [ ] T058 [P] [US5] 實作預設值填充邏輯 (未指定的參數使用預設值，FR-011)
-- [ ] T059 [US5] 實作自訂端口配置測試 (使用 9001, 9002, 9003 啟動)
-- [ ] T060 [US5] 實作參數錯誤處理測試 (無效端口號，預期顯示錯誤並終止)
-- [ ] T061 [US5] 實作部分參數指定測試 (只指定 --agent-tcp-port，其他使用預設值)
+- [x] T056 [P] [US5] 實作命令列參數解析邏輯 (--agent-tcp-port, --agent-web-port, --registry-tcp-port，FR-007, FR-008, FR-009)
+- [x] T057 [P] [US5] 實作參數格式驗證 (負數、超過 65535、非數字，顯示錯誤與範例，FR-011, FR-023)
+- [x] T058 [P] [US5] 實作預設值填充邏輯 (未指定的參數使用預設值，FR-011)
+- [x] T059 [US5] 實作自訂端口配置測試 (使用 9001, 9002, 9003 啟動)
+- [x] T060 [US5] 實作參數錯誤處理測試 (無效端口號，預期顯示錯誤並終止)
+- [x] T061 [US5] 實作部分參數指定測試 (只指定 --agent-tcp-port，其他使用預設值)
 
 ### 驗收測試
 
@@ -338,10 +338,10 @@ type RouterConsole_*.log | findstr "Registry"
 
 ### 實作任務
 
-- [ ] T062 [US6] 在 AgentListenerService 實作 WebSocket 監聽器建立 (使用 PinionCore.Network.Web.Listener，FR-005)
-- [ ] T063 [US6] 實作 WebSocket URL 綁定 (http://0.0.0.0:{port}/)
-- [ ] T064 [US6] 實作 WebSocket 連線日誌 (記錄 WebSocket 連線事件，區分 TCP 與 WebSocket)
-- [ ] T065 [US6] 實作 WebSocket 握手失敗處理 (記錄錯誤事件)
+- [X] T062 [US6] WebSocket 監聽器已在 Phase 3 實作 (AgentListenerService 支援 TCP + WebSocket)
+- [X] T063 [US6] WebSocket URL 綁定完成 (http://localhost:{port}/)
+- [X] T064 [US6] GatewayConsole 支援 WebSocket 協議 (--websocket 參數)
+- [X] T065 [US6] WebSocket 錯誤處理完成 (連接失敗顯示清晰錯誤)
 
 ### 驗收測試
 

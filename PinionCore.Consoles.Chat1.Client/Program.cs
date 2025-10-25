@@ -80,20 +80,31 @@ namespace PinionCore.Consoles.Chat1.Client
 
         private static void RunGatewayMode(ChatClientOptions options)
         {
-            System.Console.WriteLine("Gateway Router mode.");
-            System.Console.WriteLine($"Router: {options.RouterHost}:{options.RouterPort}");
-
             var protocol = ProtocolCreator.Create();
 
             // T069: 創建 Gateway.Agent
             var agentPool = new PinionCore.Remote.Gateway.Hosts.AgentPool(protocol);
             var agent = new PinionCore.Remote.Gateway.Agent(agentPool);
-            
 
             var console = new GatewayConsole(agent);
 
+            // T062-T063: 根據參數選擇 TCP 或 WebSocket 協議
+            bool connected;
+            if (options.UseWebSocket)
+            {
+                System.Console.WriteLine("Gateway Router mode (WebSocket).");
+                System.Console.WriteLine($"Router: ws://{options.RouterHost}:{options.RouterPort}/");
+                connected = console.ConnectWebSocket(options.RouterHost, options.RouterPort.Value);
+            }
+            else
+            {
+                System.Console.WriteLine("Gateway Router mode (TCP).");
+                System.Console.WriteLine($"Router: {options.RouterHost}:{options.RouterPort}");
+                connected = console.ConnectTcp(options.RouterHost, options.RouterPort.Value);
+            }
+
             // T071: 連接失敗錯誤處理
-            if (!console.Connect(options.RouterHost, options.RouterPort.Value))
+            if (!connected)
             {
                 System.Console.WriteLine("連接失敗，按任意鍵退出...");
                 System.Console.ReadKey();
