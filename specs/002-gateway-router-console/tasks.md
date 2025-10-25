@@ -464,7 +464,7 @@ docker-compose stop
 - [ ] T081 [P] 撰寫 LOGGING.md 在 specs/002-gateway-router-console/ (日誌系統使用說明、日誌格式、日誌等級)
 - [ ] T082 完善所有關鍵流程的日誌記錄 (啟動、連線、斷線、路由分配、模式切換、錯誤)
 - [ ] T083 實作錯誤處理標準化 (所有例外都有清晰錯誤訊息與日誌記錄)
-- [ ] T084 實作命令列 help 訊息 (--help 參數顯示完整使用說明與範例)
+- [X] T084 實作命令列 help 訊息 (--help 參數顯示完整使用說明與範例)
 - [ ] T085 執行端到端整合測試 (Router + 2 Chat Servers + 5 Chat Clients，驗證完整流程)
 
 ---

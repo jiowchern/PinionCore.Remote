@@ -14,6 +14,14 @@ namespace PinionCore.Consoles.Gateway.Router
 
         static async Task<int> Main(string[] args)
         {
+            // T084: 檢查 --help 或 -h 參數
+            if (args.Length > 0 && (args[0] == "--help" || args[0] == "-h" ||
+                Array.Exists(args, arg => arg == "--help" || arg == "-h")))
+            {
+                Console.WriteLine(RouterOptions.GetUsageString());
+                return 0;
+            }
+
             // 初始化日誌配置
             using var loggingConfig = new LoggingConfiguration("RouterConsole");
             var log = loggingConfig.Log;

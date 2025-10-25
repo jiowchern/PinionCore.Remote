@@ -13,6 +13,14 @@ namespace PinionCore.Consoles.Chat1.Server
     {
         static void Main(string[] args)
         {
+            // T084: 檢查 --help 或 -h 參數
+            if (args.Length > 0 && (args[0] == "--help" || args[0] == "-h" ||
+                Array.Exists(args, arg => arg == "--help" || arg == "-h")))
+            {
+                System.Console.WriteLine(ChatServerOptions.GetUsageString());
+                return;
+            }
+
             // T029: 解析命令列參數
             var options = CommandLineParser.Parse(args);
 

@@ -508,6 +508,76 @@ truncate -s 0 $(docker inspect --format='{{.LogPath}}' gateway-router)
 
 ---
 
+## 查看命令列說明
+
+### Router 使用說明
+
+```bash
+# 方法 1: 直接運行 --help 參數
+docker run --rm gateway-router:latest --help
+
+# 方法 2: 查看本地編譯的應用程式
+cd D:\develop\PinionCore.Remote\PinionCore.Consoles.Gateway.Router\bin\Release\net8.0
+.\PinionCore.Consoles.Gateway.Router.exe --help
+```
+
+**輸出範例**:
+```
+Gateway Router Console 使用說明
+=================================
+
+用途:
+  提供 Gateway Router 服務，負責將 Agent (客戶端) 連線路由到可用的 Registry (遊戲服務)。
+  支援 TCP 與 WebSocket 協議，實現負載平衡與自動服務發現。
+
+命令列語法:
+  PinionCore.Consoles.Gateway.Router [選項]
+
+選項:
+  --agent-tcp-port=PORT       Agent TCP 監聽端口 (預設: 8001)
+  --agent-web-port=PORT       Agent WebSocket 監聽端口 (預設: 8002)
+  --registry-tcp-port=PORT    Registry TCP 監聽端口 (預設: 8003)
+  --help, -h                  顯示此使用說明
+
+...
+```
+
+### Chat Server 使用說明
+
+```bash
+# 查看 Chat Server 使用說明
+docker run --rm chat-server:latest --help
+
+# 本地應用程式
+.\PinionCore.Consoles.Chat1.Server.exe --help
+```
+
+**重要參數說明**:
+- `--router-host=HOST`: Router 主機位址 (支援主機名或 IP)
+- `--router-port=PORT`: Router Registry 端口 (預設 8003)
+- `--group=ID`: 服務群組 ID (預設 1)
+- `--tcp-port=PORT`: 直連 TCP 端口 (可選)
+- `--web-port=PORT`: 直連 WebSocket 端口 (可選)
+
+### Chat Client 使用說明
+
+```bash
+# 查看 Chat Client 使用說明
+cd D:\develop\PinionCore.Remote\PinionCore.Consoles.Chat1.Client\bin\Release\net8.0
+.\PinionCore.Consoles.Chat1.Client.exe --help
+```
+
+**連線範例**:
+```bash
+# 連接到 Docker 容器中的 Router (TCP)
+.\PinionCore.Consoles.Chat1.Client.exe --router-host=127.0.0.1 --router-port=8001
+
+# 連接到 Docker 容器中的 Router (WebSocket)
+.\PinionCore.Consoles.Chat1.Client.exe --router-host=127.0.0.1 --router-port=8002 --websocket
+```
+
+---
+
 ## 效能監控
 
 ### 資源使用情況
