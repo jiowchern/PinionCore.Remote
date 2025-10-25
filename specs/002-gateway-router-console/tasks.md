@@ -159,7 +159,7 @@ start /B .\PinionCore.Consoles.Gateway.Router.exe
 - [X] T032 [US2] 實作 AgentWorker 啟動 (持續處理 registry.Agent.HandlePackets/HandleMessage)
 - [X] T033 [US2] 在 Router 端添加 Registry 連接日誌 (使用 Log.WriteInfo 記錄連線建立與 Group ID，FR-018)
 - [X] T034 [US2] 實作 Registry 斷線偵測與日誌記錄 (Router 端，FR-018)
-- [ ] T035 [US2] 實作 Registry 重連邏輯測試 (斷線後 10 秒內重連成功)
+- [X] T035 [US2] 實作 Registry 重連邏輯測試 (斷線後 10 秒內重連成功)
 
 ### 驗收測試
 
