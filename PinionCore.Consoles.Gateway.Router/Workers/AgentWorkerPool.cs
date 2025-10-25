@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using PinionCore.Utility;
+using PinionCore.Consoles.Gateway.Router.Infrastructure;
 
 namespace PinionCore.Consoles.Gateway.Router.Workers
 {
@@ -13,6 +15,12 @@ namespace PinionCore.Consoles.Gateway.Router.Workers
     {
         private readonly List<AgentWorker> _workers = new List<AgentWorker>();
         private readonly object _lock = new object();
+        private readonly Log _log;
+
+        public AgentWorkerPool(Log log = null)
+        {
+            _log = log ?? Log.Instance;
+        }
 
         /// <summary>
         /// 當前 Worker 數量
@@ -66,9 +74,10 @@ namespace PinionCore.Consoles.Gateway.Router.Workers
             {
                 worker.Dispose();
             }
-            catch
+            catch (Exception ex)
             {
-                // 忽略 Dispose 錯誤
+                // T083: 記錄 Dispose 錯誤
+                ErrorHandler.LogWarning(_log, $"移除 Agent Worker [{worker?.Id}] 時發生錯誤", ex);
             }
         }
 
@@ -84,6 +93,11 @@ namespace PinionCore.Consoles.Gateway.Router.Workers
                 _workers.Clear();
             }
 
+            if (workersCopy.Count == 0)
+                return;
+
+            _log.WriteInfo(() => $"開始關閉 {workersCopy.Count} 個 Agent Worker...");
+
             // 平行關閉所有 Worker
             var disposeTasks = workersCopy.Select(w => Task.Run(() =>
             {
@@ -91,19 +105,22 @@ namespace PinionCore.Consoles.Gateway.Router.Workers
                 {
                     w.Dispose();
                 }
-                catch
+                catch (Exception ex)
                 {
-                    // 忽略個別 worker 的 Dispose 錯誤
+                    // T083: 記錄個別 worker 的 Dispose 錯誤
+                    ErrorHandler.LogWarning(_log, $"關閉 Agent Worker [{w?.Id}] 時發生錯誤", ex);
                 }
             }, cancellationToken));
 
             try
             {
                 await Task.WhenAll(disposeTasks);
+                _log.WriteInfo(() => $"成功關閉 {workersCopy.Count} 個 Agent Worker");
             }
-            catch
+            catch (Exception ex)
             {
-                // 忽略整體錯誤
+                // T083: 記錄整體關閉錯誤
+                ErrorHandler.LogError(_log, "批次關閉 Agent Worker 時發生錯誤", ex);
             }
         }
 
@@ -112,7 +129,14 @@ namespace PinionCore.Consoles.Gateway.Router.Workers
         /// </summary>
         public void Dispose()
         {
-            DisposeAllAsync(CancellationToken.None).Wait();
+            try
+            {
+                DisposeAllAsync(CancellationToken.None).Wait();
+            }
+            catch (Exception ex)
+            {
+                ErrorHandler.LogError(_log, "AgentWorkerPool Dispose 時發生錯誤", ex);
+            }
         }
     }
 }

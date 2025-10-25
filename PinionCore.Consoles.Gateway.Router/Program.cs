@@ -65,7 +65,7 @@ namespace PinionCore.Consoles.Gateway.Router
                 log.WriteInfo(() => $"Router 配置: Agent TCP={options.AgentTcpPort}, Agent WebSocket={options.AgentWebPort}, Registry TCP={options.RegistryTcpPort}");
 
                 // T017: 初始化 Router 服務
-                workerPool = new AgentWorkerPool();
+                workerPool = new AgentWorkerPool(log);  // T083: 傳入 log 以支援錯誤日誌
                 routerService = new RouterService(log);
 
                 // T015: 初始化 Agent 監聽器服務
