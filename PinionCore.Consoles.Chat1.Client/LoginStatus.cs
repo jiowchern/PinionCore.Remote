@@ -18,6 +18,8 @@ namespace PinionCore.Consoles.Chat1.Client
 
         void IStatus.Enter()
         {
+            // T082: 路由分配成功訊息
+            System.Console.WriteLine("[路由成功] 已成功連接到遊戲服務！");
             _LoginCommand(_Login);
         }
 

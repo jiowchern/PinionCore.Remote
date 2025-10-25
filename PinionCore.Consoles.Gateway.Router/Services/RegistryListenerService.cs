@@ -76,7 +76,9 @@ namespace PinionCore.Consoles.Gateway.Router.Services
         private void _OnRegistryConnected(IStreamable streamable)
         {
             _registryCount++;
-            _log.WriteInfo(() => $"Registry 連接建立 (當前連接數: {_registryCount})");
+            // T082: 添加連接時間戳
+            var timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+            _log.WriteInfo(() => $"Registry 連接建立 [{timestamp}] (當前連接數: {_registryCount})");
 
             // 將連接傳遞給 Registry 端點處理
             _registryEndpoint?.Join(streamable);
@@ -88,7 +90,9 @@ namespace PinionCore.Consoles.Gateway.Router.Services
         private void _OnRegistryDisconnected(IStreamable streamable)
         {
             _registryCount--;
-            _log.WriteInfo(() => $"Registry 連接中斷 (當前連接數: {_registryCount})");
+            // T082: 添加斷線時間戳
+            var timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+            _log.WriteInfo(() => $"Registry 連接中斷 [{timestamp}] (當前連接數: {_registryCount})");
 
             // 通知 Registry 端點處理斷線
             _registryEndpoint?.Leave(streamable);

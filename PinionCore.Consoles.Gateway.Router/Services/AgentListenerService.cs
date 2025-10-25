@@ -21,6 +21,10 @@ namespace PinionCore.Consoles.Gateway.Router.Services
         private PinionCore.Remote.Soul.IListenable? _aggregator;
         private bool _disposed = false;
 
+        // T082: Agent 連接統計
+        private int _tcpAgentCount = 0;
+        private int _webAgentCount = 0;
+
         System.Action _Dispose;
 
         public AgentListenerService(Log log, AgentWorkerPool workerPool)
@@ -58,6 +62,12 @@ namespace PinionCore.Consoles.Gateway.Router.Services
                 _webListener = webListener;
                 _log.WriteInfo($"Agent WebSocket 監聽已啟動，端口: {webPort}");
 
+                // T082: 分別訂閱 TCP 和 WebSocket 事件以追蹤協議類型
+                _tcpListener.StreamableEnterEvent += _OnTcpAgentConnected;
+                _tcpListener.StreamableLeaveEvent += _OnTcpAgentDisconnected;
+                _webListener.StreamableEnterEvent += _OnWebAgentConnected;
+                _webListener.StreamableLeaveEvent += _OnWebAgentDisconnected;
+
                 // 使用 PinionCore.Remote.Soul.ListenableAggregator 合併兩個監聽器
                 var aggregator = new PinionCore.Remote.Soul.ListenableAggregator();
                 aggregator.Add(_tcpListener);
@@ -72,6 +82,10 @@ namespace PinionCore.Consoles.Gateway.Router.Services
 
                 _Dispose = () =>
                 {
+                    _tcpListener.StreamableEnterEvent -= _OnTcpAgentConnected;
+                    _tcpListener.StreamableLeaveEvent -= _OnTcpAgentDisconnected;
+                    _webListener.StreamableEnterEvent -= _OnWebAgentConnected;
+                    _webListener.StreamableLeaveEvent -= _OnWebAgentDisconnected;
                     _aggregator.StreamableEnterEvent -= sessionEndpoint.Join;
                     _aggregator.StreamableLeaveEvent -= sessionEndpoint.Leave;
                     tcpListener.Close();
@@ -84,6 +98,42 @@ namespace PinionCore.Consoles.Gateway.Router.Services
                 Dispose();
                 throw;
             }
+        }
+
+        /// <summary>
+        /// T082: 處理 TCP Agent 連接事件
+        /// </summary>
+        private void _OnTcpAgentConnected(IStreamable streamable)
+        {
+            _tcpAgentCount++;
+            _log.WriteInfo(() => $"[TCP] Agent 連接建立 (TCP: {_tcpAgentCount}, WebSocket: {_webAgentCount}, 總計: {_tcpAgentCount + _webAgentCount})");
+        }
+
+        /// <summary>
+        /// T082: 處理 TCP Agent 斷線事件
+        /// </summary>
+        private void _OnTcpAgentDisconnected(IStreamable streamable)
+        {
+            _tcpAgentCount--;
+            _log.WriteInfo(() => $"[TCP] Agent 連接中斷 (TCP: {_tcpAgentCount}, WebSocket: {_webAgentCount}, 總計: {_tcpAgentCount + _webAgentCount})");
+        }
+
+        /// <summary>
+        /// T082: 處理 WebSocket Agent 連接事件
+        /// </summary>
+        private void _OnWebAgentConnected(IStreamable streamable)
+        {
+            _webAgentCount++;
+            _log.WriteInfo(() => $"[WebSocket] Agent 連接建立 (TCP: {_tcpAgentCount}, WebSocket: {_webAgentCount}, 總計: {_tcpAgentCount + _webAgentCount})");
+        }
+
+        /// <summary>
+        /// T082: 處理 WebSocket Agent 斷線事件
+        /// </summary>
+        private void _OnWebAgentDisconnected(IStreamable streamable)
+        {
+            _webAgentCount--;
+            _log.WriteInfo(() => $"[WebSocket] Agent 連接中斷 (TCP: {_tcpAgentCount}, WebSocket: {_webAgentCount}, 總計: {_tcpAgentCount + _webAgentCount})");
         }
 
         public void Dispose()

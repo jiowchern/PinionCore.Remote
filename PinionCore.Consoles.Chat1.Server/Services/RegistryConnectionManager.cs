@@ -70,6 +70,13 @@ namespace PinionCore.Consoles.Chat1.Server.Services
 
         private void TransitionToConnected(Peer peer)
         {
+            // T082: 記錄連接成功資訊（顯示之前重連了幾次）
+            int previousRetries = _reconnector.RetryCount;
+            if (previousRetries > 0)
+            {
+                _log.WriteInfo(() => $"連接成功！（經過 {previousRetries} 次重連嘗試）");
+            }
+
             _reconnector.ResetRetryCount();  // 連接成功，重置重試計數
             var connectedState = new ConnectedState(_registry, peer, _log);
             connectedState.OnDisconnected += () => TransitionToReconnecting();
@@ -79,6 +86,12 @@ namespace PinionCore.Consoles.Chat1.Server.Services
         private void TransitionToReconnecting()
         {
             _reconnector.IncrementRetryCount();  // 增加重試計數
+
+            // T082: 記錄重連嘗試資訊
+            int retryCount = _reconnector.RetryCount;
+            int delayMs = _reconnector.CalculateDelay();
+            _log.WriteInfo(() => $"準備重連到 Router (第 {retryCount} 次重連，延遲 {delayMs / 1000} 秒)");
+
             var reconnectingState = new ReconnectingState(_reconnector, _log);
             reconnectingState.OnRetryConnect += () => TransitionToConnecting();
             _machine.Push(reconnectingState);

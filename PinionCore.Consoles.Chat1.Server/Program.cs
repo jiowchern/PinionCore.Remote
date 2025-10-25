@@ -161,6 +161,22 @@ namespace PinionCore.Consoles.Chat1.Server
 
             var service = PinionCore.Remote.Server.Provider.CreateService(entry, protocol, listeners);
             IListenable listenable = listeners;
+
+            // T082: 追蹤玩家連接統計
+            int playerCount = 0;
+            Action<PinionCore.Network.IStreamable> onPlayerConnected = (streamable) =>
+            {
+                playerCount++;
+                System.Console.WriteLine($"[玩家連接] 當前玩家數: {playerCount}");
+            };
+            Action<PinionCore.Network.IStreamable> onPlayerDisconnected = (streamable) =>
+            {
+                playerCount--;
+                System.Console.WriteLine($"[玩家斷線] 當前玩家數: {playerCount}");
+            };
+
+            listenable.StreamableEnterEvent += onPlayerConnected;
+            listenable.StreamableLeaveEvent += onPlayerDisconnected;
             listenable.StreamableEnterEvent += service.Join;
             listenable.StreamableLeaveEvent += service.Leave;
             var console = new Console(entry.Announcement);
@@ -178,6 +194,8 @@ namespace PinionCore.Consoles.Chat1.Server
 
             listenable.StreamableEnterEvent -= service.Join;
             listenable.StreamableLeaveEvent -= service.Leave;
+            listenable.StreamableEnterEvent -= onPlayerConnected;
+            listenable.StreamableLeaveEvent -= onPlayerDisconnected;
             service.Dispose();
         }
     }
