@@ -411,12 +411,12 @@ type RouterConsole_*.log | findstr "Registry"
 
 ### 實作任務
 
-- [ ] T072 [P] [US8] 撰寫 Dockerfile.router 在 docker/Dockerfile.router (多階段構建，基於 mcr.microsoft.com/dotnet/runtime:8.0，FR-045)
-- [ ] T073 [P] [US8] 撰寫 Dockerfile.chatserver 在 docker/Dockerfile.chatserver (多階段構建，FR-046)
-- [ ] T074 [P] [US8] 撰寫 docker-compose.yml 在 docker/docker-compose.yml (1 Router + 2 Chat Servers，FR-048, FR-052, FR-053)
-- [ ] T075 [P] [US8] 撰寫 DOCKER.md 在 docker/DOCKER.md (構建映像、啟動容器、配置參數、查看日誌，FR-054)
-- [ ] T076 [P] [US8] 在 docker-compose.yml 配置容器間網路 (bridge 或自訂網路，FR-052)
-- [ ] T077 [P] [US8] 在 docker-compose.yml 配置 stop_grace_period: 30s (優雅關閉超時，FR-055)
+- [X] T072 [P] [US8] 撰寫 Dockerfile.router 在 docker/Dockerfile.router (多階段構建，基於 mcr.microsoft.com/dotnet/runtime:8.0，FR-045)
+- [X] T073 [P] [US8] 撰寫 Dockerfile.chatserver 在 docker/Dockerfile.chatserver (多階段構建，FR-046)
+- [X] T074 [P] [US8] 撰寫 docker-compose.yml 在 docker/docker-compose.yml (1 Router + 2 Chat Servers，FR-048, FR-052, FR-053)
+- [X] T075 [P] [US8] 撰寫 DOCKER.md 在 docker/DOCKER.md (構建映像、啟動容器、配置參數、查看日誌，FR-054)
+- [X] T076 [P] [US8] 在 docker-compose.yml 配置容器間網路 (bridge 或自訂網路，FR-052)
+- [X] T077 [P] [US8] 在 docker-compose.yml 配置 stop_grace_period: 30s (優雅關閉超時，FR-055)
 
 ### 驗收測試
 

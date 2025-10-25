@@ -1,0 +1,65 @@
+# Gateway Router Console - Multi-stage Dockerfile
+# Build: docker build -f docker/Dockerfile.router -t gateway-router:latest .
+# Run: docker run -p 8001:8001 -p 8002:8002 -p 8003:8003 gateway-router:latest
+
+# ============================================
+# Stage 1: Build Stage
+# ============================================
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+WORKDIR /src
+
+# Copy solution file and all required project files
+COPY PinionCore.sln ./
+COPY PinionCore.Consoles.Gateway.Router/PinionCore.Consoles.Gateway.Router.csproj PinionCore.Consoles.Gateway.Router/
+COPY PinionCore.Remote.Gateway/PinionCore.Remote.Gateway.csproj PinionCore.Remote.Gateway/
+COPY PinionCore.Network/PinionCore.Network.csproj PinionCore.Network/
+COPY PinionCore.Utility/PinionCore.Utility/PinionCore.Utility.csproj PinionCore.Utility/PinionCore.Utility/
+COPY PinionCore.Remote/PinionCore.Remote.csproj PinionCore.Remote/
+COPY PinionCore.Serialization/PinionCore.Serialization.csproj PinionCore.Serialization/
+COPY PinionCore.Remote.Soul/PinionCore.Remote.Soul.csproj PinionCore.Remote.Soul/
+COPY PinionCore.Remote.Ghost/PinionCore.Remote.Ghost.csproj PinionCore.Remote.Ghost/
+COPY PinionCore.Remote.Client/PinionCore.Remote.Client.csproj PinionCore.Remote.Client/
+COPY PinionCore.Remote.Server/PinionCore.Remote.Server.csproj PinionCore.Remote.Server/
+COPY PinionCore.Remote.Standalone/PinionCore.Remote.Standalone.csproj PinionCore.Remote.Standalone/
+COPY PinionCore.Remote.Reactive/PinionCore.Remote.Reactive.csproj PinionCore.Remote.Reactive/
+COPY PinionCore.Remote.Tools.Protocol.Sources/PinionCore.Remote.Tools.Protocol.Sources.csproj PinionCore.Remote.Tools.Protocol.Sources/
+
+# Restore dependencies for Router project (this will restore all referenced projects)
+RUN dotnet restore PinionCore.Consoles.Gateway.Router/PinionCore.Consoles.Gateway.Router.csproj
+
+# Copy all source code
+COPY . .
+
+# Build and publish the application in Release mode
+WORKDIR /src/PinionCore.Consoles.Gateway.Router
+RUN dotnet publish -c Release -o /app/publish
+
+# ============================================
+# Stage 2: Runtime Stage
+# ============================================
+FROM mcr.microsoft.com/dotnet/runtime:8.0 AS runtime
+
+# Install net-tools for health check (provides netstat command)
+RUN apt-get update && apt-get install -y net-tools && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Copy published application from build stage
+COPY --from=build /app/publish .
+
+# Expose ports
+# 8001: Agent TCP port
+# 8002: Agent WebSocket port
+# 8003: Registry TCP port
+EXPOSE 8001 8002 8003
+
+# Set environment variables (can be overridden)
+ENV AGENT_TCP_PORT=8001
+ENV AGENT_WEB_PORT=8002
+ENV REGISTRY_TCP_PORT=8003
+
+# Set the entrypoint
+ENTRYPOINT ["dotnet", "PinionCore.Consoles.Gateway.Router.dll"]
+
+# Default command arguments (can be overridden)
+CMD ["--agent-tcp-port=8001", "--agent-web-port=8002", "--registry-tcp-port=8003"]

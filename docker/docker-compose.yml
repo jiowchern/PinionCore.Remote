@@ -1,0 +1,166 @@
+# Gateway Router Console - Docker Compose Configuration
+# Usage:
+#   docker-compose up -d          # Start all services in detached mode
+#   docker-compose down           # Stop and remove all containers
+#   docker-compose logs -f        # Follow logs from all services
+#   docker-compose ps             # Check service status
+
+version: '3.8'
+
+services:
+  # ============================================
+  # Gateway Router Service
+  # ============================================
+  router:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.router
+    image: gateway-router:latest
+    container_name: gateway-router
+    hostname: router
+
+    # Port mappings (host:container)
+    ports:
+      - "8001:8001"  # Agent TCP port
+      - "8002:8002"  # Agent WebSocket port
+      - "8003:8003"  # Registry TCP port
+
+    # Environment variables
+    environment:
+      - AGENT_TCP_PORT=8001
+      - AGENT_WEB_PORT=8002
+      - REGISTRY_TCP_PORT=8003
+
+    # Command line arguments
+    command:
+      - --agent-tcp-port=8001
+      - --agent-web-port=8002
+      - --registry-tcp-port=8003
+
+    # Graceful shutdown timeout (T077)
+    stop_grace_period: 30s
+
+    # Restart policy
+    restart: unless-stopped
+
+    # Health check
+    healthcheck:
+      test: ["CMD", "sh", "-c", "netstat -an | grep 8001"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+    # Networks
+    networks:
+      - gateway-network
+
+    # Logging configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ============================================
+  # Enhanced Chat Server 1
+  # ============================================
+  chat-server-1:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.chatserver
+    image: chat-server:latest
+    container_name: chat-server-1
+    hostname: chat-server-1
+
+    # Depends on router service
+    depends_on:
+      router:
+        condition: service_healthy
+
+    # Environment variables
+    environment:
+      - ROUTER_HOST=router
+      - ROUTER_PORT=8003
+      - GROUP=1
+
+    # Command line arguments (Gateway-only mode)
+    command:
+      - --router-host=router
+      - --router-port=8003
+      - --group=1
+
+    # Graceful shutdown timeout (T077)
+    stop_grace_period: 30s
+
+    # Restart policy
+    restart: unless-stopped
+
+    # Networks
+    networks:
+      - gateway-network
+
+    # Logging configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ============================================
+  # Enhanced Chat Server 2
+  # ============================================
+  chat-server-2:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.chatserver
+    image: chat-server:latest
+    container_name: chat-server-2
+    hostname: chat-server-2
+
+    # Depends on router service
+    depends_on:
+      router:
+        condition: service_healthy
+
+    # Environment variables
+    environment:
+      - ROUTER_HOST=router
+      - ROUTER_PORT=8003
+      - GROUP=1
+
+    # Command line arguments (Gateway-only mode)
+    command:
+      - --router-host=router
+      - --router-port=8003
+      - --group=1
+
+    # Graceful shutdown timeout (T077)
+    stop_grace_period: 30s
+
+    # Restart policy
+    restart: unless-stopped
+
+    # Networks
+    networks:
+      - gateway-network
+
+    # Logging configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+# ============================================
+# Network Configuration (T076)
+# ============================================
+networks:
+  gateway-network:
+    driver: bridge
+    name: gateway-network
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.20.0.0/16
+          gateway: 172.20.0.1

@@ -52,7 +52,12 @@ namespace PinionCore.Consoles.Chat1.Server.Services.RegistryConnectionStates
             try
             {
                 var connector = new PinionCore.Network.Tcp.Connector();
-                var endpoint = new IPEndPoint(IPAddress.Parse(_routerHost), _routerPort);
+
+                // Resolve hostname to IP address (supports both hostnames and IP addresses)
+                var addresses = await Dns.GetHostAddressesAsync(_routerHost);
+                var ipAddress = addresses[0];  // Use first resolved address
+                var endpoint = new IPEndPoint(ipAddress, _routerPort);
+
                 var peer = await connector.Connect(endpoint);
 
                 _registry.Agent.Enable(peer);

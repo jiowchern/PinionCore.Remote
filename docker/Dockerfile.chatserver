@@ -1,0 +1,65 @@
+# Enhanced Chat Server - Multi-stage Dockerfile
+# Build: docker build -f docker/Dockerfile.chatserver -t chat-server:latest .
+# Run: docker run -p 23916:23916 -p 23917:23917 chat-server:latest
+
+# ============================================
+# Stage 1: Build Stage
+# ============================================
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+WORKDIR /src
+
+# Copy solution file and all required project files
+COPY PinionCore.sln ./
+COPY PinionCore.Consoles.Chat1.Server/PinionCore.Consoles.Chat1.Server.csproj PinionCore.Consoles.Chat1.Server/
+COPY PinionCore.Consoles.Chat1.Common/PinionCore.Consoles.Chat1.Common.csproj PinionCore.Consoles.Chat1.Common/
+COPY PinionCore.Remote.Gateway/PinionCore.Remote.Gateway.csproj PinionCore.Remote.Gateway/
+COPY PinionCore.Network/PinionCore.Network.csproj PinionCore.Network/
+COPY PinionCore.Utility/PinionCore.Utility/PinionCore.Utility.csproj PinionCore.Utility/PinionCore.Utility/
+COPY PinionCore.Remote/PinionCore.Remote.csproj PinionCore.Remote/
+COPY PinionCore.Remote.Server/PinionCore.Remote.Server.csproj PinionCore.Remote.Server/
+COPY PinionCore.Remote.Soul/PinionCore.Remote.Soul.csproj PinionCore.Remote.Soul/
+COPY PinionCore.Serialization/PinionCore.Serialization.csproj PinionCore.Serialization/
+COPY PinionCore.Remote.Ghost/PinionCore.Remote.Ghost.csproj PinionCore.Remote.Ghost/
+COPY PinionCore.Remote.Client/PinionCore.Remote.Client.csproj PinionCore.Remote.Client/
+COPY PinionCore.Remote.Standalone/PinionCore.Remote.Standalone.csproj PinionCore.Remote.Standalone/
+COPY PinionCore.Remote.Reactive/PinionCore.Remote.Reactive.csproj PinionCore.Remote.Reactive/
+COPY PinionCore.Remote.Tools.Protocol.Sources/PinionCore.Remote.Tools.Protocol.Sources.csproj PinionCore.Remote.Tools.Protocol.Sources/
+
+# Restore dependencies for Chat Server project (this will restore all referenced projects)
+RUN dotnet restore PinionCore.Consoles.Chat1.Server/PinionCore.Consoles.Chat1.Server.csproj
+
+# Copy all source code
+COPY . .
+
+# Build and publish the application in Release mode
+WORKDIR /src/PinionCore.Consoles.Chat1.Server
+RUN dotnet publish -c Release -o /app/publish
+
+# ============================================
+# Stage 2: Runtime Stage
+# ============================================
+FROM mcr.microsoft.com/dotnet/runtime:8.0 AS runtime
+WORKDIR /app
+
+# Copy published application from build stage
+COPY --from=build /app/publish .
+
+# Expose ports
+# 23916: Direct TCP port (optional)
+# 23917: Direct WebSocket port (optional)
+# Note: In Gateway mode, these ports may not be used
+EXPOSE 23916 23917
+
+# Set environment variables (can be overridden)
+ENV TCP_PORT=23916
+ENV WEB_PORT=23917
+ENV ROUTER_HOST=""
+ENV ROUTER_PORT=""
+ENV GROUP=1
+
+# Set the entrypoint
+ENTRYPOINT ["dotnet", "PinionCore.Consoles.Chat1.Server.dll"]
+
+# Default command arguments for maximum compatibility mode (can be overridden)
+# Comment out to use Gateway-only mode
+CMD ["--tcp-port=23916", "--web-port=23917"]
