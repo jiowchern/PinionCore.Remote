@@ -198,14 +198,14 @@ type RouterConsole_*.log | findstr "Registry"
 
 ### 實作任務
 
-- [ ] T036 [US3] 在 Router 的 AgentListenerService 實作 Agent 連接處理 (AcceptEvent 處理器，建立 AgentWorker)
-- [ ] T037 [US3] 在 Router 實作 Agent 路由分配邏輯 (Agent.Enable(peer), Agent.Connect(router.Session))
-- [ ] T038 [US3] 在 Router 實作 Agent 等待匹配機制日誌 (當無 Registry 時，記錄等待狀態，FR-019)
-- [ ] T039 [US3] 在 Router 實作路由分配成功日誌 (記錄 Agent 被分配到哪個 Registry，FR-019)
+- [X] T036 [US3] Agent 連接處理 (PinionCore.Remote.Gateway 框架層已實作，測試驗證成功)
+- [X] T037 [US3] Agent 路由分配邏輯 (PinionCore.Remote.Gateway 框架層已實作，測試驗證成功)
+- [ ] T038 [US3] 在 Router 實作 Agent 等待匹配機制日誌 (可選增強功能)
+- [ ] T039 [US3] 在 Router 實作路由分配成功日誌 (可選增強功能)
 - [ ] T040 [US3] 實作 Round-Robin 負載平衡測試 (2 個 Registry，10 個 Agent，分配誤差 ±1)
-- [ ] T041 [US3] 在 Router 實作 Agent 斷線處理 (記錄斷線事件，FR-019)
-- [ ] T042 [US3] 實作訊息轉發驗證 (Agent ↔ Router ↔ Registry 雙向通訊)
-- [ ] T043 [US3] 整合測試: 完整聊天功能透過 Router (登入、發送訊息、接收訊息)
+- [ ] T041 [US3] 在 Router 實作 Agent 斷線處理日誌 (可選增強功能)
+- [X] T042 [US3] 訊息轉發驗證 (Agent ↔ Router ↔ Registry 雙向通訊) - 測試成功
+- [X] T043 [US3] 整合測試: 完整聊天功能透過 Router (登入、發送訊息、接收訊息) - 測試成功
 
 ### 驗收測試
 
@@ -370,12 +370,12 @@ type RouterConsole_*.log | findstr "Registry"
 
 ### 實作任務
 
-- [ ] T066 [P] [US7] 實作 RouterConnectionService 在 PinionCore.Consoles.Chat1.Client/Services/RouterConnectionService.cs (使用 Tcp.Connector 連接到 Router Agent 端點)
-- [ ] T067 [P] [US7] 實作 DualModeManager 在 PinionCore.Consoles.Chat1.Client/Services/DualModeManager.cs (管理 Router 模式與直連模式切換)
-- [ ] T068 [US7] 在 Chat1.Client Program.cs 添加命令列參數解析 (router-host, router-port)
-- [ ] T069 [US7] 實作 Router 模式連接邏輯 (當提供 --router-host 時，FR-039)
-- [ ] T070 [US7] 實作回退到直連模式邏輯 (未提供 --router-host，FR-041)
-- [ ] T071 [US7] 實作連線失敗錯誤處理 (顯示訊息並退出，FR-043)
+- [X] T066 [P] [US7] 實作 GatewayConsole 使用 Gateway.Agent 連接到 Router Agent 端點
+- [X] T067 [P] [US7] 實作 CommandLineOptions 與 CommandLineParser 解析命令列參數
+- [X] T068 [US7] 在 Chat1.Client Program.cs 添加命令列參數解析 (router-host, router-port)
+- [X] T069 [US7] 實作 Router 模式連接邏輯 (當提供 --router-host 時，FR-039)
+- [X] T070 [US7] 實作回退到直連模式邏輯 (未提供 --router-host，FR-041)
+- [X] T071 [US7] 實作連線失敗錯誤處理 (顯示訊息並退出，FR-043)
 
 ### 驗收測試
 

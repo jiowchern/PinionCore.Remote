@@ -10,6 +10,8 @@
     <ProjectReference Include="..\PinionCore.Consoles.Chat1\PinionCore.Consoles.Chat1.csproj" />
     <ProjectReference Include="..\\PinionCore.Remote\PinionCore.Remote.csproj" />
     <ProjectReference Include="..\\PinionCore.Remote.Client\PinionCore.Remote.Client.csproj" />
+    <ProjectReference Include="..\\PinionCore.Remote.Gateway\PinionCore.Remote.Gateway.csproj" />
+    
     <ProjectReference Include="..\\PinionCore.Remote.Standalone\PinionCore.Remote.Standalone.csproj" />
     <ProjectReference Include="..\\PinionCore.Utility\PinionCore.Utility\PinionCore.Utility.csproj" />
   </ItemGroup>
