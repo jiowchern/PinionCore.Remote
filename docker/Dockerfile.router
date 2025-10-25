@@ -12,6 +12,7 @@ WORKDIR /src
 COPY PinionCore.sln ./
 COPY PinionCore.Consoles.Gateway.Router/PinionCore.Consoles.Gateway.Router.csproj PinionCore.Consoles.Gateway.Router/
 COPY PinionCore.Remote.Gateway/PinionCore.Remote.Gateway.csproj PinionCore.Remote.Gateway/
+COPY PinionCore.Remote.Gateway.Protocols/PinionCore.Remote.Gateway.Protocols.csproj PinionCore.Remote.Gateway.Protocols/
 COPY PinionCore.Network/PinionCore.Network.csproj PinionCore.Network/
 COPY PinionCore.Utility/PinionCore.Utility/PinionCore.Utility.csproj PinionCore.Utility/PinionCore.Utility/
 COPY PinionCore.Remote/PinionCore.Remote.csproj PinionCore.Remote/

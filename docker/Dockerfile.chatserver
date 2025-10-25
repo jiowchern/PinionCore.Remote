@@ -13,6 +13,7 @@ COPY PinionCore.sln ./
 COPY PinionCore.Consoles.Chat1.Server/PinionCore.Consoles.Chat1.Server.csproj PinionCore.Consoles.Chat1.Server/
 COPY PinionCore.Consoles.Chat1.Common/PinionCore.Consoles.Chat1.Common.csproj PinionCore.Consoles.Chat1.Common/
 COPY PinionCore.Remote.Gateway/PinionCore.Remote.Gateway.csproj PinionCore.Remote.Gateway/
+COPY PinionCore.Remote.Gateway.Protocols/PinionCore.Remote.Gateway.Protocols.csproj PinionCore.Remote.Gateway.Protocols/
 COPY PinionCore.Network/PinionCore.Network.csproj PinionCore.Network/
 COPY PinionCore.Utility/PinionCore.Utility/PinionCore.Utility.csproj PinionCore.Utility/PinionCore.Utility/
 COPY PinionCore.Remote/PinionCore.Remote.csproj PinionCore.Remote/
