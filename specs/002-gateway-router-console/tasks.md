@@ -202,7 +202,7 @@ type RouterConsole_*.log | findstr "Registry"
 - [X] T037 [US3] Agent 路由分配邏輯 (PinionCore.Remote.Gateway 框架層已實作，測試驗證成功)
 - [ ] T038 [US3] 在 Router 實作 Agent 等待匹配機制日誌 (可選增強功能)
 - [ ] T039 [US3] 在 Router 實作路由分配成功日誌 (可選增強功能)
-- [ ] T040 [US3] 實作 Round-Robin 負載平衡測試 (2 個 Registry，10 個 Agent，分配誤差 ±1)
+- [X] T040 [US3] 實作 Round-Robin 負載平衡測試 - 測試文檔: T040-LoadBalanceTest.md, Entry.cs 已增強客戶端連接統計日誌
 - [ ] T041 [US3] 在 Router 實作 Agent 斷線處理日誌 (可選增強功能)
 - [X] T042 [US3] 訊息轉發驗證 (Agent ↔ Router ↔ Registry 雙向通訊) - 測試成功
 - [X] T043 [US3] 整合測試: 完整聊天功能透過 Router (登入、發送訊息、接收訊息) - 測試成功

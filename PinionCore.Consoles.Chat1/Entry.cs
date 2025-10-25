@@ -7,12 +7,14 @@ namespace PinionCore.Consoles.Chat1
         private readonly Room _room;
         private readonly Dictionary<PinionCore.Remote.IBinder, User> _users;
         private readonly object _sync = new object();
+        private readonly PinionCore.Utility.Log _log;
 
         public Entry()
         {
             _room = new Room();
             _users = new Dictionary<PinionCore.Remote.IBinder, User>();
             Announcement = _room;
+            _log = PinionCore.Utility.Log.Instance;
         }
 
         public Announceable Announcement { get; }
@@ -20,15 +22,19 @@ namespace PinionCore.Consoles.Chat1
         public void RegisterClientBinder(PinionCore.Remote.IBinder binder)
         {
             var user = new User(binder, _room);
+            int currentCount;
             lock (_sync)
             {
                 _users[binder] = user;
+                currentCount = _users.Count;
             }
+            _log.WriteInfo(() => $"[Entry] 客戶端連接建立 (當前連接數: {currentCount})");
         }
 
         public void UnregisterClientBinder(PinionCore.Remote.IBinder binder)
         {
             User user = null;
+            int currentCount;
             lock (_sync)
             {
                 if (_users.TryGetValue(binder, out var existing))
@@ -36,9 +42,11 @@ namespace PinionCore.Consoles.Chat1
                     user = existing;
                     _users.Remove(binder);
                 }
+                currentCount = _users.Count;
             }
 
             user?.Dispose();
+            _log.WriteInfo(() => $"[Entry] 客戶端連接中斷 (當前連接數: {currentCount})");
         }
 
         public void Update()
