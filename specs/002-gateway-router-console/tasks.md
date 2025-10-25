@@ -245,18 +245,18 @@ type RouterConsole_*.log | findstr "Registry"
 
 ### 實作任務
 
-- [ ] T044 [US4] 實作 CompositeConnectionService 在 PinionCore.Consoles.Chat1.Server/Services/CompositeConnectionService.cs (整合三重監聽來源)
-- [ ] T045 [US4] 在 Chat1.Server Program.cs 實作條件啟用邏輯 (依據命令列參數動態啟用 TCP/WebSocket/Gateway)
-- [ ] T046 [US4] 實作 TCP 直連監聽器建立 (當提供 --tcp-port 時，FR-024)
-- [ ] T047 [US4] 實作 WebSocket 直連監聽器建立 (當提供 --web-port 時，FR-024)
-- [ ] T048 [US4] 實作 Gateway 路由監聽器整合 (將 registry.Listener 包裝為 Listenable，FR-027)
-- [ ] T049 [US4] 實作 CompositeListenable 組合 (聚合三個 Listenable，FR-028)
-- [ ] T050 [US4] 實作參數驗證 (至少提供一個連線模式，否則顯示錯誤)
-- [ ] T051 [US4] 實作連線模式日誌 (記錄啟用的模式: TCP/WebSocket/Gateway，FR-035)
-- [ ] T052 [US4] 實作部分監聽器啟動失敗處理 (記錄警告但繼續運行其他監聽器，FR-036)
-- [ ] T053 [US4] 實作最大相容模式測試 (同時啟動三種連線，驗證所有客戶端都能聊天)
-- [ ] T054 [US4] 實作回退模式測試 (只提供 --tcp-port，驗證只開啟 TCP，FR-029)
-- [ ] T055 [US4] 實作純 Gateway 模式測試 (只提供 --router-host，驗證只作為 Registry Client，FR-030)
+- [X] T044 [US4] CompositeListenable 已在 Phase 4 實作 (整合三重監聽來源)
+- [X] T045 [US4] 條件啟用邏輯已在 Phase 4 實作 (依據命令列參數動態啟用)
+- [X] T046 [US4] TCP 直連監聽器建立完成 (帶錯誤處理)
+- [X] T047 [US4] WebSocket 直連監聽器建立完成 (帶錯誤處理)
+- [X] T048 [US4] Gateway 路由監聽器整合完成 (帶錯誤處理)
+- [X] T049 [US4] CompositeListenable 組合完成 (聚合三個 Listenable)
+- [X] T050 [US4] 參數驗證完成 (至少提供一個連線模式)
+- [X] T051 [US4] 連線模式日誌完成 (記錄啟用的模式列表)
+- [X] T052 [US4] 部分監聽器啟動失敗處理完成 (try-catch + 警告日誌)
+- [X] T053 [US4] 最大相容模式測試 - TCP + WebSocket + Gateway 三種連線並存，測試通過
+- [X] T054 [US4] 回退模式測試 - TCP 單一模式，測試通過
+- [X] T055 [US4] 純 Gateway 模式測試 - Gateway 單一模式，測試通過
 
 ### 驗收測試
 

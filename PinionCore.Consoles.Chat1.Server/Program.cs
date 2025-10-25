@@ -30,25 +30,44 @@ namespace PinionCore.Consoles.Chat1.Server
 
             var listeners = new CompositeListenable();
             var shutdownTasks = new List<Action>();
+            var enabledModes = new List<string>();
 
-            // 直連 TCP 監聽器
+            // T046: 直連 TCP 監聽器 (帶錯誤處理)
             if (options.TcpPort.HasValue)
             {
-                var tcp = new PinionCore.Remote.Server.Tcp.Listener();
-                listeners.Add(tcp);
-                tcp.Bind(options.TcpPort.Value);
-                shutdownTasks.Add(() => tcp.Close());
-                System.Console.WriteLine($"TCP listener started on port {options.TcpPort.Value}.");
+                try
+                {
+                    var tcp = new PinionCore.Remote.Server.Tcp.Listener();
+                    tcp.Bind(options.TcpPort.Value);
+                    listeners.Add(tcp);
+                    shutdownTasks.Add(() => tcp.Close());
+                    enabledModes.Add($"TCP (port {options.TcpPort.Value})");
+                    System.Console.WriteLine($"[OK] TCP listener started on port {options.TcpPort.Value}");
+                }
+                catch (Exception ex)
+                {
+                    // T052: 部分監聽器啟動失敗處理 - 記錄警告但繼續運行
+                    System.Console.WriteLine($"[WARNING] TCP listener failed to start on port {options.TcpPort.Value}: {ex.Message}");
+                }
             }
 
-            // 直連 WebSocket 監聽器
+            // T047: 直連 WebSocket 監聽器 (帶錯誤處理)
             if (options.WebPort.HasValue)
             {
-                var web = new PinionCore.Remote.Server.Web.Listener();
-                listeners.Add(web);
-                web.Bind($"http://*:{options.WebPort.Value}/");
-                shutdownTasks.Add(() => web.Close());
-                System.Console.WriteLine($"Web listener started on port {options.WebPort.Value}.");
+                try
+                {
+                    var web = new PinionCore.Remote.Server.Web.Listener();
+                    web.Bind($"http://*:{options.WebPort.Value}/");
+                    listeners.Add(web);
+                    shutdownTasks.Add(() => web.Close());
+                    enabledModes.Add($"WebSocket (port {options.WebPort.Value})");
+                    System.Console.WriteLine($"[OK] WebSocket listener started on port {options.WebPort.Value}");
+                }
+                catch (Exception ex)
+                {
+                    // T052: 部分監聽器啟動失敗處理 - 記錄警告但繼續運行
+                    System.Console.WriteLine($"[WARNING] WebSocket listener failed to start on port {options.WebPort.Value}: {ex.Message}");
+                }
             }
 
             // T030: Registry Client 初始化 (當提供 router-host 時)
@@ -56,61 +75,81 @@ namespace PinionCore.Consoles.Chat1.Server
             RegistryConnectionManager registryConnectionManager = null;
             Action registryWorkerDispose = null;
 
+            // T048: Gateway 路由監聽器整合 (帶錯誤處理)
             if (options.HasGatewayMode)
             {
-                System.Console.WriteLine($"Gateway mode enabled: connecting to Router {options.RouterHost}:{options.RouterPort} (Group: {options.Group})");
-
-                // 建立 Registry Client
-                registry = new PinionCore.Remote.Gateway.Registry(protocol, options.Group);
-
-                // T032: 啟動 AgentWorker (持續處理 registry.Agent.HandlePackets/HandleMessage)
-                var agentWorkerRunning = true;
-                var agentWorkerTask = Task.Run(() =>
+                try
                 {
-                    while (agentWorkerRunning)
+                    System.Console.WriteLine($"Initializing Gateway mode: Router {options.RouterHost}:{options.RouterPort} (Group: {options.Group})");
+
+                    // 建立 Registry Client
+                    registry = new PinionCore.Remote.Gateway.Registry(protocol, options.Group);
+
+                    // T032: 啟動 AgentWorker (持續處理 registry.Agent.HandlePackets/HandleMessage)
+                    var agentWorkerRunning = true;
+                    var agentWorkerTask = Task.Run(() =>
                     {
-                        registry.Agent.HandlePackets();
-                        registry.Agent.HandleMessage();
-                        System.Threading.Thread.Sleep(1); // 短暫休眠避免忙等待
-                    }
-                });
+                        while (agentWorkerRunning)
+                        {
+                            registry.Agent.HandlePackets();
+                            registry.Agent.HandleMessage();
+                            System.Threading.Thread.Sleep(1); // 短暫休眠避免忙等待
+                        }
+                    });
 
-                registryWorkerDispose = () =>
+                    registryWorkerDispose = () =>
+                    {
+                        agentWorkerRunning = false;
+                        agentWorkerTask.Wait(TimeSpan.FromSeconds(2));
+                    };
+
+                    // T049: 添加 Registry.Listener 到 CompositeListenable
+                    listeners.Add(registry.Listener);
+
+                    // T031: 建立 RegistryConnectionManager (負責連接、斷線偵測與重連)
+                    var log = PinionCore.Utility.Log.Instance;
+                    registryConnectionManager = new RegistryConnectionManager(
+                        registry,
+                        options.RouterHost,
+                        options.RouterPort.Value,
+                        log
+                    );
+
+                    // 啟動連接管理器 (會自動建立連接)
+                    registryConnectionManager.Start();
+
+                    shutdownTasks.Add(() =>
+                    {
+                        registryWorkerDispose?.Invoke();
+                        registryConnectionManager?.Dispose();
+                        registry?.Dispose();
+                    });
+
+                    enabledModes.Add($"Gateway Router ({options.RouterHost}:{options.RouterPort}, Group {options.Group})");
+                    System.Console.WriteLine($"[OK] Gateway mode initialized");
+                }
+                catch (Exception ex)
                 {
-                    agentWorkerRunning = false;
-                    agentWorkerTask.Wait(TimeSpan.FromSeconds(2));
-                };
-
-                // 添加 Registry.Listener 到 CompositeListenable
-                listeners.Add(registry.Listener);
-
-                // T031: 建立 RegistryConnectionManager (負責連接、斷線偵測與重連)
-                var log = PinionCore.Utility.Log.Instance;
-                registryConnectionManager = new RegistryConnectionManager(
-                    registry,
-                    options.RouterHost,
-                    options.RouterPort.Value,
-                    log
-                );
-
-                // 啟動連接管理器 (會自動建立連接)
-                registryConnectionManager.Start();
-
-                shutdownTasks.Add(() =>
-                {
-                    registryWorkerDispose?.Invoke();
-                    registryConnectionManager?.Dispose();
-                    registry?.Dispose();
-                });
+                    // T052: Gateway 啟動失敗處理
+                    System.Console.WriteLine($"[WARNING] Gateway mode failed to initialize: {ex.Message}");
+                }
             }
 
-            // 顯示啟用的模式
-            var modeDescription = options.IsMaxCompatibilityMode
-                ? "Maximum Compatibility (3 connection sources)"
-                : options.HasGatewayMode
-                    ? "Gateway Mode Only"
-                    : "Direct Connection Mode Only";
-            System.Console.WriteLine($"Chat Server started: {modeDescription}");
+            // T051: 顯示啟用的連線模式
+            if (enabledModes.Count == 0)
+            {
+                System.Console.WriteLine("[ERROR] No connection modes enabled. Server will exit.");
+                Environment.Exit(1);
+                return;
+            }
+
+            System.Console.WriteLine("========================================");
+            System.Console.WriteLine($"Chat Server Started - {enabledModes.Count} connection source(s) enabled:");
+            foreach (var mode in enabledModes)
+            {
+                System.Console.WriteLine($"  - {mode}");
+            }
+            System.Console.WriteLine("========================================");
 
             var service = PinionCore.Remote.Server.Provider.CreateService(entry, protocol, listeners);
             IListenable listenable = listeners;
