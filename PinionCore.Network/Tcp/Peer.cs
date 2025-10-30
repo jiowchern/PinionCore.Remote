@@ -85,6 +85,10 @@ namespace PinionCore.Network.Tcp
             return Socket;
         }
 
+        void IDisposable.Dispose()
+        {
+            Socket.Close();
+        }
 
     }
 

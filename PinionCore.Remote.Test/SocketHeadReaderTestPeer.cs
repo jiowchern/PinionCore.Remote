@@ -40,5 +40,10 @@ namespace PinionCore.Remote.Tests
         {
             throw new NotImplementedException();
         }
+
+        void IDisposable.Dispose()
+        {
+            // 測試類，不需要清理資源
+        }
     }
 }

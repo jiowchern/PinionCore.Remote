@@ -63,10 +63,18 @@ namespace PinionCore.Remote.Ghost
             {
                 _GhostProviderUpdater = () => { };
                 _GhostSerializerUpdater = () => { };
-                var senderDispose = sender as IDisposable;
-                senderDispose.Dispose();
+
                 ghostSerializer.ErrorEvent -= _ExceptionEvent;
                 ghostSerializer.Stop();
+
+                IDisposable streamableDispose = streamable;
+                streamableDispose.Dispose();
+
+                IDisposable senderDispose = sender;
+                senderDispose.Dispose();
+
+                IDisposable readerDispose = reader;
+                readerDispose.Dispose();
 
                 serverExchangeable.ResponseEvent -= clientExchangeable.Request;
                 clientExchangeable.ResponseEvent -= serverExchangeable.Request;

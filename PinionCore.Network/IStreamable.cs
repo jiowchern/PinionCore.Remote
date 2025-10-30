@@ -1,7 +1,7 @@
 ﻿using PinionCore.Remote;
 namespace PinionCore.Network
 {
-    public interface IStreamable
+    public interface IStreamable : System.IDisposable
     {
         /// <summary>
         ///     Receive data streams.

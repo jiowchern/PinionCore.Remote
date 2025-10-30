@@ -1,14 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using PinionCore.Remote;
 
 namespace PinionCore.Network
 {
  
-    public class PackageReader
+    public class PackageReader : IDisposable
     {
         private readonly IStreamable _Stream;
         private readonly PinionCore.Memorys.IPool _Pool;
@@ -28,17 +27,18 @@ namespace PinionCore.Network
             _Empty = _Pool.Alloc(0);
         }
 
-        public Task<List<PinionCore.Memorys.Buffer>> Read(CancellationToken cancellationToken = default)
+        public Task<List<PinionCore.Memorys.Buffer>> Read()
         {
-            return ReadBuffers(new Package { Buffer = _Empty, Segment = _Empty.Bytes }, cancellationToken);
+            return ReadBuffers(new Package { Buffer = _Empty, Segment = _Empty.Bytes });
         }
-        public async Task<List<PinionCore.Memorys.Buffer>> ReadBuffers(Package unfin, CancellationToken cancellationToken = default)
+        public async Task<List<PinionCore.Memorys.Buffer>> ReadBuffers(Package unfin)
         {
-            cancellationToken.ThrowIfCancellationRequested();
             var packages = new List<Package>();
             Memorys.Buffer headBuffer = _Pool.Alloc(8);
             _CopyBuffer(unfin.Segment, headBuffer.Bytes, unfin.Segment.Count);
-            var headReadCount = await _ReadFromStream(headBuffer.Bytes.Array, offset: headBuffer.Bytes.Offset + unfin.Segment.Count, count: headBuffer.Bytes.Count - unfin.Segment.Count, cancellationToken).ConfigureAwait(false);
+            PinionCore.Utility.Log.Instance.WriteInfoImmediate("ReadBuffers unfin.Segment.Count:" + unfin.Segment.Count);
+            var headReadCount = await _ReadFromStream(headBuffer.Bytes.Array, offset: headBuffer.Bytes.Offset + unfin.Segment.Count, count: headBuffer.Bytes.Count - unfin.Segment.Count);
+            PinionCore.Utility.Log.Instance.WriteInfoImmediate("ReadBuffers headReadCount:" + headReadCount);
             if (headReadCount == 0)
                 return new List<PinionCore.Memorys.Buffer>();
             headReadCount += unfin.Segment.Count;
@@ -66,8 +66,7 @@ namespace PinionCore.Network
                     var bodyReadCount = 0;
                     while (bodyReadCount < remainingBodySize)
                     {
-                        cancellationToken.ThrowIfCancellationRequested();
-                        var bytesRead = await _ReadFromStream(body.Bytes.Array, body.Bytes.Offset + readOffset + bodyReadCount, remainingBodySize - bodyReadCount, cancellationToken).ConfigureAwait(false);
+                        var bytesRead = await _ReadFromStream(body.Bytes.Array, body.Bytes.Offset + readOffset + bodyReadCount, remainingBodySize - bodyReadCount);
 
                         if (bytesRead == 0)
                             return new List<PinionCore.Memorys.Buffer>();
@@ -82,7 +81,7 @@ namespace PinionCore.Network
             var buffers = _Convert(packages).ToList();
             if (remaining.Count > 0)
             {
-                List<Memorys.Buffer> nestBuffers = await ReadBuffers(new Package { Buffer = headBuffer, Segment = remaining }, cancellationToken).ConfigureAwait(false);
+                List<Memorys.Buffer> nestBuffers = await ReadBuffers(new Package { Buffer = headBuffer, Segment = remaining });
                 buffers.AddRange(nestBuffers);
             }
             return buffers;
@@ -108,14 +107,17 @@ namespace PinionCore.Network
             Array.Copy(source.Array, source.Offset + sourceOffset, destination.Array, destination.Offset + destOffset, count);
         }
 
-        private async Task<int> _ReadFromStream(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+        private async Task<int> _ReadFromStream(byte[] buffer, int offset, int count)
         {
-            cancellationToken.ThrowIfCancellationRequested();
             var receiveAwaitable = _Stream.Receive(buffer, offset, count);
             var result = await receiveAwaitable;
-            cancellationToken.ThrowIfCancellationRequested();
             return result;
 
+        }
+
+        void IDisposable.Dispose()
+        {
+            // _Empty 缓冲区由 GC 回收（PooledBuffer 通过 Finalizer 归还）
         }
     }
 }

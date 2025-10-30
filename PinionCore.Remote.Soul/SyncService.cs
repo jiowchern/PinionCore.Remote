@@ -62,10 +62,14 @@ namespace PinionCore.Remote.Soul
                     var sender = new PinionCore.Network.PackageSender(ev.Stream, _Pool);
                     var user = new User(reader, sender, _Protocol, _Serializable, _InternalSerializable, _Pool);
                     var capturedStream = ev.Stream;
-                    var capturedSender = sender as IDisposable;
                     user.ErrorEvent += () =>
                     {
-                        capturedSender?.Dispose();
+                        IDisposable userDispose = user;
+                        userDispose.Dispose();
+
+                        IDisposable streamDispose = capturedStream;
+                        streamDispose.Dispose();
+
                         Leave(capturedStream);
                     };
                     user.Launch();
@@ -76,17 +80,24 @@ namespace PinionCore.Remote.Soul
                     else
                     {
                         // already exists; clean up the extra instance
-                        user.Shutdown();
-                        var dispose = sender as IDisposable;
-                        dispose.Dispose();
+                        IDisposable userDispose = user;
+                        userDispose.Dispose();
+
+                        IDisposable streamDispose = ev.Stream;
+                        streamDispose.Dispose();
                     }
                 }
                 else
                 {
                     if (_Users.TryRemove(ev.Stream, out User user))
                     {
-                        user.Shutdown();
                         _Entry.UnregisterClientBinder(user.Binder);
+
+                        IDisposable userDispose = user;
+                        userDispose.Dispose();
+
+                        IDisposable streamDispose = ev.Stream;
+                        streamDispose.Dispose();
                     }
                 }                
             }

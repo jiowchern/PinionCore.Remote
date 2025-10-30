@@ -22,6 +22,11 @@ namespace PinionCore.Remote.Gateway.Hosts
             {
                 return Stream.Receive(buffer, offset, count);
             }
+
+            void IDisposable.Dispose()
+            {
+                // AgentSession 不擁有 Stream 的所有權，由創建者負責釋放
+            }
         }
 
         private readonly System.Collections.Generic.List<AgentSession> _sessions;

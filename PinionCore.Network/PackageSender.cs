@@ -41,30 +41,21 @@ namespace PinionCore.Network
 
         void IDisposable.Dispose()
         {
-            if (_Sending == null)
-                return;
-
-            if (!_Sending.IsCompleted)
-            {
-                try
-                {
-                    _Sending.GetAwaiter().GetResult();
-                }
-                catch
-                {
-                    // Ignore exceptions while waiting during dispose.
-                }
-            }
-
-            _Sending.Dispose();
+            // Unity WebGL 不能同步等待 Task，避免死鎖
         }
 
 
 
         private void _Push(Memorys.Buffer buffer)
         {
-
-            _Sending = _Sending.ContinueWith(t => _SendBufferAsync(buffer)).Unwrap();
+            if (_Sending.IsCompleted || _Sending.IsFaulted || _Sending.IsCanceled)
+            {
+                _Sending = _SendBufferAsync(buffer);
+            }
+            else
+            {
+                _Sending = _Sending.ContinueWith(t => _SendBufferAsync(buffer)).Unwrap();
+            }
         }
 
         private async Task<int> _SendBufferAsync(PinionCore.Memorys.Buffer buffer)

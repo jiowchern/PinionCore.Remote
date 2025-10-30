@@ -1,14 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
+using System.Runtime.CompilerServices;
 using PinionCore.Memorys;
 
 
 namespace PinionCore.Remote.Soul
 {
-    public class User : IRequestQueue, IResponseQueue, Advanceable
+    public class User : IRequestQueue, IResponseQueue, Advanceable, IDisposable
     {
         public delegate void DisconnectCallback();
 
@@ -40,8 +39,7 @@ namespace PinionCore.Remote.Soul
         private readonly IResponseQueue _ResponseQueue;
 
         private readonly IInternalSerializable _InternalSerializer;
-        private Task<List<Memorys.Buffer>> _ReadTask;
-        private CancellationTokenSource _readCancellation;
+        private TaskAwaiter<List<Memorys.Buffer>> _ReadTask;
 
         public event System.Action ErrorEvent;
         public IBinder Binder
@@ -72,8 +70,7 @@ namespace PinionCore.Remote.Soul
 
         void _Launch()
         {
-            _readCancellation = new CancellationTokenSource();
-            _ReadTask = _Reader.Read(_readCancellation.Token);
+            _ReadTask = _Reader.Read().GetAwaiter();
             var pkg = new PinionCore.Remote.Packages.PackageProtocolSubmit();
             pkg.VersionCode = _Protocol.VersionCode;
 
@@ -98,18 +95,12 @@ namespace PinionCore.Remote.Soul
 
         void _Shutdown()
         {
-            if (_readCancellation != null && !_readCancellation.IsCancellationRequested)
-            {
-                _readCancellation.Cancel();
-            }
             PinionCore.Remote.Packages.RequestPackage req;
             while (_ExternalRequests.TryDequeue(out req))
             {
 
             }
-            _ReadTask = null;
-            _readCancellation?.Dispose();
-            _readCancellation = null;
+            Utility.Singleton<Utility.Log>.Instance.WriteInfo("User offline leave.");
         }
 
         event InvokeMethodCallback IRequestQueue.InvokeMethodEvent
@@ -219,25 +210,10 @@ namespace PinionCore.Remote.Soul
 
         void Advanceable.Advance()
         {
-            if (_ReadTask != null && _ReadTask.IsCompleted)
+            if (_ReadTask.IsCompleted)
             {
-                try
-                {
-                    List<Memorys.Buffer> buffers = _ReadTask.GetAwaiter().GetResult();
-                    _ReadDone(buffers);
-                }
-                catch (OperationCanceledException)
-                {
-                    if (_readCancellation?.IsCancellationRequested != true)
-                    {
-                        throw;
-                    }
-                }
-
-                if (_readCancellation?.IsCancellationRequested != true)
-                {
-                    _ReadTask = _Reader.Read(_readCancellation.Token);
-                }
+                _ReadDone(_ReadTask.GetResult());
+                _ReadTask = _Reader.Read().GetAwaiter();
             }
             PinionCore.Remote.Packages.RequestPackage pkg;
             while (_ExternalRequests.TryDequeue(out pkg))
@@ -252,6 +228,17 @@ namespace PinionCore.Remote.Soul
                 }
 
             }
+        }
+
+        void IDisposable.Dispose()
+        {
+            _Shutdown();
+
+            IDisposable readerDispose = _Reader;
+            readerDispose.Dispose();
+
+            IDisposable senderDispose = _Sender;
+            senderDispose.Dispose();
         }
     }
 }

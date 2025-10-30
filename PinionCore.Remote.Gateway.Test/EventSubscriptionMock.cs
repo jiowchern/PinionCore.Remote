@@ -123,6 +123,12 @@ namespace PinionCore.Remote.Gateway.Tests
             public void Dispose()
             {
                 _disposed = true;
+
+                IDisposable readerDispose = _reader;
+                readerDispose.Dispose();
+
+                IDisposable senderDispose = _sender;
+                senderDispose.Dispose();
             }
         }
     }

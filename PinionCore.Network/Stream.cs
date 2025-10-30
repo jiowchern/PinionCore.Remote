@@ -35,5 +35,14 @@ namespace PinionCore.Network
             return Receive.Pop(buffer, offset, count);
         }
 
+        void System.IDisposable.Dispose()
+        {
+            System.IDisposable sendDispose = Send;
+            sendDispose.Dispose();
+
+            System.IDisposable receiveDispose = Receive;
+            receiveDispose.Dispose();
+        }
+
     }
 }

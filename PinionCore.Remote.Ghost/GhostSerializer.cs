@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
+using System.Runtime.CompilerServices;
 using PinionCore.Memorys;
 using PinionCore.Network;
 using PinionCore.Utility;
@@ -18,8 +17,7 @@ namespace PinionCore.Remote.Ghost
 
 
         private readonly System.Collections.Concurrent.ConcurrentBag<System.Exception> _Exceptions;
-        private Task<List<Memorys.Buffer>> _ReadTask;
-        private CancellationTokenSource _readCancellation;
+        private TaskAwaiter<List<Memorys.Buffer>> _ReadTask;
 
         public event System.Action<System.Exception> ErrorEvent;
         public GhostSerializer(PinionCore.Network.PackageReader reader, PackageSender sender, IInternalSerializable serializable)
@@ -67,10 +65,9 @@ namespace PinionCore.Remote.Ghost
 
         public void Start()
         {
-            PinionCore.Utility.Log.Instance.WriteInfoImmediate("Agent online enter.");
-            //Singleton<Log>.Instance.WriteInfo("Agent online enter.");
-            _readCancellation = new CancellationTokenSource();
-            _ReadTask = _Reader.Read(_readCancellation.Token);
+            PinionCore.Utility.Log.Instance.WriteInfoImmediate("Agent online enter.");            
+            _ReadTask = _Reader.Read().GetAwaiter();
+            PinionCore.Utility.Log.Instance.WriteInfoImmediate("Agent online entered.");
         }
 
         public void Stop()
@@ -83,12 +80,9 @@ namespace PinionCore.Remote.Ghost
             {
 
             }
-            Singleton<Log>.Instance.WriteInfo("Agent online leave.");
-            _readCancellation?.Dispose();
-            _readCancellation = null;
-            _ReadTask = null;
+            PinionCore.Utility.Log.Instance.WriteInfoImmediate("Agent online leave.");
         }
-
+        
         void _Update()
         {
             if (_Exceptions.TryTake(out Exception e))
@@ -96,34 +90,12 @@ namespace PinionCore.Remote.Ghost
                 ErrorEvent.Invoke(e);
                 return;
             }
+        
 
-            if (_ReadTask != null && _ReadTask.IsCompleted)
-            {
-                var completedWithCancellation = false;
-                try
-                {
-                    _ReadDone(_ReadTask.GetAwaiter().GetResult());
-                }
-                catch (OperationCanceledException)
-                {
-                    if (_readCancellation?.IsCancellationRequested == true)
-                    {
-                        completedWithCancellation = true;
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-
-                if (!completedWithCancellation && _readCancellation?.IsCancellationRequested != true)
-                {
-                    _ReadTask = _Reader.Read(_readCancellation.Token);
-                }
-                else if (completedWithCancellation)
-                {
-                    _ReadTask = null;
-                }
+            if (_ReadTask.IsCompleted)
+            {                
+                _ReadDone(_ReadTask.GetResult());
+                _ReadTask = _Reader.Read().GetAwaiter();
             }
             _Process();
         }
@@ -151,10 +123,7 @@ namespace PinionCore.Remote.Ghost
 
         private void _ReaderStop()
         {
-            if (_readCancellation != null && !_readCancellation.IsCancellationRequested)
-            {
-                _readCancellation.Cancel();
-            }
+
         }
 
         public void Update()

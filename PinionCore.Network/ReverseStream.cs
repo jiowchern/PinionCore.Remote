@@ -21,5 +21,10 @@ namespace PinionCore.Network
         {
             return _Peer.Push(buffer, offset, count);
         }
+
+        void System.IDisposable.Dispose()
+        {
+            // ReverseStream 不擁有 _Peer 的所有權，由創建者負責釋放
+        }
     }
 }

@@ -142,5 +142,10 @@ namespace PinionCore.Network
         {
             return Push(buffer, offset, count);
         }
+
+        void IDisposable.Dispose()
+        {
+            // BufferRelay 是內存中的緩衝區，由 GC 自動回收
+        }
     }
 }
