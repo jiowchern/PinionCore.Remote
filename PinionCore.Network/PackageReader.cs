@@ -35,10 +35,8 @@ namespace PinionCore.Network
         {
             var packages = new List<Package>();
             Memorys.Buffer headBuffer = _Pool.Alloc(8);
-            _CopyBuffer(unfin.Segment, headBuffer.Bytes, unfin.Segment.Count);
-            PinionCore.Utility.Log.Instance.WriteInfoImmediate("ReadBuffers unfin.Segment.Count:" + unfin.Segment.Count);
-            var headReadCount = await _ReadFromStream(headBuffer.Bytes.Array, offset: headBuffer.Bytes.Offset + unfin.Segment.Count, count: headBuffer.Bytes.Count - unfin.Segment.Count);
-            PinionCore.Utility.Log.Instance.WriteInfoImmediate("ReadBuffers headReadCount:" + headReadCount);
+            _CopyBuffer(unfin.Segment, headBuffer.Bytes, unfin.Segment.Count);            
+            var headReadCount = await _ReadFromStream(headBuffer.Bytes.Array, offset: headBuffer.Bytes.Offset + unfin.Segment.Count, count: headBuffer.Bytes.Count - unfin.Segment.Count);            
             if (headReadCount == 0)
                 return new List<PinionCore.Memorys.Buffer>();
             headReadCount += unfin.Segment.Count;

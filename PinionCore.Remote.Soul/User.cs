@@ -132,8 +132,6 @@ namespace PinionCore.Remote.Soul
             _Sender.Push(buf);
         }
 
-
-
         private void _ExternalRequest(PinionCore.Remote.Packages.RequestPackage package)
         {
             if (package.Code == ClientToServerOpCode.CallMethod)

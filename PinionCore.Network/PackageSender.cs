@@ -10,13 +10,11 @@ namespace PinionCore.Network
         private readonly IStreamable _Stream;
         private readonly IPool _Pool;
 
-
-        private Task<int> _Sending;
+        private bool _isSending = false;
+        private readonly System.Collections.Generic.Queue<Memorys.Buffer> _sendQueue = new System.Collections.Generic.Queue<Memorys.Buffer>();
 
         public PackageSender(IStreamable stream, PinionCore.Memorys.IPool pool)
         {
-            _Sending = Task.FromResult(0);
-
             _Stream = stream;
             _Pool = pool;
         }
@@ -34,27 +32,53 @@ namespace PinionCore.Network
             {
                 sendBuffer.Bytes.Array[sendBuffer.Bytes.Offset + offset + i] = buffer.Bytes.Array[buffer.Bytes.Offset + i];
             }
-            offset += buffer.Bytes.Count;
 
-            _Push(sendBuffer);
+            _sendQueue.Enqueue(sendBuffer);
+
+            if (!_isSending)
+            {
+                _ = _ProcessSendQueueAsync();
+            }
         }
 
         void IDisposable.Dispose()
         {
             // Unity WebGL 不能同步等待 Task，避免死鎖
+            // 清理佇列中的 buffer
+            while (_sendQueue.Count > 0)
+            {
+                var buffer = _sendQueue.Dequeue();
+             //   buffer.Dispose();
+            }
         }
 
-
-
-        private void _Push(Memorys.Buffer buffer)
+        private async Task _ProcessSendQueueAsync()
         {
-            if (_Sending.IsCompleted || _Sending.IsFaulted || _Sending.IsCanceled)
+            // 防止重複進入（WebGL 單執行緒環境下已足夠）
+            if (_isSending)
+                return;
+
+            _isSending = true;
+
+            try
             {
-                _Sending = _SendBufferAsync(buffer);
+                while (_sendQueue.Count > 0)
+                {
+                    var buffer = _sendQueue.Dequeue();
+                    try
+                    {
+                        await _SendBufferAsync(buffer);
+                    }
+                    finally
+                    {
+                        // 發送完成後釋放 buffer 回 pool
+                        //buffer.Dispose();
+                    }
+                }
             }
-            else
+            finally
             {
-                _Sending = _Sending.ContinueWith(t => _SendBufferAsync(buffer)).Unwrap();
+                _isSending = false;
             }
         }
 
@@ -72,10 +96,6 @@ namespace PinionCore.Network
             return sendCount;
         }
 
-        public bool IsSending
-        {
-            get { return !_Sending.IsCompleted; }
-
-        }
+        
     }
 }
