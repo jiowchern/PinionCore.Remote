@@ -26,7 +26,7 @@ services:
     # Port mappings (host:container)
     ports:
       - "8001:8001"  # Agent TCP port
-      - "2083:8002"  # Agent WebSocket port (外部使用 2083)
+      - "8002:8002"  # Agent WebSocket port 
       - "8003:8003"  # Registry TCP port
 
     # Environment variables
