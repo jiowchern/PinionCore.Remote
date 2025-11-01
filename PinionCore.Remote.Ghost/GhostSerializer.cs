@@ -66,8 +66,7 @@ namespace PinionCore.Remote.Ghost
         public void Start()
         {
             PinionCore.Utility.Log.Instance.WriteInfoImmediate("Agent online enter.");            
-            _ReadTask = _Reader.Read().GetAwaiter();
-            PinionCore.Utility.Log.Instance.WriteInfoImmediate("Agent online entered.");
+            _ReadTask = _Reader.Read().GetAwaiter();            
         }
 
         public void Stop()

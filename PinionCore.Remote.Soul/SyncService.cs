@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using PinionCore.Extensions;
 using PinionCore.Network;
 
 namespace PinionCore.Remote.Soul
@@ -28,6 +29,7 @@ namespace PinionCore.Remote.Soul
         {
             _Entry = entry;
             _Protocol = protocol;
+            PinionCore.Utility.Log.Instance.WriteInfo("SyncService Protocol: " + protocol.VersionCode.ToMd5String());
             _Serializable = serializable;
             _InternalSerializable = internal_serializable;
             _Pool = pool;

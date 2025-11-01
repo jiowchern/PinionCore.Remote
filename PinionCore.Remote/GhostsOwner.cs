@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using PinionCore.Extensions;
 
 namespace PinionCore.Remote
 {
@@ -13,6 +14,7 @@ namespace PinionCore.Remote
             public GhostsOwner(IProtocol protocol)
             {
                 _Protocol = protocol;
+                PinionCore.Utility.Log.Instance.WriteInfo("GhostsOwner Protocol: " + protocol.VersionCode.ToMd5String());
                 _Providers = new Dictionary<Type, IProvider>();
             }
 
