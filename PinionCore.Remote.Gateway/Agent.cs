@@ -19,18 +19,7 @@ namespace PinionCore.Remote.Gateway
             _NotifierOwners = new Dictionary<Type, INotifierOwneable>();
             _Pool = pool;
         }
-        float IAgent.Ping => _AvgPing();
-
-        private float _AvgPing()
-        {
-            var total = _Pool.Agent.Ping;
-            foreach(var agent in _Agents)
-            {
-                total += agent.Ping;
-            }
-            
-            return total / (_Agents.Count + 1);
-        }
+        float IAgent.Ping => _Pool.Agent.Ping;        
 
         event Action<byte[], byte[]> _VersionCodeErrorEvent;
         event Action<byte[], byte[]> IAgent.VersionCodeErrorEvent
