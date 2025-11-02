@@ -35,14 +35,14 @@ namespace PinionCore.Serialization
 
         int ITypeDescriber.GetByteCount(object instance)
         {
-            var instanceVal = _GetUInt64(instance);
+            var instanceVal = _GetUInt64WithZigZag(instance);
             return Varint.GetByteCount(instanceVal);
         }
         public object Default { get { return _Default; } }
         int ITypeDescriber.ToBuffer(object instance, PinionCore.Memorys.Buffer buffer, int begin)
         {
             ArraySegment<byte> bytes = buffer.Bytes;
-            var instanceVal = _GetUInt64(instance);
+            var instanceVal = _GetUInt64WithZigZag(instance);
             return Varint.NumberToBuffer(bytes.Array, bytes.Offset + begin, instanceVal);
         }
 
@@ -69,6 +69,28 @@ namespace PinionCore.Serialization
             return val;
         }
 
+        private ulong _GetUInt64WithZigZag(object instance)
+        {
+            // Apply ZigZag encoding for signed types
+            if (Type == typeof(int))
+            {
+                return ZigZag.Encode((int)instance);
+            }
+            else if (Type == typeof(long))
+            {
+                return ZigZag.Encode((long)instance);
+            }
+            else if (Type == typeof(short))
+            {
+                return ZigZag.Encode((int)(short)instance);
+            }
+            else
+            {
+                // For unsigned types and others, use raw conversion
+                return _GetUInt64(instance);
+            }
+        }
+
 
         int ITypeDescriber.ToObject(PinionCore.Memorys.Buffer buffer, int begin, out object instance)
         {
@@ -81,7 +103,8 @@ namespace PinionCore.Serialization
             }
             else if (Type == typeof(short))
             {
-                instance = (short)value;
+                // Decode ZigZag for signed short
+                instance = (short)ZigZag.Decode((uint)value);
             }
             else if (Type == typeof(ushort))
             {
@@ -89,7 +112,8 @@ namespace PinionCore.Serialization
             }
             else if (Type == typeof(int))
             {
-                instance = (int)value;
+                // Decode ZigZag for signed int
+                instance = ZigZag.Decode((uint)value);
             }
             else if (Type == typeof(uint))
             {
@@ -97,7 +121,8 @@ namespace PinionCore.Serialization
             }
             else if (Type == typeof(long))
             {
-                instance = (long)value;
+                // Decode ZigZag for signed long
+                instance = ZigZag.Decode(value);
             }
             else if (Type == typeof(char))
             {
