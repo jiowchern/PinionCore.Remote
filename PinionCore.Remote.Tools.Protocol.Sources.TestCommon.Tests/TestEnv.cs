@@ -28,10 +28,9 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
             IProtocol protocol = PinionCore.Remote.Protocol.ProtocolProvider.Create(typeof(T2).Assembly).Single();
             var serializer = new PinionCore.Remote.Serializer(protocol.SerializeTypes);
             #region standalone
-            Service service = PinionCore.Remote.Standalone.Provider.CreateService(entry, protocol, serializer, new InternalSerializer() , Memorys.PoolProvider.Shared);
+            var service = new PinionCore.Remote.Soul.Service(entry, protocol, serializer, new PinionCore.Remote.InternalSerializer(), Memorys.PoolProvider.Shared);
 
-
-            Ghost.IAgent agent = PinionCore.Remote.Standalone.Provider.CreateAgent(protocol, serializer, new InternalSerializer(), Memorys.PoolProvider.Shared);
+            Ghost.IAgent agent = new PinionCore.Remote.Ghost.Agent(protocol, serializer, new PinionCore.Remote.InternalSerializer(), Memorys.PoolProvider.Shared);            
             var agentDisconnect = agent.Connect(service);
 
             var updateMessage = new ThreadUpdater(() =>

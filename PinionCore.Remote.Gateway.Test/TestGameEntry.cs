@@ -55,7 +55,7 @@ namespace PinionCore.Remote.Gateway.Tests
 
         public IService ToService()
         {            
-            return PinionCore.Remote.Standalone.Provider.CreateService(this, PinionCore.Remote.Tools.Protocol.Sources.TestCommon.ProtocolProvider.CreateCase1());
+            return new PinionCore.Remote.Soul.Service(this, PinionCore.Remote.Tools.Protocol.Sources.TestCommon.ProtocolProvider.CreateCase1());
         }
     }
 }

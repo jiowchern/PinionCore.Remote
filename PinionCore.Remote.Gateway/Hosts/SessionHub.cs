@@ -25,7 +25,8 @@ namespace PinionCore.Remote.Gateway.Hosts
             Sink = this;
             _Entry = new Entry(this);
             var protocol = PinionCore.Remote.Gateway.Protocols.ProtocolProvider.Create();
-            Source = PinionCore.Remote.Standalone.Provider.CreateService(_Entry, protocol);
+            
+            Source = new PinionCore.Remote.Soul.Service(_Entry, protocol);
         }
 
         ISessionMembership ISessionMembershipProvider.Query(byte[] version)

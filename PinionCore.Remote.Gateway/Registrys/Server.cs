@@ -45,7 +45,7 @@ namespace PinionCore.Remote.Gateway.Registrys
 
         public IService ToService()
         {
-            return PinionCore.Remote.Standalone.Provider.CreateService(this, ProtocolProvider.Create());
+            return new PinionCore.Remote.Soul.Service(this, ProtocolProvider.Create());
         }
 
         public void Dispose()

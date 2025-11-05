@@ -10,10 +10,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\PinionCore.Network\PinionCore.Network.csproj" />
-    <ProjectReference Include="..\PinionCore.Remote.Ghost\PinionCore.Remote.Ghost.csproj" />
-    <ProjectReference Include="..\PinionCore.Remote\PinionCore.Remote.csproj" />
-    <ProjectReference Include="..\PinionCore.Serialization\PinionCore.Serialization.csproj" />
+	  <ProjectReference Include="..\PinionCore.Network\PinionCore.Network.csproj" />
+	  <ProjectReference Include="..\PinionCore.Remote.Ghost\PinionCore.Remote.Ghost.csproj" />    
   </ItemGroup>
 
 </Project>

@@ -25,10 +25,10 @@ namespace PinionCore.Integration.Tests
             var tester = new PinionCore.Remote.Tools.Protocol.Sources.TestCommon.EchoTester();
             entry.RegisterClientBinder(NSubstitute.Arg.Do<IBinder>(b => b.Bind<PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Echoable>(tester)));
 
-            var service = PinionCore.Remote.Standalone.Provider.CreateService(entry, protocol);
+            var service = new PinionCore.Remote.Soul.Service(entry, protocol);
 
             var agentsObs = from i in System.Reactive.Linq.Observable.Range(0, agent_count)
-                            select PinionCore.Remote.Standalone.Provider.CreateAgent(protocol);
+                            select (new PinionCore.Remote.Ghost.Agent(protocol)) as Remote.Ghost.IAgent;
 
             var agents = await agentsObs.ToList();
 

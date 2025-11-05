@@ -22,7 +22,12 @@ namespace PinionCore.Remote.Ghost
         {
             get { return _GhostProvider.Ping; }
         }
+       
 
+        public Agent(IProtocol protocol)
+            : this(protocol, new PinionCore.Remote.Serializer(protocol.SerializeTypes), new PinionCore.Remote.InternalSerializer(), PinionCore.Memorys.PoolProvider.Shared)
+        {
+        }
         public Agent(IProtocol protocol, ISerializable serializable, IInternalSerializable internal_serializable, PinionCore.Memorys.IPool pool)
         {
             _InternalSerializer = internal_serializable;

@@ -8,7 +8,7 @@ namespace PinionCore.Remote.Gateway.Tests
     {
         internal IService ToService()
         {
-            return PinionCore.Remote.Standalone.Provider.CreateService(this, PinionCore.Consoles.Chat1.Common.ProtocolCreator.Create());
+            return new PinionCore.Remote.Soul.Service(this, PinionCore.Consoles.Chat1.Common.ProtocolCreator.Create());
         }
 
         Value<bool> ILogin.Login(string name)

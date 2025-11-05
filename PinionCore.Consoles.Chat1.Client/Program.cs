@@ -71,8 +71,8 @@ namespace PinionCore.Consoles.Chat1.Client
                 .Select(type => Activator.CreateInstance(type) as PinionCore.Remote.IEntry)
                 .Single();
 
-            using var service = PinionCore.Remote.Standalone.Provider.CreateService(entry, protocol);
-            var agent = PinionCore.Remote.Standalone.Provider.CreateAgent(protocol);
+            using var service = new PinionCore.Remote.Soul.Service(entry, protocol);
+            var agent = new PinionCore.Remote.Ghost.Agent(protocol);
             var disconnect = PinionCore.Remote.Standalone.Provider.Connect(agent, service);
 
             try

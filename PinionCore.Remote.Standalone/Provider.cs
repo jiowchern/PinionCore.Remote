@@ -7,24 +7,6 @@ namespace PinionCore.Remote.Standalone
 {
     public static class Provider
     {
-        public static Service CreateService(IEntry entry, IProtocol protocol)
-        {
-            return CreateService(entry, protocol, new PinionCore.Remote.Serializer(protocol.SerializeTypes), new InternalSerializer(), PinionCore.Memorys.PoolProvider.Shared);
-        }
-        public static Service CreateService(IEntry entry, IProtocol protocol, ISerializable serializable, IInternalSerializable internalSerializable , PinionCore.Memorys.IPool pool)
-        {
-            return new Standalone.Service(entry, protocol, serializable, internalSerializable, pool);
-        }
-
-        public static IAgent CreateAgent(IProtocol protocol)
-        {
-            return CreateAgent(protocol, new PinionCore.Remote.Serializer(protocol.SerializeTypes), new PinionCore.Remote.InternalSerializer(), PinionCore.Memorys.PoolProvider.Shared);
-        }
-
-        public static IAgent CreateAgent(IProtocol protocol,ISerializable serializable , IInternalSerializable internalSerializable , IPool pool)
-        {
-            return new Ghost.Agent(protocol, serializable , internalSerializable, pool);
-        }
 
         public static System.Action Connect(this IAgent agent ,IService service )
         {

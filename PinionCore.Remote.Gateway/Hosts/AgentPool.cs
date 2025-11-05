@@ -37,8 +37,8 @@ namespace PinionCore.Remote.Gateway.Hosts
         public AgentPool(IProtocol gameProtocol)
         {
             _Protocol = gameProtocol;
-            _sessions = new System.Collections.Generic.List<AgentSession>();
-            Agent = Provider.CreateAgent();
+            _sessions = new System.Collections.Generic.List<AgentSession>();            
+            Agent = ProtocolProvider.Create().ToAgent();
             _agentsCollection = new Depot<IAgent>();
             Agents = new Notifier<IAgent>(_agentsCollection);
 
@@ -76,7 +76,7 @@ namespace PinionCore.Remote.Gateway.Hosts
 
         private void OnConnectionSupply(IStreamable stream)
         {
-            var agent = PinionCore.Remote.Standalone.Provider.CreateAgent(_Protocol);
+            var agent = _Protocol.ToAgent();
             var wrapper = new AgentSession
             {
                 Agent = agent,

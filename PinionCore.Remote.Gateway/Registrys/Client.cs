@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using PinionCore.Network;
 using PinionCore.Remote.Gateway.Protocols;
@@ -29,7 +29,7 @@ namespace PinionCore.Remote.Gateway.Registrys
             _Streams = new Depot<IStreamable>();
             _Notifier = new Notifier<IStreamable>(_Streams);
             Listener = new PinionCore.Remote.Gateway.Misc.NotifierListener(_Notifier);
-            Agent = Provider.CreateAgent();
+            Agent = ProtocolProvider.Create().ToAgent();
             _Queryer = Agent;
             _Sessions = new List<RegisterableSession>();
             _RegisterNotifier = _Queryer.QueryNotifier<IRegisterable>();

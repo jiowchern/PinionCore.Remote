@@ -11,11 +11,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\PinionCore.Network\PinionCore.Network.csproj" />
-    
-    <ProjectReference Include="..\PinionCore.Remote.Soul\PinionCore.Remote.Soul.csproj" />
-    <ProjectReference Include="..\PinionCore.Remote\PinionCore.Remote.csproj" />
-    <ProjectReference Include="..\PinionCore.Serialization\PinionCore.Serialization.csproj" />
+	  <ProjectReference Include="..\PinionCore.Network\PinionCore.Network.csproj" />
+	  <ProjectReference Include="..\PinionCore.Remote.Soul\PinionCore.Remote.Soul.csproj" />
   </ItemGroup>
 
 </Project>
