@@ -90,6 +90,23 @@ namespace PinionCore.Network.Tcp
             Socket.Close();
         }
 
+        public System.Threading.Tasks.Task Disconnect(bool reuse = false)
+        {
+            if (Socket.Connected)
+            {
+                Socket.Shutdown(SocketShutdown.Both);
+                return System.Threading.Tasks.Task.Factory.FromAsync(
+                            (handler, obj) => Socket.BeginDisconnect(reuse, handler, null),
+                            Socket.EndDisconnect,
+                            null);
+
+            }
+            else
+            {
+                return System.Threading.Tasks.Task.CompletedTask;
+            }
+        }
+
     }
 
 

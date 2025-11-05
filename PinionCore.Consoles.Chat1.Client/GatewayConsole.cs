@@ -17,11 +17,14 @@ namespace PinionCore.Consoles.Chat1.Client
         private readonly PinionCore.Remote.Gateway.Agent _RouterAgent;
         private IAgent _Agent => _RouterAgent;
         private bool _connected;
-        private object? _connector;
+        
+
+        System.Action _Dispose;
 
         public GatewayConsole(PinionCore.Remote.Gateway.Agent agent)
             : base(agent)
         {
+            _Dispose = () => { };
             _RouterAgent = agent;
         }
 
@@ -43,8 +46,11 @@ namespace PinionCore.Consoles.Chat1.Client
                 var endpoint = new IPEndPoint(IPAddress.Parse(routerHost), routerPort);
                 var peer = tcpConnector.Connect(endpoint).GetAwaiter().GetResult();
 
+                
+
                 Agent.Enable(peer);
-                _connector = tcpConnector;
+                _Dispose = () => peer.Disconnect();
+                
                 _connected = true;
 
                 System.Console.WriteLine($"[TCP] Connected to Router. Waiting for routing allocation...");
@@ -93,7 +99,11 @@ namespace PinionCore.Consoles.Chat1.Client
                 }
 
                 Agent.Enable(webConnector);
-                _connector = webConnector;
+                _Dispose = () => {
+                    webConnector.DisconnectAsync().GetAwaiter().GetResult();
+                    // Web.Connecter 繼承 Web.Peer，Peer 實作 IDisposable
+                    ((IDisposable)webConnector).Dispose();
+                };
                 _connected = true;
 
                 System.Console.WriteLine($"[WebSocket] Connected to Router. Waiting for routing allocation...");
@@ -146,24 +156,7 @@ namespace PinionCore.Consoles.Chat1.Client
                 return;
             }
 
-            Agent.Disable();
-
-            // 處理不同類型的 Connector
-            if (_connector != null)
-            {
-                if (_connector is PinionCore.Network.Tcp.Connector tcpConnector)
-                {
-                    tcpConnector.Disconnect().GetAwaiter().GetResult();
-                }
-                else if (_connector is PinionCore.Network.Web.Connecter webConnector)
-                {
-                    webConnector.DisconnectAsync().GetAwaiter().GetResult();
-                    // Web.Connecter 繼承 Web.Peer，Peer 實作 IDisposable
-                    ((IDisposable)webConnector).Dispose();
-                }
-
-                _connector = null;
-            }
+            Agent.Disable();           
 
             _connected = false;
             System.Console.WriteLine("Disconnected from Router.");

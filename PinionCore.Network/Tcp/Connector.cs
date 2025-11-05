@@ -25,22 +25,7 @@ namespace PinionCore.Network.Tcp
             return new Peer(_Socket);
         }
 
-        public System.Threading.Tasks.Task Disconnect(bool reuse = false)
-        {
-            if (_Socket.Connected)
-            {
-                _Socket.Shutdown(SocketShutdown.Both);
-                return System.Threading.Tasks.Task.Factory.FromAsync(
-                            (handler, obj) => _Socket.BeginDisconnect(reuse, handler, null),
-                            _Socket.EndDisconnect,
-                            null);
-
-            }
-            else
-            {
-                return System.Threading.Tasks.Task.CompletedTask;
-            }
-        }
+        
 
 
     }

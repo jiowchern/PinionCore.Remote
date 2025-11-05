@@ -40,7 +40,7 @@ namespace PinionCore.Samples.HelloWorld.Client
                 agent.HandlePackets();
             }
 
-            await tcp.Disconnect();
+            await peer.Disconnect();
             agent.Disable();
             System.Console.WriteLine($"Press any key to end.");
             System.Console.ReadKey();

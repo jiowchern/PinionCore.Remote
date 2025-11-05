@@ -43,7 +43,7 @@ namespace PinionCore.Integration.Tests
 
             client.Agent.Enable(peer);
 
-            await client.Connector.Disconnect();
+            await peer.Disconnect();
 
             while (!peerBreak)
             {
@@ -111,7 +111,7 @@ namespace PinionCore.Integration.Tests
             await task;
 
             // release
-            await client.Connector.Disconnect();
+            await peer.Disconnect();
             client.Agent.Disable();
 
             server.Listener.Close();

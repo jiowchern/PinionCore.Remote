@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Threading.Tasks;
@@ -93,7 +93,7 @@ namespace PinionCore.Consoles.Chat1.Bots
             target.Peer.BreakEvent -= target.BreakHandler;
             target.Bot.Dispose();
             target.Set.Agent.Disable();
-            target.Set.Connector.Disconnect().GetAwaiter().GetResult();
+            target.Peer.Disconnect().GetAwaiter().GetResult();
         }
 
         public void Dispose()
@@ -110,7 +110,7 @@ namespace PinionCore.Consoles.Chat1.Bots
                 connection.Peer.BreakEvent -= connection.BreakHandler;
                 connection.Bot.Dispose();
                 connection.Set.Agent.Disable();
-                connection.Set.Connector.Disconnect().GetAwaiter().GetResult();
+                connection.Peer.Disconnect().GetAwaiter().GetResult();
             }
         }
     }

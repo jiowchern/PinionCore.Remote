@@ -7,6 +7,7 @@ namespace PinionCore.Consoles.Chat1.Client
     {
         private readonly PinionCore.Network.Tcp.Connector _connector;
         private bool _connected;
+        System.Action _Dispose = () => { };
 
         public RemoteConsole(PinionCore.Remote.Client.TcpConnectSet set)
             : base(set.Agent)
@@ -29,6 +30,7 @@ namespace PinionCore.Consoles.Chat1.Client
                 Agent.Enable(peer);
                 Command.Register("disconnect", DisconnectCommand);
                 _connected = true;
+                _Dispose = () => peer.Disconnect();
                 System.Console.WriteLine($"Connected to {endpoint}.");
                 return true;
             }
@@ -87,7 +89,8 @@ namespace PinionCore.Consoles.Chat1.Client
             }
 
             Agent.Disable();
-            _connector.Disconnect().GetAwaiter().GetResult();
+            _Dispose();
+            _Dispose = () => { };
             Command.Unregister("disconnect");
             _connected = false;
             System.Console.WriteLine("Disconnected.");

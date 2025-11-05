@@ -100,7 +100,7 @@ namespace PinionCore.Network.Tests
             if (false)
             {
                 // disconnect test
-                await connector.Disconnect(true);
+                await peer.Disconnect(true);
 
                 // reconnect test
                 peer = await connector.Connect(new System.Net.IPEndPoint(System.Net.IPAddress.Loopback, port));
@@ -110,7 +110,7 @@ namespace PinionCore.Network.Tests
             else
             {
                 // disconnect test
-                await connector.Disconnect(false);
+                await peer.Disconnect(false);
             }
 
             lintener.Close();
@@ -169,7 +169,7 @@ namespace PinionCore.Network.Tests
                 var count = await streamable.Send(buffer, 0, buffer.Length);
             }
 
-            await connector.Disconnect(false);
+            await peer.Disconnect(false);
 
             {
                 IStreamable streamable = serverPeer;
