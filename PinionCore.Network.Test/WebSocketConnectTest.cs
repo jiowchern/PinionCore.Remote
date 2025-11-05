@@ -17,24 +17,27 @@ namespace PinionCore.Network.Tests
             listener.AcceptEvent += peers.Enqueue;
 
             var connecter = new PinionCore.Network.Web.Connecter(new System.Net.WebSockets.ClientWebSocket());
-            var connectResult = await connecter.ConnectAsync("ws://127.0.0.1:12345/");
+            var peerClient = await connecter.ConnectAsync("ws://127.0.0.1:12345/");
 
-            NUnit.Framework.Assert.True(connectResult);
+            NUnit.Framework.Assert.True(peerClient != null);
 
             var ar = new PinionCore.Utility.AutoPowerRegulator(new Utility.PowerRegulator(10));
 
-            Web.Peer peer;
-            while (!peers.TryDequeue(out peer))
+            Web.Peer peerServer;
+            while (!peers.TryDequeue(out peerServer))
             {
                 ar.Operate(new CancellationTokenSource());
             }
-            IStreamable server = peer;
+            IStreamable server = peerServer;
             var serverReceiveBuffer = new byte[5];
             Remote.IAwaitableSource<int> serverReceiveTask = server.Receive(serverReceiveBuffer, 0, 5);
-            IStreamable client = connecter;
+            IStreamable client = peerClient;
             var clientSendCount = await client.Send(new byte[] { 1, 2, 3, 4, 5 }, 0, 5);
 
             var serverReceiveCount = await serverReceiveTask;
+
+            await peerClient.DisconnectAsync();
+
 
             NUnit.Framework.Assert.AreEqual(5, serverReceiveCount);
             NUnit.Framework.Assert.AreEqual(5, clientSendCount);

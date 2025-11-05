@@ -4,36 +4,32 @@ using System.Threading.Tasks;
 
 namespace PinionCore.Network.Web
 {
-    public class Connecter : Peer
+    public class Connecter 
     {
 
         readonly ClientWebSocket _Socket;
 
-        public Connecter(ClientWebSocket socket) : base(socket)
+        public Connecter(ClientWebSocket socket) 
         {
             _Socket = socket;
         }
 
-        public System.Threading.Tasks.Task<bool> ConnectAsync(string address)
+        public System.Threading.Tasks.Task<Peer> ConnectAsync(string address)
         {
             Task connectTask = _Socket.ConnectAsync(new Uri(address), System.Threading.CancellationToken.None);
-            return connectTask.ContinueWith<bool>(_ConnectResult);
+            return connectTask.ContinueWith<Peer>(_ConnectResult);
         }
 
-        public Task DisconnectAsync()
-        {
-            return _Socket.CloseAsync(WebSocketCloseStatus.NormalClosure, "close", System.Threading.CancellationToken.None);
-        }
 
-        private bool _ConnectResult(Task arg)
+        private Peer _ConnectResult(Task arg)
         {
             if (_Socket.State == WebSocketState.Open)
             {
-                return true;
+                return new Peer(_Socket);
             }
             else
             {
-                return false;
+                return null;
             }
         }
     }

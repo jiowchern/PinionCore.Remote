@@ -90,17 +90,17 @@ namespace PinionCore.Consoles.Chat1.Client
                 var webConnector = new PinionCore.Network.Web.Connecter(clientWebSocket);
                 var address = $"ws://{routerHost}:{routerPort}/";
 
-                bool connected = webConnector.ConnectAsync(address).GetAwaiter().GetResult();
-
-                if (!connected)
+                var peer=  webConnector.ConnectAsync(address).GetAwaiter().GetResult();
+                
+                if (peer == null)
                 {
                     System.Console.WriteLine($"錯誤: WebSocket 連接失敗");
                     return false;
                 }
 
-                Agent.Enable(webConnector);
+                Agent.Enable(peer);
                 _Dispose = () => {
-                    webConnector.DisconnectAsync().GetAwaiter().GetResult();
+                    peer.DisconnectAsync().GetAwaiter().GetResult();
                     // Web.Connecter 繼承 Web.Peer，Peer 實作 IDisposable
                     ((IDisposable)webConnector).Dispose();
                 };

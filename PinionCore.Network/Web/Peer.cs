@@ -3,6 +3,7 @@ using System.Net.WebSockets;
 
 namespace PinionCore.Network.Web
 {
+    using System.Threading.Tasks;
     using PinionCore.Remote;
     public class Peer : IStreamable, IDisposable
     {
@@ -68,6 +69,32 @@ namespace PinionCore.Network.Web
             }).ToWaitableValue();
 
 
+        }
+        public Task DisconnectAsync() => DisconnectAsync(TimeSpan.FromSeconds(5));
+
+        public async Task DisconnectAsync(TimeSpan timeout)
+        {
+            if (_Socket.State == WebSocketState.Closed || _Socket.State == WebSocketState.Aborted)
+                return;
+
+            using var cts = System.Threading.CancellationTokenSource.CreateLinkedTokenSource(_CancelSource.Token);
+            cts.CancelAfter(timeout);
+
+            try
+            {
+                await _Socket.CloseAsync(WebSocketCloseStatus.NormalClosure, "close", cts.Token)
+                              .ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                // 對端未回應 close，強制中止
+                _Socket.Abort();
+            }
+            catch (WebSocketException)
+            {
+                // 網路錯誤等情況，保底中止
+                _Socket.Abort();
+            }
         }
     }
 }
