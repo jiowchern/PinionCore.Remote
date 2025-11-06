@@ -34,8 +34,10 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{845C59A2-925C-4D68-BAF9-E3545A354CF2}"
 	ProjectSection(SolutionItems) = preProject
 		AGENTS.md = AGENTS.md
+		CHANGELOG.md = CHANGELOG.md
 		CLAUDE.md = CLAUDE.md
 		.github\workflows\dotnet-desktop.yml = .github\workflows\dotnet-desktop.yml
+		README-tc.md = README-tc.md
 		README.md = README.md
 	EndProjectSection
 EndProject

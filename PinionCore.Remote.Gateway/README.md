@@ -354,7 +354,7 @@ public class MyGameEntry : IEntry
 
 // 建立服務
 var gameEntry = new MyGameEntry();
-var gameService = PinionCore.Remote.Standalone.Provider.CreateService(
+var gameService = new PinionCore.Remote.Soul.Service(
     gameEntry,
     protocol
 );
@@ -600,7 +600,7 @@ var data = await observable.FirstAsync();
 
 ### 網路模式 vs 單機模式
 
-範例使用的是 Standalone 模式（單機模式），適合開發和測試。生產環境應使用網路模式：
+範例使用的是 Soul 內部模式（透過 Standalone 連接器），適合開發和測試。生產環境應使用網路模式：
 
 ```csharp
 // 網路模式 - Server

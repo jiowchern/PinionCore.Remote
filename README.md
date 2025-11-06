@@ -20,7 +20,7 @@ PinionCore Remote is a powerful and flexible server-client communication framewo
 
 Key features of PinionCore Remote include support for IL2CPP and AOT, making it compatible with various platforms, including Unity WebGL. It provides default TCP connection and serialization mechanisms but also allows for customization to suit specific project needs. The framework supports methods, events, properties, and notifiers, giving developers comprehensive tools to build robust networked applications.  
 
-With its stand-alone mode, developers can simulate server-client interactions without a network connection, facilitating development and debugging. PinionCore Remote aims to streamline network communication in game development and other applications, enabling developers to focus more on implementing business logic rather than dealing with the complexities of network protocols.  
+With its Soul in-process mode and Standalone bridge, developers can simulate server-client interactions without a network connection, facilitating development and debugging. PinionCore Remote aims to streamline network communication in game development and other applications, enabling developers to focus more on implementing business logic rather than dealing with the complexities of network protocols.  
 
 If you want to know the details of the system architecture you can refer to Ask --> [DeepWiki](https://deepwiki.com/jiowchern/PinionCore.Remote) Or [OpenDeepWiki](https://opendeep.wiki/jiowchern/PinionCore.Remote) 
 
@@ -30,22 +30,12 @@ If you want to know the details of the system architecture you can refer to Ask 
 * Compatible with Unity il2cpp
 * Compatible with Unity WebGL
 * Customizable connection
-* Stand-alone mode  -->
+* Soul in-process mode  -->
 
 ## Feature
 Server and client transfer through the interface, reducing the maintenance cost of the protocol.
 
-### Gateway Module
-The **PinionCore.Remote.Gateway** module provides a distributed service gateway architecture that enables intelligent routing and connection management between clients and multiple backend services. Key features include:
 
-- **Multi-Service Architecture**: Allows clients to connect to multiple backend services through a single Router entry point
-- **Intelligent Routing**: Supports customizable routing strategies (default: Round-Robin) to distribute client connections across service instances
-- **Group-Based Organization**: Services can be organized into groups, with automatic load balancing within groups
-- **Protocol Versioning Support**: Supports multiple protocol versions simultaneously, enabling seamless coexistence of different client/service versions within the same system
-- **Transparent Proxy**: Clients interact with remote services through unified interfaces without managing individual connections
-- **Standalone Mode Support**: Includes standalone testing mode for development without network infrastructure
-
-For detailed documentation, see [PinionCore.Remote.Gateway/README.md](PinionCore.Remote.Gateway/README.md).
 <!-- 
 @startuml
 package Protocol <<Rectangle>>{
@@ -380,40 +370,44 @@ namespace Client
 		// Close
 		stop = true;
 		task.Wait();
-		set.Connector.Disconnect();
+		await peer.Disconnect();
 		set.Agent.Disable();
+		peer.Dispose();
 
 	}
 }
 ```
 ---
-## Standalone mode
-In order to facilitate development and debugging, a standalone mode is provided to run the system without a connection.
+## Soul in-process mode (Standalone bridge)
+The legacy Standalone service has been replaced by the Soul runtime. Use the Standalone provider only as a bridge between a Ghost agent and an in-process Soul service when you need offline testing.
 ```powershell
 Sample/Standalone>dotnet new console 
 ```
 1. Add References
 ```xml
 <ItemGroup>
+	<PackageReference Include="PinionCore.Remote.Soul" Version="0.1.13.14" />
+	<PackageReference Include="PinionCore.Remote.Ghost" Version="0.1.13.14" />
 	<PackageReference Include="PinionCore.Remote.Standalone" Version="0.1.13.14" />
 	<ProjectReference Include="..\Protocol\Protocol.csproj" />
 	<ProjectReference Include="..\Server\Server.csproj" />
 </ItemGroup>
 ```
-2.  Create standalone service
+2.  Create Soul service and connect through Standalone bridge
 ```csharp
 namespace Standalone
 {	
 	static void Main(string[] args)
 	{		
-		// Get IProtocol with ProtocolCreator
 		var protocol = Protocol.ProtocolCreator.Create();
-		
-		// Create service
+
 		var entry = new Entry();
-		var service = PinionCore.Remote.Standalone.Provider.CreateService(entry , protocol);
-		var agent = service.Create();
-		
+
+		using var service = new PinionCore.Remote.Soul.Service(entry, protocol);
+		using var agent = new PinionCore.Remote.Ghost.Agent(protocol);
+
+		var disconnect = PinionCore.Remote.Standalone.Provider.Connect(agent, service);
+
 		bool stop = false;
 		var task = System.Threading.Tasks.Task.Run(() => 
 		{
@@ -437,12 +431,10 @@ namespace Standalone
 			
 		};
 
-		// Close
 		stop = true;
 		task.Wait();
 		
-		agent.Dispose();
-		service.Dispose();		
+		disconnect();
 
 	}
 }
@@ -455,7 +447,7 @@ Create a connection use ```CreateAgent``` and implement the interface ```IStream
 ```csharp
 var protocol = Protocol.ProtocolCreator.Create();
 IStreamable stream = null ;// todo: Implementation Interface IStreamable
-var service = PinionCore.Remote.Client.CreateAgent(protocol , stream) ;
+var agent = PinionCore.Remote.Client.Provider.CreateAgent(protocol , stream) ;
 ```
 implement ```IStreamable```.
 ```csharp
@@ -491,7 +483,7 @@ Create a service use ```CreateService``` and implement the interface ```IListena
 var protocol = Protocol.ProtocolCreator.Create();
 var entry = new Entry();
 IListenable listener = null; // todo: Implementation Interface IListenable
-var service = PinionCore.Remote.Server.CreateService(entry , protocol , listener) ;
+var service = PinionCore.Remote.Server.Provider.CreateService(entry , protocol , listener) ;
 ```
 implement ```IListenable```.
 ```csharp
@@ -552,4 +544,14 @@ namespace PinionCore.Remote
 }
 ```
 
+### Gateway Module
+The **PinionCore.Remote.Gateway** module provides a distributed service gateway architecture that enables intelligent routing and connection management between clients and multiple backend services. Key features include:
 
+- **Multi-Service Architecture**: Allows clients to connect to multiple backend services through a single Router entry point
+- **Intelligent Routing**: Supports customizable routing strategies (default: Round-Robin) to distribute client connections across service instances
+- **Group-Based Organization**: Services can be organized into groups, with automatic load balancing within groups
+- **Protocol Versioning Support**: Supports multiple protocol versions simultaneously, enabling seamless coexistence of different client/service versions within the same system
+- **Transparent Proxy**: Clients interact with remote services through unified interfaces without managing individual connections
+- **Soul Service Support**: Includes an in-process Soul service host and Standalone bridge for development without network infrastructure
+
+For detailed documentation, see [PinionCore.Remote.Gateway/README.md](PinionCore.Remote.Gateway/README.md).

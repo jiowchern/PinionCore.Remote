@@ -1,4 +1,4 @@
-# Changelog
+﻿# Changelog
 
 All notable changes to PinionCore Remote will be documented in this file.
 
@@ -7,7 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
+### 2025-11-06
+
+#### Added
+- Added `CompressionBenchmarkTests` to measure ZigZag integer encoding and UTF-8 string serialization performance.
+
+#### Changed
+- Local in-process hosting now uses `PinionCore.Remote.Soul.Service` with Ghost agents, replacing the legacy Standalone service helpers.
+- TCP and WebSocket connectors now return `Peer` instances directly and expect `Peer.Disconnect()` for unified teardown.
+- Gateway agent ping reporting now reads from the shared pool metrics instead of recalculating averages on each call.
+
+#### Fixed
+- WebSocket connection handling now validates the returned `Peer` and surfaces socket errors for more reliable disconnect detection in tests.
+
+### 2025-10-21
+
+#### Added
 - **Gateway Protocol Versioning Support**: Router now supports multiple protocol versions simultaneously
   - `SessionHub` implements version-based isolation using `VersionKey` for safe hash-based dictionary operations
   - `ILineAllocatable` interface now includes `Version` property for protocol version identification
@@ -18,7 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - New `Entry` class replacing `ClientEntry` for improved client connection handling
 - Enhanced protocol version documentation in Gateway README with upgrade strategies
 
-### Changed
+#### Changed
 - **Breaking**: `ILoginable.Login(uint group)` signature changed to `Login(uint group, byte[] version)`
 - **Breaking**: `IServiceRegistry.Register/Unregister` methods now take `ILineAllocatable` directly instead of separate `uint group` parameter
 - `SessionHub` refactored from simple wrapper to version management center
@@ -27,10 +42,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Registry` constructor now requires protocol version: `Registry(IProtocol protocol, uint group)`
 - Improved hash collision handling with dedicated `VersionKey` class using Base64 encoding
 
-### Removed
+#### Removed
 - `ClientEntry.cs` - functionality merged into new `Entry` class
 
-### Fixed
+#### Fixed
 - Thread safety improvements in `SessionHub` version coordinator management
 - Memory leak prevention with proper `Dispose` implementation for version coordinators
 
