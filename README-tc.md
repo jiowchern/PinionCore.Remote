@@ -21,12 +21,14 @@ PinionCore Remote 是以 C# 開發的的網路通訊框架，採用物件導向�
 - 支援 Unity WebGL（伺服器端 WebSocket，客戶端需自訂）
 
 ## 特色
+這個章節將介紹 PinionCore Remote 的主要特色與設計理念。  
+裡面的範例代碼可能與實際使用的 API 有所不同，但是重點是描述 PinionCore Remote 的核心概念與功能。
 ### 1.介面導向通訊
 PinionCore Remote 採用介面導向的設計，讓開發者能夠以物件導向的方式定義伺服器與客戶端之間的通訊協議。透過定義介面，開發者可以清晰地描述通訊行為，並且讓伺服器與客戶端能夠輕鬆地實作這些介面。  
 
 ```csharp
 // 前端直接的方法呼叫遠端方法
-var val = fromserverInstance.Method1();
+var val = fromServerInstance.Method1();
 val.OnValue += result => 
 {
 	// 處理回傳結果
@@ -34,37 +36,21 @@ val.OnValue += result =>
 ```
 ### 2.輕量級
 PinionCore Remote 採用輕量級設計，核心程式庫僅包含必要的通訊功能，並且提供擴充點讓開發者能夠根據需求自訂連線與序列化方式。這使得 PinionCore Remote 能夠在各種環境中運行，包括資源有限的裝置與高效能伺服器。
-
 ### 3.可控的生命週期
 PinionCore Remote 提供了明確的生命週期管理機制，讓開發者能夠控制物件的建立與銷毀。透過 `IBinder`的 Bind 與 Unbind 方法，開發者可以在適當的時機點註冊與取消註冊介面實作，確保資源的有效利用與權限控管。
 ```csharp
 var player = new Player();
-binder.Bind<IPlayer>(player); // 綁定 IPlayer 介面
-if player.IsDeveloper() {
-	binder.Bind<IDeveloper>(player); // 檢查如果這個 玩家是開發者，才綁定 IDeveloper 介面, 簡易的權限控管機制
-}
-```
-### 4.巢狀介面支援
-PinionCore Remote 支援巢狀介面的定義與使用，讓開發者能夠在介面中包含其他介面，進一步提升通訊協議的結構化與可讀性。這使得複雜的通訊行為能夠被清晰地描述與實作。
-**以RPG遊戲舉例**
-```csharp
-// 每個npc或玩家都擁有一些基本屬性比如名字等級
-interface IActor { 
-	Property<string> Name {get};
-	Property<int> Level {get};
+var playerSoul = binder.Bind<IPlayer>(player); // 綁定 IPlayer 介面
+
+if player.IsGM() {
+	binder.Bind<IGameMsater>(player); // 檢查如果這個玩家是GM ，才綁定 IGameMaster 介面, 簡易的權限控管機制
 }
 
-// 玩家獨有的介面，繼承自IActor
-interface IPlayer : IActor {
-	
-    Notifier<IActor> Actors; // (重點)玩家看的到的其他角色列表 
-	Property<int> Gold {get; } // 玩家金幣 只有自己才看的到
-	Value<Path> Move(Postion pos) ;// 玩家移動方法
-	event System.Action<Postion> StopEvent; // 玩家停止通知
-}
+binder.Unbind(playerSoul); // 如果不需要了可以直接解除綁定, 前端將不再能呼叫這個介面
 ```
-### 5.即時通知機制
+### 4.即時通知機制
 PinionCore Remote 提供即時通知機制，讓伺服器能夠主動向客戶端推送事件與狀態變更。透過 Notifier 與 Event 的設計，開發者可以輕鬆地實現即時通訊功能，提升使用者體驗。
+**概念示意範例**
 ```csharp
 // 伺服器端
 class GameServer : IGameServer {
@@ -94,20 +80,56 @@ class GameClient {
 	}
 }
 ```
+### 5.巢狀介面支援
+PinionCore Remote 支援巢狀介面的定義與使用，讓開發者能夠在介面中包含其他介面，進一步提升通訊協議的結構化與可讀性。這使得複雜的通訊行為能夠被清晰地描述與實作。
+**以RPG遊戲舉例**
+```csharp
+// 每個npc或玩家都擁有一些基本屬性比如名字等級
+interface IActor { 
+	Property<string> Name {get};
+	Property<int> Level {get};
+}
+
+// 玩家獨有的介面，繼承自IActor
+interface IPlayer : IActor {
+	
+    Notifier<IActor> Actors; // (重點)玩家看的到的其他角色列表 
+	Property<int> Gold {get; } // 玩家金幣 只有自己才看的到
+	Value<Path> Move(Postion pos) ;// 玩家移動方法
+	event System.Action<Postion> StopEvent; // 玩家停止通知
+}
+```
+你可以像這樣定義以上介面給前端, 使用上就像在操作本地物件一樣, 但實際上是透過網路呼叫後端服務器.
+
 ### 6. 響應式方法支援
 PinionCore Remote 支援響應式方法，讓開發者能夠定義非同步且可監聽的遠端方法呼叫。  
 **範例**
 ```csharp
-// 前端代碼 (概念碼)
-var obs = from path in player.Move(position) // 調用遠端移動
-		  from _ in avatar.PlayMove(path) // 將返回的路徑交給前端播放
+// 前端代碼 (概念碼-控制玩家角色移動)
+var obs = from pathRequest in avatar.PlayMove(position) // 角色移動
+		  from pathResponse in player.Move(pathRequest) // 調用遠端移動
+		  from _ in avatar.PlayMove(pathResponse) // 更新服務端返回的路徑修正
 		  from pos in player.StopEvent() // 收到服務端停止角色移動
-		  from _ in avatar.Stop(pos) // 調用停止
+		  from _ in avatar.Stop(pos) // 停止角色移動動畫 
 		  select new {path , pos} 
 ```
 ### 7. 閘道服務器支援
 在真實環境下如果遊戲沒有即時反應的需求可以使用閘道服務器減少機器曝光於公網上
 詳細參閱 Gateway 章節
+
+### 8. 單機模擬支援
+PinionCore Remote 提供單機模擬功能，讓開發者能夠在無需網路環境下模擬伺服器與客戶端的通訊行為。這對於開發與測試階段非常有用，能夠加速開發流程並降低測試成本。
+```csharp
+// 簡易的單機模擬範例
+using PinionCore.Remote.Standalone;
+
+var service = new PinionCore.Remote.Soul.Service(entry , protocol);
+var agent = new PinionCore.Remote.Ghost.Agent(protocol);
+
+var disconnect = agent.Connect(service);// 如此即可模擬連線
+
+disconnect();// 模擬斷線
+```
 
 
 
