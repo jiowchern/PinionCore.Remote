@@ -28,7 +28,7 @@ namespace PinionCore.Integration.Tests
             var service = new PinionCore.Remote.Soul.Service(entry, protocol);
 
             var agentsObs = from i in System.Reactive.Linq.Observable.Range(0, agent_count)
-                            select (new PinionCore.Remote.Ghost.Agent(protocol)) as Remote.Ghost.IAgent;
+                            select (new PinionCore.Remote.Ghost.User(protocol)) as Remote.Ghost.IAgent;
 
             var agents = await agentsObs.ToList();
 

@@ -5,18 +5,18 @@ using PinionCore.Network;
 
 namespace PinionCore.Remote.Soul
 {
-    public class AsyncService : Soul.IService
+    public class ServiceUpdateLoop : Soul.IService
     {
-        readonly SyncService _SyncService;
+        readonly SessionEngine _SyncService;
         readonly IService _Service;
         readonly IDisposable _Disposed;
 
         readonly Task _ThreadUpdater;
         readonly CancellationTokenSource Cancellation_;
         readonly SemaphoreSlim _UpdateSignal;
-        readonly TimeSpan _MaxWaitInterval = TimeSpan.FromMilliseconds(5);
+        readonly TimeSpan _MaxWaitInterval = TimeSpan.FromMilliseconds(16);
 
-        public AsyncService(SyncService syncService)
+        public ServiceUpdateLoop(SessionEngine syncService)
         {
             if (syncService == null)
             {

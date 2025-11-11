@@ -1,7 +1,4 @@
-using System;
-using System.Threading;
-using System.Threading.Tasks;
-using PinionCore.Utility;
+﻿using PinionCore.Utility;
 
 namespace PinionCore.Consoles.Chat1.Server.Services.RegistryConnectionStates
 {

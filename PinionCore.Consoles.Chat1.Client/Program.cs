@@ -72,7 +72,7 @@ namespace PinionCore.Consoles.Chat1.Client
                 .Single();
 
             using var service = new PinionCore.Remote.Soul.Service(entry, protocol);
-            var agent = new PinionCore.Remote.Ghost.Agent(protocol);
+            var agent = new PinionCore.Remote.Ghost.User(protocol);
             var disconnect = PinionCore.Remote.Standalone.Provider.Connect(agent, service);
 
             try

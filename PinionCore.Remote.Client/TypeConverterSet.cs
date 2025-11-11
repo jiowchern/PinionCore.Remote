@@ -21,3 +21,8 @@ namespace PinionCore.Remote.Client
         }
     }
 }
+
+namespace PinionCore.Remote.Client.Tcp
+{
+    
+}

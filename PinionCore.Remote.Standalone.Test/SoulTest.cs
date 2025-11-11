@@ -22,9 +22,9 @@ namespace PinionCore.Remote.Standalone.Test
             var internalSer = new PinionCore.Remote.InternalSerializer();
             Memorys.Pool pool = PinionCore.Memorys.PoolProvider.Shared;
             
-            Soul.IService service = new PinionCore.Remote.Soul.AsyncService(new Soul.SyncService(entry, protocol, serializer, internalSer, pool));
+            Soul.IService service = new PinionCore.Remote.Soul.ServiceUpdateLoop(new Soul.SessionEngine(entry, protocol, serializer, internalSer, pool));
 
-            var ghostAgent = new PinionCore.Remote.Ghost.Agent(protocol, serializer, internalSer, pool);
+            var ghostAgent = new PinionCore.Remote.Ghost.User(protocol, serializer, internalSer, pool);
             var ghostAgentDisconnect = ghostAgent.Connect(service);
             IAgent agent = ghostAgent;
             IGpiA ghostGpia = null;

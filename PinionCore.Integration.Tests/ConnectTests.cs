@@ -6,12 +6,12 @@ using System.Threading.Tasks;
 using NUnit.Framework;
 using PinionCore.Remote;
 using PinionCore.Remote.Reactive;
+
 namespace PinionCore.Integration.Tests
 {
     public class ConnectTests
     {
         [Test]
-
         public async Task AgentDisconnectTest()
         {
             var port = PinionCore.Network.Tcp.Tools.GetAvailablePort();
@@ -123,5 +123,8 @@ namespace PinionCore.Integration.Tests
             Assert.AreEqual(2, values.v2);
             Assert.AreEqual(0, values.v0[0]);
         }
+
+
+        
     }
 }

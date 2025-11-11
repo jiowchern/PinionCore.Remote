@@ -8,14 +8,14 @@ namespace PinionCore.Remote.Server.Tcp
     {
 
         PinionCore.Network.Tcp.Listener _Listener;
-        readonly PinionCore.Remote.Depot<IStreamable> _NotifiableCollection;
+        readonly PinionCore.Remote.Depot<IStreamable> _ConnectedPeers;
 
         public event System.Action<int> DataReceivedEvent;
         public event System.Action<int> DataSentEvent;
 
         public Listener()
         {
-            _NotifiableCollection = new Depot<IStreamable>();
+            _ConnectedPeers = new Depot<IStreamable>();
             DataReceivedEvent += (size) => { };
             DataSentEvent += (size) => { };
         }
@@ -24,12 +24,12 @@ namespace PinionCore.Remote.Server.Tcp
         {
             add
             {
-                _NotifiableCollection.Notifier.Supply += value;
+                _ConnectedPeers.Notifier.Supply += value;
             }
 
             remove
             {
-                _NotifiableCollection.Notifier.Supply -= value;
+                _ConnectedPeers.Notifier.Supply -= value;
             }
         }
 
@@ -37,12 +37,12 @@ namespace PinionCore.Remote.Server.Tcp
         {
             add
             {
-                _NotifiableCollection.Notifier.Unsupply += value;
+                _ConnectedPeers.Notifier.Unsupply += value;
             }
 
             remove
             {
-                _NotifiableCollection.Notifier.Unsupply -= value;
+                _ConnectedPeers.Notifier.Unsupply -= value;
             }
         }
 
@@ -58,9 +58,9 @@ namespace PinionCore.Remote.Server.Tcp
             _Listener.Close();
             _Listener.AcceptEvent -= _Join;
             _Listener = null;
-            lock (_NotifiableCollection)
+            lock (_ConnectedPeers)
             {
-                _NotifiableCollection.Items.Clear();
+                _ConnectedPeers.Items.Clear();
             }
         }
 
@@ -68,20 +68,20 @@ namespace PinionCore.Remote.Server.Tcp
         {
             peer.BreakEvent += () =>
             {
-                lock (_NotifiableCollection)
+                lock (_ConnectedPeers)
                 {
                     peer.ReceiveEvent -= _Receive;
                     peer.SendEvent -= _Send;
-                    _NotifiableCollection.Items.Remove(peer);
+                    _ConnectedPeers.Items.Remove(peer);
                 }
 
             };
 
-            lock (_NotifiableCollection)
+            lock (_ConnectedPeers)
             {
                 peer.SendEvent += _Send;
                 peer.ReceiveEvent += _Receive;
-                _NotifiableCollection.Items.Add(peer);
+                _ConnectedPeers.Items.Add(peer);
             }
 
         }

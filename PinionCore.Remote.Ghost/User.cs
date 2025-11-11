@@ -7,7 +7,7 @@ using PinionCore.Remote.ProviderHelper;
 
 namespace PinionCore.Remote.Ghost
 {
-    public class Agent : IAgent
+    public class User : IAgent
     {
 
         private readonly GhostProviderQueryer _GhostProvider;
@@ -22,13 +22,12 @@ namespace PinionCore.Remote.Ghost
         {
             get { return _GhostProvider.Ping; }
         }
-       
 
-        public Agent(IProtocol protocol)
+        public User(IProtocol protocol)
             : this(protocol, new PinionCore.Remote.Serializer(protocol.SerializeTypes), new PinionCore.Remote.InternalSerializer(), PinionCore.Memorys.PoolProvider.Shared)
         {
         }
-        public Agent(IProtocol protocol, ISerializable serializable, IInternalSerializable internal_serializable, PinionCore.Memorys.IPool pool)
+        public User(IProtocol protocol, ISerializable serializable, IInternalSerializable internal_serializable, PinionCore.Memorys.IPool pool)
         {
             _InternalSerializer = internal_serializable;
             _Pool = pool;
@@ -94,17 +93,13 @@ namespace PinionCore.Remote.Ghost
 
             _GhostSerializerUpdater = ghostSerializer.Update;
             _GhostProviderUpdater = _GhostProvider.Update;
-
-
+            
 
         }
         public void Disable()
         {
-
-
             _Disables();
             _Disables = () => { };
-
         }
         INotifier<T> INotifierQueryable.QueryNotifier<T>()
         {

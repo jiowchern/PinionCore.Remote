@@ -25,7 +25,7 @@ namespace PinionCore.Consoles.Chat1.Bots
         {
             for (var i = 0; i < _botCount; i++)
             {
-                var agent = new PinionCore.Remote.Ghost.Agent(_protocol);
+                var agent = new PinionCore.Remote.Ghost.User(_protocol);
                 var disconnect = PinionCore.Remote.Standalone.Provider.Connect(agent, _service);
                 var bot = new Bot(agent);
                 _bots.Add((bot, disconnect));

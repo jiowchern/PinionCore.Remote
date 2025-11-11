@@ -1,18 +1,24 @@
-﻿namespace PinionCore.Remote.Server
+﻿using System;
+using PinionCore.Remote.Soul;
+using PinionCore.Utility;
+
+namespace PinionCore.Remote.Server
 {
     public static class Provider
     {
+
+
         public static Soul.IService CreateService(IEntry entry, IProtocol protocol, Soul.IListenable listenable)
         {
             Memorys.Pool pool = PinionCore.Memorys.PoolProvider.Shared;
             
-            return new Soul.Service(entry, protocol, new PinionCore.Remote.Serializer(protocol.SerializeTypes), new PinionCore.Remote.InternalSerializer(), pool); ;
+            return new Service(entry, protocol, new PinionCore.Remote.Serializer(protocol.SerializeTypes), new PinionCore.Remote.InternalSerializer(), pool); ;
         }
 
         public static Soul.IService CreateService(IEntry entry, IProtocol protocol, ISerializable serializable)
         {
             Memorys.Pool pool = PinionCore.Memorys.PoolProvider.Shared;            
-            return new Soul.Service(entry, protocol, new PinionCore.Remote.Serializer(protocol.SerializeTypes), new PinionCore.Remote.InternalSerializer(), pool); ;
+            return new Service(entry, protocol, new PinionCore.Remote.Serializer(protocol.SerializeTypes), new PinionCore.Remote.InternalSerializer(), pool); ;
         }
 
         public static TcpListenSet CreateTcpService(IEntry entry, IProtocol protocol)

@@ -5,7 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\PinionCore.Network\PinionCore.Network.csproj" />
+    
     <ProjectReference Include="..\PinionCore.Remote.Ghost\PinionCore.Remote.Ghost.csproj" />
     <ProjectReference Include="..\PinionCore.Remote.Gateway.Protocols\PinionCore.Remote.Gateway.Protocols.csproj" />
     

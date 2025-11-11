@@ -6,7 +6,7 @@ using PinionCore.Network;
 
 namespace PinionCore.Remote.Soul
 {
-    public class SyncService : System.IDisposable , IService
+    public class SessionEngine : System.IDisposable , IService
     {
         readonly IEntry _Entry;
         private readonly IProtocol _Protocol;
@@ -25,7 +25,7 @@ namespace PinionCore.Remote.Soul
         private readonly ConcurrentQueue<Pending> _Pending;
         
 
-        public SyncService(IEntry entry, IProtocol protocol, ISerializable serializable, IInternalSerializable internal_serializable, PinionCore.Memorys.IPool pool)
+        public SessionEngine(IEntry entry, IProtocol protocol, ISerializable serializable, IInternalSerializable internal_serializable, PinionCore.Memorys.IPool pool)
         {
             _Entry = entry;
             _Protocol = protocol;

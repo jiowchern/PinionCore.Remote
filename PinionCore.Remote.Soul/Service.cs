@@ -22,7 +22,7 @@ namespace PinionCore.Remote.Soul
             _Pool = pool;        
             Protocol = protocol;
             Serializer = serializable;            
-            var service = new PinionCore.Remote.Soul.AsyncService(new SyncService(entry, protocol, serializable, internal_serializable, _Pool));
+            var service = new PinionCore.Remote.Soul.ServiceUpdateLoop(new SessionEngine(entry, protocol, serializable, internal_serializable, _Pool));
             _Service = service;            
         }
 
