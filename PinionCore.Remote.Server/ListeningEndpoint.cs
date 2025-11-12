@@ -41,7 +41,7 @@ namespace PinionCore.Remote.Server.Tcp
         public readonly int Port;
         public readonly int Backlog;
         readonly Listener _Listener;
-        readonly Soul.IListenable _Listenable;
+        readonly Remote.Soul.IListenable _Listenable;
         public ListeningEndpoint(int port,int backlog)
         {
             Port = port;

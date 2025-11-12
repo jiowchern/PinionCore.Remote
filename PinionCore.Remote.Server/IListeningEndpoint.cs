@@ -3,7 +3,7 @@
 namespace PinionCore.Remote.Server
 {
     
-    public interface IListeningEndpoint : Soul.IListenable , IDisposable
+    public interface IListeningEndpoint : Remote.Soul.IListenable , IDisposable
     {
         System.Threading.Tasks.Task<bool> ListenAsync();
     }

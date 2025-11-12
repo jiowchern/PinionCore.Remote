@@ -5,21 +5,21 @@ namespace PinionCore.Consoles.Chat1
     public class Entry : PinionCore.Remote.IEntry
     {
         private readonly Room _room;
-        private readonly Dictionary<PinionCore.Remote.IBinder, User> _users;
+        private readonly Dictionary<PinionCore.Remote.ISessionBinder, User> _users;
         private readonly object _sync = new object();
         private readonly PinionCore.Utility.Log _log;
 
         public Entry()
         {
             _room = new Room();
-            _users = new Dictionary<PinionCore.Remote.IBinder, User>();
+            _users = new Dictionary<PinionCore.Remote.ISessionBinder, User>();
             Announcement = _room;
             _log = PinionCore.Utility.Log.Instance;
         }
 
         public Announceable Announcement { get; }
 
-        public void RegisterClientBinder(PinionCore.Remote.IBinder binder)
+        public void OnSessionOpened(PinionCore.Remote.ISessionBinder binder)
         {
             var user = new User(binder, _room);
             int currentCount;
@@ -31,7 +31,7 @@ namespace PinionCore.Consoles.Chat1
             _log.WriteInfo(() => $"[Entry] 客戶端連接建立 (當前連接數: {currentCount})");
         }
 
-        public void UnregisterClientBinder(PinionCore.Remote.IBinder binder)
+        public void OnSessionClosed(PinionCore.Remote.ISessionBinder binder)
         {
             User user = null;
             int currentCount;

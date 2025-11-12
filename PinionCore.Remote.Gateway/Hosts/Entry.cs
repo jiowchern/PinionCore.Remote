@@ -10,14 +10,14 @@ namespace PinionCore.Remote.Gateway.Hosts
     {
 
         private readonly ISessionMembershipProvider _provider;
-        readonly System.Collections.Generic.Dictionary<IBinder, User> _Users;
+        readonly System.Collections.Generic.Dictionary<ISessionBinder, User> _Users;
         readonly PinionCore.Utility.Updater _Updater;
 
         public Entry(ISessionMembershipProvider provider)
         {
             _Updater = new PinionCore.Utility.Updater();
             _provider = provider;
-            _Users = new System.Collections.Generic.Dictionary<IBinder, User>();
+            _Users = new System.Collections.Generic.Dictionary<ISessionBinder, User>();
         }
 
         public void Dispose()
@@ -25,7 +25,7 @@ namespace PinionCore.Remote.Gateway.Hosts
             _Updater.Shutdown();
         }
 
-        void IBinderProvider.RegisterClientBinder(IBinder binder)
+        void ISessionObserver.OnSessionOpened(ISessionBinder binder)
         {
             var user = new User(binder,_provider);            
             if (!_Users.TryAdd(binder, user))
@@ -36,7 +36,7 @@ namespace PinionCore.Remote.Gateway.Hosts
             
         }
 
-        void IBinderProvider.UnregisterClientBinder(IBinder binder)
+        void ISessionObserver.OnSessionClosed(ISessionBinder binder)
         {
             if(_Users.TryGetValue(binder, out User user))
             {

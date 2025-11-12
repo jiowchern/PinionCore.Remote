@@ -22,7 +22,7 @@ namespace PinionCore.Remote.Gateway.Hosts
             _RosterDepot = new SupplyDepot<IConnectionRoster>();
         }
 
-        public User(IBinder binder, ISessionMembershipProvider provider)
+        public User(ISessionBinder binder, ISessionMembershipProvider provider)
         {
             _Machine = new StatusMachine();
             Binder = binder;
@@ -35,7 +35,7 @@ namespace PinionCore.Remote.Gateway.Hosts
         Notifier<IVerisable> IServiceSubUser.Versions => _VersionsDepot.Supplier;
 
         readonly SupplyDepot<IConnectionRoster> _RosterDepot;
-        public readonly IBinder Binder;
+        public readonly ISessionBinder Binder;
         private ISoul _Soul;
 
         Notifier<IConnectionRoster> IServiceSubUser.Rosters => _RosterDepot.Supplier;

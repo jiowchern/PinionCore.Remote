@@ -14,7 +14,7 @@ namespace PinionCore.Samples.HelloWorld.Server
             Enable = true;
         }
 
-        void IBinderProvider.RegisterClientBinder(PinionCore.Remote.IBinder binder)
+        void ISessionObserver.OnSessionOpened(PinionCore.Remote.ISessionBinder binder)
         {
             // IBinder is what you get when your client completes the connection.            
             var soul = binder.Bind<IGreeter>(_Greeter);
@@ -33,7 +33,7 @@ namespace PinionCore.Samples.HelloWorld.Server
             
         }
 
-        void IBinderProvider.UnregisterClientBinder(IBinder binder)
+        void ISessionObserver.OnSessionClosed(ISessionBinder binder)
         {
             _End();
         }

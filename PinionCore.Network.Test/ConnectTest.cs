@@ -93,7 +93,7 @@ namespace PinionCore.Network.Tests
             lintener.Bind(port,10);
             var connector = new PinionCore.Network.Tcp.Connector();
 
-            Tcp.Peer peer = await connector.Connect(new System.Net.IPEndPoint(System.Net.IPAddress.Loopback, port));
+            Tcp.Peer peer = await connector.ConnectAsync(new System.Net.IPEndPoint(System.Net.IPAddress.Loopback, port));
 
             NUnit.Framework.Assert.IsNotNull(peer);
 
@@ -103,7 +103,7 @@ namespace PinionCore.Network.Tests
                 await peer.Disconnect(true);
 
                 // reconnect test
-                peer = await connector.Connect(new System.Net.IPEndPoint(System.Net.IPAddress.Loopback, port));
+                peer = await connector.ConnectAsync(new System.Net.IPEndPoint(System.Net.IPAddress.Loopback, port));
 
                 NUnit.Framework.Assert.IsNotNull(peer);
             }
@@ -159,7 +159,7 @@ namespace PinionCore.Network.Tests
             lintener.Bind(port,10);
             var connector = new PinionCore.Network.Tcp.Connector();
 
-            PinionCore.Network.Tcp.Peer peer = await connector.Connect(new System.Net.IPEndPoint(System.Net.IPAddress.Loopback, port));
+            PinionCore.Network.Tcp.Peer peer = await connector.ConnectAsync(new System.Net.IPEndPoint(System.Net.IPAddress.Loopback, port));
 
             var serverPeer = await acceptTcs.Task.WaitAsync(System.TimeSpan.FromSeconds(1));
 

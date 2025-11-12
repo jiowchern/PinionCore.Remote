@@ -43,7 +43,7 @@ namespace PinionCore.Consoles.Chat1.Bots
         private async Task AddBotAsync()
         {
             var set = PinionCore.Remote.Client.Provider.CreateTcpAgent(_protocol);
-            var peer = await set.Connector.Connect(_endPoint).ConfigureAwait(false);
+            var peer = await set.Connector.ConnectAsync(_endPoint).ConfigureAwait(false);
             if (peer == null)
             {
                 System.Console.WriteLine($"Failed to connect to {_endPoint}.");

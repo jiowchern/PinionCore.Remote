@@ -35,7 +35,7 @@ namespace PinionCore.Remote.Client.Tcp
 
         async Task<IStreamable> IConnectingEndpoint.ConnectAsync()
         {
-            var peer = await _Connector.Connect(EndPoint);
+            var peer = await _Connector.ConnectAsync(EndPoint);
             peer.SendEvent += SendEvent;
             peer.ReceiveEvent += ReceiveEvent;
             peer.SocketErrorEvent += SocketErrorEvent;

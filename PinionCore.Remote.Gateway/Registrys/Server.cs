@@ -11,22 +11,22 @@ namespace PinionCore.Remote.Gateway.Registrys
         readonly Depot<ILineAllocatable> _Lines;
         public readonly Notifier<ILineAllocatable> LinesNotifier;
 
-        readonly Dictionary<IBinder, User> _Users;
+        readonly Dictionary<ISessionBinder, User> _Users;
         public Server()
         {
             _Updater = new Updater();
             _Lines = new Depot<ILineAllocatable>();
             LinesNotifier = new Notifier<ILineAllocatable>(_Lines);
-            _Users = new Dictionary<IBinder, User>();
+            _Users = new Dictionary<ISessionBinder, User>();
         }
-        void IBinderProvider.RegisterClientBinder(IBinder binder)
+        void ISessionObserver.OnSessionOpened(ISessionBinder binder)
         {
             var user = new User(binder, _Lines);
             _Users.Add(binder, user);
             _Updater.Add(user);
         }
 
-        void IBinderProvider.UnregisterClientBinder(IBinder binder)
+        void ISessionObserver.OnSessionClosed(ISessionBinder binder)
         {
             if (!_Users.ContainsKey(binder))
             {

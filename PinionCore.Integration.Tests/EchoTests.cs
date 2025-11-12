@@ -23,7 +23,7 @@ namespace PinionCore.Integration.Tests
             var protocol = PinionCore.Remote.Tools.Protocol.Sources.TestCommon.ProtocolProvider.CreateCase1();
             var entry = NSubstitute.Substitute.For<IEntry>();
             var tester = new PinionCore.Remote.Tools.Protocol.Sources.TestCommon.EchoTester();
-            entry.RegisterClientBinder(NSubstitute.Arg.Do<IBinder>(b => b.Bind<PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Echoable>(tester)));
+            entry.OnSessionOpened(NSubstitute.Arg.Do<ISessionBinder>(b => b.Bind<PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Echoable>(tester)));
 
             var service = new PinionCore.Remote.Soul.Service(entry, protocol);
 

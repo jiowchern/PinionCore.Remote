@@ -1,6 +1,6 @@
 ﻿namespace PinionCore.Remote
 {
-    public interface IEntry : IBinderProvider
+    public interface IEntry : ISessionObserver
     {
         void Update();
     }

@@ -26,7 +26,7 @@ namespace PinionCore.Consoles.Chat1.Client
             try
             {
                 var endpoint = new IPEndPoint(IPAddress.Parse(ip), port);
-                var peer = _connector.Connect(endpoint).GetAwaiter().GetResult();
+                var peer = _connector.ConnectAsync(endpoint).GetAwaiter().GetResult();
                 Agent.Enable(peer);
                 Command.Register("disconnect", DisconnectCommand);
                 _connected = true;

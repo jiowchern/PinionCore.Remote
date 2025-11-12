@@ -108,7 +108,7 @@ namespace PinionCore.Consoles.Chat1.Client
             {
                 System.Console.WriteLine("Gateway Router mode (TCP).");
                 System.Console.WriteLine($"Router: {options.RouterHost}:{options.RouterPort}");
-                connected = console.ConnectTcp(options.RouterHost, options.RouterPort.Value);
+                connected = console.ConnectTcp(options.RouterHost, options.RouterPort.Value).GetAwaiter().GetResult();
             }
 
             // T071: 連接失敗錯誤處理

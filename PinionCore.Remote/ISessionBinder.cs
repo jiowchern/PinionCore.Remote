@@ -1,7 +1,7 @@
 ﻿namespace PinionCore.Remote
 {
 
-    public interface IBinder
+    public interface ISessionBinder
     {
 
         ISoul Return<TSoul>(TSoul soul);

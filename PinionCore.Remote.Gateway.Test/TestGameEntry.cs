@@ -30,7 +30,7 @@ namespace PinionCore.Remote.Gateway.Tests
             return 2;
         }
 
-        void IBinderProvider.RegisterClientBinder(IBinder binder)
+        void ISessionObserver.OnSessionOpened(ISessionBinder binder)
         {
             if(_GameType == GameType.Method1)
                 binder.Bind<IMethodable1>(this);
@@ -43,7 +43,7 @@ namespace PinionCore.Remote.Gateway.Tests
             return new HelloReply { Message = "Hello " + request.Name };
         }
 
-        void IBinderProvider.UnregisterClientBinder(IBinder binder)
+        void ISessionObserver.OnSessionClosed(ISessionBinder binder)
         {
             
         }

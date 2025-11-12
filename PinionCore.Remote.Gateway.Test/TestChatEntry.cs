@@ -16,12 +16,12 @@ namespace PinionCore.Remote.Gateway.Tests
             return true;
         }
 
-        void IBinderProvider.RegisterClientBinder(IBinder binder)
+        void ISessionObserver.OnSessionOpened(ISessionBinder binder)
         {
             binder.Bind<ILogin>(this);
         }
 
-        void IBinderProvider.UnregisterClientBinder(IBinder binder)
+        void ISessionObserver.OnSessionClosed(ISessionBinder binder)
         {
             
         }

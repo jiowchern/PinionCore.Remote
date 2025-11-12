@@ -42,7 +42,7 @@ namespace PinionCore.Remote.Soul
         private TaskAwaiter<List<Memorys.Buffer>> _ReadTask;
 
         public event System.Action ErrorEvent;
-        public IBinder Binder
+        public ISessionBinder Binder
         {
             get { return _SoulProvider; }
         }

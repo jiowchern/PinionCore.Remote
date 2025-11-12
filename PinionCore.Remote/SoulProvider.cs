@@ -6,7 +6,7 @@ namespace PinionCore.Remote
 {
 
 
-    public class SoulProvider : IDisposable, IBinder
+    public class SoulProvider : IDisposable, ISessionBinder
     {
         private readonly IdLandlord _IdLandlord;
         private readonly IRequestQueue _Peer;
@@ -51,17 +51,17 @@ namespace PinionCore.Remote
             _methodHandler.Dispose();
         }
 
-        ISoul IBinder.Return<TSoul>(TSoul soul)
+        ISoul ISessionBinder.Return<TSoul>(TSoul soul)
         {
             return _bindHandler.Return(soul);
         }
 
-        ISoul IBinder.Bind<TSoul>(TSoul soul)
+        ISoul ISessionBinder.Bind<TSoul>(TSoul soul)
         {
             return _bindHandler.Bind(soul);
         }
 
-        void IBinder.Unbind(ISoul soul)
+        void ISessionBinder.Unbind(ISoul soul)
         {
             _bindHandler.Unbind(soul);
         }

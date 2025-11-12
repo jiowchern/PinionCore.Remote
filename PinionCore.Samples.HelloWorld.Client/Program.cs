@@ -20,7 +20,7 @@ namespace PinionCore.Samples.HelloWorld.Client
             var set = PinionCore.Remote.Client.Provider.CreateTcpAgent(protocol);
             var tcp = set.Connector;
             var agent = set.Agent;
-            var peer = await tcp.Connect(new IPEndPoint(ip, port));
+            var peer = await tcp.ConnectAsync(new IPEndPoint(ip, port));
             if (peer == null)
             {
                 System.Console.WriteLine($"Failed to connect to {ip}:{port}");

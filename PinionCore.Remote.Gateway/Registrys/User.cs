@@ -9,7 +9,7 @@ namespace PinionCore.Remote.Gateway.Registrys
 
     class User : IDisposable ,PinionCore.Utility.IUpdatable , IRegisterable
     {
-        public readonly IBinder Binder;
+        public readonly ISessionBinder Binder;
         
         
         readonly StatusMachine _StatusMachine ;
@@ -26,7 +26,7 @@ namespace PinionCore.Remote.Gateway.Registrys
 
         readonly ICollection<ILineAllocatable> _LineAllocators;
 
-        public User(IBinder binder, ICollection<ILineAllocatable> lineAllocators)
+        public User(ISessionBinder binder, ICollection<ILineAllocatable> lineAllocators)
         {
             _LineAllocators = lineAllocators;
             

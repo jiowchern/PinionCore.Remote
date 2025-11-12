@@ -4,7 +4,7 @@ using PinionCore.Network.Tcp;
 
 namespace PinionCore.Remote.Server.Tcp
 {
-    public class Listener : Soul.IListenable
+    public class Listener : Remote.Soul.IListenable
     {
 
         PinionCore.Network.Tcp.Listener _Listener;
@@ -20,7 +20,7 @@ namespace PinionCore.Remote.Server.Tcp
             DataSentEvent += (size) => { };
         }
 
-        event Action<IStreamable> Soul.IListenable.StreamableEnterEvent
+        event Action<IStreamable> Remote.Soul.IListenable.StreamableEnterEvent
         {
             add
             {
@@ -33,7 +33,7 @@ namespace PinionCore.Remote.Server.Tcp
             }
         }
 
-        event Action<IStreamable> Soul.IListenable.StreamableLeaveEvent
+        event Action<IStreamable> Remote.Soul.IListenable.StreamableLeaveEvent
         {
             add
             {

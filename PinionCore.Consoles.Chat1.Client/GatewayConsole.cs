@@ -31,7 +31,7 @@ namespace PinionCore.Consoles.Chat1.Client
         /// <summary>
         /// 使用 TCP 連接到 Router
         /// </summary>
-        public bool ConnectTcp(string routerHost, int routerPort)
+        public async Task<bool> ConnectTcp(string routerHost, int routerPort)
         {
             if (_connected)
             {
@@ -44,10 +44,10 @@ namespace PinionCore.Consoles.Chat1.Client
                 System.Console.WriteLine($"[TCP] Connecting to Router at {routerHost}:{routerPort}...");
                 var tcpConnector = new PinionCore.Network.Tcp.Connector();
                 var endpoint = new IPEndPoint(IPAddress.Parse(routerHost), routerPort);
-                var peer = tcpConnector.Connect(endpoint).GetAwaiter().GetResult();
 
-                
 
+
+                var peer = await tcpConnector.ConnectAsync(endpoint);
                 Agent.Enable(peer);
                 _Dispose = () => peer.Disconnect();
                 

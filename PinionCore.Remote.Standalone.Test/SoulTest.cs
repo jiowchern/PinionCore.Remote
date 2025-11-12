@@ -15,7 +15,7 @@ namespace PinionCore.Remote.Standalone.Test
             IEntry entry = NSubstitute.Substitute.For<IEntry>();
             Soul.IListenable listenable = NSubstitute.Substitute.For<Soul.IListenable>();
             IGpiA gpia = new SoulGpiA();
-            entry.RegisterClientBinder(NSubstitute.Arg.Do<IBinder>(binder => binder.Bind<IGpiA>(gpia)));
+            entry.OnSessionOpened(NSubstitute.Arg.Do<ISessionBinder>(binder => binder.Bind<IGpiA>(gpia)));
 
             ISerializable serializer = new PinionCore.Remote.DynamicSerializer();
             IProtocol protocol = ProtocolHelper.CreateProtocol();

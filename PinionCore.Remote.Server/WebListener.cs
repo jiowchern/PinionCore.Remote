@@ -4,7 +4,7 @@ using PinionCore.Network.Web;
 
 namespace PinionCore.Remote.Server.Web
 {
-    public class Listener : Soul.IListenable
+    public class Listener : Remote.Soul.IListenable
     {
 
         readonly PinionCore.Network.Web.Listener _Listener;
@@ -19,7 +19,7 @@ namespace PinionCore.Remote.Server.Web
 
         }
 
-        event Action<IStreamable> Soul.IListenable.StreamableEnterEvent
+        event Action<IStreamable> Remote.Soul.IListenable.StreamableEnterEvent
         {
             add
             {
@@ -32,7 +32,7 @@ namespace PinionCore.Remote.Server.Web
             }
         }
 
-        event Action<IStreamable> Soul.IListenable.StreamableLeaveEvent
+        event Action<IStreamable> Remote.Soul.IListenable.StreamableLeaveEvent
         {
             add
             {

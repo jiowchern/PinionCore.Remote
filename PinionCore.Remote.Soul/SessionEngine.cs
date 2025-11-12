@@ -77,7 +77,7 @@ namespace PinionCore.Remote.Soul
                     user.Launch();
                     if (_Users.TryAdd(ev.Stream, user))
                     {
-                        _Entry.RegisterClientBinder(user.Binder);
+                        _Entry.OnSessionOpened(user.Binder);
                     }
                     else
                     {
@@ -93,7 +93,7 @@ namespace PinionCore.Remote.Soul
                 {
                     if (_Users.TryRemove(ev.Stream, out User user))
                     {
-                        _Entry.UnregisterClientBinder(user.Binder);
+                        _Entry.OnSessionClosed(user.Binder);
 
                         IDisposable userDispose = user;
                         userDispose.Dispose();

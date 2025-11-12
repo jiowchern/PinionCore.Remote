@@ -1,12 +1,12 @@
-namespace PinionCore.Consoles.Chat1
+﻿namespace PinionCore.Consoles.Chat1
 {
     internal sealed class User
     {
-        private readonly PinionCore.Remote.IBinder _binder;
+        private readonly PinionCore.Remote.ISessionBinder _binder;
         private readonly Room _room;
         private readonly PinionCore.Utility.StageMachine _machine;
 
-        public User(PinionCore.Remote.IBinder binder, Room room)
+        public User(PinionCore.Remote.ISessionBinder binder, Room room)
         {
             _binder = binder;
             _room = room;

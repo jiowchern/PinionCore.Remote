@@ -10,12 +10,12 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
         {
             _Entry = entry;
         }
-        void IBinderProvider.RegisterClientBinder(IBinder binder)
+        void ISessionObserver.OnSessionOpened(ISessionBinder binder)
         {
             binder.Bind(_Entry);
         }
 
-        void IBinderProvider.UnregisterClientBinder(IBinder binder)
+        void ISessionObserver.OnSessionClosed(ISessionBinder binder)
         {
             //binder.Unbind(_Entry);
         }

@@ -17,7 +17,7 @@ namespace PinionCore.Integration.Tests
             var port = PinionCore.Network.Tcp.Tools.GetAvailablePort();
             var tester = new PinionCore.Remote.Tools.Protocol.Sources.TestCommon.MethodTester();
             IEntry entry = NSubstitute.Substitute.For<IEntry>();
-            entry.RegisterClientBinder(NSubstitute.Arg.Do<IBinder>(b => b.Bind<PinionCore.Remote.Tools.Protocol.Sources.TestCommon.IMethodable>(tester)));
+            entry.OnSessionOpened(NSubstitute.Arg.Do<ISessionBinder>(b => b.Bind<PinionCore.Remote.Tools.Protocol.Sources.TestCommon.IMethodable>(tester)));
             IProtocol protocol = PinionCore.Remote.Tools.Protocol.Sources.TestCommon.ProtocolProvider.CreateCase1();
 
             Remote.Server.TcpListenSet server = PinionCore.Remote.Server.Provider.CreateTcpService(entry, protocol);
@@ -31,7 +31,7 @@ namespace PinionCore.Integration.Tests
                 ex = exc;
             };
 
-            Network.Tcp.Peer peer = await client.Connector.Connect(new IPEndPoint(IPAddress.Loopback, port));
+            Network.Tcp.Peer peer = await client.Connector.ConnectAsync(new IPEndPoint(IPAddress.Loopback, port));
             var peerBreak = false;
             peer.BreakEvent += () =>
             {
@@ -69,7 +69,7 @@ namespace PinionCore.Integration.Tests
             // bind interface
             var tester = new PinionCore.Remote.Tools.Protocol.Sources.TestCommon.MethodTester();
             IEntry entry = NSubstitute.Substitute.For<IEntry>();
-            entry.RegisterClientBinder(NSubstitute.Arg.Do<IBinder>(b => b.Bind<PinionCore.Remote.Tools.Protocol.Sources.TestCommon.IMethodable>(tester)));
+            entry.OnSessionOpened(NSubstitute.Arg.Do<ISessionBinder>(b => b.Bind<PinionCore.Remote.Tools.Protocol.Sources.TestCommon.IMethodable>(tester)));
 
             // create protocol
             IProtocol protocol = PinionCore.Remote.Tools.Protocol.Sources.TestCommon.ProtocolProvider.CreateCase1();
@@ -95,7 +95,7 @@ namespace PinionCore.Integration.Tests
             // do connect
             System.Net.IPEndPoint endPoint;
             System.Net.IPEndPoint.TryParse($"127.0.0.1:{port}", out endPoint);
-            Network.Tcp.Peer peer = await client.Connector.Connect(endPoint);
+            Network.Tcp.Peer peer = await client.Connector.ConnectAsync(endPoint);
 
             client.Agent.Enable(peer);
             // get values

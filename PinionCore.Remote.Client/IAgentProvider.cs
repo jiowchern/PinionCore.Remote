@@ -2,6 +2,6 @@
 {
     public interface IAgentProvider
     {
-        Ghost.IAgent Spawn();
+        Remote.Ghost.IAgent Spawn();
     }
 }

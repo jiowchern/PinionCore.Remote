@@ -6,7 +6,7 @@ namespace PinionCore.Consoles.Chat1
 {
     internal sealed class UserChat : PinionCore.Utility.IBootable, IPlayer, IMessageable
     {
-        private readonly PinionCore.Remote.IBinder _binder;
+        private readonly PinionCore.Remote.ISessionBinder _binder;
         private readonly Room _room;
         private readonly string _name;
         private readonly PinionCore.Remote.Depot<IChatter> _chatters;
@@ -17,7 +17,7 @@ namespace PinionCore.Consoles.Chat1
         private event Action<Message> _publicMessageEvent = delegate { };
         private event Action<Message> _privateMessageEvent = delegate { };
 
-        public UserChat(PinionCore.Remote.IBinder binder, Room room, string name)
+        public UserChat(PinionCore.Remote.ISessionBinder binder, Room room, string name)
         {
             _binder = binder;
             _room = room;
