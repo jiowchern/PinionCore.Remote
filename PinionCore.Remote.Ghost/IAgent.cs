@@ -13,7 +13,7 @@ namespace PinionCore.Remote.Ghost
         event Action<System.Exception> ExceptionEvent;
 
         void HandlePackets();
-        void HandleMessage();
+        void HandleMessages();
         void Enable(IStreamable streamable);
         void Disable();
     }

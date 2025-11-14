@@ -37,7 +37,7 @@ val.OnValue += result =>
 ### 2.輕量級
 PinionCore Remote 採用輕量級設計，核心程式庫僅包含必要的通訊功能，並且提供擴充點讓開發者能夠根據需求自訂連線與序列化方式。這使得 PinionCore Remote 能夠在各種環境中運行，包括資源有限的裝置與高效能伺服器。
 ### 3.可控的生命週期
-PinionCore Remote 提供了明確的生命週期管理機制，讓開發者能夠控制物件的建立與銷毀。透過 `IBinder`的 Bind 與 Unbind 方法，開發者可以在適當的時機點註冊與取消註冊介面實作，確保資源的有效利用與權限控管。
+PinionCore Remote 提供了明確的生命週期管理機制，讓開發者能夠控制物件的建立與銷毀。透過 `ISessionBinder` 的 Bind 與 Unbind 方法，開發者可以在適當的時機點註冊與取消註冊介面實作，確保資源的有效利用與權限控管。
 ```csharp
 var player = new Player();
 var playerSoul = binder.Bind<IPlayer>(player); // 綁定 IPlayer 介面
@@ -56,7 +56,7 @@ PinionCore Remote 提供即時通知機制，讓伺服器能夠主動向客戶�
 class GameServer : IGameServer {
 	Notifier<IPlayer> _Players = new Notifier<IPlayer>();
 	
-	void IBinderProvider.RegisterClientBinder(IBinder binder) {
+	void ISessionObserver.OnSessionOpened(ISessionBinder binder) {
 		binder.Bind<IGameServer>(this);
 	}
 	
@@ -123,8 +123,8 @@ PinionCore Remote 提供單機模擬功能，讓開發者能夠在無需網路�
 // 簡易的單機模擬範例
 using PinionCore.Remote.Standalone;
 
-var service = new PinionCore.Remote.Soul.Service(entry , protocol);
-var agent = new PinionCore.Remote.Ghost.Agent(protocol);
+var service = new PinionCore.Remote.Soul.Service(entry, protocol);
+var agent = new PinionCore.Remote.Ghost.User(protocol);
 
 var disconnect = agent.Connect(service);// 如此即可模擬連線
 
@@ -169,25 +169,38 @@ namespace Server
 }
 ```
 
-3. 伺服器用 `IBinder.Bind` 提供 `IGreeter` 給客戶端
+3. 伺服器用 `ISessionBinder.Bind` 提供 `IGreeter` 給客戶端
 
 ```csharp
 namespace Server
 {
-	public class Entry	
+	public class Entry : PinionCore.Remote.IEntry
 	{
 		readonly Greeter _Greeter;
-		readonly PinionCore.Remote.IBinder _Binder;
-		readonly PinionCore.Remote.ISoul _GreeterSoul;
-		public Entry(PinionCore.Remote.IBinder binder)
+		PinionCore.Remote.ISoul _GreeterSoul;
+
+		public Entry()
 		{
 			_Greeter = new Greeter();
-			_Binder = binder;
+		}
+
+		void ISessionObserver.OnSessionOpened(PinionCore.Remote.ISessionBinder binder)
+		{
 			_GreeterSoul = binder.Bind<IGreeter>(_Greeter);
 		}
-		public void Dispose()
+
+		void ISessionObserver.OnSessionClosed(PinionCore.Remote.ISessionBinder binder)
 		{
-			_Binder.Unbind(_GreeterSoul);
+			if (_GreeterSoul != null)
+			{
+				binder.Unbind(_GreeterSoul);
+				_GreeterSoul = null;
+			}
+		}
+
+		void IEntry.Update()
+		{
+			// 每幀更新
 		}
 	}
 }
@@ -332,12 +345,12 @@ namespace Server
 {
 	public class Entry : PinionCore.Remote.IEntry
 	{
-		void IBinderProvider.RegisterClientBinder(IBinder binder)
+		void ISessionObserver.OnSessionOpened(ISessionBinder binder)
 		{
-			binder.Binder<IGreeter>(new Greeter());
+			binder.Bind<IGreeter>(new Greeter());
 		}
 
-		void IBinderProvider.UnregisterClientBinder(IBinder binder)
+		void ISessionObserver.OnSessionClosed(ISessionBinder binder)
 		{
 			// 客戶端斷線時
 		}
@@ -396,22 +409,22 @@ namespace Client
 		var set = PinionCore.Remote.Client.Provider.CreateTcpAgent(protocol);
 
 		bool stop = false;
-		var task = System.Threading.Tasks.Task.Run(() => 
+		var task = System.Threading.Tasks.Task.Run(() =>
 		{
 			while (!stop)
 			{
-				set.Agent.HandleMessages();
+				set.Agent.HandleMessage();
 				set.Agent.HandlePackets();
 			}
 		});
 
 		// 開始連線
 		EndPoint yourEndPoint = null;
-		var peer = await set.Connector.Connect(yourEndPoint);
+		var peer = await set.Connector.ConnectAsync(yourEndPoint);
 		set.Agent.Enable(peer);
 
 		// 當伺服器供應 IGreeter
-		set.Agent.QueryNotifier<Protocol.IGreeter>().Supply += greeter => 
+		set.Agent.QueryNotifier<Protocol.IGreeter>().Supply += greeter =>
 		{
 			greeter.SayHello("hello");
 		};
@@ -422,7 +435,7 @@ namespace Client
 		// 關閉
 		stop = true;
 		task.Wait();
-		set.Connector.Disconnect();
+		await peer.Disconnect();
 		set.Agent.Disable();
 	}
 }
@@ -434,9 +447,12 @@ namespace Client
 ```csharp
 var protocol = Protocol.ProtocolCreator.Create();
 var entry = new Entry();
-var service = PinionCore.Remote.Standalone.Provider.CreateService(entry , protocol);
-var agent = service.Create();
+var service = new PinionCore.Remote.Soul.Service(entry, protocol);
+var agent = new PinionCore.Remote.Ghost.User(protocol);
+var disconnect = agent.Connect(service);
 // 依循與 Client 類似的輪詢/事件流程
+// ...
+disconnect();
 ```
 
 ---
@@ -490,10 +506,10 @@ namespace PinionCore.Remote
 
 ```csharp
 // Server 端
-var service = PinionCore.Remote.Server.CreateTcpService(entry, protocol, yourSerializer);
+var set = PinionCore.Remote.Server.Provider.CreateTcpService(entry, protocol, yourSerializer);
 
 // Client 端
-var service = PinionCore.Remote.Client.CreateTcpAgent(protocol, yourSerializer);
+var set = PinionCore.Remote.Client.Provider.CreateTcpAgent(protocol, yourSerializer, PinionCore.Memorys.PoolProvider.Shared);
 ```
 
 需要被序列化的型別可參考 `IProtocol.SerializeTypes`。

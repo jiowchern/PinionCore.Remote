@@ -36,7 +36,7 @@ namespace PinionCore.Samples.HelloWorld.Client
             while (Enable)
             {
                 System.Threading.Thread.Sleep(0);
-                agent.HandleMessage();
+                agent.HandleMessages();
                 agent.HandlePackets();
             }
 

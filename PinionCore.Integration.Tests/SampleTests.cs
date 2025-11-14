@@ -83,7 +83,7 @@ namespace PinionCore.Integration.Tests
                     while (!cts.Token.IsCancellationRequested)
                     {
                         ghost.User.HandlePackets();
-                        ghost.User.HandleMessage();
+                        ghost.User.HandleMessages();
                         await Task.Delay(1, cts.Token);
                     }
                 }

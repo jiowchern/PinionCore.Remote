@@ -46,7 +46,7 @@ namespace PinionCore.Remote.Ghost
             _GhostSerializerUpdater();
 
         }
-        void IAgent.HandleMessage()
+        void IAgent.HandleMessages()
         {
             _GhostProviderUpdater();
         }

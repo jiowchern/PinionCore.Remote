@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
 using PinionCore.Utility;
@@ -44,7 +44,7 @@ namespace PinionCore.Consoles.Gateway.Router.Workers
                 try
                 {
                     _agent.HandlePackets();
-                    _agent.HandleMessage();
+                    _agent.HandleMessages();
                 }
                 catch (Exception ex)
                 {

@@ -36,7 +36,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
             var updateMessage = new ThreadUpdater(() =>
             {
                 //stream.Receive.Digestion();
-                agent.HandleMessage();
+                agent.HandleMessages();
                 _NowMessage += _CounterMessage.Elapsed;
                 _CounterMessage.Restart();
                 if (_NowMessage > expiry)

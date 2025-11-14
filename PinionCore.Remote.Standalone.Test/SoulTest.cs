@@ -37,7 +37,7 @@ namespace PinionCore.Remote.Standalone.Test
 
             while (ghostGpia == null)
             {
-                agent.HandleMessage();
+                agent.HandleMessages();
                 agent.HandlePackets();
             }
             ghostAgent.Disable();

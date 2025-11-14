@@ -41,7 +41,7 @@ namespace PinionCore.Remote.Gateway.Tests
                 {
                     var ping = _agent.Ping;
                     _agent.HandlePackets();
-                    _agent.HandleMessage();
+                    _agent.HandleMessages();
                     if (_sleepInterval > TimeSpan.Zero)
                     {
                         Thread.Sleep(_sleepInterval);

@@ -101,7 +101,7 @@ namespace PinionCore.Consoles.Chat1.Server
                         while (agentWorkerRunning)
                         {
                             registry.Agent.HandlePackets();
-                            registry.Agent.HandleMessage();
+                            registry.Agent.HandleMessages();
                             System.Threading.Thread.Sleep(1); // 短暫休眠避免忙等待
                         }
                     });

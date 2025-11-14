@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Reactive.Linq;
 using System.Threading;
@@ -58,7 +58,7 @@ namespace PinionCore.Consoles.Chat1.Bots
             {
                 while (!_cancel.IsCancellationRequested)
                 {
-                    _agent.HandleMessage();
+                    _agent.HandleMessages();
                     _agent.HandlePackets();
 
                     while (_actions.TryDequeue(out var action))

@@ -54,7 +54,7 @@ namespace PinionCore.Integration.Tests
                     foreach (var agent in agents)
                     {
                         agent.HandlePackets();
-                        agent.HandleMessage();
+                        agent.HandleMessages();
                         
                     }
                     //await System.Threading.Tasks.Task.Delay(1);

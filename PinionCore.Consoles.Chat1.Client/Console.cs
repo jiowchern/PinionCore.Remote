@@ -41,7 +41,7 @@ namespace PinionCore.Consoles.Chat1.Client
 
         protected override void _Update()
         {            
-            Agent.HandleMessage();
+            Agent.HandleMessages();
             Agent.HandlePackets();
             _machine.Update();
         }

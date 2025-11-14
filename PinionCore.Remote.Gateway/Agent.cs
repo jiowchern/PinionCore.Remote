@@ -117,14 +117,14 @@ namespace PinionCore.Remote.Gateway
 
         }
 
-        void IAgent.HandleMessage()
+        void IAgent.HandleMessages()
         {
 
-            _Pool.Agent.HandleMessage();
+            _Pool.Agent.HandleMessages();
 
             foreach(var agent in _Agents)
             {
-                agent.HandleMessage();
+                agent.HandleMessages();
             }
         }
 
