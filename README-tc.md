@@ -3,6 +3,7 @@
 [![Build](https://github.com/jiowchern/PinionCore.Remote/actions/workflows/dotnet-desktop.yml/badge.svg?branch=master)](https://github.com/jiowchern/PinionCore.Remote/actions/workflows/dotnet-desktop.yml)
 [![Coverage Status](https://coveralls.io/repos/github/jiowchern/PinionCore.Remote/badge.svg?branch=master)](https://coveralls.io/github/jiowchern/PinionCore.Remote?branch=master)
 ![commit last date](https://img.shields.io/github/last-commit/jiowchern/PinionCore.Remote)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/jiowchern/PinionCore.Remote)
 
 ## 簡介
 
@@ -556,7 +557,9 @@ Source Generator 會將其視為「串流方法」：
 - 回傳的 IAwaitableSource<int> 表示實際處理的位元組數（長度）。
 
 內部檢查邏輯見 PinionCore.Remote.Tools.Protocol.Sources/MethodPinionCoreRemoteStreamable.cs。
-———
+
+---
+
 ## 傳輸模式與 Standalone
 
 ### TCP
@@ -731,7 +734,7 @@ var agent = new PinionCore.Remote.Ghost.Agent(protocol, serializer, internalSeri
     - 驗證三種傳輸模式行為一致
 - PinionCore.Remote.Gateway + PinionCore.Consoles.Chat1.*：Gateway 實際落地案例
 
-———
+---
 
 ## 建置、測試與打包
 
