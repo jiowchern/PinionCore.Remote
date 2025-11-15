@@ -6,22 +6,71 @@
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/jiowchern/PinionCore.Remote)  
 [Ask OpenDeepWiki](https://opendeep.wiki/jiowchern/PinionCore.Remote/introduction?branch=master)
 
+---
+
+## 目錄
+
+- [簡介](#簡介)
+- [核心特色](#核心特色)
+  - [介面導向通訊](#1-介面導向通訊)
+  - [可控的生命週期（Entry / Session / Soul）](#2-可控的生命週期entry--session--soul)
+  - [Value / Property / Notifier](#3-value--property--notifier-支援)
+  - [Reactive 支援](#4-響應式方法支援reactive)
+  - [公開與私有介面](#5-簡易的公開與私有介面支援)
+  - [多傳輸模式與 Standalone](#6-多傳輸模式與-standalone)
+- [架構與模組總覽](#架構與模組總覽)
+- [快速開始（Hello World）](#快速開始hello-world)
+  - [環境需求](#環境需求)
+  - [1 協議專案 Protocol](#1-protocol-專案)
+  - [2 伺服器專案 Server](#2-server-專案)
+  - [3 客戶端專案 Client](#3-client-專案)
+- [核心概念詳解](#核心概念詳解)
+  - [IEntry / ISessionBinder / ISoul](#ientry--isessionbinder--isoul)
+  - [Value\<T>](#valuet)
+  - [Property\<T>](#propertyt)
+  - [Notifier\<T> 與 Depot\<T>](#notifiert-與-depott)
+  - [串流方法（Streamable Method）](#串流方法streamable-method)
+- [傳輸模式與 Standalone](#傳輸模式與-standalone)
+  - [TCP](#tcp)
+  - [WebSocket](#websocket)
+  - [Standalone（單機模擬）](#standalone單機模擬)
+- [進階主題](#進階主題)
+  - [Reactive 擴充](#reactive-擴充pinioncoreremotereactive)
+  - [Gateway 模組](#gateway-模組)
+  - [自訂連線（Custom Connection）](#自訂連線custom-connection)
+  - [自訂序列化](#自訂序列化)
+- [範例與測試](#範例與測試)
+- [結語](#結語)
+
+---
 
 ## 簡介
 
-PinionCore Remote 是一個以 C# 開發的物件導向遠端通訊框架。
-你可以用「介面」定義通訊協議，伺服器實作這些介面，客戶端像呼叫本地物件一樣呼叫，實際資料透過 TCP / WebSocket / 單機模擬等管道傳輸。
+**PinionCore Remote** 是一個以 C# 開發的「介面導向」遠端通訊框架。
 
-- 支援 .NET Standard 2.1（.NET 6/7/8、Unity 2021+）
-- 支援 IL2CPP 與 AOT（需預先註冊序列化型別）
-- 內建 TCP、WebSocket 與 Standalone 單機模式
-- 透過 Source Generator 自動產生 `IProtocol` 實作，降低維護成本
+你可以用 **介面（interface）** 定義遠端協議，伺服器實作這些介面，客戶端則像呼叫本地物件一樣呼叫它們；實際資料會透過 **TCP / WebSocket / Standalone（單機模擬）** 傳輸。
+
+- 支援 **.NET Standard 2.1**（.NET 6/7/8、Unity 2021+）
+- 支援 **IL2CPP 與 AOT**（需預先註冊序列化型別）
+- 內建 **TCP、WebSocket、Standalone** 三種傳輸模式
+- 透過 **Source Generator** 自動產生 `IProtocol` 實作，降低維護成本
+- 以 **Value / Property / Notifier** 為核心抽象描述遠端行為與狀態
+- 搭配 **PinionCore.Remote.Reactive** 可用 Rx 方式寫遠端流程
+
+---
+
+## 線上文件
+
+- [DeepWiki](https://deepwiki.com/jiowchern/PinionCore.Remote)
+- [OpenDeepWiki](https://opendeep.wiki/jiowchern/PinionCore.Remote/introduction?branch=master)
+
+---
 
 ## 核心特色
 
 ### 1. 介面導向通訊
 
-只需要定義介面，不需要手寫序列化與協議解析：
+你只需要定義介面，不需要手寫序列化或協議解析：
 
 ```csharp
 public interface IGreeter
@@ -29,7 +78,9 @@ public interface IGreeter
     PinionCore.Remote.Value<HelloReply> SayHello(HelloRequest request);
 }
 ```
-伺服器實作介面：
+
+伺服器實作這個介面：
+
 ```csharp
 class Greeter : IGreeter
 {
@@ -39,7 +90,9 @@ class Greeter : IGreeter
     }
 }
 ```
-客戶端透過 QueryNotifier<IGreeter>() 拿到遠端代理，直接呼叫 SayHello，回傳 Value<T> 可以 await。
+
+客戶端透過 `QueryNotifier<IGreeter>()` 拿到遠端代理，像本地物件一樣呼叫：
+
 ```csharp
 agent.QueryNotifier<IGreeter>().Supply += greeter =>
 {
@@ -51,9 +104,15 @@ agent.QueryNotifier<IGreeter>().Supply += greeter =>
 };
 ```
 
+- `Value<T>` 可以 `await`，也可以透過 `OnValue` 事件取得結果。
+- 你不需要處理任何連線 ID 或 RPC ID，只要跟著介面走即可。
+
+---
+
 ### 2. 可控的生命週期（Entry / Session / Soul）
 
-伺服器入口實作 PinionCore.Remote.IEntry，在連線建立時收到 ISessionBinder，由你決定何時綁定/解除綁定介面：
+伺服器入口實作 `PinionCore.Remote.IEntry`，在連線建立/關閉時由框架呼叫：
+
 ```csharp
 public class Entry : PinionCore.Remote.IEntry
 {
@@ -64,9 +123,8 @@ public class Entry : PinionCore.Remote.IEntry
         // 客戶端連線成功，綁定 _greeter
         var soul = binder.Bind<IGreeter>(_greeter);
 
-
-        // 若要解除綁定可呼叫這行
-        binder.Unbind(soul);
+        // 若要解除綁定可以呼叫：
+        // binder.Unbind(soul);
     }
 
     void PinionCore.Remote.ISessionObserver.OnSessionClosed(PinionCore.Remote.ISessionBinder binder)
@@ -80,106 +138,104 @@ public class Entry : PinionCore.Remote.IEntry
     }
 }
 ```
-伺服器端使用 Host 建立服務（Host 繼承自 Soul.Service，內部透過 SessionEngine 管理所有連線與 Session）：`new PinionCore.Remote.Server.Host(entry, protocol)`。
 
+建立伺服器時使用 `Host`：
+
+```csharp
+var host = new PinionCore.Remote.Server.Host(entry, protocol);
+// Host 內部使用 SessionEngine 管理所有 Session
+```
+
+`Entry / Session / Soul` 組合出一套可控制的遠端物件生命週期模型。
+
+---
 
 ### 3. Value / Property / Notifier 支援
 
-PinionCore.Remote 以「介面」為中心，提供三種常用成員型別來描述遠端行為與狀態：
+PinionCore Remote 以「介面」為中心，提供三種常用成員型別來描述遠端行為與狀態：
 
-- **Value\<T>**：描述「一次性非同步呼叫」  
-  - 用於方法回傳值（類似 Task\<T> 的概念）  
-  - 適合請求 / 回應流程，例如：登入、取得設定、送出指令等  
-  - 呼叫端只需等待結果，不需維護長期狀態
+#### Value\<T>：一次性非同步呼叫
 
-- **Property**：描述「穩定存在的遠端狀態」  
-  - 介面上的屬性會由伺服器端實作，客戶端透過代理讀取  
-  - 適合表示較穩定的資訊，例如：玩家名稱、房間標題、伺服器版本等  
-  - 搭配事件或 Notifier，可以在狀態變化時通知客戶端更新 UI
+- 類似 `Task<T>` 的概念。
+- 用於請求 / 回應流程，例如登入、取得設定、送出指令。
+- 只會被設定一次；支援 `await` 與 `OnValue` 事件。
 
-- **Notifier\<T>：支援巢狀介面與物件樹同步的動態集合**  
-  `INotifier<T>` 用來表示「一組動態存在的遠端物件」。  
-  特別的是，`T` 不只可以是基礎型別，更可以是**介面本身**，因此可以自然地描述**巢狀物件結構（物件樹）**，並在伺服器與客戶端之間同步這棵樹的生命週期。
+```csharp
+Value<LoginResult> Login(LoginRequest request);
+```
 
-  典型場景是 Lobby / Room / Player 等分層結構：
+#### Property\<T>：穩定存在的遠端狀態
 
-  ```csharp
-  public interface IChatEntry
-  {
-      // 目前所有房間的動態列表
-      INotifier<IRoom> Rooms { get; }
-  }
+- 伺服器實作端維護實際值。
+- 客戶端透過代理讀取，並可在變更時收到通知（DirtyEvent / Observable）。
+- 適合如：玩家名稱、房間標題、伺服器版本等。
 
-  public interface IRoom
-  {
-      Property<string> Name { get; }
-      // 房間內玩家的動態列表
-      INotifier<IPlayer> Players { get; }
-  }
+```csharp
+Property<string> Nickname { get; }
+Property<string> RoomName { get; }
+```
 
-  public interface IPlayer
-  {
-      Property<string> Nickname { get; }
-  }
-  ```
+#### Notifier\<T>：動態集合與巢狀物件樹
 
-  - 伺服器端維護實際的房間與玩家物件，並對應到 `INotifier<IRoom>`、`INotifier<IPlayer>`  
-    - 房間建立時，由伺服器「供應（Supply）」一個 `IRoom` 實例給 `Rooms`  
-    - 房間刪除時，將該 `IRoom` 從 `Rooms` 中移除  
-    - 玩家進出房間時，針對該 `IRoom.Players` 供應 / 移除對應的 `IPlayer`  
-  - 客戶端只需透過介面拿到 `INotifier<IRoom>`，就能：  
-    - 自動收到「房間新增 / 移除」通知  
-    - 對每個房間，再繼續訂閱 `room.Players`，自動收到「玩家進入 / 離開」通知  
-    - 取得的 `IRoom` / `IPlayer` 都是遠端代理，直接呼叫其介面成員即可
+`INotifier<T>` 描述「一組動態存在的遠端物件」，`T` 本身可以是介面，因此很適合描述 Lobby / Room / Player 等巢狀結構：
 
-  透過這種設計，Notifier 不只是「事件的集合」，而是：
+```csharp
+public interface IChatEntry
+{
+    INotifier<IRoom> Rooms { get; }
+}
 
-  - 用來描述「會動的集合」與「會變化的物件樹」  
-  - 支援介面巢狀：`INotifier<IRoom>` → `IRoom` 內再有 `INotifier<IPlayer>` → 甚至更深層的子模組  
-  - 客戶端不需要管理任何 id 或查表邏輯，只要依照介面層級存取，即可自動追蹤伺服器端物件的產生與銷毀
+public interface IRoom
+{
+    Property<string> Name { get; }
+    INotifier<IPlayer> Players { get; }
+}
 
-  **總結**：  
-  - `Value<T>`：一次性呼叫結果  
-  - `Property`：穩定狀態值  
-  - `Notifier<T>`：同步「會增減的物件集合」，並支援以介面為節點的巢狀物件樹，是 PinionCore.Remote 用來表達複雜遠端結構的核心能力。
+public interface IPlayer
+{
+    Property<string> Nickname { get; }
+}
+```
 
-#### Notifier 供應 / 移除流程概觀
+伺服器：
 
-以 `IChatEntry.Rooms` 為例，可以用以下流程理解 Notifier 的運作：
+- 房間建立 → `Rooms.Supply(roomImpl)`
+- 房間刪除 → `Rooms.Unsupply(roomImpl)`
+- 玩家進入 → `room.Players.Supply(playerImpl)`
+- 玩家離開 → `room.Players.Unsupply(playerImpl)`
 
-1. 伺服器啟動後，建立 `IRoom` 實作物件，並透過 `INotifier<IRoom>` 供應：
-   - 當房間存在時呼叫 `Rooms.Supply(roomImpl)`
-   - 當房間關閉時呼叫 `Rooms.Unsupply(roomImpl)`
-2. 通訊層會將這些供應 / 移除事件轉送到每一個已連線的客戶端。
-3. 客戶端透過 `agent.QueryNotifier<IRoom>()` 取得對應的 `INotifier<IRoom>` 代理，並訂閱：
+客戶端：
 
-   ```csharp
-   agent.QueryNotifier<IRoom>().Supply += room =>
-   {
-       // 這裡的 room 已經是遠端代理，可以直接使用
-       room.Players.Supply += player =>
-       {
-           // 處理玩家加入事件
-       };
-   };
-   ```
+```csharp
+agent.QueryNotifier<IRoom>().Supply += room =>
+{
+    // room 已是遠端代理
+    room.Players.Supply += player =>
+    {
+        Console.WriteLine($"Player joined: {player.Nickname.Value}");
+    };
+};
+```
 
-4. 當伺服器端 Unsupply 物件時，客戶端會收到對應的 `Unsupply` 事件，並自動釋放該代理。
+**重點：**
 
-透過這個機制，伺服器只需管理真實物件的生命週期，客戶端就能自動維持一份同步的巢狀物件樹（Entry → Room → Player…）。
+- Notifier 不只是事件集合，而是「會增減的物件集合」＋「巢狀物件樹」的同步工具。
+- 客戶端不需要管理任何 ID 或查表，只要依照介面層級操作即可。
+
+---
 
 ### 4. 響應式方法支援（Reactive）
 
-PinionCore.Remote.Reactive 提供 Rx 擴充，用 IObservable<T> 串接遠端呼叫。
+`PinionCore.Remote.Reactive` 提供 Rx 擴充，讓你用 `IObservable<T>` 串接遠端流程。
 
-PinionCore.Remote.Reactive.Extensions 中重要的擴充方法：
+重要擴充方法（在 `PinionCore.Remote.Reactive.Extensions` 中）：
 
-- RemoteValue()：把 Value<T> 轉成 IObservable<T>
-- SupplyEvent() / UnsupplyEvent()：把 Notifier 轉成 IObservable<T>
+- `RemoteValue()`：`Value<T> → IObservable<T>`
+- `SupplyEvent()` / `UnsupplyEvent()`：`INotifier<T> → IObservable<T>`
 
-在整合測試 PinionCore.Integration.Tests/SampleTests.cs 中：
+整合測試 `PinionCore.Integration.Tests/SampleTests.cs` 中的範例（節錄）：
+
 ```csharp
-// 重要：Rx 模式仍需要背景處理迴圈
 var cts = new CancellationTokenSource();
 var runTask = Task.Run(async () =>
 {
@@ -191,102 +247,127 @@ var runTask = Task.Run(async () =>
     }
 }, cts.Token);
 
-// 建立 Rx 查詢鏈
 var echoObs =
     from e in proxy.Agent
-        .QueryNotifier<PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Echoable>()
+        .QueryNotifier<Echoable>()
         .SupplyEvent()
     from val in e.Echo().RemoteValue()
     select val;
 
 var echoValue = await echoObs.FirstAsync();
 
-// 停止背景處理
 cts.Cancel();
 await runTask;
 ```
-這個例子同時示範：
 
-- **背景處理迴圈是必須的**：即使使用 Rx，仍需持續呼叫 HandlePackets/HandleMessages
-- 透過 Notifier 的 SupplyEvent() 等待伺服器供應介面
-- 呼叫遠端方法 Echo() 回傳 Value<int>
-- 用 RemoteValue() 轉成 IObservable<int>，再用 Rx 取得一次結果
+注意：
+
+- 即使用 Rx，**背景處理迴圈仍然必須存在**（持續呼叫 `HandlePackets` / `HandleMessages`）。
+- Rx 只是讓流程組裝更方便，並不取代底層事件處理。
+
+---
+
 ### 5. 簡易的公開與私有介面支援
-由於PinionCore.Remote採用介面導向設計，伺服器可以根據需求公開不同的介面給不同的客戶端。這使得實現公開與私有介面的需求變得簡單且直觀。
-例如，可以定義一個公開介面 `IPublicService` 和一個私有介面 `IPrivateService`：
+
+由於 PinionCore Remote 採用介面導向，伺服器可以針對不同客戶端綁定不同介面，輕鬆實現「公開 / 私有」 API：
+
 ```csharp
-public interface IPublicService  
+public interface IPublicService
 {
-    PinionCore.Remote.Value<string> GetPublicData();
+    Value<string> GetPublicData();
 }
 
 public interface IPrivateService : IPublicService
 {
-    PinionCore.Remote.Value<string> GetPrivateData();
+    Value<string> GetPrivateData();
 }
 
 class ServiceImpl : IPrivateService
 {
-    public PinionCore.Remote.Value<string> GetPublicData()
-    {
-        return "This is public data.";
-    }
-
-    public PinionCore.Remote.Value<string> GetPrivateData()
-    {
-        return "This is private data.";
-    }
-
+    public Value<string> GetPublicData() => "This is public data.";
+    public Value<string> GetPrivateData() => "This is private data.";
 }
 ```
-伺服器可以根據客戶端的身份驗證狀態，決定綁定哪個介面：
+
+伺服器端：
+
 ```csharp
 void ISessionObserver.OnSessionOpened(ISessionBinder binder)
 {
     var serviceImpl = new ServiceImpl();
+
     if (IsAuthenticatedClient(binder))
     {
-        // 綁定私有介面給已驗證的客戶端
-        binder.Bind<IPrivateService>(serviceImpl);
+        binder.Bind<IPrivateService>(serviceImpl); // 已驗證客戶端
     }
 
-    // 綁定公開介面給未驗證的客戶端
-    binder.Bind<IPublicService>(serviceImpl);
+    binder.Bind<IPublicService>(serviceImpl);      // 所有人都有
 }
 ```
-這樣，未經驗證的客戶端只能訪問 `IPublicService`，而已驗證的客戶端則可以訪問 `IPrivateService`，從而實現了介面的公開與私有控制。
+
+未驗證客戶端只能存取 `IPublicService`，已驗證客戶端則可以用 `IPrivateService`。
+
+---
 
 ### 6. 多傳輸模式與 Standalone
 
 內建三種傳輸方式：
 
-- TCP：PinionCore.Remote.Server.Tcp.ListeningEndpoint / PinionCore.Remote.Client.Tcp.ConnectingEndpoint
-- WebSocket：PinionCore.Remote.Server.Web.ListeningEndpoint / PinionCore.Remote.Client.Web.ConnectingEndpoint
-- Standalone：PinionCore.Remote.Standalone.ListeningEndpoint（同時實作 Server 與 Client 端點，用於單機模擬）
+- **TCP**  
+  - `PinionCore.Remote.Server.Tcp.ListeningEndpoint`  
+  - `PinionCore.Remote.Client.Tcp.ConnectingEndpoint`
+- **WebSocket**  
+  - `PinionCore.Remote.Server.Web.ListeningEndpoint`  
+  - `PinionCore.Remote.Client.Web.ConnectingEndpoint`
+- **Standalone（單機模擬）**  
+  - `PinionCore.Remote.Standalone.ListeningEndpoint`  
+  - 同時實作 Server / Client 端點，適合同進程模擬與測試
 
-整合測試 SampleTests 同時啟動三種端點並逐一驗證，確保各模式行為一致。
+整合測試 `SampleTests` 同時啟動三種端點並逐一驗證，確保行為一致。
 
 ---
+
 ## 架構與模組總覽
 
-主要專案：
+主要專案與角色：
 
-- PinionCore.Remote：核心介面與抽象（IEntry、ISessionBinder、Value<T>、Property<T>、Notifier<T> 等）
-- PinionCore.Remote.Client：Proxy、IConnectingEndpoint 及連線擴充（AgentExtensions.Connect）
-- PinionCore.Remote.Server：Host、IListeningEndpoint、ServiceExtensions.ListenAsync
-- PinionCore.Remote.Soul：伺服器 Session 管理、更新迴圈（ServiceUpdateLoop）
-- PinionCore.Remote.Ghost：客戶端 Agent 實作（User），封包編碼與處理
-- PinionCore.Remote.Standalone：ListeningEndpoint 以記憶體流模擬 Server/Client
-- PinionCore.Network：IStreamable、TCP/WebSocket Peer、封包讀寫
-- PinionCore.Serialization：預設序列化實作與型別描述
-- PinionCore.Remote.Tools.Protocol.Sources：Source Generator，透過 [PinionCore.Remote.Protocol.Creator] 自動產生 IProtocol
-- PinionCore.Remote.Gateway：閘道與多服務路由（詳細見該模組 README）
-
+- **PinionCore.Remote**  
+  - 核心介面與抽象：`IEntry`、`ISessionBinder`、`ISoul`  
+  - 狀態型別：`Value<T>`、`Property<T>`、`Notifier<T>`
+- **PinionCore.Remote.Client**  
+  - `Proxy`、`IConnectingEndpoint`  
+  - 連線擴充：`AgentExtensions.Connect`
+- **PinionCore.Remote.Server**  
+  - `Host`、`IListeningEndpoint`  
+  - 建立服務與監聽：`ServiceExtensions.ListenAsync`
+- **PinionCore.Remote.Soul**  
+  - 伺服器 Session 管理（`SessionEngine`）  
+  - 更新迴圈：`ServiceUpdateLoop`
+- **PinionCore.Remote.Ghost**  
+  - 客戶端 `Agent` 實作（`User`）  
+  - 封包編碼與處理
+- **PinionCore.Remote.Standalone**  
+  - `ListeningEndpoint` 使用記憶體流模擬 Server/Client
+- **PinionCore.Network**  
+  - `IStreamable` 介面、TCP/WebSocket Peer、封包讀寫
+- **PinionCore.Serialization**  
+  - 預設序列化實作與型別描述（可替換）
+- **PinionCore.Remote.Tools.Protocol.Sources**  
+  - Source Generator  
+  - 透過 `[PinionCore.Remote.Protocol.Creator]` 自動產生 `IProtocol`
+- **PinionCore.Remote.Gateway**  
+  - Gateway / Router、多服務路由與版本共存（詳見該模組 README）
 
 ---
+
 ## 快速開始（Hello World）
 
-建議建立三個專案：Protocol、Server、Client。以下範例會對齊實際樣板 (PinionCore.Samples.HelloWorld.*) 的寫法。
+建議建立三個專案：**Protocol、Server、Client**。  
+以下範例是簡化版流程，實際完整範例可參考 repo 中：
+
+- `PinionCore.Samples.HelloWorld.Protocols`
+- `PinionCore.Samples.HelloWorld.Server`
+- `PinionCore.Samples.HelloWorld.Client`
 
 ### 環境需求
 
@@ -294,24 +375,31 @@ void ISessionObserver.OnSessionOpened(ISessionBinder binder)
 - Visual Studio 2022 / Rider / VS Code
 - 若需 Unity，建議 Unity 2021 LTS 以上
 
+---
+
 ### 1. Protocol 專案
 
 建立 Class Library：
 
+```bash
 Sample/Protocol> dotnet new classlib
+```
 
 加入 NuGet 參考（版本請依實際發佈為準）：
+
 ```xml
 <ItemGroup>
-<PackageReference Include="PinionCore.Remote" Version="0.1.14.15" />
-<PackageReference Include="PinionCore.Serialization" Version="0.1.14.12" />
-<PackageReference Include="PinionCore.Remote.Tools.Protocol.Sources" Version="0.0.4.25">
+  <PackageReference Include="PinionCore.Remote" Version="0.1.14.15" />
+  <PackageReference Include="PinionCore.Serialization" Version="0.1.14.12" />
+  <PackageReference Include="PinionCore.Remote.Tools.Protocol.Sources" Version="0.0.4.25">
     <PrivateAssets>all</PrivateAssets>
     <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-</PackageReference>
+  </PackageReference>
 </ItemGroup>
 ```
-定義資料與介面：
+
+定義資料與介面（以簡化 HelloWorld 為例）：
+
 ```csharp
 namespace Protocol
 {
@@ -331,7 +419,9 @@ namespace Protocol
     }
 }
 ```
-建立 ProtocolCreator（Source Generator 入口）：
+
+建立 `ProtocolCreator`（Source Generator 入口）：
+
 ```csharp
 namespace Protocol
 {
@@ -349,24 +439,31 @@ namespace Protocol
     }
 }
 ```
- 
-> 注意：被標記為 [PinionCore.Remote.Protocol.Creator] 的方法必須是
-> static partial void Method(ref PinionCore.Remote.IProtocol)，否則無法編譯。
- 
+
+> 注意：被標記為 `[PinionCore.Remote.Protocol.Creator]` 的方法簽章必須是  
+> `static partial void Method(ref PinionCore.Remote.IProtocol)`，否則無法編譯。
+
+---
+
 ### 2. Server 專案
 
 建立 Console 專案：
 
-```Sample/Server> dotnet new console```
+```bash
+Sample/Server> dotnet new console
+```
 
-csproj 參考：
+`csproj` 參考：
+
 ```xml
 <ItemGroup>
-<PackageReference Include="PinionCore.Remote.Server" Version="0.1.14.13" />
-<ProjectReference Include="..\Protocol\Protocol.csproj" />
+  <PackageReference Include="PinionCore.Remote.Server" Version="0.1.14.13" />
+  <ProjectReference Include="..\Protocol\Protocol.csproj" />
 </ItemGroup>
 ```
-實作 IGreeter（對齊 PinionCore.Samples.HelloWorld.Server/Greeter.cs）：
+
+實作 `IGreeter`：
+
 ```csharp
 using Protocol;
 
@@ -381,7 +478,9 @@ namespace Server
     }
 }
 ```
-實作 Entry（對齊 HelloWorld 範例）：
+
+實作 `Entry`：
+
 ```csharp
 using PinionCore.Remote;
 using Protocol;
@@ -391,14 +490,12 @@ namespace Server
     class Entry : IEntry
     {
         public volatile bool Enable = true;
-
         private readonly Greeter _greeter = new Greeter();
 
         void ISessionObserver.OnSessionOpened(ISessionBinder binder)
         {
             // 客戶端連線成功，綁定 IGreeter
             var soul = binder.Bind<IGreeter>(_greeter);
-            // 若要解除綁定可呼叫 binder.Unbind(soul);
         }
 
         void ISessionObserver.OnSessionClosed(ISessionBinder binder)
@@ -409,12 +506,14 @@ namespace Server
 
         void IEntry.Update()
         {
-            // 若需要伺服器主迴圈更新，可放在這裡
+            // 伺服器主迴圈更新（如有需要）
         }
     }
 }
 ```
-啟動伺服器主程式（沿用 HelloWorld 實作方式）：
+
+啟動伺服器主程式（TCP 版本）：
+
 ```csharp
 using System;
 using System.Threading.Tasks;
@@ -436,7 +535,7 @@ namespace Server
             PinionCore.Remote.Soul.IService service = host;
 
             var (disposeServer, errorInfos) = await service.ListenAsync(
-                new PinionCore.Remote.Server.Tcp.ListeningEndpoint(port, 10));
+                new PinionCore.Remote.Server.Tcp.ListeningEndpoint(port, backlog: 10));
 
             foreach (var error in errorInfos)
             {
@@ -449,7 +548,7 @@ namespace Server
             while (entry.Enable)
             {
                 System.Threading.Thread.Sleep(0);
-                // 若有需要，也可以在這裡手動呼叫 entry.Update()
+                // 如有需要，也可以呼叫 entry.Update();
             }
 
             disposeServer.Dispose();
@@ -461,21 +560,29 @@ namespace Server
     }
 }
 ```
+
+---
+
 ### 3. Client 專案
 
 建立 Console 專案：
-```
+
+```bash
 Sample/Client> dotnet new console
 ```
-csproj 參考：
+
+`csproj` 參考：
+
 ```xml
 <ItemGroup>
-<PackageReference Include="PinionCore.Remote.Client" Version="0.1.14.12" />
-<PackageReference Include="PinionCore.Remote.Reactive" Version="0.1.14.13" />
-<ProjectReference Include="..\Protocol\Protocol.csproj" />
+  <PackageReference Include="PinionCore.Remote.Client" Version="0.1.14.12" />
+  <PackageReference Include="PinionCore.Remote.Reactive" Version="0.1.14.13" />
+  <ProjectReference Include="..\Protocol\Protocol.csproj" />
 </ItemGroup>
 ```
-客戶端程式（對齊 HelloWorld Client 實作）：
+
+客戶端程式（簡化版）：
+
 ```csharp
 using System;
 using System.Net;
@@ -507,8 +614,6 @@ namespace Client
                 new IPEndPoint(ip, port));
 
             // Connect() 是 AgentExtensions 中的擴充方法
-            // 它會自動呼叫 Enable(stream) 並返回 IDisposable 用於清理
-            // 呼叫 Dispose() 時會自動執行 Disable() 和 endpoint.Dispose()
             var connection = await agent.Connect(endpoint).ConfigureAwait(false);
 
             agent.QueryNotifier<IGreeter>().Supply += greeter =>
@@ -517,12 +622,12 @@ namespace Client
                 greeter.SayHello(request).OnValue += _OnReply;
             };
 
-            // 必須持續處理封包與訊息，否則遠端事件不會被觸發
+            // 必須持續處理封包與訊息
             while (_enable)
             {
                 System.Threading.Thread.Sleep(0);
-                agent.HandleMessages();  // 處理遠端傳來的訊息
-                agent.HandlePackets();   // 處理封包編碼
+                agent.HandleMessages();
+                agent.HandlePackets();
             }
 
             connection.Dispose();
@@ -539,73 +644,91 @@ namespace Client
 }
 ```
 
+---
+
 ## 核心概念詳解
 
 ### IEntry / ISessionBinder / ISoul
 
-- IEntry：伺服器入口，負責 Session 開/關與主迴圈更新。
-- ISessionBinder：在 OnSessionOpened 傳入，用來 Bind<T> / Unbind(ISoul)。
-- ISoul：代表一個已綁定到 Session 的實例，之後可用於解除綁定或查詢。
+- **`IEntry`**：伺服器入口，負責 Session 開/關與更新。
+- **`ISessionBinder`**：在 `OnSessionOpened` 傳入，用來 `Bind<T>` / `Unbind(ISoul)`。
+- **`ISoul`**：代表一個已綁定到 Session 的實例，可用於之後解除綁定或查詢。
 
-介面定義：
+相關檔案：
 
-- PinionCore.Remote/IEntry.cs
-- PinionCore.Remote/ISessionObserver.cs
-- PinionCore.Remote/ISessionBinder.cs
-- PinionCore.Remote/ISoul.cs
+- `PinionCore.Remote/IEntry.cs`
+- `PinionCore.Remote/ISessionObserver.cs`
+- `PinionCore.Remote/ISessionBinder.cs`
+- `PinionCore.Remote/ISoul.cs`
 
-PinionCore.Remote.Soul.Service 會在內部使用 SessionEngine 管理所有 Session，PinionCore.Remote.Server.Host 則包裝它方便建立服務。
+`PinionCore.Remote.Soul.Service` 使用 `SessionEngine` 管理所有 Session，  
+`PinionCore.Remote.Server.Host` 則包裝它以便建立服務。
 
-### Value<T>
+---
 
-Value<T> 主要特性：
+### Value\<T>
 
-- 支援 OnValue 事件與 await。
+特性：
+
+- 支援 `OnValue` 事件與 `await`。
 - 只會設定一次值（一次性結果）。
-- 使用隱含轉型接出：return new HelloReply { ... }; 會自動包成 Value<HelloReply>。
+- 支援隱含轉型：`return new HelloReply { ... };` 會自動包成 `Value<HelloReply>`。
 
-實作位置：PinionCore.Utility/PinionCore.Utility/Remote/Value.cs
+實作位置：`PinionCore.Utility/Remote/Value.cs`
 
-### Property<T>
+---
 
-Property<T> 是可通知的值型狀態：
+### Property\<T>
 
-- Value 屬性改變會觸發 DirtyEvent。
-- 透過 PropertyObservable 可以轉成 IObservable<T>（PinionCore.Remote.Reactive/PropertyObservable.cs）。
-- 提供隱含轉型成 T，用起來像普通屬性。
+可通知的狀態值：
 
-實作位置：PinionCore.Remote/Property.cs
+- 設定 `Value` 時會觸發 DirtyEvent。
+- 可透過 `PropertyObservable` 轉成 `IObservable<T>`（在 `PinionCore.Remote.Reactive/PropertyObservable.cs`）。
+- 提供隱含轉型成 `T`，使用起來像一般屬性。
 
-### Notifier<T> 與 Depot<T>
+實作位置：`PinionCore.Remote/Property.cs`
 
-Depot<T>（PinionCore.Utility/Remote/Depot.cs）是一個集合 + Notifier：
+---
 
-- Items.Add(item)：會觸發 Supply。
-- Items.Remove(item)：會觸發 Unsupply。
-- Notifier<T> 則包裝 Depot<TypeObject>，支援跨型別查詢與事件訂閱。
+### Notifier\<T> 與 Depot\<T>
 
-INotifierQueryable 介面（PinionCore.Remote/INotifierQueryable.cs）允許呼叫：
+`Depot<T>`（`PinionCore.Utility/Remote/Depot.cs`）是集合＋通知結合：
 
+- `Items.Add(item)` → 觸發 `Supply`
+- `Items.Remove(item)` → 觸發 `Unsupply`
+
+`Notifier<T>` 包裝 `Depot<TypeObject>`，支援跨型別查詢與事件訂閱。
+
+`INotifierQueryable` 介面（`PinionCore.Remote/INotifierQueryable.cs`）可呼叫：
+
+```csharp
 INotifier<T> QueryNotifier<T>();
+```
 
-Ghost.User 實作了 INotifierQueryable，所以客戶端可以透過 QueryNotifier<T> 取得任何介面的 Notifier。
+`Ghost.User` 實作了 `INotifierQueryable`，  
+所以客戶端可以透過 `QueryNotifier<T>` 取得任何介面的 Notifier。
+
+---
 
 ### 串流方法（Streamable Method）
 
 若介面方法定義如下：
+
 ```csharp
 PinionCore.Remote.IAwaitableSource<int> StreamEcho(
     byte[] buffer,
     int offset,
     int count);
 ```
+
 Source Generator 會將其視為「串流方法」：
 
-- 傳送的資料只會包含 buffer[offset..offset+count)。
+- 傳送資料只包含 `buffer[offset..offset+count)`。
 - 伺服器處理後的資料會原地寫回同一段區間。
-- 回傳的 IAwaitableSource<int> 表示實際處理的位元組數（長度）。
+- 回傳的 `IAwaitableSource<int>` 表示實際處理的位元組數。
 
-內部檢查邏輯見 PinionCore.Remote.Tools.Protocol.Sources/MethodPinionCoreRemoteStreamable.cs。
+檢查邏輯見：  
+`PinionCore.Remote.Tools.Protocol.Sources/MethodPinionCoreRemoteStreamable.cs`
 
 ---
 
@@ -614,43 +737,55 @@ Source Generator 會將其視為「串流方法」：
 ### TCP
 
 伺服器端：
+
 ```csharp
 var host = new PinionCore.Remote.Server.Host(entry, protocol);
 PinionCore.Remote.Soul.IService service = host;
+
 var (disposeServer, errorInfos) = await service.ListenAsync(
     new PinionCore.Remote.Server.Tcp.ListeningEndpoint(port, backlog: 10));
 ```
+
 客戶端：
+
 ```csharp
 var proxy = new PinionCore.Remote.Client.Proxy(protocol);
 using var connection = await proxy.Connect(
     new PinionCore.Remote.Client.Tcp.ConnectingEndpoint(
         new System.Net.IPEndPoint(System.Net.IPAddress.Loopback, port)));
 ```
+
+---
+
 ### WebSocket
 
 伺服器端：
+
 ```csharp
 var (disposeServer, errorInfos) = await service.ListenAsync(
     new PinionCore.Remote.Server.Web.ListeningEndpoint($"http://localhost:{webPort}/"));
 ```
+
 客戶端：
+
 ```csharp
 var proxy = new PinionCore.Remote.Client.Proxy(protocol);
 using var connection = await proxy.Connect(
     new PinionCore.Remote.Client.Web.ConnectingEndpoint(
         $"ws://localhost:{webPort}/"));
 ```
-PinionCore.Remote.Client.Web.ConnectingEndpoint 內部使用 System.Net.WebSockets.ClientWebSocket 與 PinionCore.Network.Web.Peer。
+
+---
 
 ### Standalone（單機模擬）
 
-PinionCore.Remote.Standalone.ListeningEndpoint 同時實作：
+`PinionCore.Remote.Standalone.ListeningEndpoint` 同時實作：
 
-- PinionCore.Remote.Server.IListeningEndpoint
-- PinionCore.Remote.Client.IConnectingEndpoint
+- `PinionCore.Remote.Server.IListeningEndpoint`
+- `PinionCore.Remote.Client.IConnectingEndpoint`
 
-用法（與 SampleTests 一致）：
+用法（簡化自 `SampleTests`）：
+
 ```csharp
 var protocol = ProtocolCreator.Create();
 var entry = new Entry();
@@ -676,7 +811,6 @@ var processTask = Task.Run(async () =>
     }
 });
 
-// 之後流程與一般 Client 相同
 proxy.Agent.QueryNotifier<IGreeter>().Supply += async greeter =>
 {
     var reply = await greeter.SayHello(new HelloRequest { Name = "offline" });
@@ -686,112 +820,120 @@ proxy.Agent.QueryNotifier<IGreeter>().Supply += async greeter =>
 
 await processTask;
 
-// 清理資源
 disposeServer.Dispose();
 host.Dispose();
-
-// ListeningEndpoint 會建立一對 Stream / ReverseStream，在同一個進程內模擬收送
 ```
+
 ---
+
 ## 進階主題
 
 ### Reactive 擴充（PinionCore.Remote.Reactive）
 
-PinionCore.Remote.Reactive/Extensions.cs 提供以下常用擴充：
+`PinionCore.Remote.Reactive/Extensions.cs` 提供常用擴充：
 
-- ReturnVoid(this Action)：把 Action 包成 IObservable<Unit>
-- RemoteValue(this Value<T>)：遠端回傳值轉 IObservable<T>
-- PropertyChangeValue(this Property<T>)：屬性變更轉 IObservable<T>
-- SupplyEvent/UnsupplyEvent(this INotifier<T>)：Notifier 事件轉 IObservable<T>
+- `ReturnVoid(this Action)`：`Action → IObservable<Unit>`
+- `RemoteValue(this Value<T>)`：遠端回傳值轉 `IObservable<T>`
+- `PropertyChangeValue(this Property<T>)`：屬性變更轉 `IObservable<T>`
+- `SupplyEvent/UnsupplyEvent(this INotifier<T>)`：Notifier 事件轉 `IObservable<T>`
 
-SampleTests 用 Rx 寫法串接：
+搭配 LINQ-to-Rx，可以很自然地組成遠端流程。
 
-1. 等待 Echo 介面供應：
-
-    ```proxy.Agent.QueryNotifier<Echoable>().SupplyEvent()```
-2. 呼叫遠端 Echo() 並用 RemoteValue() 取回：
-```
-    from e in ...
-    from val in e.Echo().RemoteValue()
-    select val;
-```
-這種寫法在需要組合多個連續遠端呼叫時非常適合。
+---
 
 ### Gateway 模組
 
-PinionCore.Remote.Gateway 提供：
+`PinionCore.Remote.Gateway` 提供：
 
 - 多服務入口（Router）
 - 群組化與負載平衡（LineAllocator）
-- 版本共存（不同 IProtocol.VersionCode）
-- 與 Chat1 範例整合的 Gateway 主控流程
+- 版本共存（不同 `IProtocol.VersionCode`）
+- 與 `PinionCore.Consoles.Chat1.*` 整合的 Gateway 案例
 
-詳細請參考 PinionCore.Remote.Gateway/README.md 以及 PinionCore.Consoles.Chat1.* 專案。
+詳細可參考 `PinionCore.Remote.Gateway/README.md` 與 Chat 範例程式。
+
+---
 
 ### 自訂連線（Custom Connection）
 
-若內建 TCP/WebSocket 不符合需求，可自行實作：
+若內建 TCP / WebSocket 不符合需求，可以自訂：
 
-- PinionCore.Network.IStreamable（收送 byte[]）
-- PinionCore.Remote.Client.IConnectingEndpoint
-- PinionCore.Remote.Server.IListeningEndpoint
+- `PinionCore.Network.IStreamable`（收送 byte[]）
+- `PinionCore.Remote.Client.IConnectingEndpoint`
+- `PinionCore.Remote.Server.IListeningEndpoint`
 
-用法與內建端點相同，只是底層換成你的協議或傳輸。
+用法與內建端點相同，只是底層換成你自己的協議或傳輸。
+
+---
 
 ### 自訂序列化
 
-若需要自訂序列化，應直接使用底層類別而非簡化包裝：
+需要自訂序列化時，建議直接使用底層類別（而不是簡化包裝）：
 
-**伺服器端（使用 PinionCore.Remote.Soul.Service）**：
+伺服器端（使用 `Soul.Service`）：
+
 ```csharp
 var serializer = new YourSerializer();
 var internalSerializer = new YourInternalSerializer();
 var pool = PinionCore.Memorys.PoolProvider.Shared;
 
-// 注意：這裡使用 Soul.Service（底層完整類別），不是 Server.Host（簡化包裝）
-var service = new PinionCore.Remote.Soul.Service(entry, protocol, serializer, internalSerializer, pool);
+var service = new PinionCore.Remote.Soul.Service(
+    entry, protocol, serializer, internalSerializer, pool);
 ```
 
-**客戶端（使用 PinionCore.Remote.Ghost.Agent）**：
+客戶端（使用 `Ghost.Agent`）：
+
 ```csharp
 var serializer = new YourSerializer();
 var internalSerializer = new YourInternalSerializer();
 var pool = PinionCore.Memorys.PoolProvider.Shared;
 
-// 注意：這裡使用 Ghost.Agent（底層完整類別），不是 Client.Proxy（簡化包裝）
-var agent = new PinionCore.Remote.Ghost.Agent(protocol, serializer, internalSerializer, pool);
+var agent = new PinionCore.Remote.Ghost.Agent(
+    protocol, serializer, internalSerializer, pool);
 ```
 
-**簡化包裝與完整類別的對應關係**：
-- `Server.Host` 內部使用預設序列化的 `Soul.Service`
-- `Client.Proxy` 內部使用預設序列化的 `Ghost.Agent`
+對應關係：
 
-需要序列化的型別可由 IProtocol.SerializeTypes 取得，或參考 PinionCore.Serialization/README.md。
+- `Server.Host`：封裝預設序列化的 `Soul.Service`
+- `Client.Proxy`：封裝預設序列化的 `Ghost.Agent`
+
+需要序列化的型別可由 `IProtocol.SerializeTypes` 取得，  
+或參考 `PinionCore.Serialization/README.md`。
 
 ---
+
 ## 範例與測試
 
-建議從以下專案開始閱讀：
+建議閱讀順序：
 
-- PinionCore.Samples.Helloworld.Protocols：基本 Protocol 與 ProtocolCreator 實作
-- PinionCore.Samples.Helloworld.Server：Entry、Greeter、Host 用法
-- PinionCore.Samples.Helloworld.Client：Proxy、ConnectingEndpoint 與 QueryNotifier
-- **PinionCore.Integration.Tests/SampleTests.cs**（重點推薦）：
-    - **同時啟動 TCP / WebSocket / Standalone 三種端點並行測試**
-    - 展示如何使用 Rx (SupplyEvent / RemoteValue) 處理遠端呼叫
-    - **詳細的英文註解說明每個步驟**，包括為何需要背景處理迴圈
-    - 驗證三種傳輸模式行為一致
-- PinionCore.Remote.Gateway + PinionCore.Consoles.Chat1.*：Gateway 實際落地案例
+1. **PinionCore.Samples.HelloWorld.Protocols**  
+   - 基本 Protocol 與 `ProtocolCreator` 實作
+2. **PinionCore.Samples.HelloWorld.Server**  
+   - `Entry`、`Greeter`、`Host` 用法
+3. **PinionCore.Samples.HelloWorld.Client**  
+   - `Proxy`、`ConnectingEndpoint` 與 `QueryNotifier`
+4. **PinionCore.Integration.Tests/SampleTests.cs**（強烈推薦）  
+   - 同時啟動 TCP / WebSocket / Standalone 三種端點  
+   - 使用 Rx (`SupplyEvent` / `RemoteValue`) 處理遠端呼叫  
+   - 詳細英文註解解釋背景處理迴圈的必要性  
+   - 驗證多種傳輸模式行為一致
+5. **PinionCore.Remote.Gateway + PinionCore.Consoles.Chat1.***  
+   - Gateway 在實際專案中的組合與運作方式
 
 ---
 
 ## 結語
 
-PinionCore Remote 的目標，是用「介面導向」的方式，把伺服器與客戶端之間的溝通，從繁瑣的封包格式與序列化細節中抽離出來。你只需要專注在 Domain 模型與狀態管理上，其餘連線、序列化、供應/退供與版本檢查等細節，都交
-給框架處理。無論是遊戲、即時服務、工具後端，或是透過 Gateway 串起多個服務，只要你的需求是「在不同進程或機器之間像呼叫本地介面一樣互動」，這個框架都可以成為你的基礎。
+PinionCore Remote 的設計目標，是用「介面導向」把伺服器與客戶端之間的溝通，從繁瑣的封包格式、序列化與 ID 管理中抽離出來。你可以專注在 Domain 模型與狀態管理，其餘連線、供應 / 退供、版本檢查等細節交給框架處理。
 
-如果你第一次接觸這個專案，建議從 PinionCore.Samples.HelloWorld.* 開始，照著「快速開始」章節建立 Protocol / Server / Client 三個專案，實際跑一次完整流程。接著再閱讀 PinionCore.Integration.Tests（特別是
-SampleTests）與 Gateway 相關範例，會更清楚整體架構如何在真實場景下組合運作。當你需要更進階的能力，例如自訂傳輸層或序列化格式，可以回頭參考「進階主題」章節與對應程式碼檔案。
+無論是遊戲、即時服務、工具後端，或是透過 Gateway 串起多個服務，只要你的需求是「在不同進程或機器之間像呼叫本地介面一樣互動」，這個框架都可以作為基礎。
 
-在使用過程中，如果你發現文件哪裡不清楚、範例有不足之處，或遇到實際需求無法覆蓋的情境，非常歡迎在 GitHub 開 Issue 討論，也歡迎提出 PR。無論是補充說明、修正文案、增加小型範例或整合測試，只要能讓下一個使用者更
-容易上手，都是非常有價值的貢獻。希望 PinionCore Remote 能在你的專案裡，替你省下處理網路細節的時間，讓你把心力放在真正重要的遊戲與應用程式設計上。
+如果你第一次接觸這個專案，建議：
+
+1. 先照著「快速開始」建立 Protocol / Server / Client 三個專案並跑起 Hello World。  
+2. 再閱讀 `PinionCore.Integration.Tests`（尤其 `SampleTests`）與 Gateway 範例。  
+3. 需要更進階能力時，再回頭看「進階主題」與對應程式碼檔案。
+
+如果在使用過程中覺得文件有不清楚、範例不足，或遇到特殊需求，歡迎在 GitHub 開 Issue 討論，也歡迎 PR：  
+補充說明、修正文案、增加小型範例或整合測試，都能讓下一個使用者更快上手。  
+希望 PinionCore Remote 能幫你省下處理網路細節的時間，讓你把心力放在真正重要的遊戲與應用程式設計上。
