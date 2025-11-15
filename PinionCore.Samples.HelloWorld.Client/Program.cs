@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Net;
 using System.Threading.Tasks;
 using PinionCore.Remote.Client;
@@ -20,8 +20,8 @@ namespace PinionCore.Samples.HelloWorld.Client
             var port = int.Parse(args[1]);
             var protocolAsm = typeof(IGreeter).Assembly;
             var protocol = PinionCore.Samples.HelloWorld.Protocols.ProtocolCreator.Create();
-            var ghost = new PinionCore.Remote.Client.Ghost(protocol);
-            var agent = ghost.User;
+            var ghost = new PinionCore.Remote.Client.Proxy(protocol);
+            var agent = ghost.Agent;
             var endpoint = new PinionCore.Remote.Client.Tcp.ConnectingEndpoint(new IPEndPoint(ip, port));
             var connection = await agent.Connect(endpoint).ConfigureAwait(false);
             agent.QueryNotifier<Protocols.IGreeter>().Supply += (greeter) =>

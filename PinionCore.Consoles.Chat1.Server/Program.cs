@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -38,7 +38,7 @@ namespace PinionCore.Consoles.Chat1.Server
 
             var protocol = PinionCore.Consoles.Chat1.Common.ProtocolCreator.Create();
             var entry = new PinionCore.Consoles.Chat1.Entry();
-            var soul = new PinionCore.Remote.Server.Soul(entry, protocol);
+            var soul = new PinionCore.Remote.Server.Host(entry, protocol);
             PinionCore.Remote.Soul.IService service = soul;
 
             var endpointDescriptors = new List<(PinionCore.Remote.Server.IListeningEndpoint Endpoint, string Description)>();

@@ -7,7 +7,7 @@ using PinionCore.Remote.ProviderHelper;
 
 namespace PinionCore.Remote.Ghost
 {
-    public class User : IAgent
+    public class Agent : IAgent
     {
 
         private readonly GhostProviderQueryer _GhostProvider;
@@ -23,11 +23,11 @@ namespace PinionCore.Remote.Ghost
             get { return _GhostProvider.Ping; }
         }
 
-        public User(IProtocol protocol)
+        public Agent(IProtocol protocol)
             : this(protocol, new PinionCore.Remote.Serializer(protocol.SerializeTypes), new PinionCore.Remote.InternalSerializer(), PinionCore.Memorys.PoolProvider.Shared)
         {
         }
-        public User(IProtocol protocol, ISerializable serializable, IInternalSerializable internal_serializable, PinionCore.Memorys.IPool pool)
+        public Agent(IProtocol protocol, ISerializable serializable, IInternalSerializable internal_serializable, PinionCore.Memorys.IPool pool)
         {
             _InternalSerializer = internal_serializable;
             _Pool = pool;

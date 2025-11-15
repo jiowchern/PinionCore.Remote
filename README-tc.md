@@ -62,7 +62,7 @@ public class Entry : PinionCore.Remote.IEntry
     }
 }
 ```
-Soul 負責管理所有連線與 ```Session：new PinionCore.Remote.Server.Soul(entry, protocol)```。
+Soul 負責管理所有連線與 Session：`new PinionCore.Remote.Server.Host(entry, protocol)`。
 
 ### 3. Value / Property / Notifier 支援
 
@@ -149,17 +149,35 @@ PinionCore.Remote.Reactive.Extensions 中重要的擴充方法：
 
 在整合測試 PinionCore.Integration.Tests/SampleTests.cs 中：
 ```csharp
+// 重要：Rx 模式仍需要背景處理迴圈
+var cts = new CancellationTokenSource();
+var runTask = Task.Run(async () =>
+{
+    while (!cts.Token.IsCancellationRequested)
+    {
+        proxy.Agent.HandlePackets();
+        proxy.Agent.HandleMessages();
+        await Task.Delay(1, cts.Token);
+    }
+}, cts.Token);
+
+// 建立 Rx 查詢鏈
 var echoObs =
-    from e in ghost.User
+    from e in proxy.Agent
         .QueryNotifier<PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Echoable>()
         .SupplyEvent()
     from val in e.Echo().RemoteValue()
     select val;
 
 var echoValue = await echoObs.FirstAsync();
+
+// 停止背景處理
+cts.Cancel();
+await runTask;
 ```
 這個例子同時示範：
 
+- **背景處理迴圈是必須的**：即使使用 Rx，仍需持續呼叫 HandlePackets/HandleMessages
 - 透過 Notifier 的 SupplyEvent() 等待伺服器供應介面
 - 呼叫遠端方法 Echo() 回傳 Value<int>
 - 用 RemoteValue() 轉成 IObservable<int>，再用 Rx 取得一次結果
@@ -180,8 +198,8 @@ var echoValue = await echoObs.FirstAsync();
 主要專案：
 
 - PinionCore.Remote：核心介面與抽象（IEntry、ISessionBinder、Value<T>、Property<T>、Notifier<T> 等）
-- PinionCore.Remote.Client：Ghost、IConnectingEndpoint 及連線擴充（AgentExtensions.Connect）
-- PinionCore.Remote.Server：Soul、IListeningEndpoint、ServiceExtensions.ListenAsync
+- PinionCore.Remote.Client：Proxy、IConnectingEndpoint 及連線擴充（AgentExtensions.Connect）
+- PinionCore.Remote.Server：Host、IListeningEndpoint、ServiceExtensions.ListenAsync
 - PinionCore.Remote.Soul：伺服器 Session 管理、更新迴圈（ServiceUpdateLoop）
 - PinionCore.Remote.Ghost：客戶端 Agent 實作（User），封包編碼與處理
 - PinionCore.Remote.Standalone：ListeningEndpoint 以記憶體流模擬 Server/Client
@@ -364,8 +382,8 @@ namespace Server
             var protocol = ProtocolCreator.Create();
             var entry = new Entry();
 
-            var soul = new PinionCore.Remote.Server.Soul(entry, protocol);
-            var service = (PinionCore.Remote.Soul.IService)soul;
+            var host = new PinionCore.Remote.Server.Host(entry, protocol);
+            PinionCore.Remote.Soul.IService service = host;
 
             var (disposeServer, errorInfos) = await service.ListenAsync(
                 new PinionCore.Remote.Server.Tcp.ListeningEndpoint(port, 10));
@@ -385,7 +403,7 @@ namespace Server
             }
 
             disposeServer.Dispose();
-            soul.Dispose();
+            host.Dispose();
 
             Console.WriteLine("Press any key to exit.");
             Console.ReadKey();
@@ -432,12 +450,15 @@ namespace Client
             var port = int.Parse(args[1]);
 
             var protocol = ProtocolCreator.Create();
-            var ghost = new Ghost(protocol);
-            var agent = ghost.User;
+            var proxy = new Proxy(protocol);
+            var agent = proxy.Agent;
 
             var endpoint = new PinionCore.Remote.Client.Tcp.ConnectingEndpoint(
                 new IPEndPoint(ip, port));
 
+            // Connect() 是 AgentExtensions 中的擴充方法
+            // 它會自動呼叫 Enable(stream) 並返回 IDisposable 用於清理
+            // 呼叫 Dispose() 時會自動執行 Disable() 和 endpoint.Dispose()
             var connection = await agent.Connect(endpoint).ConfigureAwait(false);
 
             agent.QueryNotifier<IGreeter>().Supply += greeter =>
@@ -446,11 +467,12 @@ namespace Client
                 greeter.SayHello(request).OnValue += _OnReply;
             };
 
+            // 必須持續處理封包與訊息，否則遠端事件不會被觸發
             while (_enable)
             {
                 System.Threading.Thread.Sleep(0);
-                agent.HandleMessages();
-                agent.HandlePackets();
+                agent.HandleMessages();  // 處理遠端傳來的訊息
+                agent.HandlePackets();   // 處理封包編碼
             }
 
             connection.Dispose();
@@ -482,7 +504,7 @@ namespace Client
 - PinionCore.Remote/ISessionBinder.cs
 - PinionCore.Remote/ISoul.cs
 
-PinionCore.Remote.Soul.Service 會在內部使用 SessionEngine 管理所有 Session，PinionCore.Remote.Server.Soul 則包裝它方便建立服務。
+PinionCore.Remote.Soul.Service 會在內部使用 SessionEngine 管理所有 Session，PinionCore.Remote.Server.Host 則包裝它方便建立服務。
 
 ### Value<T>
 
@@ -541,14 +563,15 @@ Source Generator 會將其視為「串流方法」：
 
 伺服器端：
 ```csharp
-var service = (PinionCore.Remote.Soul.IService)soul;
+var host = new PinionCore.Remote.Server.Host(entry, protocol);
+PinionCore.Remote.Soul.IService service = host;
 var (disposeServer, errorInfos) = await service.ListenAsync(
     new PinionCore.Remote.Server.Tcp.ListeningEndpoint(port, backlog: 10));
 ```
 客戶端：
 ```csharp
-var ghost = new PinionCore.Remote.Client.Ghost(protocol);
-using var connection = await ghost.Connect(
+var proxy = new PinionCore.Remote.Client.Proxy(protocol);
+using var connection = await proxy.Connect(
     new PinionCore.Remote.Client.Tcp.ConnectingEndpoint(
         new System.Net.IPEndPoint(System.Net.IPAddress.Loopback, port)));
 ```
@@ -561,8 +584,8 @@ var (disposeServer, errorInfos) = await service.ListenAsync(
 ```
 客戶端：
 ```csharp
-var ghost = new PinionCore.Remote.Client.Ghost(protocol);
-using var connection = await ghost.Connect(
+var proxy = new PinionCore.Remote.Client.Proxy(protocol);
+using var connection = await proxy.Connect(
     new PinionCore.Remote.Client.Web.ConnectingEndpoint(
         $"ws://localhost:{webPort}/"));
 ```
@@ -579,24 +602,43 @@ PinionCore.Remote.Standalone.ListeningEndpoint 同時實作：
 ```csharp
 var protocol = ProtocolCreator.Create();
 var entry = new Entry();
-var soul = new PinionCore.Remote.Server.Soul(entry, protocol);
-var service = (PinionCore.Remote.Soul.IService)soul;
+var host = new PinionCore.Remote.Server.Host(entry, protocol);
+PinionCore.Remote.Soul.IService service = host;
 
 var standaloneEndpoint = new PinionCore.Remote.Standalone.ListeningEndpoint();
 
 var (disposeServer, errors) = await service.ListenAsync(standaloneEndpoint);
 
-var ghost = new PinionCore.Remote.Client.Ghost(protocol);
-using var connection = await ghost.Connect(standaloneEndpoint);
+var proxy = new PinionCore.Remote.Client.Proxy(protocol);
+using var connection = await proxy.Connect(standaloneEndpoint);
 
-// 之後流程與一般 Client 相同：
-ghost.User.QueryNotifier<IGreeter>().Supply += async greeter =>
+// 重要：必須持續處理封包與訊息
+var running = true;
+var processTask = Task.Run(async () =>
+{
+    while (running)
+    {
+        proxy.Agent.HandlePackets();
+        proxy.Agent.HandleMessages();
+        await Task.Delay(1);
+    }
+});
+
+// 之後流程與一般 Client 相同
+proxy.Agent.QueryNotifier<IGreeter>().Supply += async greeter =>
 {
     var reply = await greeter.SayHello(new HelloRequest { Name = "offline" });
     Console.WriteLine(reply.Message);
+    running = false;
 };
 
-ListeningEndpoint 會建立一對 Stream / ReverseStream，在同一個進程內模擬收送。
+await processTask;
+
+// 清理資源
+disposeServer.Dispose();
+host.Dispose();
+
+// ListeningEndpoint 會建立一對 Stream / ReverseStream，在同一個進程內模擬收送
 ```
 ---
 ## 進階主題
@@ -614,7 +656,7 @@ SampleTests 用 Rx 寫法串接：
 
 1. 等待 Echo 介面供應：
 
-    ```ghost.User.QueryNotifier<Echoable>().SupplyEvent()```
+    ```proxy.Agent.QueryNotifier<Echoable>().SupplyEvent()```
 2. 呼叫遠端 Echo() 並用 RemoteValue() 取回：
 ```
     from e in ...
@@ -645,16 +687,33 @@ PinionCore.Remote.Gateway 提供：
 用法與內建端點相同，只是底層換成你的協議或傳輸。
 
 ### 自訂序列化
-  
-PinionCore.Remote.Soul.Service 與 PinionCore.Remote.Ghost.User 都提供完整建構子，可注入自訂 ISerializable：
+
+若需要自訂序列化，應直接使用底層類別而非簡化包裝：
+
+**伺服器端（使用 PinionCore.Remote.Soul.Service）**：
 ```csharp
 var serializer = new YourSerializer();
 var internalSerializer = new YourInternalSerializer();
 var pool = PinionCore.Memorys.PoolProvider.Shared;
 
-var soul = new PinionCore.Remote.Soul.Service(entry, protocol, serializer, internalSerializer, pool);
-var ghostUser = new PinionCore.Remote.Ghost.User(protocol, serializer, internalSerializer, pool);
+// 注意：這裡使用 Soul.Service（底層完整類別），不是 Server.Host（簡化包裝）
+var service = new PinionCore.Remote.Soul.Service(entry, protocol, serializer, internalSerializer, pool);
 ```
+
+**客戶端（使用 PinionCore.Remote.Ghost.Agent）**：
+```csharp
+var serializer = new YourSerializer();
+var internalSerializer = new YourInternalSerializer();
+var pool = PinionCore.Memorys.PoolProvider.Shared;
+
+// 注意：這裡使用 Ghost.Agent（底層完整類別），不是 Client.Proxy（簡化包裝）
+var agent = new PinionCore.Remote.Ghost.Agent(protocol, serializer, internalSerializer, pool);
+```
+
+**簡化包裝與完整類別的對應關係**：
+- `Server.Host` 內部使用預設序列化的 `Soul.Service`
+- `Client.Proxy` 內部使用預設序列化的 `Ghost.Agent`
+
 需要序列化的型別可由 IProtocol.SerializeTypes 取得，或參考 PinionCore.Serialization/README.md。
 
 ---
@@ -663,11 +722,13 @@ var ghostUser = new PinionCore.Remote.Ghost.User(protocol, serializer, internalS
 建議從以下專案開始閱讀：
 
 - PinionCore.Samples.Helloworld.Protocols：基本 Protocol 與 ProtocolCreator 實作
-- PinionCore.Samples.Helloworld.Server：Entry、Greeter、Soul 用法
-- PinionCore.Samples.Helloworld.Client：Ghost、ConnectingEndpoint 與 QueryNotifier
-- PinionCore.Integration.Tests/SampleTests.cs：
-    - 同時啟動 TCP / WebSocket / Standalone 三種端點
-    - 使用 Ghost.Connect 與 Rx SupplyEvent / RemoteValue 驗證完整流程
+- PinionCore.Samples.Helloworld.Server：Entry、Greeter、Host 用法
+- PinionCore.Samples.Helloworld.Client：Proxy、ConnectingEndpoint 與 QueryNotifier
+- **PinionCore.Integration.Tests/SampleTests.cs**（重點推薦）：
+    - **同時啟動 TCP / WebSocket / Standalone 三種端點並行測試**
+    - 展示如何使用 Rx (SupplyEvent / RemoteValue) 處理遠端呼叫
+    - **詳細的英文註解說明每個步驟**，包括為何需要背景處理迴圈
+    - 驗證三種傳輸模式行為一致
 - PinionCore.Remote.Gateway + PinionCore.Consoles.Chat1.*：Gateway 實際落地案例
 
 ———

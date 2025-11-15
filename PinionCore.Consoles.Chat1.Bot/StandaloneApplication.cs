@@ -11,7 +11,7 @@ namespace PinionCore.Consoles.Chat1.Bots
         private readonly IProtocol _protocol;
         private readonly int _botCount;
         private readonly Entry _entry;
-        private readonly PinionCore.Remote.Server.Soul _soul;
+        private readonly PinionCore.Remote.Server.Host _soul;
         private readonly PinionCore.Remote.Standalone.ListeningEndpoint _endpoint;
         private readonly List<(Bot bot, PinionCore.Remote.Ghost.IAgent agent)> _bots;
         private IDisposable? _listenHandle;
@@ -21,7 +21,7 @@ namespace PinionCore.Consoles.Chat1.Bots
             _protocol = protocol;
             _botCount = botCount;
             _entry = new Entry();
-            _soul = new PinionCore.Remote.Server.Soul(_entry, _protocol);
+            _soul = new PinionCore.Remote.Server.Host(_entry, _protocol);
             _endpoint = new PinionCore.Remote.Standalone.ListeningEndpoint();
             _bots = new List<(Bot, PinionCore.Remote.Ghost.IAgent)>();
         }
@@ -42,7 +42,7 @@ namespace PinionCore.Consoles.Chat1.Bots
 
             for (var i = 0; i < _botCount; i++)
             {
-                var agent = new PinionCore.Remote.Ghost.User(_protocol);
+                var agent = new PinionCore.Remote.Ghost.Agent(_protocol);
                 PinionCore.Remote.Client.IConnectingEndpoint connectable = _endpoint;
                 var stream = connectable.ConnectAsync().GetAwaiter().GetResult();
                 agent.Enable(stream);

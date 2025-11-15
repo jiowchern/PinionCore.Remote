@@ -8,7 +8,7 @@ namespace PinionCore.Remote.Gateway.Protocols
         public static IAgent ToAgent(this IProtocol protocol)
         {            
             PinionCore.Utility.Log.Instance.WriteInfo($"Creating agent with protocol: {protocol.VersionCode.ToMd5String()}");
-            return new PinionCore.Remote.Ghost.User(protocol);
+            return new PinionCore.Remote.Ghost.Agent(protocol);
         }
     }
 }

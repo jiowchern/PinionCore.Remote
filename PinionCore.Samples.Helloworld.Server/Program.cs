@@ -1,4 +1,4 @@
-using PinionCore.Remote.Server;
+﻿using PinionCore.Remote.Server;
 
 namespace PinionCore.Samples.HelloWorld.Server
 {
@@ -11,7 +11,7 @@ namespace PinionCore.Samples.HelloWorld.Server
             var protocol = PinionCore.Samples.HelloWorld.Protocols.ProtocolCreator.Create();
             var entry = new Entry();
 
-            var soul = new PinionCore.Remote.Server.Soul(entry, protocol);
+            var soul = new PinionCore.Remote.Server.Host(entry, protocol);
             var service = (PinionCore.Remote.Soul.IService)soul;
             var (disposeServer, errorInfos) = await service.ListenAsync(
                 new PinionCore.Remote.Server.Tcp.ListeningEndpoint(port, 10));

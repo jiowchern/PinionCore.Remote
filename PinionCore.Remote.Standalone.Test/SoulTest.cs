@@ -29,7 +29,7 @@ namespace PinionCore.Remote.Standalone.Test
             var (listenHandle, listenErrors) = service.ListenAsync(standaloneEndpoint).GetAwaiter().GetResult();
             Assert.IsEmpty(listenErrors, "Standalone listener failed.");
 
-            var ghostAgent = new PinionCore.Remote.Ghost.User(protocol, serializer, internalSer, pool);
+            var ghostAgent = new PinionCore.Remote.Ghost.Agent(protocol, serializer, internalSer, pool);
             PinionCore.Remote.Client.IConnectingEndpoint connectable = standaloneEndpoint;
             var stream = connectable.ConnectAsync().GetAwaiter().GetResult();
             ghostAgent.Enable(stream);

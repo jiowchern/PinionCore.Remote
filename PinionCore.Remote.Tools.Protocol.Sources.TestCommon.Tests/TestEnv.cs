@@ -32,7 +32,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
             #region standalone
             var service = new PinionCore.Remote.Soul.Service(entry, protocol, serializer, new PinionCore.Remote.InternalSerializer(), Memorys.PoolProvider.Shared);
 
-            Ghost.IAgent agent = new PinionCore.Remote.Ghost.User(protocol, serializer, new PinionCore.Remote.InternalSerializer(), Memorys.PoolProvider.Shared);            
+            Ghost.IAgent agent = new PinionCore.Remote.Ghost.Agent(protocol, serializer, new PinionCore.Remote.InternalSerializer(), Memorys.PoolProvider.Shared);            
             var agentConnection = ConnectAgent(agent, service);
 
             var updateMessage = new ThreadUpdater(() =>

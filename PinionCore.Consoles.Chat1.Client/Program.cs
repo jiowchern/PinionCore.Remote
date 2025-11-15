@@ -73,7 +73,7 @@ namespace PinionCore.Consoles.Chat1.Client
                 .Select(type => Activator.CreateInstance(type) as PinionCore.Remote.IEntry)
                 .Single();
 
-            using var soul = new PinionCore.Remote.Server.Soul(entry, protocol);
+            using var soul = new PinionCore.Remote.Server.Host(entry, protocol);
             PinionCore.Remote.Soul.IService service = soul;
             var standaloneEndpoint = new PinionCore.Remote.Standalone.ListeningEndpoint();
             var (listenHandle, errorInfos) = service.ListenAsync(standaloneEndpoint).GetAwaiter().GetResult();
@@ -83,7 +83,7 @@ namespace PinionCore.Consoles.Chat1.Client
                 return;
             }
 
-            var agent = new PinionCore.Remote.Ghost.User(protocol);
+            var agent = new PinionCore.Remote.Ghost.Agent(protocol);
             PinionCore.Remote.Client.IConnectingEndpoint connectable = standaloneEndpoint;
             var stream = connectable.ConnectAsync().GetAwaiter().GetResult();
             agent.Enable(stream);
@@ -142,7 +142,7 @@ namespace PinionCore.Consoles.Chat1.Client
         {
             System.Console.WriteLine("Remote mode.");
             var protocol = ProtocolCreator.Create();
-            var agent = new PinionCore.Remote.Ghost.User(protocol);
+            var agent = new PinionCore.Remote.Ghost.Agent(protocol);
             var console = new RemoteConsole(agent);
 
             if (args?.Length == 2 && int.TryParse(args[1], NumberStyles.Integer, CultureInfo.InvariantCulture, out var port))

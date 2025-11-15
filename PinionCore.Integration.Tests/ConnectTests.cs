@@ -23,7 +23,7 @@ namespace PinionCore.Integration.Tests
             entry.OnSessionOpened(NSubstitute.Arg.Do<ISessionBinder>(b => b.Bind<PinionCore.Remote.Tools.Protocol.Sources.TestCommon.IMethodable>(tester)));
             IProtocol protocol = PinionCore.Remote.Tools.Protocol.Sources.TestCommon.ProtocolProvider.CreateCase1();
 
-            var soul = new PinionCore.Remote.Server.Soul(entry, protocol);
+            var soul = new PinionCore.Remote.Server.Host(entry, protocol);
             PinionCore.Remote.Soul.IService service = soul;
             var (disposeServer, errorInfos) = await service.ListenAsync(
                 new PinionCore.Remote.Server.Tcp.ListeningEndpoint(port, 10));
@@ -33,7 +33,7 @@ namespace PinionCore.Integration.Tests
                 Assert.Fail($"Server error: {error.Exception}");
             }
 
-            var ghost = new PinionCore.Remote.Client.Ghost(protocol);
+            var ghost = new PinionCore.Remote.Client.Proxy(protocol);
             var endpoint = new PinionCore.Remote.Client.Tcp.ConnectingEndpoint(new IPEndPoint(IPAddress.Loopback, port));
             PinionCore.Remote.Client.IConnectingEndpoint connectable = endpoint;
             var stream = await connectable.ConnectAsync().ConfigureAwait(false);
@@ -41,17 +41,17 @@ namespace PinionCore.Integration.Tests
             var peerBreak = false;
             peer.BreakEvent += () => peerBreak = true;
 
-            ghost.User.Enable(stream);
+            ghost.Agent.Enable(stream);
 
             await peer.Disconnect().ConfigureAwait(false);
 
             while (!peerBreak)
             {
-                ghost.User.HandleMessages();
-                ghost.User.HandlePackets();
+                ghost.Agent.HandleMessages();
+                ghost.Agent.HandlePackets();
             }
 
-            ghost.User.Disable();
+            ghost.Agent.Disable();
             IDisposable disposable = endpoint;
             disposable.Dispose();
             disposeServer.Dispose();
@@ -77,7 +77,7 @@ namespace PinionCore.Integration.Tests
             // create protocol
             IProtocol protocol = PinionCore.Remote.Tools.Protocol.Sources.TestCommon.ProtocolProvider.CreateCase1();
 
-            var soul = new PinionCore.Remote.Server.Soul(entry, protocol);
+            var soul = new PinionCore.Remote.Server.Host(entry, protocol);
             PinionCore.Remote.Soul.IService service = soul;
             var (disposeServer, errorInfos) = await service.ListenAsync(
                 new PinionCore.Remote.Server.Tcp.ListeningEndpoint(port, 10));
@@ -87,15 +87,15 @@ namespace PinionCore.Integration.Tests
                 Assert.Fail($"Server error: {error.Exception}");
             }
 
-            var ghost = new PinionCore.Remote.Client.Ghost(protocol);
+            var ghost = new PinionCore.Remote.Client.Proxy(protocol);
 
             var stop = false;
             var task = System.Threading.Tasks.Task.Run(() =>
             {
                 while (!stop)
                 {
-                    ghost.User.HandlePackets();
-                    ghost.User.HandleMessages();
+                    ghost.Agent.HandlePackets();
+                    ghost.Agent.HandleMessages();
                 }
 
             });
@@ -105,9 +105,9 @@ namespace PinionCore.Integration.Tests
             PinionCore.Remote.Client.IConnectingEndpoint connectable = endpoint;
             var stream = await connectable.ConnectAsync().ConfigureAwait(false);
 
-            ghost.User.Enable(stream);
+            ghost.Agent.Enable(stream);
             // get values
-            var valuesObs = from gpi in ghost.User.QueryNotifier<PinionCore.Remote.Tools.Protocol.Sources.TestCommon.IMethodable>().SupplyEvent()
+            var valuesObs = from gpi in ghost.Agent.QueryNotifier<PinionCore.Remote.Tools.Protocol.Sources.TestCommon.IMethodable>().SupplyEvent()
                             from v1 in gpi.GetValue1().RemoteValue()
                             from v2 in gpi.GetValue2().RemoteValue()
                             from v0 in gpi.GetValue0(0, "", 0, 0, 0, System.Guid.Empty).RemoteValue()
@@ -119,7 +119,7 @@ namespace PinionCore.Integration.Tests
             await task;
 
             // release
-            ghost.User.Disable();
+            ghost.Agent.Disable();
             IDisposable disposable2 = endpoint;
             disposable2.Dispose();
             disposeServer.Dispose();

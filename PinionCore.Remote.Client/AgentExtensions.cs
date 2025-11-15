@@ -6,9 +6,9 @@ namespace PinionCore.Remote.Client
 {
     public static class AgentExtensions
     {
-        public static async Task<IDisposable> Connect(this Ghost guest, IConnectingEndpoint endpoint)
+        public static async Task<IDisposable> Connect(this Proxy guest, IConnectingEndpoint endpoint)
         {
-            return await guest.User.Connect(endpoint);
+            return await guest.Agent.Connect(endpoint);
         }
         public static async Task<IDisposable> Connect(this IAgent agent, IConnectingEndpoint endpoint)
         {
