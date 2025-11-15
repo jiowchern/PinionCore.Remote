@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using PinionCore.Remote;
+using PinionCore.Remote.Client;
+using PinionCore.Remote.Server;
 
 namespace PinionCore.Consoles.Chat1.Bots
 {
@@ -9,26 +11,43 @@ namespace PinionCore.Consoles.Chat1.Bots
         private readonly IProtocol _protocol;
         private readonly int _botCount;
         private readonly Entry _entry;
-        private readonly PinionCore.Remote.Soul.Service _service;
-        private readonly List<(Bot bot, Action disconnect)> _bots;
+        private readonly PinionCore.Remote.Server.Soul _soul;
+        private readonly PinionCore.Remote.Standalone.ListeningEndpoint _endpoint;
+        private readonly List<(Bot bot, PinionCore.Remote.Ghost.IAgent agent)> _bots;
+        private IDisposable? _listenHandle;
 
         public StandaloneApplication(IProtocol protocol, int botCount)
         {
             _protocol = protocol;
             _botCount = botCount;
             _entry = new Entry();
-            _service = new PinionCore.Remote.Soul.Service(_entry, _protocol);
-            _bots = new List<(Bot, Action)>();
+            _soul = new PinionCore.Remote.Server.Soul(_entry, _protocol);
+            _endpoint = new PinionCore.Remote.Standalone.ListeningEndpoint();
+            _bots = new List<(Bot, PinionCore.Remote.Ghost.IAgent)>();
         }
 
         public void Run()
         {
+            if (_listenHandle == null)
+            {
+                PinionCore.Remote.Soul.IService service = _soul;
+                var (handle, errorInfos) = service.ListenAsync(_endpoint).GetAwaiter().GetResult();
+                foreach (var error in errorInfos)
+                {
+                    throw new InvalidOperationException($"Standalone listener error: {error.Exception}");
+                }
+
+                _listenHandle = handle;
+            }
+
             for (var i = 0; i < _botCount; i++)
             {
                 var agent = new PinionCore.Remote.Ghost.User(_protocol);
-                var disconnect = PinionCore.Remote.Standalone.Provider.Connect(agent, _service);
+                var connectable = (PinionCore.Remote.Client.IConnectingEndpoint)_endpoint;
+                var stream = connectable.ConnectAsync().GetAwaiter().GetResult();
+                agent.Enable(stream);
                 var bot = new Bot(agent);
-                _bots.Add((bot, disconnect));
+                _bots.Add((bot, agent));
             }
 
             System.Console.WriteLine($"Standalone bots running: {_botCount}. Press Enter to stop.");
@@ -37,14 +56,15 @@ namespace PinionCore.Consoles.Chat1.Bots
 
         public void Dispose()
         {
-            foreach (var (bot, disconnect) in _bots)
+            foreach (var (bot, agent) in _bots)
             {
                 bot.Dispose();
-                disconnect();
+                agent.Disable();
             }
             _bots.Clear();
-            _service.Dispose();
+            _listenHandle?.Dispose();
+            ((IDisposable)_endpoint).Dispose();
+            _soul.Dispose();
         }
     }
 }
-

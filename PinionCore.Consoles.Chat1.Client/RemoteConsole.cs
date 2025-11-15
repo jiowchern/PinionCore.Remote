@@ -5,14 +5,12 @@ namespace PinionCore.Consoles.Chat1.Client
 {
     internal sealed class RemoteConsole : Console
     {
-        private readonly PinionCore.Network.Tcp.Connector _connector;
+        private PinionCore.Remote.Client.Tcp.ConnectingEndpoint? _endpoint;
         private bool _connected;
-        System.Action _Dispose = () => { };
 
-        public RemoteConsole(PinionCore.Remote.Client.TcpConnectSet set)
-            : base(set.Agent)
+        public RemoteConsole(PinionCore.Remote.Ghost.IAgent agent)
+            : base(agent)
         {
-            _connector = set.Connector;
         }
 
         public bool Connect(string ip, int port)
@@ -25,19 +23,14 @@ namespace PinionCore.Consoles.Chat1.Client
 
             try
             {
-                var endpoint = new IPEndPoint(IPAddress.Parse(ip), port);
-                var connectResult = _connector.ConnectAsync(endpoint).GetAwaiter().GetResult();
-                if (connectResult.Exception != null)
-                {
-                    throw connectResult.Exception;
-                }
-
-                var peer = connectResult.Peer ?? throw new InvalidOperationException("Connector returned null peer.");
-                Agent.Enable(peer);
+                var endpoint = new PinionCore.Remote.Client.Tcp.ConnectingEndpoint(new IPEndPoint(IPAddress.Parse(ip), port));
+                var connectable = (PinionCore.Remote.Client.IConnectingEndpoint)endpoint;
+                var stream = connectable.ConnectAsync().GetAwaiter().GetResult();
+                Agent.Enable(stream);
+                _endpoint = endpoint;
                 Command.Register("disconnect", DisconnectCommand);
                 _connected = true;
-                _Dispose = () => peer.Disconnect();
-                System.Console.WriteLine($"Connected to {endpoint}.");
+                System.Console.WriteLine($"Connected to {endpoint.EndPoint}.");
                 return true;
             }
             catch (FormatException)
@@ -95,8 +88,11 @@ namespace PinionCore.Consoles.Chat1.Client
             }
 
             Agent.Disable();
-            _Dispose();
-            _Dispose = () => { };
+            if (_endpoint != null)
+            {
+                ((IDisposable)_endpoint).Dispose();
+                _endpoint = null;
+            }
             Command.Unregister("disconnect");
             _connected = false;
             System.Console.WriteLine("Disconnected.");

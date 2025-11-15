@@ -1,28 +1,35 @@
-﻿namespace PinionCore.Samples.HelloWorld.Server
+using PinionCore.Remote.Server;
+
+namespace PinionCore.Samples.HelloWorld.Server
 {
     internal class Program
     {
-        static void Main(string[] args)
+        static async System.Threading.Tasks.Task Main(string[] args)
         {
             int port = int.Parse(args[0]);
 
             var protocol = PinionCore.Samples.HelloWorld.Protocols.ProtocolCreator.Create();
-
             var entry = new Entry();
 
-            var set = PinionCore.Remote.Server.Provider.CreateTcpService(entry, protocol);
-            var listener = set.Listener;
-            var service = set.Service;
+            var soul = new PinionCore.Remote.Server.Soul(entry, protocol);
+            var service = (PinionCore.Remote.Soul.IService)soul;
+            var (disposeServer, errorInfos) = await service.ListenAsync(
+                new PinionCore.Remote.Server.Tcp.ListeningEndpoint(port, 10));
 
+            foreach (var error in errorInfos)
+            {
+                System.Console.WriteLine($"Listener error: {error.Exception}");
+                return;
+            }
 
-            listener.Bind(port);
-            System.Console.WriteLine($"start.");
+            System.Console.WriteLine("start.");
             while (entry.Enable)
             {
                 System.Threading.Thread.Sleep(0);
             }
-            listener.Close();
-            service.Dispose();
+
+            disposeServer.Dispose();
+            soul.Dispose();
 
             System.Console.WriteLine($"Press any key to end.");
             System.Console.ReadKey();

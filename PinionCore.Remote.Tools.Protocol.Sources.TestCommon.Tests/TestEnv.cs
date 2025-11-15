@@ -2,6 +2,8 @@
 using System.Diagnostics;
 using System.Linq;
 using PinionCore.Remote.Standalone;
+using PinionCore.Remote.Server;
+using PinionCore.Remote.Client;
 using PinionCore.Utility;
 
 namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
@@ -31,7 +33,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
             var service = new PinionCore.Remote.Soul.Service(entry, protocol, serializer, new PinionCore.Remote.InternalSerializer(), Memorys.PoolProvider.Shared);
 
             Ghost.IAgent agent = new PinionCore.Remote.Ghost.User(protocol, serializer, new PinionCore.Remote.InternalSerializer(), Memorys.PoolProvider.Shared);            
-            var agentDisconnect = agent.Connect(service);
+            var agentConnection = ConnectAgent(agent, service);
 
             var updateMessage = new ThreadUpdater(() =>
             {
@@ -63,7 +65,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
                 Entry.Dispose();
                 updateMessage.Stop();
                 updatePacket.Stop();
-                agentDisconnect();
+                agentConnection.Dispose();
                 service.Dispose();
             };
             #endregion
@@ -77,6 +79,26 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
             _Dispose();
 
 
+        }
+        private static IDisposable ConnectAgent(Remote.Ghost.IAgent agent, PinionCore.Remote.Soul.IService service)
+        {
+            var endpoint = new PinionCore.Remote.Standalone.ListeningEndpoint();
+            var (handle, errors) = service.ListenAsync(endpoint).GetAwaiter().GetResult();
+            if (errors.Length > 0)
+            {
+                throw new InvalidOperationException($"Standalone listener failed: {errors[0].Exception}");
+            }
+
+            var connectable = (PinionCore.Remote.Client.IConnectingEndpoint)endpoint;
+            var stream = connectable.ConnectAsync().GetAwaiter().GetResult();
+            agent.Enable(stream);
+
+            return new PinionCore.Utility.DisposeAction(() =>
+            {
+                agent.Disable();
+                handle.Dispose();
+                ((IDisposable)endpoint).Dispose();
+            });
         }
     }
 }

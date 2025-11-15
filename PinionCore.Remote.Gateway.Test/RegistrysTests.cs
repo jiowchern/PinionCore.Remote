@@ -6,6 +6,9 @@ using PinionCore.Remote.Gateway.Registrys;
 using PinionCore.Remote.Reactive;
 
 using PinionCore.Remote.Standalone;
+using PinionCore.Remote.Client;
+using PinionCore.Remote.Server;
+using PinionCore.Utility;
 
 
 namespace PinionCore.Remote.Gateway.Tests
@@ -23,8 +26,8 @@ namespace PinionCore.Remote.Gateway.Tests
 
             var client1 = new PinionCore.Remote.Gateway.Registrys.Client(1, version);
             var client2 = new PinionCore.Remote.Gateway.Registrys.Client(2, version);
-            var dispose1 = client1.Agent.Connect(service);
-            var dispose2 = client2.Agent.Connect(service);
+            var dispose1 = ConnectAgent(client1.Agent, service);
+            var dispose2 = ConnectAgent(client2.Agent, service);
 
             using var worker1 = new AgentWorker(client1.Agent);
 
@@ -86,6 +89,26 @@ namespace PinionCore.Remote.Gateway.Tests
             // check data integrity
             Assert.AreEqual(sendData2, receiveBuffer2);
 
+        }
+        private static IDisposable ConnectAgent(Remote.Ghost.IAgent agent, PinionCore.Remote.Soul.IService service)
+        {
+            var endpoint = new PinionCore.Remote.Standalone.ListeningEndpoint();
+            var (handle, errors) = service.ListenAsync(endpoint).GetAwaiter().GetResult();
+            if (errors.Length > 0)
+            {
+                throw new InvalidOperationException($"Standalone listener failed: {errors[0].Exception}");
+            }
+
+            var connectable = (PinionCore.Remote.Client.IConnectingEndpoint)endpoint;
+            var stream = connectable.ConnectAsync().GetAwaiter().GetResult();
+            agent.Enable(stream);
+
+            return new DisposeAction(() =>
+            {
+                agent.Disable();
+                handle.Dispose();
+                ((IDisposable)endpoint).Dispose();
+            });
         }
     }
 }

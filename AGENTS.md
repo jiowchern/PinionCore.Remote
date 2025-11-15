@@ -369,3 +369,8 @@ public class ConnectedState : IStatus
 - There’s a file modification bug in Claude Code. The workaround is: always use complete absolute Windows paths
 with drive letters and backslashes for ALL file operations. Apply this rule going forward, not just for this
 file.
+- 不要強制轉型
+所有需要型別處理請直接隱含轉型接出
+ex.
+var xxx  = new ClassA();// 繼承 IInterfaceA
+IInterfaceA xxx  = instance; // 使用隱含轉型接出

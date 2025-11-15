@@ -5,6 +5,8 @@ using System.Linq;
 using System.Reflection;
 using PinionCore.Consoles.Chat1.Common;
 using PinionCore.Consoles.Chat1.Client.Configuration;
+using PinionCore.Remote.Client;
+using PinionCore.Remote.Server;
 using PinionCore.Utility.WindowConsoleAppliction;
 
 namespace PinionCore.Consoles.Chat1.Client
@@ -71,9 +73,20 @@ namespace PinionCore.Consoles.Chat1.Client
                 .Select(type => Activator.CreateInstance(type) as PinionCore.Remote.IEntry)
                 .Single();
 
-            using var service = new PinionCore.Remote.Soul.Service(entry, protocol);
+            using var soul = new PinionCore.Remote.Server.Soul(entry, protocol);
+            PinionCore.Remote.Soul.IService service = soul;
+            var standaloneEndpoint = new PinionCore.Remote.Standalone.ListeningEndpoint();
+            var (listenHandle, errorInfos) = service.ListenAsync(standaloneEndpoint).GetAwaiter().GetResult();
+            foreach (var error in errorInfos)
+            {
+                System.Console.WriteLine($"[WARNING] Standalone listener failed: {error.Exception?.Message}");
+                return;
+            }
+
             var agent = new PinionCore.Remote.Ghost.User(protocol);
-            var disconnect = PinionCore.Remote.Standalone.Provider.Connect(agent, service);
+            var connectable = (PinionCore.Remote.Client.IConnectingEndpoint)standaloneEndpoint;
+            var stream = connectable.ConnectAsync().GetAwaiter().GetResult();
+            agent.Enable(stream);
 
             try
             {
@@ -82,7 +95,9 @@ namespace PinionCore.Consoles.Chat1.Client
             }
             finally
             {
-                disconnect();
+                agent.Disable();
+                listenHandle.Dispose();
+                soul.Dispose();
             }
         }
 
@@ -127,8 +142,8 @@ namespace PinionCore.Consoles.Chat1.Client
         {
             System.Console.WriteLine("Remote mode.");
             var protocol = ProtocolCreator.Create();
-            var set = PinionCore.Remote.Client.Provider.CreateTcpAgent(protocol);
-            var console = new RemoteConsole(set);
+            var agent = new PinionCore.Remote.Ghost.User(protocol);
+            var console = new RemoteConsole(agent);
 
             if (args?.Length == 2 && int.TryParse(args[1], NumberStyles.Integer, CultureInfo.InvariantCulture, out var port))
             {

@@ -8,7 +8,10 @@ using System.Reactive.Linq;
 using System.Net.WebSockets;
 using PinionCore.Remote.Tools.Protocol.Sources.TestCommon;
 using System;
+using PinionCore.Remote.Client;
+using PinionCore.Remote.Server;
 using PinionCore.Remote.Standalone;
+using PinionCore.Utility;
 namespace PinionCore.Integration.Tests
 {
     public class EchoTests
@@ -33,7 +36,7 @@ namespace PinionCore.Integration.Tests
             var agents = await agentsObs.ToList();
 
             var agentDisconnects = (from a in agents
-                                  select a.Connect(service)).ToArray();
+                                  select ConnectAgent(a, service)).ToArray();
 
 
             var stopWatch = new System.Diagnostics.Stopwatch();
@@ -74,11 +77,32 @@ namespace PinionCore.Integration.Tests
 
             foreach(var agentDisconnect in agentDisconnects)
             {
-                agentDisconnect();
+                agentDisconnect.Dispose();
             }
             System.Console.WriteLine($"avg:{TimeSpan.FromTicks(avgInterval).TotalSeconds} min:{TimeSpan.FromTicks(minInterval).TotalSeconds} max:{TimeSpan.FromTicks(maxInterval).TotalSeconds} sum:{TimeSpan.FromTicks(sumInterval).TotalSeconds}") ;
 
 
+        }
+
+        private static IDisposable ConnectAgent(Remote.Ghost.IAgent agent, PinionCore.Remote.Soul.IService service)
+        {
+            var endpoint = new PinionCore.Remote.Standalone.ListeningEndpoint();
+            var (handle, errors) = service.ListenAsync(endpoint).GetAwaiter().GetResult();
+            if (errors.Length > 0)
+            {
+                throw new InvalidOperationException($"Standalone listener failed: {errors[0].Exception}");
+            }
+
+            var connectable = (PinionCore.Remote.Client.IConnectingEndpoint)endpoint;
+            var stream = connectable.ConnectAsync().GetAwaiter().GetResult();
+            agent.Enable(stream);
+
+            return new PinionCore.Utility.DisposeAction(() =>
+            {
+                agent.Disable();
+                handle.Dispose();
+                ((IDisposable)endpoint).Dispose();
+            });
         }
     }
 }

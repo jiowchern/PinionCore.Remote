@@ -40,24 +40,33 @@ namespace PinionCore.Integration.Tests
 
             try
             {
-                var tcpConnector = new PinionCore.Remote.Client.Tcp.ConnectingEndpoint(new IPEndPoint(IPAddress.Loopback, tcpPort));
-                var tcpGhost = new PinionCore.Remote.Client.Ghost(protocol);
-                var tcpDisposeClient = await tcpGhost.Connect(tcpConnector);
-                await RunGhostEchoTestAsync(tcpGhost);
-                tcpDisposeClient.Dispose();
+                var tcpTask = Task.Run(async () =>
+                {
+                    var tcpConnector = new PinionCore.Remote.Client.Tcp.ConnectingEndpoint(new IPEndPoint(IPAddress.Loopback, tcpPort));
+                    var tcpGhost = new PinionCore.Remote.Client.Ghost(protocol);
+                    var tcpDisposeClient = await tcpGhost.Connect(tcpConnector);
+                    await RunGhostEchoTestAsync(tcpGhost);
+                    tcpDisposeClient.Dispose();
+                });
+                
+                var webTask = Task.Run(async () =>
+                {
+                    var webConnector = new PinionCore.Remote.Client.Web.ConnectingEndpoint($"ws://localhost:{webPort}/");
+                    var webGhost = new PinionCore.Remote.Client.Ghost(protocol);
+                    var webDisposeClient = await webGhost.Connect(webConnector);
+                    await RunGhostEchoTestAsync(webGhost);
+                    webDisposeClient.Dispose();
+                });
 
-                var webConnector = new PinionCore.Remote.Client.Web.ConnectingEndpoint($"ws://localhost:{webPort}/");
-                var webGhost = new PinionCore.Remote.Client.Ghost(protocol);
-                var webDisposeClient = await webGhost.Connect(webConnector);
-                await RunGhostEchoTestAsync(webGhost);
-                webDisposeClient.Dispose();
+                var standaloneTask = Task.Run(async () =>
+                {
+                    var standaloneGhost = new PinionCore.Remote.Client.Ghost(protocol);
+                    var standaloneDisposeClient = await standaloneGhost.Connect(standaloneListener);
+                    await RunGhostEchoTestAsync(standaloneGhost);
+                    standaloneDisposeClient.Dispose();
+                });
 
-
-                var standaloneGhost = new PinionCore.Remote.Client.Ghost(protocol);
-                var standaloneDisposeClient = await standaloneGhost.Connect(standaloneListener);
-                await RunGhostEchoTestAsync(standaloneGhost);
-                standaloneDisposeClient.Dispose();
-
+                Task.WaitAll(tcpTask, webTask, standaloneTask);
             }
             catch
             {

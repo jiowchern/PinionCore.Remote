@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Net;
 using System.Threading.Tasks;
 using PinionCore.Remote;
+using PinionCore.Remote.Client;
 
 namespace PinionCore.Consoles.Chat1.Bots
 {
@@ -11,8 +12,8 @@ namespace PinionCore.Consoles.Chat1.Bots
         private sealed class BotConnection
         {
             public required Bot Bot { get; init; }
-            public required PinionCore.Remote.Client.TcpConnectSet Set { get; init; }
-            public required PinionCore.Network.Tcp.Peer Peer { get; init; }
+            public required PinionCore.Remote.Ghost.IAgent Agent { get; init; }
+            public required PinionCore.Remote.Client.Tcp.ConnectingEndpoint Endpoint { get; init; }
             public required System.Action BreakHandler { get; init; }
         }
 
@@ -42,17 +43,14 @@ namespace PinionCore.Consoles.Chat1.Bots
 
         private async Task AddBotAsync()
         {
-            var set = PinionCore.Remote.Client.Provider.CreateTcpAgent(_protocol);
-            var connectResult = await set.Connector.ConnectAsync(_endPoint).ConfigureAwait(false);
-            if (connectResult.Exception != null)
-            {
-                throw connectResult.Exception;
-            }
+            var ghost = new PinionCore.Remote.Client.Ghost(_protocol);
+            var agent = ghost.User;
+            var endpoint = new PinionCore.Remote.Client.Tcp.ConnectingEndpoint(_endPoint);
+            var connectable = (PinionCore.Remote.Client.IConnectingEndpoint)endpoint;
+            var stream = await connectable.ConnectAsync().ConfigureAwait(false);
 
-            var peer = connectResult.Peer ?? throw new InvalidOperationException($"Connector returned null peer for {_endPoint}.");
-
-            set.Agent.Enable(peer);
-            var bot = new Bot(set.Agent);
+            agent.Enable(stream);
+            var bot = new Bot(agent);
 
             void HandleBreak()
             {
@@ -60,15 +58,15 @@ namespace PinionCore.Consoles.Chat1.Bots
                 RemoveBot(bot);
             }
 
-            peer.BreakEvent += HandleBreak;
+            endpoint.BreakEvent += HandleBreak;
 
             lock (_bots)
             {
                 _bots.Add(new BotConnection
                 {
                     Bot = bot,
-                    Set = set,
-                    Peer = peer,
+                    Agent = agent,
+                    Endpoint = endpoint,
                     BreakHandler = HandleBreak
                 });
             }
@@ -91,10 +89,10 @@ namespace PinionCore.Consoles.Chat1.Bots
                 return;
             }
 
-            target.Peer.BreakEvent -= target.BreakHandler;
+            target.Endpoint.BreakEvent -= target.BreakHandler;
             target.Bot.Dispose();
-            target.Set.Agent.Disable();
-            target.Peer.Disconnect().GetAwaiter().GetResult();
+            target.Agent.Disable();
+            ((IDisposable)target.Endpoint).Dispose();
         }
 
         public void Dispose()
@@ -108,12 +106,11 @@ namespace PinionCore.Consoles.Chat1.Bots
 
             foreach (var connection in snapshot)
             {
-                connection.Peer.BreakEvent -= connection.BreakHandler;
+                connection.Endpoint.BreakEvent -= connection.BreakHandler;
                 connection.Bot.Dispose();
-                connection.Set.Agent.Disable();
-                connection.Peer.Disconnect().GetAwaiter().GetResult();
+                connection.Agent.Disable();
+                ((IDisposable)connection.Endpoint).Dispose();
             }
         }
     }
 }
-

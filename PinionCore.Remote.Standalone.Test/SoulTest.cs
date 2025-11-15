@@ -2,6 +2,8 @@
 using NUnit.Framework;
 using PinionCore.Network;
 using PinionCore.Remote.Ghost;
+using PinionCore.Remote.Server;
+using PinionCore.Remote.Client;
 
 namespace PinionCore.Remote.Standalone.Test
 {
@@ -23,9 +25,14 @@ namespace PinionCore.Remote.Standalone.Test
             Memorys.Pool pool = PinionCore.Memorys.PoolProvider.Shared;
             
             Soul.IService service = new PinionCore.Remote.Soul.ServiceUpdateLoop(new Soul.SessionEngine(entry, protocol, serializer, internalSer, pool));
+            var standaloneEndpoint = new PinionCore.Remote.Standalone.ListeningEndpoint();
+            var (listenHandle, listenErrors) = service.ListenAsync(standaloneEndpoint).GetAwaiter().GetResult();
+            Assert.IsEmpty(listenErrors, "Standalone listener failed.");
 
             var ghostAgent = new PinionCore.Remote.Ghost.User(protocol, serializer, internalSer, pool);
-            var ghostAgentDisconnect = ghostAgent.Connect(service);
+            var connectable = (PinionCore.Remote.Client.IConnectingEndpoint)standaloneEndpoint;
+            var stream = connectable.ConnectAsync().GetAwaiter().GetResult();
+            ghostAgent.Enable(stream);
             IAgent agent = ghostAgent;
             IGpiA ghostGpia = null;
 
@@ -42,6 +49,8 @@ namespace PinionCore.Remote.Standalone.Test
             }
             ghostAgent.Disable();
             agent.Disable();
+            listenHandle.Dispose();
+            ((IDisposable)standaloneEndpoint).Dispose();
             //listenable.StreamableLeaveEvent -= wrapper;
 
             IDisposable disposable = service;

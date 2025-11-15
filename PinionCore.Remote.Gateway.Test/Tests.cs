@@ -1,10 +1,14 @@
 ﻿using Microsoft.Win32;
 using NUnit.Framework;
 using PinionCore.Remote.Standalone;
+using PinionCore.Remote.Client;
+using PinionCore.Remote.Server;
+using PinionCore.Utility;
 
 
 namespace PinionCore.Remote.Gateway.Tests
 {
+    using System;
     public class Tests
     {
         /// <summary>
@@ -99,9 +103,9 @@ namespace PinionCore.Remote.Gateway.Tests
             // 連接後，Registry 會自動向 Router 註冊自己的 Group ID
             // Router 收到註冊後，會將此 Registry 加入到路由表中
             // 之後當客戶端連接時，Router 會根據策略選擇 Registry 並建立連線
-            registry1.Agent.Connect(host.Registry);
-            registry2.Agent.Connect(host.Registry);
-            registry3.Agent.Connect(host.Registry);
+            using var registryConnection1 = ConnectAgent(registry1.Agent, host.Registry);
+            using var registryConnection2 = ConnectAgent(registry2.Agent, host.Registry);
+            using var registryConnection3 = ConnectAgent(registry3.Agent, host.Registry);
 
             //// ========================================
             //// 階段 6: 建立客戶端 (Client Agent)
@@ -114,14 +118,14 @@ namespace PinionCore.Remote.Gateway.Tests
             var agent1 = gameClient1.Agent;
 
             // 連接到 Router 的 Session 端點 (單機)
-            agent1.Connect(host.Session);
+            using var sessionConnection1 = ConnectAgent(agent1, host.Session);
             using var agentWorker1 = new AgentWorker(agent1);
 
             var gameClient2 = new TestClient(testChatProtocol);
             var agent2 = gameClient2.Agent;
 
             // 連接到 Router 的 Session 端點 (單機)
-            agent2.Connect(host.Session);
+            using var sessionConnection2 = ConnectAgent(agent2, host.Session);
             using var agentWorker2 = new AgentWorker(agent2);
 
 
@@ -158,6 +162,26 @@ namespace PinionCore.Remote.Gateway.Tests
             registry3.Listener.StreamableLeaveEvent -= gameService3.Leave;
             
 
+        }
+        private static IDisposable ConnectAgent(Remote.Ghost.IAgent agent, PinionCore.Remote.Soul.IService service)
+        {
+            var endpoint = new PinionCore.Remote.Standalone.ListeningEndpoint();
+            var (handle, errors) = service.ListenAsync(endpoint).GetAwaiter().GetResult();
+            if (errors.Length > 0)
+            {
+                throw new InvalidOperationException($"Standalone listener failed: {errors[0].Exception}");
+            }
+
+            var connectable = (PinionCore.Remote.Client.IConnectingEndpoint)endpoint;
+            var stream = connectable.ConnectAsync().GetAwaiter().GetResult();
+            agent.Enable(stream);
+
+            return new DisposeAction(() =>
+            {
+                agent.Disable();
+                handle.Dispose();
+                ((IDisposable)endpoint).Dispose();
+            });
         }
     }
 }

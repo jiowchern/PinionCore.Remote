@@ -1,6 +1,8 @@
-﻿using System.Net;
-using PinionCore.Samples.HelloWorld.Protocols;
 using System;
+using System.Net;
+using System.Threading.Tasks;
+using PinionCore.Remote.Client;
+using PinionCore.Samples.HelloWorld.Protocols;
 
 namespace PinionCore.Samples.HelloWorld.Client
 {
@@ -18,20 +20,13 @@ namespace PinionCore.Samples.HelloWorld.Client
             var port = int.Parse(args[1]);
             var protocolAsm = typeof(IGreeter).Assembly;
             var protocol = PinionCore.Samples.HelloWorld.Protocols.ProtocolCreator.Create();
-            var set = PinionCore.Remote.Client.Provider.CreateTcpAgent(protocol);
-            var tcp = set.Connector;
-            var agent = set.Agent;
-            var connectResult = await tcp.ConnectAsync(new IPEndPoint(ip, port)).ConfigureAwait(false);
-            if (connectResult.Exception != null)
-            {
-                throw connectResult.Exception;
-            }
-
-            var peer = connectResult.Peer ?? throw new InvalidOperationException($"Connector returned null peer for {ip}:{port}.");
-            agent.Enable(peer);
+            var ghost = new PinionCore.Remote.Client.Ghost(protocol);
+            var agent = ghost.User;
+            var endpoint = new PinionCore.Remote.Client.Tcp.ConnectingEndpoint(new IPEndPoint(ip, port));
+            var connection = await agent.Connect(endpoint).ConfigureAwait(false);
             agent.QueryNotifier<Protocols.IGreeter>().Supply += (greeter) =>
             {
-                String user = "you";
+                string user = "you";
                 greeter.SayHello(new HelloRequest() { Name = user }).OnValue += _GetReply;
             };
 
@@ -42,8 +37,7 @@ namespace PinionCore.Samples.HelloWorld.Client
                 agent.HandlePackets();
             }
 
-            await peer.Disconnect();
-            agent.Disable();
+            connection.Dispose();
             System.Console.WriteLine($"Press any key to end.");
             System.Console.ReadKey();
         }

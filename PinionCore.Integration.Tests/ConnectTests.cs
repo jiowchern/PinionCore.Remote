@@ -5,6 +5,8 @@ using System.Reactive.Linq;
 using System.Threading.Tasks;
 using NUnit.Framework;
 using PinionCore.Remote;
+using PinionCore.Remote.Client;
+using PinionCore.Remote.Server;
 using PinionCore.Remote.Reactive;
 using System;
 
@@ -12,7 +14,7 @@ namespace PinionCore.Integration.Tests
 {
     public class ConnectTests
     {
-        [Test]
+        [Test,Timeout(10000)]
         public async Task AgentDisconnectTest()
         {
             var port = PinionCore.Network.Tcp.Tools.GetAvailablePort();
@@ -21,43 +23,37 @@ namespace PinionCore.Integration.Tests
             entry.OnSessionOpened(NSubstitute.Arg.Do<ISessionBinder>(b => b.Bind<PinionCore.Remote.Tools.Protocol.Sources.TestCommon.IMethodable>(tester)));
             IProtocol protocol = PinionCore.Remote.Tools.Protocol.Sources.TestCommon.ProtocolProvider.CreateCase1();
 
-            Remote.Server.TcpListenSet server = PinionCore.Remote.Server.Provider.CreateTcpService(entry, protocol);
-            server.Listener.Bind(port);
+            var soul = new PinionCore.Remote.Server.Soul(entry, protocol);
+            PinionCore.Remote.Soul.IService service = soul;
+            var (disposeServer, errorInfos) = await service.ListenAsync(
+                new PinionCore.Remote.Server.Tcp.ListeningEndpoint(port, 10));
 
-            Remote.Client.TcpConnectSet client = PinionCore.Remote.Client.Provider.CreateTcpAgent(protocol);
-            System.Exception ex;
-
-            client.Agent.ExceptionEvent += (exc) =>
+            foreach (var error in errorInfos)
             {
-                ex = exc;
-            };
-
-            var connectResult = await client.Connector.ConnectAsync(new IPEndPoint(IPAddress.Loopback, port)).ConfigureAwait(false);
-            if (connectResult.Exception != null)
-            {
-                throw connectResult.Exception;
+                Assert.Fail($"Server error: {error.Exception}");
             }
-            Network.Tcp.Peer peer = connectResult.Peer ?? throw new InvalidOperationException("Connector returned null peer.");
+
+            var ghost = new PinionCore.Remote.Client.Ghost(protocol);
+            var endpoint = new PinionCore.Remote.Client.Tcp.ConnectingEndpoint(new IPEndPoint(IPAddress.Loopback, port));
+            var connectable = (PinionCore.Remote.Client.IConnectingEndpoint)endpoint;
+            var stream = await connectable.ConnectAsync().ConfigureAwait(false);
+            var peer = stream as PinionCore.Network.Tcp.Peer ?? throw new InvalidOperationException("Expected TCP peer.");
             var peerBreak = false;
-            peer.BreakEvent += () =>
-            {
-                peerBreak = true;
-            };
+            peer.BreakEvent += () => peerBreak = true;
 
+            ghost.User.Enable(stream);
 
-
-
-            client.Agent.Enable(peer);
-
-            await peer.Disconnect();
+            await peer.Disconnect().ConfigureAwait(false);
 
             while (!peerBreak)
             {
-                client.Agent.HandleMessages();
-                client.Agent.HandlePackets();
+                ghost.User.HandleMessages();
+                ghost.User.HandlePackets();
             }
 
-
+            ghost.User.Disable();
+            ((IDisposable)endpoint).Dispose();
+            disposeServer.Dispose();
         }
         [Test]
         public async Task TcpLocalConnectTest()
@@ -80,37 +76,37 @@ namespace PinionCore.Integration.Tests
             // create protocol
             IProtocol protocol = PinionCore.Remote.Tools.Protocol.Sources.TestCommon.ProtocolProvider.CreateCase1();
 
-            // create server and client
-            Remote.Server.TcpListenSet server = PinionCore.Remote.Server.Provider.CreateTcpService(entry, protocol);
+            var soul = new PinionCore.Remote.Server.Soul(entry, protocol);
+            PinionCore.Remote.Soul.IService service = soul;
+            var (disposeServer, errorInfos) = await service.ListenAsync(
+                new PinionCore.Remote.Server.Tcp.ListeningEndpoint(port, 10));
 
-            server.Listener.Bind(port);
+            foreach (var error in errorInfos)
+            {
+                Assert.Fail($"Server error: {error.Exception}");
+            }
 
-            Remote.Client.TcpConnectSet client = PinionCore.Remote.Client.Provider.CreateTcpAgent(protocol);
+            var ghost = new PinionCore.Remote.Client.Ghost(protocol);
 
             var stop = false;
             var task = System.Threading.Tasks.Task.Run(() =>
             {
                 while (!stop)
                 {
-                    client.Agent.HandlePackets();
-                    client.Agent.HandleMessages();
+                    ghost.User.HandlePackets();
+                    ghost.User.HandleMessages();
                 }
 
             });
 
             // do connect
-            System.Net.IPEndPoint endPoint;
-            System.Net.IPEndPoint.TryParse($"127.0.0.1:{port}", out endPoint);
-            var connectResult = await client.Connector.ConnectAsync(endPoint).ConfigureAwait(false);
-            if (connectResult.Exception != null)
-            {
-                throw connectResult.Exception;
-            }
-            Network.Tcp.Peer peer = connectResult.Peer ?? throw new InvalidOperationException("Connector returned null peer.");
+            var endpoint = new PinionCore.Remote.Client.Tcp.ConnectingEndpoint(new IPEndPoint(IPAddress.Loopback, port));
+            var connectable = (PinionCore.Remote.Client.IConnectingEndpoint)endpoint;
+            var stream = await connectable.ConnectAsync().ConfigureAwait(false);
 
-            client.Agent.Enable(peer);
+            ghost.User.Enable(stream);
             // get values
-            var valuesObs = from gpi in client.Agent.QueryNotifier<PinionCore.Remote.Tools.Protocol.Sources.TestCommon.IMethodable>().SupplyEvent()
+            var valuesObs = from gpi in ghost.User.QueryNotifier<PinionCore.Remote.Tools.Protocol.Sources.TestCommon.IMethodable>().SupplyEvent()
                             from v1 in gpi.GetValue1().RemoteValue()
                             from v2 in gpi.GetValue2().RemoteValue()
                             from v0 in gpi.GetValue0(0, "", 0, 0, 0, System.Guid.Empty).RemoteValue()
@@ -122,12 +118,9 @@ namespace PinionCore.Integration.Tests
             await task;
 
             // release
-            await peer.Disconnect();
-            client.Agent.Disable();
-
-            server.Listener.Close();
-
-            server.Service.Dispose();
+            ghost.User.Disable();
+            ((IDisposable)endpoint).Dispose();
+            disposeServer.Dispose();
 
             // test
             Assert.AreEqual(1, values.v1);

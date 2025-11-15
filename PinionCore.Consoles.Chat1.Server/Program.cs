@@ -1,7 +1,9 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
+using PinionCore.Remote.Server;
 using PinionCore.Remote.Soul;
 using PinionCore.Utility.WindowConsoleAppliction;
 using PinionCore.Consoles.Chat1.Server.Configuration;
@@ -11,10 +13,10 @@ namespace PinionCore.Consoles.Chat1.Server
 {
     internal static class Program
     {
-        static void Main(string[] args)
+        static async Task Main(string[] args)
         {
             PinionCore.Utility.Log.Instance.RecordEvent += message => System.Console.WriteLine(message);
-            // T084: 檢查 --help 或 -h 參數
+            // T084: �ˬd --help �� -h �Ѽ�
             if (args.Length > 0 && (args[0] == "--help" || args[0] == "-h" ||
                 Array.Exists(args, arg => arg == "--help" || arg == "-h")))
             {
@@ -22,13 +24,13 @@ namespace PinionCore.Consoles.Chat1.Server
                 return;
             }
 
-            // T029: 解析命令列參數
+            // T029: �ѪR�R�O�C�Ѽ�
             var options = CommandLineParser.Parse(args);
 
-            // 驗證參數有效性
+            // ���ҰѼƦ��ĩ�
             if (!options.Validate(out var error))
             {
-                System.Console.WriteLine($"錯誤: {error}");
+                System.Console.WriteLine($"���~: {error}");
                 System.Console.WriteLine(ChatServerOptions.GetUsageString());
                 Environment.Exit(1);
                 return;
@@ -36,65 +38,45 @@ namespace PinionCore.Consoles.Chat1.Server
 
             var protocol = PinionCore.Consoles.Chat1.Common.ProtocolCreator.Create();
             var entry = new PinionCore.Consoles.Chat1.Entry();
+            var soul = new PinionCore.Remote.Server.Soul(entry, protocol);
+            PinionCore.Remote.Soul.IService service = soul;
 
-            var listeners = new CompositeListenable();
+            var endpointDescriptors = new List<(PinionCore.Remote.Server.IListeningEndpoint Endpoint, string Description)>();
+            var activePlayerSources = new List<PinionCore.Remote.Soul.IListenable>();
             var shutdownTasks = new List<Action>();
             var enabledModes = new List<string>();
+            PinionCore.Remote.Soul.IListenable registryListener = null;
+            var registryListenerAttached = false;
 
-            // T046: 直連 TCP 監聽器 (帶錯誤處理)
+            // T046: ���s TCP ��ť��
             if (options.TcpPort.HasValue)
             {
-                try
-                {
-                    var tcp = new PinionCore.Remote.Server.Tcp.Listener();
-                    tcp.Bind(options.TcpPort.Value);
-                    listeners.Add(tcp);
-                    shutdownTasks.Add(() => tcp.Close());
-                    enabledModes.Add($"TCP (port {options.TcpPort.Value})");
-                    System.Console.WriteLine($"[OK] TCP listener started on port {options.TcpPort.Value}");
-                }
-                catch (Exception ex)
-                {
-                    // T052: 部分監聽器啟動失敗處理 - 記錄警告但繼續運行
-                    System.Console.WriteLine($"[WARNING] TCP listener failed to start on port {options.TcpPort.Value}: {ex.Message}");
-                }
+                endpointDescriptors.Add((new PinionCore.Remote.Server.Tcp.ListeningEndpoint(options.TcpPort.Value, 10),
+                    $"TCP (port {options.TcpPort.Value})"));
             }
 
-            // T047: 直連 WebSocket 監聽器 (帶錯誤處理)
+            // T047: ���s WebSocket ��ť��
             if (options.WebPort.HasValue)
             {
-                try
-                {
-                    var web = new PinionCore.Remote.Server.Web.Listener();
-                    web.Bind($"http://*:{options.WebPort.Value}/");
-                    listeners.Add(web);
-                    shutdownTasks.Add(() => web.Close());
-                    enabledModes.Add($"WebSocket (port {options.WebPort.Value})");
-                    System.Console.WriteLine($"[OK] WebSocket listener started on port {options.WebPort.Value}");
-                }
-                catch (Exception ex)
-                {
-                    // T052: 部分監聽器啟動失敗處理 - 記錄警告但繼續運行
-                    System.Console.WriteLine($"[WARNING] WebSocket listener failed to start on port {options.WebPort.Value}: {ex.Message}");
-                }
+                endpointDescriptors.Add((new PinionCore.Remote.Server.Web.ListeningEndpoint($"http://*:{options.WebPort.Value}/"),
+                    $"WebSocket (port {options.WebPort.Value})"));
             }
 
-            // T030: Registry Client 初始化 (當提供 router-host 時)
+            // T030: Registry Client ��l��
             PinionCore.Remote.Gateway.Registry registry = null;
             RegistryConnectionManager registryConnectionManager = null;
             Action registryWorkerDispose = null;
 
-            // T048: Gateway 路由監聽器整合 (帶錯誤處理)
+            // T048: Gateway ���Ѻ�ť����X
             if (options.HasGatewayMode)
             {
                 try
                 {
                     System.Console.WriteLine($"Initializing Gateway mode: Router {options.RouterHost}:{options.RouterPort} (Group: {options.Group})");
 
-                    // 建立 Registry Client
                     registry = new PinionCore.Remote.Gateway.Registry(protocol, options.Group);
 
-                    // T032: 啟動 AgentWorker (持續處理 registry.Agent.HandlePackets/HandleMessage)
+                    // T032: �Ұ� AgentWorker (����B�z registry.Agent.HandlePackets/HandleMessage)
                     var agentWorkerRunning = true;
                     var agentWorkerTask = Task.Run(() =>
                     {
@@ -102,7 +84,7 @@ namespace PinionCore.Consoles.Chat1.Server
                         {
                             registry.Agent.HandlePackets();
                             registry.Agent.HandleMessages();
-                            System.Threading.Thread.Sleep(1); // 短暫休眠避免忙等待
+                            System.Threading.Thread.Sleep(1); // �u�ȥ�v�קK������
                         }
                     });
 
@@ -112,10 +94,13 @@ namespace PinionCore.Consoles.Chat1.Server
                         agentWorkerTask.Wait(TimeSpan.FromSeconds(2));
                     };
 
-                    // T049: 添加 Registry.Listener 到 CompositeListenable
-                    listeners.Add(registry.Listener);
+                    registryListener = registry.Listener;
+                    registryListener.StreamableEnterEvent += service.Join;
+                    registryListener.StreamableLeaveEvent += service.Leave;
+                    activePlayerSources.Add(registryListener);
+                    registryListenerAttached = true;
 
-                    // T031: 建立 RegistryConnectionManager (負責連接、斷線偵測與重連)
+                    // T031: �إ� RegistryConnectionManager (�t�d�s���B�_�u�����P���s)
                     var log = PinionCore.Utility.Log.Instance;
                     registryConnectionManager = new RegistryConnectionManager(
                         registry,
@@ -124,7 +109,6 @@ namespace PinionCore.Consoles.Chat1.Server
                         log
                     );
 
-                    // 啟動連接管理器 (會自動建立連接)
                     registryConnectionManager.Start();
 
                     shutdownTasks.Add(() =>
@@ -139,15 +123,33 @@ namespace PinionCore.Consoles.Chat1.Server
                 }
                 catch (Exception ex)
                 {
-                    // T052: Gateway 啟動失敗處理
                     System.Console.WriteLine($"[WARNING] Gateway mode failed to initialize: {ex.Message}");
                 }
             }
 
-            // T051: 顯示啟用的連線模式
+            var (listenHandle, errorInfos) = await service.ListenAsync(endpointDescriptors.Select(d => d.Endpoint).ToArray());
+            var endpointErrorLookup = errorInfos.ToDictionary(info => info.ListeningEndpoint, info => info.Exception);
+
+            foreach (var descriptor in endpointDescriptors)
+            {
+                if (endpointErrorLookup.TryGetValue(descriptor.Endpoint, out var exception))
+                {
+                    System.Console.WriteLine($"[WARNING] {descriptor.Description} listener failed to start: {exception?.Message}");
+                }
+                else
+                {
+                    enabledModes.Add(descriptor.Description);
+                    activePlayerSources.Add(descriptor.Endpoint);
+                    System.Console.WriteLine($"[OK] {descriptor.Description} listener started");
+                }
+            }
+
+            // T051: ��ܱҥΪ��s�u�Ҧ�
             if (enabledModes.Count == 0)
             {
                 System.Console.WriteLine("[ERROR] No connection modes enabled. Server will exit.");
+                listenHandle.Dispose();
+                soul.Dispose();
                 Environment.Exit(1);
                 return;
             }
@@ -160,44 +162,51 @@ namespace PinionCore.Consoles.Chat1.Server
             }
             System.Console.WriteLine("========================================");
 
-            var service = PinionCore.Remote.Server.Provider.CreateService(entry, protocol, listeners);
-            IListenable listenable = listeners;
-
-            // T082: 追蹤玩家連接統計
+            // T082: �l�ܪ��a�s���έp
             int playerCount = 0;
-            Action<PinionCore.Network.IStreamable> onPlayerConnected = (streamable) =>
+            Action<PinionCore.Network.IStreamable> onPlayerConnected = (_) =>
             {
                 playerCount++;
-                System.Console.WriteLine($"[玩家連接] 當前玩家數: {playerCount}");
+                System.Console.WriteLine($"[���a�s��] ���e���a��: {playerCount}");
             };
-            Action<PinionCore.Network.IStreamable> onPlayerDisconnected = (streamable) =>
+            Action<PinionCore.Network.IStreamable> onPlayerDisconnected = (_) =>
             {
                 playerCount--;
-                System.Console.WriteLine($"[玩家斷線] 當前玩家數: {playerCount}");
+                System.Console.WriteLine($"[���a�_�u] ���e���a��: {playerCount}");
             };
 
-            listenable.StreamableEnterEvent += onPlayerConnected;
-            listenable.StreamableLeaveEvent += onPlayerDisconnected;
-            listenable.StreamableEnterEvent += service.Join;
-            listenable.StreamableLeaveEvent += service.Leave;
+            foreach (var source in activePlayerSources)
+            {
+                source.StreamableEnterEvent += onPlayerConnected;
+                source.StreamableLeaveEvent += onPlayerDisconnected;
+            }
+
             var console = new Console(entry.Announcement);
             console.Run(() =>
             {
                 entry.Update();
-                registryConnectionManager?.Update(); // 更新 RegistryConnectionManager 狀態機
+                registryConnectionManager?.Update(); // ��s RegistryConnectionManager ���A��
             });
 
-            // 優雅關閉
             foreach (var shutdown in shutdownTasks)
             {
                 shutdown();
             }
 
-            listenable.StreamableEnterEvent -= service.Join;
-            listenable.StreamableLeaveEvent -= service.Leave;
-            listenable.StreamableEnterEvent -= onPlayerConnected;
-            listenable.StreamableLeaveEvent -= onPlayerDisconnected;
-            service.Dispose();
+            foreach (var source in activePlayerSources)
+            {
+                source.StreamableEnterEvent -= onPlayerConnected;
+                source.StreamableLeaveEvent -= onPlayerDisconnected;
+            }
+
+            if (registryListenerAttached && registryListener != null)
+            {
+                registryListener.StreamableEnterEvent -= service.Join;
+                registryListener.StreamableLeaveEvent -= service.Leave;
+            }
+
+            listenHandle.Dispose();
+            soul.Dispose();
         }
     }
 }
