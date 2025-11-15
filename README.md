@@ -86,90 +86,92 @@ public class Entry : PinionCore.Remote.IEntry
 
 `Soul` manages all connections and sessions: `new PinionCore.Remote.Server.Host(entry, protocol)` wraps the underlying `PinionCore.Remote.Soul.Service`.
 
-### 3. Value / Property / Notifier
+### 3. Value / Property / Notifier Support
 
-- `Value<T>`: asynchronous single result (see `PinionCore.Utility/PinionCore.Utility/Remote/Value.cs`)
-- `Property<T>`: synchronized state (`PinionCore.Remote/Property.cs`)
-- `Notifier<T>`: supply/unsupply object notifications (`PinionCore.Remote/Notifier.cs`)
+PinionCore.Remote centers around **interfaces** and provides three common member types to describe remote behavior and state:
 
-Example RPG‑style interfaces:
+- **Value\<T>**: Represents "one‑time asynchronous calls"
+  - Used for method return values (similar to `Task<T>`)
+  - Suitable for request/response flows, e.g., login, fetch config, submit command
+  - Caller only waits for the result without maintaining long‑term state
 
-```csharp
-public interface IActor
-{
-    PinionCore.Remote.Property<string> Name { get; }
-    PinionCore.Remote.Property<int> Level { get; }
-}
-```
+- **Property**: Represents "stable remote state"
+  - Properties on interfaces are implemented server‑side and read via proxy on the client
+  - Suitable for relatively stable information, e.g., player name, room title, server version
+  - Combined with events or Notifier, can notify clients to update UI when state changes
 
-```csharp
-public interface IPlayer : IActor
-{
-    PinionCore.Remote.Notifier<IActor> VisibleActors { get; } // actors the player can see
-    PinionCore.Remote.Property<int> Gold { get; }             // player‑only state
-    PinionCore.Remote.Value<Path> Move(Position position);    // move command
-    event System.Action<Position> StopEvent;                  // stop event
-}
-```
+- **Notifier\<T>: Dynamic collections supporting nested interfaces and object tree synchronization**
+  `INotifier<T>` represents "a set of dynamically existing remote objects."
+  Notably, `T` can be not just primitive types but **interfaces themselves**, naturally describing **nested object structures (object trees)** and synchronizing the lifecycle of this tree between server and client.
 
-From the client side these feel like local objects whose changes are synchronized through the framework.
+  A typical scenario is Lobby / Room / Player hierarchical structure:
 
-### 4. Realtime notifications with Notifier
+  ```csharp
+  public interface IChatEntry
+  {
+      // Dynamic list of all current rooms
+      INotifier<IRoom> Rooms { get; }
+  }
 
-`Notifier<T>` lets the server work with a single collection while clients automatically receive supply/unsupply notifications:
+  public interface IRoom
+  {
+      Property<string> Name { get; }
+      // Dynamic list of players in the room
+      INotifier<IPlayer> Players { get; }
+  }
 
-```csharp
-class GameServer : IGameServer
-{
-    private readonly PinionCore.Remote.Depot<IPlayer> _players = new PinionCore.Remote.Depot<IPlayer>();
+  public interface IPlayer
+  {
+      Property<string> Nickname { get; }
+  }
+  ```
 
-    public PinionCore.Remote.Notifier<IPlayer> Players { get; }
+  - Server‑side maintains actual room and player objects, mapping to `INotifier<IRoom>` and `INotifier<IPlayer>`
+    - When a room is created, the server "supplies" an `IRoom` instance to `Rooms`
+    - When a room is deleted, it removes that `IRoom` from `Rooms`
+    - When players join/leave rooms, supply/remove corresponding `IPlayer` from `IRoom.Players`
+  - Client‑side only needs to get `INotifier<IRoom>` via the interface and can:
+    - Automatically receive "room added/removed" notifications
+    - For each room, subscribe to `room.Players` and automatically receive "player joined/left" notifications
+    - The obtained `IRoom` / `IPlayer` are remote proxies, directly call their interface members
 
-    public GameServer()
-    {
-        Players = new PinionCore.Remote.Notifier<IPlayer>(_players);
-    }
+  Through this design, Notifier is not just "a collection of events," but:
 
-    void OnPlayerJoin(IPlayer player)
-    {
-        _players.Items.Add(player);    // all clients receive Supply
-    }
+  - Describes "dynamic collections" and "changing object trees"
+  - Supports interface nesting: `INotifier<IRoom>` → `IRoom` contains `INotifier<IPlayer>` → even deeper submodules
+  - Client doesn't need to manage any id or lookup logic; just access by interface hierarchy to automatically track server‑side object creation and destruction
 
-    void OnPlayerLeave(IPlayer player)
-    {
-        _players.Items.Remove(player); // all clients receive Unsupply
-    }
-}
-```
+  **Summary**:
+  - `Value<T>`: One‑time call result
+  - `Property`: Stable state value
+  - `Notifier<T>`: Synchronizes "collections that grow/shrink" and supports nested object trees with interfaces as nodes—the core capability of PinionCore.Remote for expressing complex remote structures
 
-Client side:
+#### Notifier Supply/Unsupply Flow Overview
 
-```csharp
-agent.QueryNotifier<IPlayer>().Supply += player =>
-{
-    // handle new player joining
-};
-```
+Using `IChatEntry.Rooms` as an example, you can understand Notifier operation with the following flow:
 
-### 5. Nested interfaces and composite structures
+1. After server startup, create `IRoom` implementation objects and supply via `INotifier<IRoom>`:
+   - When room exists, call `Rooms.Supply(roomImpl)`
+   - When room closes, call `Rooms.Unsupply(roomImpl)`
+2. The communication layer forwards these supply/unsupply events to all connected clients
+3. Client gets the corresponding `INotifier<IRoom>` proxy via `agent.QueryNotifier<IRoom>()` and subscribes:
 
-Interfaces can inherit and be composed to align your protocol with the domain model:
+   ```csharp
+   agent.QueryNotifier<IRoom>().Supply += room =>
+   {
+       // Here room is already a remote proxy, can be used directly
+       room.Players.Supply += player =>
+       {
+           // Handle player join event
+       };
+   };
+   ```
 
-```csharp
-public interface IParty
-{
-    PinionCore.Remote.Notifier<IPlayer> Members { get; }
-}
+4. When server‑side unsupplies an object, the client receives the corresponding `Unsupply` event and automatically releases that proxy
 
-public interface IPartyService
-{
-    PinionCore.Remote.Value<IParty> CreateParty();
-}
-```
+Through this mechanism, the server only needs to manage the lifecycle of real objects, and the client can automatically maintain a synchronized nested object tree (Entry → Room → Player…).
 
-The source generator handles nested interfaces and the special types `Value<T>`, `Notifier<T>`, `Property<T>`, etc.
-
-### 6. Reactive style methods
+### 4. Reactive style methods
 
 `PinionCore.Remote.Reactive` provides Rx extensions so you can work with `IObservable<T>` instead of callbacks.
 
@@ -214,7 +216,57 @@ This demonstrates:
 - Calling a remote `Echo()` that returns `Value<int>`
 - Converting it into `IObservable<int>` with `RemoteValue()` and consuming with Rx
 
-### 7. Multiple transports and Standalone mode
+### 5. Simple Public and Private Interface Support
+
+Due to PinionCore.Remote's interface‑driven design, the server can expose different interfaces to different clients based on requirements. This makes implementing public and private interface needs simple and intuitive.
+
+For example, you can define a public interface `IPublicService` and a private interface `IPrivateService`:
+
+```csharp
+public interface IPublicService
+{
+    PinionCore.Remote.Value<string> GetPublicData();
+}
+
+public interface IPrivateService : IPublicService
+{
+    PinionCore.Remote.Value<string> GetPrivateData();
+}
+
+class ServiceImpl : IPrivateService
+{
+    public PinionCore.Remote.Value<string> GetPublicData()
+    {
+        return "This is public data.";
+    }
+
+    public PinionCore.Remote.Value<string> GetPrivateData()
+    {
+        return "This is private data.";
+    }
+}
+```
+
+The server can decide which interface to bind based on the client's authentication status:
+
+```csharp
+void ISessionObserver.OnSessionOpened(ISessionBinder binder)
+{
+    var serviceImpl = new ServiceImpl();
+    if (IsAuthenticatedClient(binder))
+    {
+        // Bind private interface for authenticated clients
+        binder.Bind<IPrivateService>(serviceImpl);
+    }
+
+    // Bind public interface for unauthenticated clients
+    binder.Bind<IPublicService>(serviceImpl);
+}
+```
+
+This way, unauthenticated clients can only access `IPublicService`, while authenticated clients can access `IPrivateService`, thus achieving public and private interface control.
+
+### 6. Multiple transports and Standalone mode
 
 Built‑in transports:
 

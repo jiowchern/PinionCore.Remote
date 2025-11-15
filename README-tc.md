@@ -85,33 +85,88 @@ public class Entry : PinionCore.Remote.IEntry
 
 ### 3. Value / Property / Notifier 支援
 
-以 RPG 範例來看，可以非常直觀這樣設計介面：
-```csharp
-// 公開給所有人看的角色介面
-public interface IActor
-{
-    PinionCore.Remote.Property<string> Name { get; }
-    PinionCore.Remote.Property<int> Level { get; }
-    event System.Action<Position> StopEvent;               // 停止事件
-    event System.Action<Path> MoveEvent;                  // 移動事件
-}
-```
+PinionCore.Remote 以「介面」為中心，提供三種常用成員型別來描述遠端行為與狀態：
 
-```csharp
-// 玩家專屬介面, 只有自己看得到
-public interface IPlayer : IActor
-{
-    PinionCore.Remote.Notifier<IActor> VisibleActors { get; } // 玩家看到的其他角色列表
-    PinionCore.Remote.Property<int> Gold { get; }             // 金幣，只自己看得到
-    PinionCore.Remote.Value<Path> Move(Position position);    // 移動命令    
-}
-```
-這些特殊型別的意義：
-- Value<T>：非同步回傳值（PinionCore.Utility/Remote/Value.cs）
-- Property<T>：狀態同步（PinionCore.Remote/Property.cs）
-- Notifier<T>：巢狀物件供應/移除通知（PinionCore.Remote/Notifier.cs）
+- **Value\<T>**：描述「一次性非同步呼叫」  
+  - 用於方法回傳值（類似 Task\<T> 的概念）  
+  - 適合請求 / 回應流程，例如：登入、取得設定、送出指令等  
+  - 呼叫端只需等待結果，不需維護長期狀態
 
-客戶端操作起來就像本地物件，變更會透過框架同步。
+- **Property**：描述「穩定存在的遠端狀態」  
+  - 介面上的屬性會由伺服器端實作，客戶端透過代理讀取  
+  - 適合表示較穩定的資訊，例如：玩家名稱、房間標題、伺服器版本等  
+  - 搭配事件或 Notifier，可以在狀態變化時通知客戶端更新 UI
+
+- **Notifier\<T>：支援巢狀介面與物件樹同步的動態集合**  
+  `INotifier<T>` 用來表示「一組動態存在的遠端物件」。  
+  特別的是，`T` 不只可以是基礎型別，更可以是**介面本身**，因此可以自然地描述**巢狀物件結構（物件樹）**，並在伺服器與客戶端之間同步這棵樹的生命週期。
+
+  典型場景是 Lobby / Room / Player 等分層結構：
+
+  ```csharp
+  public interface IChatEntry
+  {
+      // 目前所有房間的動態列表
+      INotifier<IRoom> Rooms { get; }
+  }
+
+  public interface IRoom
+  {
+      Property<string> Name { get; }
+      // 房間內玩家的動態列表
+      INotifier<IPlayer> Players { get; }
+  }
+
+  public interface IPlayer
+  {
+      Property<string> Nickname { get; }
+  }
+  ```
+
+  - 伺服器端維護實際的房間與玩家物件，並對應到 `INotifier<IRoom>`、`INotifier<IPlayer>`  
+    - 房間建立時，由伺服器「供應（Supply）」一個 `IRoom` 實例給 `Rooms`  
+    - 房間刪除時，將該 `IRoom` 從 `Rooms` 中移除  
+    - 玩家進出房間時，針對該 `IRoom.Players` 供應 / 移除對應的 `IPlayer`  
+  - 客戶端只需透過介面拿到 `INotifier<IRoom>`，就能：  
+    - 自動收到「房間新增 / 移除」通知  
+    - 對每個房間，再繼續訂閱 `room.Players`，自動收到「玩家進入 / 離開」通知  
+    - 取得的 `IRoom` / `IPlayer` 都是遠端代理，直接呼叫其介面成員即可
+
+  透過這種設計，Notifier 不只是「事件的集合」，而是：
+
+  - 用來描述「會動的集合」與「會變化的物件樹」  
+  - 支援介面巢狀：`INotifier<IRoom>` → `IRoom` 內再有 `INotifier<IPlayer>` → 甚至更深層的子模組  
+  - 客戶端不需要管理任何 id 或查表邏輯，只要依照介面層級存取，即可自動追蹤伺服器端物件的產生與銷毀
+
+  **總結**：  
+  - `Value<T>`：一次性呼叫結果  
+  - `Property`：穩定狀態值  
+  - `Notifier<T>`：同步「會增減的物件集合」，並支援以介面為節點的巢狀物件樹，是 PinionCore.Remote 用來表達複雜遠端結構的核心能力。
+
+#### Notifier 供應 / 移除流程概觀
+
+以 `IChatEntry.Rooms` 為例，可以用以下流程理解 Notifier 的運作：
+
+1. 伺服器啟動後，建立 `IRoom` 實作物件，並透過 `INotifier<IRoom>` 供應：
+   - 當房間存在時呼叫 `Rooms.Supply(roomImpl)`
+   - 當房間關閉時呼叫 `Rooms.Unsupply(roomImpl)`
+2. 通訊層會將這些供應 / 移除事件轉送到每一個已連線的客戶端。
+3. 客戶端透過 `agent.QueryNotifier<IRoom>()` 取得對應的 `INotifier<IRoom>` 代理，並訂閱：
+
+   ```csharp
+   agent.QueryNotifier<IRoom>().Supply += room =>
+   {
+       // 這裡的 room 已經是遠端代理，可以直接使用
+       room.Players.Supply += player =>
+       {
+           // 處理玩家加入事件
+       };
+   };
+   ```
+
+4. 當伺服器端 Unsupply 物件時，客戶端會收到對應的 `Unsupply` 事件，並自動釋放該代理。
+
+透過這個機制，伺服器只需管理真實物件的生命週期，客戶端就能自動維持一份同步的巢狀物件樹（Entry → Room → Player…）。
 
 ### 4. 響應式方法支援（Reactive）
 
@@ -156,8 +211,52 @@ await runTask;
 - 透過 Notifier 的 SupplyEvent() 等待伺服器供應介面
 - 呼叫遠端方法 Echo() 回傳 Value<int>
 - 用 RemoteValue() 轉成 IObservable<int>，再用 Rx 取得一次結果
+### 5. 簡易的公開與私有介面支援
+由於PinionCore.Remote採用介面導向設計，伺服器可以根據需求公開不同的介面給不同的客戶端。這使得實現公開與私有介面的需求變得簡單且直觀。
+例如，可以定義一個公開介面 `IPublicService` 和一個私有介面 `IPrivateService`：
+```csharp
+public interface IPublicService  
+{
+    PinionCore.Remote.Value<string> GetPublicData();
+}
 
-### 5. 多傳輸模式與 Standalone
+public interface IPrivateService : IPublicService
+{
+    PinionCore.Remote.Value<string> GetPrivateData();
+}
+
+class ServiceImpl : IPrivateService
+{
+    public PinionCore.Remote.Value<string> GetPublicData()
+    {
+        return "This is public data.";
+    }
+
+    public PinionCore.Remote.Value<string> GetPrivateData()
+    {
+        return "This is private data.";
+    }
+
+}
+```
+伺服器可以根據客戶端的身份驗證狀態，決定綁定哪個介面：
+```csharp
+void ISessionObserver.OnSessionOpened(ISessionBinder binder)
+{
+    var serviceImpl = new ServiceImpl();
+    if (IsAuthenticatedClient(binder))
+    {
+        // 綁定私有介面給已驗證的客戶端
+        binder.Bind<IPrivateService>(serviceImpl);
+    }
+
+    // 綁定公開介面給未驗證的客戶端
+    binder.Bind<IPublicService>(serviceImpl);
+}
+```
+這樣，未經驗證的客戶端只能訪問 `IPublicService`，而已驗證的客戶端則可以訪問 `IPrivateService`，從而實現了介面的公開與私有控制。
+
+### 6. 多傳輸模式與 Standalone
 
 內建三種傳輸方式：
 
