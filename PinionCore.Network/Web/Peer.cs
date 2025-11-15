@@ -29,7 +29,7 @@ namespace PinionCore.Network.Web
         {
             if (_Socket.State == WebSocketState.Aborted)
             {
-                ErrorEvent(_Socket.State);
+                ErrorEvent?.Invoke(_Socket.State);
                 return 0.ToWaitableValue();
             }
 
@@ -47,7 +47,7 @@ namespace PinionCore.Network.Web
                 {
                     PinionCore.Utility.Log.Instance.WriteInfo($"websocket receive error state:{_Socket.State} ,{e.ToString()}.");
 
-                    ErrorEvent(_Socket.State);
+                    ErrorEvent?.Invoke(_Socket.State);
 
 
                 }
@@ -59,7 +59,7 @@ namespace PinionCore.Network.Web
         {
             if (_Socket.State == WebSocketState.Aborted)
             {
-                ErrorEvent(_Socket.State);
+                ErrorEvent?.Invoke(_Socket.State);
                 return 0.ToWaitableValue();
             }
             var arraySegment = new ArraySegment<byte>(buffer, offset, count);
