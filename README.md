@@ -6,14 +6,16 @@
 [![Build](https://github.com/jiowchern/PinionCore.Remote/actions/workflows/dotnet-desktop.yml/badge.svg?branch=master)](https://github.com/jiowchern/PinionCore.Remote/actions/workflows/dotnet-desktop.yml)
 [![Coverage Status](https://coveralls.io/repos/github/jiowchern/PinionCore.Remote/badge.svg?branch=master)](https://coveralls.io/github/jiowchern/PinionCore.Remote?branch=master)
 ![commit last date](https://img.shields.io/github/last-commit/jiowchern/PinionCore.Remote)
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/jiowchern/PinionCore.Remote)  
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/jiowchern/PinionCore.Remote)
+[Ask OpenDeepWiki](https://opendeep.wiki/jiowchern/PinionCore.Remote/introduction?branch=master)  
+
 <!-- [![Discord](https://img.shields.io/discord/101557008930451456.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](https://discord.gg/uDF8NTp) -->
 <!-- [![Build status](https://ci.appveyor.com/api/projects/status/fv1owwit4utddawv/branch/release?svg=true)](https://ci.appveyor.com/project/jiowchern/regulus-remote/branch/release) -->
 <!-- [![GitHub release](https://img.shields.io/github/release/jiowchern/regulus.svg?style=flat-square)](https://github.com/jiowchern/PinionCore/releases)![pre-release](https://img.shields.io/github/v/release/jiowchern/PinionCore?include_prereleases) -->
 <!-- [![Gitter](https://badges.gitter.im/JoinChat.svg)](https://gitter.im/PinionCore-Library) -->
 
 <!-- ![NuGet Downloads](https://img.shields.io/nuget/dt/PinionCore.Remote) -->
-[中文說明（繁體）](README-tc.md)
+[中文說明](README-tc.md)
 
 ---
 

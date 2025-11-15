@@ -7,6 +7,63 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### 2025-11-16
+
+#### Added
+- Added support for multiple transport modes (TCP/WebSocket/Standalone) with behavioral consistency verification.
+- Added `PinionCore.Remote.Standalone.ListeningEndpoint` class to support Standalone mode listening.
+- Added `PinionCore.Remote.Client.Web.ConnectingEndpoint` class for WebSocket connection with error event handling.
+
+#### Changed
+- **Breaking**: Renamed core classes for improved clarity:
+  - `Soul` → `Host` (server-side service)
+  - `Ghost` → `Proxy` (client-side proxy)
+  - Internal `User` → `Agent` (in Ghost module)
+- Removed forced type conversions in favor of explicit variable declarations to improve code readability and safety.
+- Enhanced README documentation with OpenDeepWiki link.
+- Reorganized class structure to simplify implementation and improve maintainability.
+
+#### Fixed
+- Fixed safe calling of `ErrorEvent` in `Peer.cs` to avoid null reference exceptions.
+- Complete implementation of `ListeningEndpoint` class with event handling and resource disposal.
+- Removed `NotImplementedException` placeholders with fully functional implementations.
+
+### 2025-11-15
+
+#### Added
+- Introduced `Result` structure to encapsulate connection results (including `Peer` and `Exception`).
+- Added `ConnectOrThrowAsync` helper method to reduce code duplication and improve readability.
+- Added multi-port support and enhanced error handling in connection logic.
+
+#### Changed
+- Unified TCP connection exception handling logic to throw `InvalidOperationException` when `Peer` is null.
+- Updated all connection logic to use the new `Result` structure for better error handling.
+
+### 2025-11-13
+
+#### Added
+- Introduced `ISessionBinder` and `ISessionObserver` interfaces to replace legacy `IBinder` and `IBinderProvider`.
+- Added `Ghost` and `Soul` classes as async client proxy and server service wrappers respectively.
+- Added serialization optimization proposal with ZigZag encoding and UTF-8 support.
+
+#### Changed
+- Converted multiple synchronous methods to async versions (e.g., `ConnectAsync`) for improved async performance.
+- Updated namespace structure (e.g., `Soul` → `Remote.Soul`) for better code organization.
+- Enhanced session management logic with new interface abstractions.
+
+#### Removed
+- Removed legacy `Node` class and related interfaces to simplify code structure.
+
+### 2025-11-11
+
+#### Changed
+- Renamed `Agent` to `User` in Gateway module for improved clarity and consistency.
+
+### 2025-11-07
+
+#### Changed
+- Updated and refined README documentation with emphasis on framework features.
+
 ### 2025-11-06
 
 #### Added
