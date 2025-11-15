@@ -40,6 +40,16 @@ class Greeter : IGreeter
 }
 ```
 客戶端透過 QueryNotifier<IGreeter>() 拿到遠端代理，直接呼叫 SayHello，回傳 Value<T> 可以 await。
+```csharp
+agent.QueryNotifier<IGreeter>().Supply += greeter =>
+{
+    var request = new HelloRequest { Name = "you" };
+    greeter.SayHello(request).OnValue += reply =>
+    {
+        Console.WriteLine($"Receive message: {reply.Message}");
+    };
+};
+```
 
 ### 2. 可控的生命週期（Entry / Session / Soul）
 
@@ -51,12 +61,17 @@ public class Entry : PinionCore.Remote.IEntry
 
     void PinionCore.Remote.ISessionObserver.OnSessionOpened(PinionCore.Remote.ISessionBinder binder)
     {
-        binder.Bind<IGreeter>(_greeter);
+        // 客戶端連線成功，綁定 _greeter
+        var soul = binder.Bind<IGreeter>(_greeter);
+
+
+        // 若要解除綁定可呼叫這行
+        binder.Unbind(soul);
     }
 
     void PinionCore.Remote.ISessionObserver.OnSessionClosed(PinionCore.Remote.ISessionBinder binder)
     {
-        // 客戶端斷線時要做的清理
+        // 客戶端斷線時要做的清理        
     }
 
     void PinionCore.Remote.IEntry.Update()
@@ -65,83 +80,40 @@ public class Entry : PinionCore.Remote.IEntry
     }
 }
 ```
-Soul 負責管理所有連線與 Session：`new PinionCore.Remote.Server.Host(entry, protocol)`。
+伺服器端使用 Host 建立服務（Host 繼承自 Soul.Service，內部透過 SessionEngine 管理所有連線與 Session）：`new PinionCore.Remote.Server.Host(entry, protocol)`。
+
 
 ### 3. Value / Property / Notifier 支援
 
-- Value<T>：非同步回傳值（PinionCore.Utility/Remote/Value.cs）
-- Property<T>：狀態同步（PinionCore.Remote/Property.cs）
-- Notifier<T>：物件供應/移除通知（PinionCore.Remote/Notifier.cs）
-
-以 RPG 範例來看，可以這樣設計介面：
+以 RPG 範例來看，可以非常直觀這樣設計介面：
 ```csharp
+// 公開給所有人看的角色介面
 public interface IActor
 {
     PinionCore.Remote.Property<string> Name { get; }
     PinionCore.Remote.Property<int> Level { get; }
+    event System.Action<Position> StopEvent;               // 停止事件
+    event System.Action<Path> MoveEvent;                  // 移動事件
 }
 ```
+
 ```csharp
+// 玩家專屬介面, 只有自己看得到
 public interface IPlayer : IActor
 {
-    PinionCore.Remote.Notifier<IActor> VisibleActors { get; } // 玩家看到的角色列表
+    PinionCore.Remote.Notifier<IActor> VisibleActors { get; } // 玩家看到的其他角色列表
     PinionCore.Remote.Property<int> Gold { get; }             // 金幣，只自己看得到
-    PinionCore.Remote.Value<Path> Move(Position position);    // 移動命令
-    event System.Action<Position> StopEvent;                  // 停止事件
+    PinionCore.Remote.Value<Path> Move(Position position);    // 移動命令    
 }
 ```
+這些特殊型別的意義：
+- Value<T>：非同步回傳值（PinionCore.Utility/Remote/Value.cs）
+- Property<T>：狀態同步（PinionCore.Remote/Property.cs）
+- Notifier<T>：巢狀物件供應/移除通知（PinionCore.Remote/Notifier.cs）
+
 客戶端操作起來就像本地物件，變更會透過框架同步。
 
-### 4. 即時通知機制（Notifier）
-
-Notifier<T> 讓伺服器只要操作一個集合，客戶端就能自動收到新增/移除通知：
-```csharp
-class GameServer : IGameServer
-{
-    private readonly PinionCore.Remote.Depot<IPlayer> _players = new PinionCore.Remote.Depot<IPlayer>();
-
-    public PinionCore.Remote.Notifier<IPlayer> Players { get; }
-
-    public GameServer()
-    {
-        Players = new PinionCore.Remote.Notifier<IPlayer>(_players);
-    }
-
-    void OnPlayerJoin(IPlayer player)
-    {
-        _players.Items.Add(player);    // 所有客戶端會收到 Supply
-    }
-
-    void OnPlayerLeave(IPlayer player)
-    {
-        _players.Items.Remove(player); // 所有客戶端會收到 Unsupply
-    }
-}
-```
-客戶端：
-```csharp
-agent.QueryNotifier<IPlayer>().Supply += player =>
-{
-    // 處理新玩家加入
-};
-```
-### 5. 巢狀介面與複合結構
-
-介面可以繼承與組合，讓協議定義對應 Domain Model：
-```csharp
-public interface IParty
-{
-    PinionCore.Remote.Notifier<IPlayer> Members { get; }
-}
-
-public interface IPartyService
-{
-    PinionCore.Remote.Value<IParty> CreateParty();
-}
-```
-Source Generator 會自動處理巢狀介面與 Value<T> / Notifier<T> / Property<T> 等型別。
-
-### 6. 響應式方法支援（Reactive）
+### 4. 響應式方法支援（Reactive）
 
 PinionCore.Remote.Reactive 提供 Rx 擴充，用 IObservable<T> 串接遠端呼叫。
 
@@ -185,7 +157,7 @@ await runTask;
 - 呼叫遠端方法 Echo() 回傳 Value<int>
 - 用 RemoteValue() 轉成 IObservable<int>，再用 Rx 取得一次結果
 
-### 7. 多傳輸模式與 Standalone
+### 5. 多傳輸模式與 Standalone
 
 內建三種傳輸方式：
 
@@ -210,30 +182,6 @@ await runTask;
 - PinionCore.Serialization：預設序列化實作與型別描述
 - PinionCore.Remote.Tools.Protocol.Sources：Source Generator，透過 [PinionCore.Remote.Protocol.Creator] 自動產生 IProtocol
 - PinionCore.Remote.Gateway：閘道與多服務路由（詳細見該模組 README）
-
-架構示意圖（概念一致，實際實作請以以下章節為準）：
-```mermaid
-
- classDiagram
-      class IGreeter {
-          <<interface>>
-          +SayHello()
-      }
-
-      class Greeter {
-          +SayHello()
-      }
-
-      class SomeClass {
-          -IGreeter greeter
-      }
-
-      IGreeter <|.. Greeter
-      SomeClass --> IGreeter : greeter
-
-      note for Greeter "Implement IGreeter"
-      note for SomeClass "Use object from server"
-```
 
 
 ---
@@ -738,28 +686,6 @@ var agent = new PinionCore.Remote.Ghost.Agent(protocol, serializer, internalSeri
 
 ---
 
-## 建置、測試與打包
-
-在專案根目錄：
-```
-dotnet restore
-dotnet build --configuration Release --no-restore
-```
-# 執行所有測試並產出覆蓋率
-```
-dotnet test /p:CollectCoverage=true \
-            /p:CoverletOutput=../CoverageResults/ \
-            /p:MergeWith="../CoverageResults/coverage.json" \
-            /p:CoverletOutputFormat="lcov%2cjson" -m:1
-```
-# 打包 NuGet
-```
-dotnet pack --configuration Release --output ./nupkgs
-```
-單一測試專案可以使用：
-```
-dotnet test PinionCore.Integration.Tests/PinionCore.Integration.Tests.csproj
-```
 ## 結語
 
 PinionCore Remote 的目標，是用「介面導向」的方式，把伺服器與客戶端之間的溝通，從繁瑣的封包格式與序列化細節中抽離出來。你只需要專注在 Domain 模型與狀態管理上，其餘連線、序列化、供應/退供與版本檢查等細節，都交
