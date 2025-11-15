@@ -30,11 +30,20 @@ namespace PinionCore.Network.Web
             }
         }
 
-        public void Bind(string address)
+        public Exception Bind(string address)
         {
-            _HttpListener.Prefixes.Add(address);
-            _HttpListener.Start();
-            _ = _HttpListener.GetContextAsync().ContinueWith(_Listen, _CancelGetContext.Token);
+            try 
+            {
+                _HttpListener.Prefixes.Add(address);
+                _HttpListener.Start();
+                _ = _HttpListener.GetContextAsync().ContinueWith(_Listen, _CancelGetContext.Token);
+            }
+            catch (Exception e)
+            {
+                return e;
+            }
+            return null;
+
         }
 
         private void _Listen(Task<HttpListenerContext> task)

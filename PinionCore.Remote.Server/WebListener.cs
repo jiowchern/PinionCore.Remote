@@ -45,9 +45,9 @@ namespace PinionCore.Remote.Server.Web
             }
         }
 
-        public void Bind(string address)
+        public Exception Bind(string address)
         {
-            _Listener.Bind(address);
+            return _Listener.Bind(address);
         }
 
         public void Close()

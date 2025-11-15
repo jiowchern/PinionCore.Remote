@@ -3,10 +3,6 @@ using System.Threading.Tasks;
 using PinionCore.Network;
 using PinionCore.Remote.Soul;
 
-namespace PinionCore.Remote.Server
-{
-}
-
 namespace PinionCore.Remote.Server.Tcp
 {
     public class ListeningEndpoint : IListeningEndpoint
@@ -41,7 +37,7 @@ namespace PinionCore.Remote.Server.Tcp
         public readonly int Port;
         public readonly int Backlog;
         readonly Listener _Listener;
-        readonly Remote.Soul.IListenable _Listenable;
+        readonly IListenable _Listenable;
         public ListeningEndpoint(int port,int backlog)
         {
             Port = port;
@@ -50,10 +46,9 @@ namespace PinionCore.Remote.Server.Tcp
             _Listenable = _Listener;
         }
 
-        Task<bool> IListeningEndpoint.ListenAsync()
+        Task<System.Exception> IListeningEndpoint.ListenAsync()
         {
-            _Listener.Bind(Port, Backlog);
-            return Task.FromResult(true);
+            return Task.FromResult<System.Exception>(_Listener.Bind(Port, Backlog));
         }
 
         void IDisposable.Dispose()

@@ -10,7 +10,6 @@ namespace PinionCore.Remote.Client
 }
 namespace PinionCore.Remote.Client.Tcp
 {
-
     public class ConnectingEndpoint : IConnectingEndpoint
     {
         public readonly System.Net.IPEndPoint EndPoint;

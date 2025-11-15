@@ -21,12 +21,21 @@ namespace PinionCore.Network.Tcp
             _Socket.NoDelay = true;
         }
         
-        public void Bind(int Port, int backlog)
+        public Exception Bind(int Port, int backlog)
         {
-            _Socket.Bind(new IPEndPoint(IPAddress.Any, Port));
+            try 
+            {
+                _Socket.Bind(new IPEndPoint(IPAddress.Any, Port));
+                _Socket.Listen(backlog);
+            }            
+            catch (Exception e)
+            {
+                Singleton<Log>.Instance.WriteInfo($"bind {e.ToString()}.");
+                return e;
+            }
 
-            _Socket.Listen(backlog);
             _Socket.BeginAccept(_Accept, state: null);
+            return null;
         }
 
         private void _Accept(IAsyncResult Ar)
