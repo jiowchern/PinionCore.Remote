@@ -46,7 +46,7 @@ namespace PinionCore.Consoles.Chat1.Bots
             var ghost = new PinionCore.Remote.Client.Ghost(_protocol);
             var agent = ghost.User;
             var endpoint = new PinionCore.Remote.Client.Tcp.ConnectingEndpoint(_endPoint);
-            var connectable = (PinionCore.Remote.Client.IConnectingEndpoint)endpoint;
+            PinionCore.Remote.Client.IConnectingEndpoint connectable = endpoint;
             var stream = await connectable.ConnectAsync().ConfigureAwait(false);
 
             agent.Enable(stream);
@@ -92,7 +92,8 @@ namespace PinionCore.Consoles.Chat1.Bots
             target.Endpoint.BreakEvent -= target.BreakHandler;
             target.Bot.Dispose();
             target.Agent.Disable();
-            ((IDisposable)target.Endpoint).Dispose();
+            IDisposable disposable = target.Endpoint;
+            disposable.Dispose();
         }
 
         public void Dispose()
@@ -109,7 +110,8 @@ namespace PinionCore.Consoles.Chat1.Bots
                 connection.Endpoint.BreakEvent -= connection.BreakHandler;
                 connection.Bot.Dispose();
                 connection.Agent.Disable();
-                ((IDisposable)connection.Endpoint).Dispose();
+                IDisposable disposable = connection.Endpoint;
+                disposable.Dispose();
             }
         }
     }

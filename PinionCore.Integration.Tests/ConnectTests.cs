@@ -35,7 +35,7 @@ namespace PinionCore.Integration.Tests
 
             var ghost = new PinionCore.Remote.Client.Ghost(protocol);
             var endpoint = new PinionCore.Remote.Client.Tcp.ConnectingEndpoint(new IPEndPoint(IPAddress.Loopback, port));
-            var connectable = (PinionCore.Remote.Client.IConnectingEndpoint)endpoint;
+            PinionCore.Remote.Client.IConnectingEndpoint connectable = endpoint;
             var stream = await connectable.ConnectAsync().ConfigureAwait(false);
             var peer = stream as PinionCore.Network.Tcp.Peer ?? throw new InvalidOperationException("Expected TCP peer.");
             var peerBreak = false;
@@ -52,7 +52,8 @@ namespace PinionCore.Integration.Tests
             }
 
             ghost.User.Disable();
-            ((IDisposable)endpoint).Dispose();
+            IDisposable disposable = endpoint;
+            disposable.Dispose();
             disposeServer.Dispose();
         }
         [Test]
@@ -101,7 +102,7 @@ namespace PinionCore.Integration.Tests
 
             // do connect
             var endpoint = new PinionCore.Remote.Client.Tcp.ConnectingEndpoint(new IPEndPoint(IPAddress.Loopback, port));
-            var connectable = (PinionCore.Remote.Client.IConnectingEndpoint)endpoint;
+            PinionCore.Remote.Client.IConnectingEndpoint connectable = endpoint;
             var stream = await connectable.ConnectAsync().ConfigureAwait(false);
 
             ghost.User.Enable(stream);
@@ -119,7 +120,8 @@ namespace PinionCore.Integration.Tests
 
             // release
             ghost.User.Disable();
-            ((IDisposable)endpoint).Dispose();
+            IDisposable disposable2 = endpoint;
+            disposable2.Dispose();
             disposeServer.Dispose();
 
             // test

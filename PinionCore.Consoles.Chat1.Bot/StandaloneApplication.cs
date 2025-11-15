@@ -43,7 +43,7 @@ namespace PinionCore.Consoles.Chat1.Bots
             for (var i = 0; i < _botCount; i++)
             {
                 var agent = new PinionCore.Remote.Ghost.User(_protocol);
-                var connectable = (PinionCore.Remote.Client.IConnectingEndpoint)_endpoint;
+                PinionCore.Remote.Client.IConnectingEndpoint connectable = _endpoint;
                 var stream = connectable.ConnectAsync().GetAwaiter().GetResult();
                 agent.Enable(stream);
                 var bot = new Bot(agent);
@@ -63,7 +63,8 @@ namespace PinionCore.Consoles.Chat1.Bots
             }
             _bots.Clear();
             _listenHandle?.Dispose();
-            ((IDisposable)_endpoint).Dispose();
+            IDisposable disposable = _endpoint;
+            disposable.Dispose();
             _soul.Dispose();
         }
     }

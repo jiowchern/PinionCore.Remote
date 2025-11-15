@@ -30,7 +30,7 @@ namespace PinionCore.Remote.Standalone.Test
             Assert.IsEmpty(listenErrors, "Standalone listener failed.");
 
             var ghostAgent = new PinionCore.Remote.Ghost.User(protocol, serializer, internalSer, pool);
-            var connectable = (PinionCore.Remote.Client.IConnectingEndpoint)standaloneEndpoint;
+            PinionCore.Remote.Client.IConnectingEndpoint connectable = standaloneEndpoint;
             var stream = connectable.ConnectAsync().GetAwaiter().GetResult();
             ghostAgent.Enable(stream);
             IAgent agent = ghostAgent;
@@ -50,11 +50,12 @@ namespace PinionCore.Remote.Standalone.Test
             ghostAgent.Disable();
             agent.Disable();
             listenHandle.Dispose();
-            ((IDisposable)standaloneEndpoint).Dispose();
+            IDisposable disposable1 = standaloneEndpoint;
+            disposable1.Dispose();
             //listenable.StreamableLeaveEvent -= wrapper;
 
-            IDisposable disposable = service;
-            disposable.Dispose();
+            IDisposable disposable2 = service;
+            disposable2.Dispose();
         }
     }
 }

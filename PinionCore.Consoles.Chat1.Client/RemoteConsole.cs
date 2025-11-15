@@ -24,7 +24,7 @@ namespace PinionCore.Consoles.Chat1.Client
             try
             {
                 var endpoint = new PinionCore.Remote.Client.Tcp.ConnectingEndpoint(new IPEndPoint(IPAddress.Parse(ip), port));
-                var connectable = (PinionCore.Remote.Client.IConnectingEndpoint)endpoint;
+                PinionCore.Remote.Client.IConnectingEndpoint connectable = endpoint;
                 var stream = connectable.ConnectAsync().GetAwaiter().GetResult();
                 Agent.Enable(stream);
                 _endpoint = endpoint;
@@ -90,7 +90,8 @@ namespace PinionCore.Consoles.Chat1.Client
             Agent.Disable();
             if (_endpoint != null)
             {
-                ((IDisposable)_endpoint).Dispose();
+                IDisposable disposable = _endpoint;
+                disposable.Dispose();
                 _endpoint = null;
             }
             Command.Unregister("disconnect");

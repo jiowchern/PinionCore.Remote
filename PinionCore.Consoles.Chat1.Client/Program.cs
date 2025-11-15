@@ -84,7 +84,7 @@ namespace PinionCore.Consoles.Chat1.Client
             }
 
             var agent = new PinionCore.Remote.Ghost.User(protocol);
-            var connectable = (PinionCore.Remote.Client.IConnectingEndpoint)standaloneEndpoint;
+            PinionCore.Remote.Client.IConnectingEndpoint connectable = standaloneEndpoint;
             var stream = connectable.ConnectAsync().GetAwaiter().GetResult();
             agent.Enable(stream);
 

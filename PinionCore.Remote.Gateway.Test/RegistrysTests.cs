@@ -99,7 +99,7 @@ namespace PinionCore.Remote.Gateway.Tests
                 throw new InvalidOperationException($"Standalone listener failed: {errors[0].Exception}");
             }
 
-            var connectable = (PinionCore.Remote.Client.IConnectingEndpoint)endpoint;
+            PinionCore.Remote.Client.IConnectingEndpoint connectable = endpoint;
             var stream = connectable.ConnectAsync().GetAwaiter().GetResult();
             agent.Enable(stream);
 
@@ -107,7 +107,8 @@ namespace PinionCore.Remote.Gateway.Tests
             {
                 agent.Disable();
                 handle.Dispose();
-                ((IDisposable)endpoint).Dispose();
+                IDisposable disposable = endpoint;
+                disposable.Dispose();
             });
         }
     }
