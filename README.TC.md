@@ -18,6 +18,7 @@
   - [Reactive 支援](#4-響應式方法支援reactive)
   - [公開與私有介面](#5-簡易的公開與私有介面支援)
   - [多傳輸模式與 Standalone](#6-多傳輸模式與-standalone)
+  - [Gateway 閘道服務](#7-gateway-閘道服務)
 - [架構與模組總覽](#架構與模組總覽)
 - [快速開始（Hello World）](#快速開始hello-world)
   - [環境需求](#環境需求)
@@ -324,6 +325,71 @@ void ISessionObserver.OnSessionOpened(ISessionBinder binder)
   - 同時實作 Server / Client 端點，適合同進程模擬與測試
 
 整合測試 `SampleTests` 同時啟動三種端點並逐一驗證，確保行為一致。
+
+---
+
+### 7. Gateway 閘道服務
+
+**模組目的**：
+
+`PinionCore.Remote.Gateway` 提供企業級的服務閘道功能，作為多個後端服務的統一入口，解決以下場景：
+
+- **多服務路由**：統一入口分發請求到不同的後端服務（Chat、Game、Auth 等）
+- **版本共存**：同時支援多個協議版本（`IProtocol.VersionCode`），實現平滑升級
+- **負載平衡**：`LineAllocator` 提供服務實例的分配與平衡
+- **服務隔離**：不同服務獨立部署、獨立擴展，透過 Gateway 統一管理
+
+**架構示意**：
+
+```mermaid
+graph TB
+    subgraph Clients["客戶端層"]
+        C1[Client v1.0]
+        C2[Client v1.1]
+        C3[Client v2.0]
+    end
+
+    subgraph Gateway["Gateway 層"]
+        GW[Gateway<br/>統一入口]
+        VA[Version Adapter<br/>版本匹配]
+        LB[Line Allocator<br/>負載平衡]
+    end
+
+    subgraph Services["服務層"]
+        S1[Chat Service v1]
+        S2[Chat Service v2]
+        S3[Game Service]
+        S4[Auth Service]
+    end
+
+    C1 --> GW
+    C2 --> GW
+    C3 --> GW
+
+    GW --> VA
+    VA --> LB
+
+    LB --> S1
+    LB --> S2
+    LB --> S3
+    LB --> S4
+    
+```
+
+**核心組件**：
+
+- **Router**：根據協議版本、服務類型進行路由分發
+- **LineAllocator**：管理服務實例群組，實現負載平衡與容錯
+- **Version Adapter**：處理不同協議版本的客戶端共存，協議升級無需停機
+
+**使用場景**：
+
+- 需要同時運行多個獨立服務（微服務架構）
+- 需要協議版本管理與平滑升級
+- 需要橫向擴展與負載平衡
+- 需要統一的連線管理與監控入口
+
+詳細說明與範例請參考 `PinionCore.Remote.Gateway/README.md` 與 `PinionCore.Consoles.Chat1.*` 專案。
 
 ---
 

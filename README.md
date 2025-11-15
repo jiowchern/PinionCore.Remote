@@ -18,6 +18,7 @@
   - [Reactive Support](#4-reactive-support)
   - [Public & Private Interfaces](#5-public--private-interface-support)
   - [Multiple Transport Modes & Standalone](#6-multiple-transport-modes--standalone)
+  - [Gateway Service](#7-gateway-service)
 - [Architecture & Module Overview](#architecture--module-overview)
 - [Quick Start (Hello World)](#quick-start-hello-world)
   - [Environment Requirements](#environment-requirements)
@@ -224,7 +225,7 @@ agent.QueryNotifier<IRoom>().Supply += room =>
 
 - Notifier = dynamic object collection + remote object tree synchronization
 - Client does not manage IDs; everything follows the interface hierarchy
-- ### 4. Reactive Support
+### 4. Reactive Support
 
 `PinionCore.Remote.Reactive` provides Rx (Reactive Extensions) support, allowing you to compose remote workflows using `IObservable<T>`.
 
@@ -328,6 +329,73 @@ PinionCore Remote includes three built-in transport modes:
   Acts as both server & client endpoints, ideal for testing
 
 Integration tests (`SampleTests`) launch all three transports and ensure identical behavior across modes.
+
+---
+
+### 7. Gateway Service
+
+**Purpose**:
+
+`PinionCore.Remote.Gateway` provides enterprise-grade gateway capabilities, serving as a unified entry point for multiple backend services:
+
+- **Multi-Service Routing**: Unified entry point distributing requests to different backend services (Chat, Game, Auth, etc.)
+- **Version Coexistence**: Supports multiple protocol versions (`IProtocol.VersionCode`) simultaneously for smooth upgrades
+- **Load Balancing**: `LineAllocator` provides service instance allocation and balancing
+- **Service Isolation**: Independent deployment and scaling of services, unified management through Gateway
+
+**Architecture Diagram**:
+
+```mermaid
+graph TB
+    subgraph Clients["Client Layer"]
+        C1[Client v1.0]
+        C2[Client v1.1]
+        C3[Client v2.0]
+    end
+
+    subgraph Gateway["Gateway Layer"]
+        GW[Gateway<br/>Unified Entry]
+        VA[Version Adapter<br/>Version Matching]
+        LB[Line Allocator<br/>Load Balancing]
+    end
+
+    subgraph Services["Service Layer"]
+        S1[Chat Service v1]
+        S2[Chat Service v2]
+        S3[Game Service]
+        S4[Auth Service]
+    end
+
+    C1 --> GW
+    C2 --> GW
+    C3 --> GW
+
+    GW --> VA
+    VA --> LB
+
+    LB --> S1
+    LB --> S2
+    LB --> S3
+    LB --> S4
+```
+
+**Core Components**:
+
+- **Router**: Routes requests based on protocol version and service type
+- **LineAllocator**: Manages service instance groups, provides load balancing and fault tolerance
+- **Version Adapter**: Handles coexistence of clients with different protocol versions, enabling zero-downtime upgrades
+
+**Use Cases**:
+
+- Running multiple independent services simultaneously (microservices architecture)
+- Protocol version management and smooth upgrades
+- Horizontal scaling and load balancing
+- Unified connection management and monitoring entry point
+
+For detailed documentation and examples, see `PinionCore.Remote.Gateway/README.md` and the `PinionCore.Consoles.Chat1.*` projects.
+
+---
+
 ## Architecture & Module Overview
 
 Main projects and their roles:
