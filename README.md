@@ -1,41 +1,27 @@
-﻿
-
-
-# PinionCore Remote
+﻿# PinionCore Remote
 [![Maintainability](https://api.codeclimate.com/v1/badges/89c3a646f9daff42a38e/maintainability)](https://codeclimate.com/github/jiowchern/PinionCore.Remote/maintainability)
 [![Build](https://github.com/jiowchern/PinionCore.Remote/actions/workflows/dotnet-desktop.yml/badge.svg?branch=master)](https://github.com/jiowchern/PinionCore.Remote/actions/workflows/dotnet-desktop.yml)
 [![Coverage Status](https://coveralls.io/repos/github/jiowchern/PinionCore.Remote/badge.svg?branch=master)](https://coveralls.io/github/jiowchern/PinionCore.Remote?branch=master)
 ![commit last date](https://img.shields.io/github/last-commit/jiowchern/PinionCore.Remote)
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/jiowchern/PinionCore.Remote)
-[Ask OpenDeepWiki](https://opendeep.wiki/jiowchern/PinionCore.Remote/introduction?branch=master)  
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/jiowchern/PinionCore.Remote)  
+[Ask OpenDeepWiki](https://opendeep.wiki/jiowchern/PinionCore.Remote/introduction?branch=master)
 
-<!-- [![Discord](https://img.shields.io/discord/101557008930451456.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](https://discord.gg/uDF8NTp) -->
-<!-- [![Build status](https://ci.appveyor.com/api/projects/status/fv1owwit4utddawv/branch/release?svg=true)](https://ci.appveyor.com/project/jiowchern/regulus-remote/branch/release) -->
-<!-- [![GitHub release](https://img.shields.io/github/release/jiowchern/regulus.svg?style=flat-square)](https://github.com/jiowchern/PinionCore/releases)![pre-release](https://img.shields.io/github/v/release/jiowchern/PinionCore?include_prereleases) -->
-<!-- [![Gitter](https://badges.gitter.im/JoinChat.svg)](https://gitter.im/PinionCore-Library) -->
-
-<!-- ![NuGet Downloads](https://img.shields.io/nuget/dt/PinionCore.Remote) -->
-[中文說明](README-tc.md)
-
----
 
 ## Introduction
 
-PinionCore Remote is an object‑oriented remote communication framework written in C#.
-You define your protocol as interfaces, implement them on the server, and call them from the client as if they were local objects. The real data is transported over TCP, WebSocket, or an in‑memory standalone mode.
+PinionCore Remote is an object-oriented remote communication framework developed in C#.
+You can define communication protocols using "interfaces" - the server implements these interfaces, and the client invokes them as if calling local objects, while the actual data is transmitted through TCP / WebSocket / Standalone simulation channels.
 
-- Targets .NET Standard 2.1 (runs on .NET 6/7/8 and Unity 2021+)
-- Supports IL2CPP and AOT (types must be pre‑registered for serialization)
-- Built‑in TCP, WebSocket and Standalone transports
-- Uses a source generator to automatically create `IProtocol` implementations and reduce maintenance cost
+- Supports .NET Standard 2.1 (.NET 6/7/8, Unity 2021+)
+- Supports IL2CPP and AOT (requires pre-registration of serialization types)
+- Built-in TCP, WebSocket, and Standalone single-machine mode
+- Automatically generates `IProtocol` implementation through Source Generator, reducing maintenance costs
 
----
+## Core Features
 
-## Key Features
+### 1. Interface-Oriented Communication
 
-### 1. Interface‑driven communication
-
-You only need to define interfaces – no handwritten serialization or protocol parsing:
+Only need to define interfaces, no need to manually write serialization and protocol parsing:
 
 ```csharp
 public interface IGreeter
@@ -43,9 +29,7 @@ public interface IGreeter
     PinionCore.Remote.Value<HelloReply> SayHello(HelloRequest request);
 }
 ```
-
-Server side:
-
+Server implements the interface:
 ```csharp
 class Greeter : IGreeter
 {
@@ -55,13 +39,21 @@ class Greeter : IGreeter
     }
 }
 ```
+Client gets the remote proxy through QueryNotifier<IGreeter>(), calls SayHello directly, and the returned Value<T> can be awaited.
+```csharp
+agent.QueryNotifier<IGreeter>().Supply += greeter =>
+{
+    var request = new HelloRequest { Name = "you" };
+    greeter.SayHello(request).OnValue += reply =>
+    {
+        Console.WriteLine($"Receive message: {reply.Message}");
+    };
+};
+```
 
-On the client you obtain a remote proxy via `QueryNotifier<IGreeter>()` and call `SayHello` directly. The return type `Value<T>` can be awaited.
+### 2. Controllable Lifecycle (Entry / Session / Soul)
 
-### 2. Controlled lifecycle (Entry / Session / Soul)
-
-The server entry implements `PinionCore.Remote.IEntry`. When a new connection is established you receive an `ISessionBinder` and decide when to bind or unbind interfaces:
-
+The server entry implements PinionCore.Remote.IEntry, receives ISessionBinder when a connection is established, and you decide when to bind/unbind interfaces:
 ```csharp
 public class Entry : PinionCore.Remote.IEntry
 {
@@ -69,42 +61,47 @@ public class Entry : PinionCore.Remote.IEntry
 
     void PinionCore.Remote.ISessionObserver.OnSessionOpened(PinionCore.Remote.ISessionBinder binder)
     {
-        binder.Bind<IGreeter>(_greeter);
+        // Client connected successfully, bind _greeter
+        var soul = binder.Bind<IGreeter>(_greeter);
+
+
+        // To unbind, call this line
+        binder.Unbind(soul);
     }
 
     void PinionCore.Remote.ISessionObserver.OnSessionClosed(PinionCore.Remote.ISessionBinder binder)
     {
-        // Cleanup when the client disconnects
+        // Cleanup when client disconnects
     }
 
     void PinionCore.Remote.IEntry.Update()
     {
-        // Optional server update loop
+        // Per-loop update (can be empty, depending on requirements)
     }
 }
 ```
+The server uses Host to create services (Host inherits from Soul.Service, internally manages all connections and Sessions through SessionEngine): `new PinionCore.Remote.Server.Host(entry, protocol)`.
 
-`Soul` manages all connections and sessions: `new PinionCore.Remote.Server.Host(entry, protocol)` wraps the underlying `PinionCore.Remote.Soul.Service`.
 
 ### 3. Value / Property / Notifier Support
 
-PinionCore.Remote centers around **interfaces** and provides three common member types to describe remote behavior and state:
+PinionCore.Remote is centered around "interfaces" and provides three common member types to describe remote behavior and state:
 
-- **Value\<T>**: Represents "one‑time asynchronous calls"
-  - Used for method return values (similar to `Task<T>`)
-  - Suitable for request/response flows, e.g., login, fetch config, submit command
-  - Caller only waits for the result without maintaining long‑term state
+- **Value\<T>**: Describes "one-time asynchronous calls"
+  - Used for method return values (similar to the Task\<T> concept)
+  - Suitable for request/response flows, such as: login, get settings, submit commands, etc.
+  - The caller only needs to wait for the result, no need to maintain long-term state
 
-- **Property**: Represents "stable remote state"
-  - Properties on interfaces are implemented server‑side and read via proxy on the client
-  - Suitable for relatively stable information, e.g., player name, room title, server version
-  - Combined with events or Notifier, can notify clients to update UI when state changes
+- **Property**: Describes "stable remote state"
+  - Properties on the interface are implemented by the server, and the client reads them through proxies
+  - Suitable for representing relatively stable information, such as: player name, room title, server version, etc.
+  - Combined with events or Notifier, can notify the client to update UI when state changes
 
-- **Notifier\<T>: Dynamic collections supporting nested interfaces and object tree synchronization**
-  `INotifier<T>` represents "a set of dynamically existing remote objects."
-  Notably, `T` can be not just primitive types but **interfaces themselves**, naturally describing **nested object structures (object trees)** and synchronizing the lifecycle of this tree between server and client.
+- **Notifier\<T>: Dynamic collection supporting nested interfaces and object tree synchronization**
+  `INotifier<T>` is used to represent "a set of dynamically existing remote objects".
+  Notably, `T` can not only be a primitive type, but also **an interface itself**, allowing natural description of **nested object structures (object trees)** and synchronizing the lifecycle of this tree between server and client.
 
-  A typical scenario is Lobby / Room / Player hierarchical structure:
+  Typical scenarios include hierarchical structures like Lobby / Room / Player:
 
   ```csharp
   public interface IChatEntry
@@ -126,40 +123,40 @@ PinionCore.Remote centers around **interfaces** and provides three common member
   }
   ```
 
-  - Server‑side maintains actual room and player objects, mapping to `INotifier<IRoom>` and `INotifier<IPlayer>`
+  - The server maintains the actual room and player objects, corresponding to `INotifier<IRoom>`, `INotifier<IPlayer>`
     - When a room is created, the server "supplies" an `IRoom` instance to `Rooms`
-    - When a room is deleted, it removes that `IRoom` from `Rooms`
-    - When players join/leave rooms, supply/remove corresponding `IPlayer` from `IRoom.Players`
-  - Client‑side only needs to get `INotifier<IRoom>` via the interface and can:
+    - When a room is deleted, that `IRoom` is removed from `Rooms`
+    - When players enter/exit a room, the corresponding `IPlayer` is supplied/removed from that `IRoom.Players`
+  - The client only needs to get `INotifier<IRoom>` through the interface to:
     - Automatically receive "room added/removed" notifications
-    - For each room, subscribe to `room.Players` and automatically receive "player joined/left" notifications
-    - The obtained `IRoom` / `IPlayer` are remote proxies, directly call their interface members
+    - For each room, continue subscribing to `room.Players` and automatically receive "player entered/left" notifications
+    - The obtained `IRoom` / `IPlayer` are all remote proxies, just call their interface members directly
 
-  Through this design, Notifier is not just "a collection of events," but:
+  Through this design, Notifier is not just a "collection of events", but:
 
-  - Describes "dynamic collections" and "changing object trees"
-  - Supports interface nesting: `INotifier<IRoom>` → `IRoom` contains `INotifier<IPlayer>` → even deeper submodules
-  - Client doesn't need to manage any id or lookup logic; just access by interface hierarchy to automatically track server‑side object creation and destruction
+  - Used to describe "dynamic collections" and "changing object trees"
+  - Supports nested interfaces: `INotifier<IRoom>` → `IRoom` contains `INotifier<IPlayer>` → even deeper sub-modules
+  - The client does not need to manage any ids or lookup logic, just access by interface hierarchy, and automatically track the creation and destruction of server-side objects
 
   **Summary**:
-  - `Value<T>`: One‑time call result
+  - `Value<T>`: One-time call result
   - `Property`: Stable state value
-  - `Notifier<T>`: Synchronizes "collections that grow/shrink" and supports nested object trees with interfaces as nodes—the core capability of PinionCore.Remote for expressing complex remote structures
+  - `Notifier<T>`: Synchronizes "collections of objects that can grow/shrink", and supports nested object trees with interfaces as nodes, which is the core capability of PinionCore.Remote for expressing complex remote structures.
 
-#### Notifier Supply/Unsupply Flow Overview
+#### Notifier Supply / Removal Process Overview
 
-Using `IChatEntry.Rooms` as an example, you can understand Notifier operation with the following flow:
+Using `IChatEntry.Rooms` as an example, the operation of Notifier can be understood through the following process:
 
-1. After server startup, create `IRoom` implementation objects and supply via `INotifier<IRoom>`:
-   - When room exists, call `Rooms.Supply(roomImpl)`
-   - When room closes, call `Rooms.Unsupply(roomImpl)`
-2. The communication layer forwards these supply/unsupply events to all connected clients
-3. Client gets the corresponding `INotifier<IRoom>` proxy via `agent.QueryNotifier<IRoom>()` and subscribes:
+1. After the server starts, create `IRoom` implementation objects and supply them through `INotifier<IRoom>`:
+   - Call `Rooms.Supply(roomImpl)` when a room exists
+   - Call `Rooms.Unsupply(roomImpl)` when a room closes
+2. The communication layer forwards these supply/removal events to each connected client.
+3. The client gets the corresponding `INotifier<IRoom>` proxy through `agent.QueryNotifier<IRoom>()` and subscribes:
 
    ```csharp
    agent.QueryNotifier<IRoom>().Supply += room =>
    {
-       // Here room is already a remote proxy, can be used directly
+       // The room here is already a remote proxy and can be used directly
        room.Players.Supply += player =>
        {
            // Handle player join event
@@ -167,23 +164,22 @@ Using `IChatEntry.Rooms` as an example, you can understand Notifier operation wi
    };
    ```
 
-4. When server‑side unsupplies an object, the client receives the corresponding `Unsupply` event and automatically releases that proxy
+4. When the server Unsupplies an object, the client receives the corresponding `Unsupply` event and automatically releases that proxy.
 
 Through this mechanism, the server only needs to manage the lifecycle of real objects, and the client can automatically maintain a synchronized nested object tree (Entry → Room → Player…).
 
-### 4. Reactive style methods
+### 4. Reactive Method Support (Reactive)
 
-`PinionCore.Remote.Reactive` provides Rx extensions so you can work with `IObservable<T>` instead of callbacks.
+PinionCore.Remote.Reactive provides Rx extensions to chain remote calls with IObservable<T>.
 
-Key extensions in `PinionCore.Remote.Reactive.Extensions`:
+Important extension methods in PinionCore.Remote.Reactive.Extensions:
 
-- `RemoteValue()`: convert `Value<T>` into `IObservable<T>`
-- `SupplyEvent()` / `UnsupplyEvent()`: convert `Notifier<T>` events into `IObservable<T>`
+- RemoteValue(): Converts Value<T> to IObservable<T>
+- SupplyEvent() / UnsupplyEvent(): Converts Notifier to IObservable<T>
 
-From `PinionCore.Integration.Tests/SampleTests.cs`:
-
+In the integration test PinionCore.Integration.Tests/SampleTests.cs:
 ```csharp
-// Important: the Rx flow still needs a background loop
+// Important: Rx pattern still requires a background processing loop
 var cts = new CancellationTokenSource();
 var runTask = Task.Run(async () =>
 {
@@ -195,7 +191,7 @@ var runTask = Task.Run(async () =>
     }
 }, cts.Token);
 
-// Build an Rx query
+// Create Rx query chain
 var echoObs =
     from e in proxy.Agent
         .QueryNotifier<PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Echoable>()
@@ -205,25 +201,21 @@ var echoObs =
 
 var echoValue = await echoObs.FirstAsync();
 
+// Stop background processing
 cts.Cancel();
 await runTask;
 ```
+This example demonstrates:
 
-This demonstrates:
-
-- A background processing loop is still required (HandlePackets/HandleMessages)
-- Waiting for the server to supply an interface via `SupplyEvent()`
-- Calling a remote `Echo()` that returns `Value<int>`
-- Converting it into `IObservable<int>` with `RemoteValue()` and consuming with Rx
-
+- **Background processing loop is necessary**: Even when using Rx, you still need to continuously call HandlePackets/HandleMessages
+- Wait for the server to supply the interface through Notifier's SupplyEvent()
+- Call remote method Echo() which returns Value<int>
+- Use RemoteValue() to convert to IObservable<int>, then get the result once with Rx
 ### 5. Simple Public and Private Interface Support
-
-Due to PinionCore.Remote's interface‑driven design, the server can expose different interfaces to different clients based on requirements. This makes implementing public and private interface needs simple and intuitive.
-
+Since PinionCore.Remote adopts an interface-oriented design, the server can expose different interfaces to different clients based on requirements. This makes implementing public and private interface requirements simple and intuitive.
 For example, you can define a public interface `IPublicService` and a private interface `IPrivateService`:
-
 ```csharp
-public interface IPublicService
+public interface IPublicService  
 {
     PinionCore.Remote.Value<string> GetPublicData();
 }
@@ -244,114 +236,82 @@ class ServiceImpl : IPrivateService
     {
         return "This is private data.";
     }
+
 }
 ```
-
 The server can decide which interface to bind based on the client's authentication status:
-
 ```csharp
 void ISessionObserver.OnSessionOpened(ISessionBinder binder)
 {
     var serviceImpl = new ServiceImpl();
     if (IsAuthenticatedClient(binder))
     {
-        // Bind private interface for authenticated clients
+        // Bind private interface to authenticated clients
         binder.Bind<IPrivateService>(serviceImpl);
     }
 
-    // Bind public interface for unauthenticated clients
+    // Bind public interface to unauthenticated clients
     binder.Bind<IPublicService>(serviceImpl);
 }
 ```
+This way, unauthenticated clients can only access `IPublicService`, while authenticated clients can access `IPrivateService`, thus implementing public and private control of interfaces.
 
-This way, unauthenticated clients can only access `IPublicService`, while authenticated clients can access `IPrivateService`, thus achieving public and private interface control.
+### 6. Multi-Transport Modes and Standalone
 
-### 6. Multiple transports and Standalone mode
+Built-in three transport methods:
 
-Built‑in transports:
+- TCP: PinionCore.Remote.Server.Tcp.ListeningEndpoint / PinionCore.Remote.Client.Tcp.ConnectingEndpoint
+- WebSocket: PinionCore.Remote.Server.Web.ListeningEndpoint / PinionCore.Remote.Client.Web.ConnectingEndpoint
+- Standalone: PinionCore.Remote.Standalone.ListeningEndpoint (implements both Server and Client endpoints for single-machine simulation)
 
-- TCP: `PinionCore.Remote.Server.Tcp.ListeningEndpoint` / `PinionCore.Remote.Client.Tcp.ConnectingEndpoint`
-- WebSocket: `PinionCore.Remote.Server.Web.ListeningEndpoint` / `PinionCore.Remote.Client.Web.ConnectingEndpoint`
-- Standalone: `PinionCore.Remote.Standalone.ListeningEndpoint` (in‑memory server + client, ideal for tests and offline simulation)
-
-The integration tests (`PinionCore.Integration.Tests/SampleTests.cs`) start all three endpoints and validate that their behavior is consistent.
+The integration test SampleTests starts all three endpoints simultaneously and verifies them one by one to ensure consistent behavior across all modes.
 
 ---
-
-## Architecture and Modules
+## Architecture and Module Overview
 
 Main projects:
 
-- `PinionCore.Remote`: core abstractions (`IEntry`, `ISessionBinder`, `Value<T>`, `Property<T>`, `Notifier<T>`, etc.)
-- `PinionCore.Remote.Client`: proxy, `IConnectingEndpoint`, and connection helpers (`AgentExtensions.Connect`)
-- `PinionCore.Remote.Server`: host, `IListeningEndpoint`, `ServiceExtensions.ListenAsync`
-- `PinionCore.Remote.Soul`: server‑side session management and update loop (`ServiceUpdateLoop`)
-- `PinionCore.Remote.Ghost`: client‑side agent implementation (`User`), packet encoding/decoding
-- `PinionCore.Remote.Standalone`: in‑memory `ListeningEndpoint` implementing both server and client endpoints
-- `PinionCore.Network`: `IStreamable`, TCP/WebSocket peers, low‑level packet IO
-- `PinionCore.Serialization`: default serialization and type descriptors
-- `PinionCore.Remote.Tools.Protocol.Sources`: source generator; uses `[PinionCore.Remote.Protocol.Creator]` to generate `IProtocol`
-- `PinionCore.Remote.Gateway`: gateway and multi‑service routing (see that module’s README for details)
+- PinionCore.Remote: Core interfaces and abstractions (IEntry, ISessionBinder, Value<T>, Property<T>, Notifier<T>, etc.)
+- PinionCore.Remote.Client: Proxy, IConnectingEndpoint, and connection extensions (AgentExtensions.Connect)
+- PinionCore.Remote.Server: Host, IListeningEndpoint, ServiceExtensions.ListenAsync
+- PinionCore.Remote.Soul: Server Session management, update loop (ServiceUpdateLoop)
+- PinionCore.Remote.Ghost: Client Agent implementation (User), packet encoding and processing
+- PinionCore.Remote.Standalone: ListeningEndpoint simulates Server/Client with memory streams
+- PinionCore.Network: IStreamable, TCP/WebSocket Peer, packet read/write
+- PinionCore.Serialization: Default serialization implementation and type description
+- PinionCore.Remote.Tools.Protocol.Sources: Source Generator, automatically generates IProtocol through [PinionCore.Remote.Protocol.Creator]
+- PinionCore.Remote.Gateway: Gateway and multi-service routing (see module README for details)
 
-Conceptual diagram (simplified):
-
-```mermaid
-classDiagram
-     class IGreeter {
-         <<interface>>
-         +SayHello()
-     }
-
-     class Greeter {
-         +SayHello()
-     }
-
-     class SomeClass {
-         -IGreeter greeter
-     }
-
-     IGreeter <|.. Greeter
-     SomeClass --> IGreeter : greeter
-
-     note for Greeter "Implement IGreeter"
-     note for SomeClass "Use object from server"
-```
 
 ---
+## Quick Start (Hello World)
 
-## Quickstart (Hello World)
+It is recommended to create three projects: Protocol, Server, and Client. The following examples align with the actual template (PinionCore.Samples.HelloWorld.*) implementation.
 
-The recommended layout is three projects: `Protocol`, `Server`, `Client`. The examples here mirror the official samples in `PinionCore.Samples.HelloWorld.*`.
+### Environment Requirements
 
-### Environment
-
-- .NET SDK 6 or later
+- .NET SDK 6 or above
 - Visual Studio 2022 / Rider / VS Code
-- For Unity, Unity 2021 LTS or later is recommended
+- If Unity is needed, Unity 2021 LTS or above is recommended
 
-### 1. Protocol project
+### 1. Protocol Project
 
-Create a class library:
+Create a Class Library:
 
-```bash
 Sample/Protocol> dotnet new classlib
-```
 
-Add package references (use the latest published versions in your project):
-
+Add NuGet references (version numbers should match actual releases):
 ```xml
 <ItemGroup>
-  <PackageReference Include="PinionCore.Remote" Version="0.1.14.15" />
-  <PackageReference Include="PinionCore.Serialization" Version="0.1.14.12" />
-  <PackageReference Include="PinionCore.Remote.Tools.Protocol.Sources" Version="0.0.4.25">
+<PackageReference Include="PinionCore.Remote" Version="0.1.14.15" />
+<PackageReference Include="PinionCore.Serialization" Version="0.1.14.12" />
+<PackageReference Include="PinionCore.Remote.Tools.Protocol.Sources" Version="0.0.4.25">
     <PrivateAssets>all</PrivateAssets>
     <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-  </PackageReference>
+</PackageReference>
 </ItemGroup>
 ```
-
-Define request/response types and the interface:
-
+Define data structures and interfaces:
 ```csharp
 namespace Protocol
 {
@@ -371,9 +331,7 @@ namespace Protocol
     }
 }
 ```
-
-Create the `ProtocolCreator` entry point for the source generator:
-
+Create ProtocolCreator (Source Generator entry point):
 ```csharp
 namespace Protocol
 {
@@ -392,29 +350,23 @@ namespace Protocol
 }
 ```
 
-> The method marked with `[PinionCore.Remote.Protocol.Creator]` must have the signature  
-> `static partial void Method(ref PinionCore.Remote.IProtocol protocol);`  
-> otherwise code generation will fail.
+> Note: Methods marked with [PinionCore.Remote.Protocol.Creator] must be
+> static partial void Method(ref PinionCore.Remote.IProtocol), otherwise compilation will fail.
 
-### 2. Server project
+### 2. Server Project
 
-Create a console project:
+Create a Console project:
 
-```bash
-Sample/Server> dotnet new console
-```
+```Sample/Server> dotnet new console```
 
-Add references:
-
+csproj references:
 ```xml
 <ItemGroup>
-  <PackageReference Include="PinionCore.Remote.Server" Version="0.1.14.13" />
-  <ProjectReference Include="..\Protocol\Protocol.csproj" />
+<PackageReference Include="PinionCore.Remote.Server" Version="0.1.14.13" />
+<ProjectReference Include="..\Protocol\Protocol.csproj" />
 </ItemGroup>
 ```
-
-Implement `IGreeter` (mirrors `PinionCore.Samples.HelloWorld.Server/Greeter.cs`):
-
+Implement IGreeter (aligned with PinionCore.Samples.HelloWorld.Server/Greeter.cs):
 ```csharp
 using Protocol;
 
@@ -429,9 +381,7 @@ namespace Server
     }
 }
 ```
-
-Implement `Entry`:
-
+Implement Entry (aligned with HelloWorld example):
 ```csharp
 using PinionCore.Remote;
 using Protocol;
@@ -446,27 +396,25 @@ namespace Server
 
         void ISessionObserver.OnSessionOpened(ISessionBinder binder)
         {
-            // Client connected, bind IGreeter
+            // Client connected successfully, bind IGreeter
             var soul = binder.Bind<IGreeter>(_greeter);
-            // You can later unbind with binder.Unbind(soul);
+            // To unbind, call binder.Unbind(soul);
         }
 
         void ISessionObserver.OnSessionClosed(ISessionBinder binder)
         {
-            // Cleanup when the client disconnects
+            // Cleanup when client disconnects
             Enable = false;
         }
 
         void IEntry.Update()
         {
-            // Optional server update loop
+            // If server main loop update is needed, put it here
         }
     }
 }
 ```
-
-Server startup (based on the HelloWorld sample):
-
+Start the server main program (following HelloWorld implementation):
 ```csharp
 using System;
 using System.Threading.Tasks;
@@ -501,7 +449,7 @@ namespace Server
             while (entry.Enable)
             {
                 System.Threading.Thread.Sleep(0);
-                // You can also call entry.Update() here if needed
+                // If needed, you can manually call entry.Update() here
             }
 
             disposeServer.Dispose();
@@ -513,27 +461,21 @@ namespace Server
     }
 }
 ```
+### 3. Client Project
 
-### 3. Client project
-
-Create a console project:
-
-```bash
+Create a Console project:
+```
 Sample/Client> dotnet new console
 ```
-
-Add references:
-
+csproj references:
 ```xml
 <ItemGroup>
-  <PackageReference Include="PinionCore.Remote.Client" Version="0.1.14.12" />
-  <PackageReference Include="PinionCore.Remote.Reactive" Version="0.1.14.13" />
-  <ProjectReference Include="..\Protocol\Protocol.csproj" />
+<PackageReference Include="PinionCore.Remote.Client" Version="0.1.14.12" />
+<PackageReference Include="PinionCore.Remote.Reactive" Version="0.1.14.13" />
+<ProjectReference Include="..\Protocol\Protocol.csproj" />
 </ItemGroup>
 ```
-
-Client program (aligned with the HelloWorld client sample):
-
+Client program (aligned with HelloWorld Client implementation):
 ```csharp
 using System;
 using System.Net;
@@ -564,9 +506,9 @@ namespace Client
             var endpoint = new PinionCore.Remote.Client.Tcp.ConnectingEndpoint(
                 new IPEndPoint(ip, port));
 
-            // Connect() is an extension method on AgentExtensions:
-            // it calls Enable(stream) and returns an IDisposable.
-            // Disposing it will automatically call Disable() and dispose the endpoint.
+            // Connect() is an extension method in AgentExtensions
+            // It automatically calls Enable(stream) and returns IDisposable for cleanup
+            // Calling Dispose() will automatically execute Disable() and endpoint.Dispose()
             var connection = await agent.Connect(endpoint).ConfigureAwait(false);
 
             agent.QueryNotifier<IGreeter>().Supply += greeter =>
@@ -575,12 +517,12 @@ namespace Client
                 greeter.SayHello(request).OnValue += _OnReply;
             };
 
-            // You must keep processing packets and messages
+            // Must continuously process packets and messages, otherwise remote events won't be triggered
             while (_enable)
             {
                 System.Threading.Thread.Sleep(0);
-                agent.HandleMessages();
-                agent.HandlePackets();
+                agent.HandleMessages();  // Process messages from remote
+                agent.HandlePackets();   // Process packet encoding
             }
 
             connection.Dispose();
@@ -597,84 +539,73 @@ namespace Client
 }
 ```
 
----
-
-## Core Concepts
+## Core Concepts Explained
 
 ### IEntry / ISessionBinder / ISoul
 
-- `IEntry`: server entry point, responsible for session open/close and optional update loop
-- `ISessionBinder`: passed into `OnSessionOpened`, used to `Bind<T>()` / `Unbind(ISoul)`
-- `ISoul`: represents a bound instance attached to a session; later used for unbinding or querying
+- IEntry: Server entry point, responsible for Session open/close and main loop updates.
+- ISessionBinder: Passed in OnSessionOpened, used to Bind<T> / Unbind(ISoul).
+- ISoul: Represents an instance bound to a Session, which can later be used for unbinding or querying.
 
-Relevant interfaces:
+Interface definitions:
 
-- `PinionCore.Remote/IEntry.cs`
-- `PinionCore.Remote/ISessionObserver.cs`
-- `PinionCore.Remote/ISessionBinder.cs`
-- `PinionCore.Remote/ISoul.cs`
+- PinionCore.Remote/IEntry.cs
+- PinionCore.Remote/ISessionObserver.cs
+- PinionCore.Remote/ISessionBinder.cs
+- PinionCore.Remote/ISoul.cs
 
-`PinionCore.Remote.Soul.Service` manages sessions internally via `SessionEngine`, and `PinionCore.Remote.Server.Host` wraps it for easier service construction.
+PinionCore.Remote.Soul.Service internally uses SessionEngine to manage all Sessions, while PinionCore.Remote.Server.Host wraps it for convenient service creation.
 
-### Value\<T>
+### Value<T>
 
-`Value<T>` represents a single remote result:
+Main characteristics of Value<T>:
 
-- Supports both `OnValue` event and `await`
-- The value is set exactly once
-- You typically return plain `T` and rely on implicit conversion:
+- Supports OnValue event and await.
+- Value is set only once (one-time result).
+- Uses implicit conversion: return new HelloReply { ... }; automatically wraps into Value<HelloReply>.
 
-```csharp
-return new HelloReply { Message = "..." }; // implicitly converted to Value<HelloReply>
-```
+Implementation location: PinionCore.Utility/PinionCore.Utility/Remote/Value.cs
 
-Implementation: `PinionCore.Utility/PinionCore.Utility/Remote/Value.cs`
+### Property<T>
 
-### Property\<T>
+Property<T> is a notifiable value-type state:
 
-`Property<T>` is a stateful value with change notifications:
+- Changes to the Value property trigger DirtyEvent.
+- Can be converted to IObservable<T> through PropertyObservable (PinionCore.Remote.Reactive/PropertyObservable.cs).
+- Provides implicit conversion to T, behaves like a normal property.
 
-- Updating `Value` triggers `DirtyEvent`
-- `PropertyObservable` in `PinionCore.Remote.Reactive/PropertyObservable.cs` turns it into `IObservable<T>`
-- Implicit conversion to `T` makes it feel like a normal property
+Implementation location: PinionCore.Remote/Property.cs
 
-Implementation: `PinionCore.Remote/Property.cs`
+### Notifier<T> and Depot<T>
 
-### Notifier\<T> and Depot\<T>
+Depot<T> (PinionCore.Utility/Remote/Depot.cs) is a collection + Notifier:
 
-`Depot<T>` (`PinionCore.Utility/Remote/Depot.cs`) combines a collection with notification:
+- Items.Add(item): Triggers Supply.
+- Items.Remove(item): Triggers Unsupply.
+- Notifier<T> wraps Depot<TypeObject>, supporting cross-type querying and event subscription.
 
-- `Items.Add(item)` triggers `Supply`
-- `Items.Remove(item)` triggers `Unsupply`
+The INotifierQueryable interface (PinionCore.Remote/INotifierQueryable.cs) allows calling:
 
-`Notifier<T>` wraps `Depot<TypeObject>` and supports cross‑type queries and event subscriptions.
-
-`INotifierQueryable` (`PinionCore.Remote/INotifierQueryable.cs`) allows:
-
-```csharp
 INotifier<T> QueryNotifier<T>();
-```
 
-`Ghost.User` implements `INotifierQueryable`, so clients can obtain `Notifier<T>` for any interface via `QueryNotifier<T>()`.
+Ghost.User implements INotifierQueryable, so the client can get the Notifier of any interface through QueryNotifier<T>.
 
-### Streamable methods
+### Streamable Method
 
-If an interface defines a method like:
-
+If an interface method is defined as follows:
 ```csharp
 PinionCore.Remote.IAwaitableSource<int> StreamEcho(
     byte[] buffer,
     int offset,
     int count);
 ```
+The Source Generator treats it as a "streamable method":
 
-The source generator treats it as a **streamable method**:
+- The transmitted data will only include buffer[offset..offset+count).
+- Server-processed data is written back in-place to the same segment.
+- The returned IAwaitableSource<int> indicates the actual number of bytes processed (length).
 
-- Only `buffer[offset..offset + count)` is transmitted
-- The server writes the result back into the same slice
-- The returned `IAwaitableSource<int>` represents the actual processed length
-
-Validation logic lives in `PinionCore.Remote.Tools.Protocol.Sources/MethodPinionCoreRemoteStreamable.cs`.
+Internal checking logic can be found in PinionCore.Remote.Tools.Protocol.Sources/MethodPinionCoreRemoteStreamable.cs.
 
 ---
 
@@ -682,53 +613,44 @@ Validation logic lives in `PinionCore.Remote.Tools.Protocol.Sources/MethodPinion
 
 ### TCP
 
-Server:
-
+Server side:
 ```csharp
 var host = new PinionCore.Remote.Server.Host(entry, protocol);
 PinionCore.Remote.Soul.IService service = host;
 var (disposeServer, errorInfos) = await service.ListenAsync(
     new PinionCore.Remote.Server.Tcp.ListeningEndpoint(port, backlog: 10));
 ```
-
-Client:
-
+Client side:
 ```csharp
 var proxy = new PinionCore.Remote.Client.Proxy(protocol);
 using var connection = await proxy.Connect(
     new PinionCore.Remote.Client.Tcp.ConnectingEndpoint(
         new System.Net.IPEndPoint(System.Net.IPAddress.Loopback, port)));
 ```
-
 ### WebSocket
 
-Server:
-
+Server side:
 ```csharp
 var (disposeServer, errorInfos) = await service.ListenAsync(
     new PinionCore.Remote.Server.Web.ListeningEndpoint($"http://localhost:{webPort}/"));
 ```
-
-Client:
-
+Client side:
 ```csharp
 var proxy = new PinionCore.Remote.Client.Proxy(protocol);
 using var connection = await proxy.Connect(
     new PinionCore.Remote.Client.Web.ConnectingEndpoint(
         $"ws://localhost:{webPort}/"));
 ```
+PinionCore.Remote.Client.Web.ConnectingEndpoint internally uses System.Net.WebSockets.ClientWebSocket and PinionCore.Network.Web.Peer.
 
-`PinionCore.Remote.Client.Web.ConnectingEndpoint` uses `System.Net.WebSockets.ClientWebSocket` together with `PinionCore.Network.Web.Peer`.
+### Standalone (Single-Machine Simulation)
 
-### Standalone (in‑memory simulation)
+PinionCore.Remote.Standalone.ListeningEndpoint implements both:
 
-`PinionCore.Remote.Standalone.ListeningEndpoint` implements both:
+- PinionCore.Remote.Server.IListeningEndpoint
+- PinionCore.Remote.Client.IConnectingEndpoint
 
-- `PinionCore.Remote.Server.IListeningEndpoint`
-- `PinionCore.Remote.Client.IConnectingEndpoint`
-
-Usage (same as in `SampleTests`):
-
+Usage (consistent with SampleTests):
 ```csharp
 var protocol = ProtocolCreator.Create();
 var entry = new Entry();
@@ -738,153 +660,135 @@ PinionCore.Remote.Soul.IService service = host;
 var standaloneEndpoint = new PinionCore.Remote.Standalone.ListeningEndpoint();
 
 var (disposeServer, errors) = await service.ListenAsync(standaloneEndpoint);
+
+var proxy = new PinionCore.Remote.Client.Proxy(protocol);
+using var connection = await proxy.Connect(standaloneEndpoint);
+
+// Important: Must continuously process packets and messages
+var running = true;
+var processTask = Task.Run(async () =>
+{
+    while (running)
+    {
+        proxy.Agent.HandlePackets();
+        proxy.Agent.HandleMessages();
+        await Task.Delay(1);
+    }
+});
+
+// The rest of the flow is the same as a normal Client
+proxy.Agent.QueryNotifier<IGreeter>().Supply += async greeter =>
+{
+    var reply = await greeter.SayHello(new HelloRequest { Name = "offline" });
+    Console.WriteLine(reply.Message);
+    running = false;
+};
+
+await processTask;
+
+// Cleanup resources
+disposeServer.Dispose();
+host.Dispose();
+
+// ListeningEndpoint creates a pair of Stream / ReverseStream to simulate send/receive within the same process
 ```
-
-This lets you run both server and client in the same process without any real network, which is ideal for development and integration tests.
-
 ---
-
 ## Advanced Topics
 
-### Reactive extensions
+### Reactive Extensions (PinionCore.Remote.Reactive)
 
-`PinionCore.Remote.Reactive/Extensions.cs` provides:
+PinionCore.Remote.Reactive/Extensions.cs provides the following common extensions:
 
-- `ReturnVoid(this Action)`: wrap an `Action` as `IObservable<Unit>`
-- `RemoteValue(this Value<T>)`: convert a remote `Value<T>` into `IObservable<T>`
-- `PropertyChangeValue(this Property<T>)`: convert property changes into `IObservable<T>`
-- `SupplyEvent` / `UnsupplyEvent(this INotifier<T>)`: convert notifier events into `IObservable<T>`
+- ReturnVoid(this Action): Wraps Action into IObservable<Unit>
+- RemoteValue(this Value<T>): Converts remote return value to IObservable<T>
+- PropertyChangeValue(this Property<T>): Converts property changes to IObservable<T>
+- SupplyEvent/UnsupplyEvent(this INotifier<T>): Converts Notifier events to IObservable<T>
 
-In `SampleTests` the Rx chain is roughly:
+SampleTests chains using Rx syntax:
 
-1. Wait for the `Echoable` interface to be supplied:
+1. Wait for Echo interface to be supplied:
 
-   ```csharp
-   proxy.Agent.QueryNotifier<Echoable>().SupplyEvent()
-   ```
+    ```proxy.Agent.QueryNotifier<Echoable>().SupplyEvent()```
+2. Call remote Echo() and retrieve with RemoteValue():
+```
+    from e in ...
+    from val in e.Echo().RemoteValue()
+    select val;
+```
+This approach is very suitable when composing multiple consecutive remote calls.
 
-2. Call remote `Echo()` and project the result via `RemoteValue()`:
+### Gateway Module
 
-   ```csharp
-   from e in ...
-   from val in e.Echo().RemoteValue()
-   select val;
-   ```
+PinionCore.Remote.Gateway provides:
 
-This style is well‑suited when you need to compose multiple sequential remote calls.
+- Multi-service entry point (Router)
+- Grouping and load balancing (LineAllocator)
+- Version coexistence (different IProtocol.VersionCode)
+- Gateway main control flow integrated with Chat1 example
 
-### Gateway module
+For details, refer to PinionCore.Remote.Gateway/README.md and PinionCore.Consoles.Chat1.* projects.
 
-`PinionCore.Remote.Gateway` provides:
+### Custom Connection
 
-- Multi‑service entry (router)
-- Grouping and load balancing (`LineAllocator`)
-- Version coexistence (different `IProtocol.VersionCode`)
-- Gateway control flow as used by the Chat1 sample
+If the built-in TCP/WebSocket does not meet your needs, you can implement your own:
 
-See `PinionCore.Remote.Gateway/README.md` and the `PinionCore.Consoles.Chat1.*` projects for details.
+- PinionCore.Network.IStreamable (send/receive byte[])
+- PinionCore.Remote.Client.IConnectingEndpoint
+- PinionCore.Remote.Server.IListeningEndpoint
 
-### Custom connections
+Usage is the same as built-in endpoints, just with your own protocol or transport at the underlying layer.
 
-If the built‑in TCP/WebSocket transports do not meet your needs, you can implement:
+### Custom Serialization
 
-- `PinionCore.Network.IStreamable` (read/write `byte[]`)
-- `PinionCore.Remote.Client.IConnectingEndpoint`
-- `PinionCore.Remote.Server.IListeningEndpoint`
+If you need custom serialization, use the underlying classes directly instead of simplified wrappers:
 
-The usage pattern is the same as with built‑in endpoints; only the underlying transport or protocol differs.
-
-### Custom serialization
-
-To customize serialization, use the low‑level types instead of the convenience wrappers.
-
-**Server (using `PinionCore.Remote.Soul.Service`):**
-
+**Server side (using PinionCore.Remote.Soul.Service)**:
 ```csharp
 var serializer = new YourSerializer();
 var internalSerializer = new YourInternalSerializer();
 var pool = PinionCore.Memorys.PoolProvider.Shared;
 
-// Use Soul.Service directly (full control), not Server.Host
+// Note: Using Soul.Service (underlying full class), not Server.Host (simplified wrapper)
 var service = new PinionCore.Remote.Soul.Service(entry, protocol, serializer, internalSerializer, pool);
 ```
 
-**Client (using `PinionCore.Remote.Ghost.Agent`):**
-
+**Client side (using PinionCore.Remote.Ghost.Agent)**:
 ```csharp
 var serializer = new YourSerializer();
 var internalSerializer = new YourInternalSerializer();
 var pool = PinionCore.Memorys.PoolProvider.Shared;
 
-// Use Ghost.Agent directly (full control), not Client.Proxy
+// Note: Using Ghost.Agent (underlying full class), not Client.Proxy (simplified wrapper)
 var agent = new PinionCore.Remote.Ghost.Agent(protocol, serializer, internalSerializer, pool);
 ```
 
-Mapping between convenience wrappers and full types:
+**Mapping between simplified wrappers and full classes**:
+- `Server.Host` internally uses `Soul.Service` with default serialization
+- `Client.Proxy` internally uses `Ghost.Agent` with default serialization
 
-- `Server.Host` internally uses `Soul.Service` with default serializers
-- `Client.Proxy` internally uses `Ghost.Agent` with default serializers
+Types that need serialization can be obtained from IProtocol.SerializeTypes, or refer to PinionCore.Serialization/README.md.
 
-Types that need serialization can be retrieved from `IProtocol.SerializeTypes`, or see `PinionCore.Serialization/README.md` for more information.
+---
+## Examples and Testing
+
+Recommended reading starting from the following projects:
+
+- PinionCore.Samples.Helloworld.Protocols: Basic Protocol and ProtocolCreator implementation
+- PinionCore.Samples.Helloworld.Server: Entry, Greeter, Host usage
+- PinionCore.Samples.Helloworld.Client: Proxy, ConnectingEndpoint, and QueryNotifier
+- **PinionCore.Integration.Tests/SampleTests.cs** (highly recommended):
+    - **Starts TCP / WebSocket / Standalone three endpoints simultaneously for parallel testing**
+    - Demonstrates how to use Rx (SupplyEvent / RemoteValue) to handle remote calls
+    - **Detailed English comments explaining each step**, including why a background processing loop is needed
+    - Verifies consistent behavior across all three transport modes
+- PinionCore.Remote.Gateway + PinionCore.Consoles.Chat1.*: Gateway real-world implementation case
 
 ---
 
-## Samples and Tests
+## Conclusion
 
-Recommended projects to read:
+The goal of PinionCore Remote is to use an "interface-oriented" approach to abstract server-client communication from tedious packet formats and serialization details. You only need to focus on Domain models and state management, while the framework handles connection, serialization, supply/unsupply, and version checking details. Whether it's games, real-time services, tool backends, or connecting multiple services through Gateway, as long as your requirement is "interacting like calling local interfaces between different processes or machines", this framework can be your foundation.
 
-- `PinionCore.Samples.Helloworld.Protocols`: basic protocol and `ProtocolCreator` implementation
-- `PinionCore.Samples.Helloworld.Server`: `Entry`, `Greeter`, and host usage
-- `PinionCore.Samples.Helloworld.Client`: `Proxy`, `ConnectingEndpoint`, and `QueryNotifier`
-- `PinionCore.Integration.Tests/SampleTests.cs` (highly recommended):
-  - Starts TCP, WebSocket, and Standalone endpoints in parallel
-  - Demonstrates using Rx (`SupplyEvent` / `RemoteValue`) to handle remote calls
-  - Includes detailed English comments explaining each step and the need for the background loop
-  - Verifies consistent behavior across all transport modes
-- `PinionCore.Remote.Gateway` + `PinionCore.Consoles.Chat1.*`: real‑world gateway scenario
+If you're encountering this project for the first time, it's recommended to start with PinionCore.Samples.HelloWorld.*, follow the "Quick Start" section to create Protocol / Server / Client three projects, and run through the complete process. Then read PinionCore.Integration.Tests (especially SampleTests) and Gateway-related examples to better understand how the overall architecture works together in real scenarios. When you need more advanced capabilities, such as custom transport layers or serialization formats, you can refer back to the "Advanced Topics" section and corresponding code files.
 
----
-
-## Build, Test and Pack
-
-At the repository root:
-
-```bash
-dotnet restore
-dotnet build --configuration Release --no-restore
-```
-
-Run all tests and collect coverage:
-
-```bash
-dotnet test /p:CollectCoverage=true \
-            /p:CoverletOutput=../CoverageResults/ \
-            /p:MergeWith="../CoverageResults/coverage.json" \
-            /p:CoverletOutputFormat="lcov%2cjson" -m:1
-```
-
-Pack NuGet packages:
-
-```bash
-dotnet pack --configuration Release --output ./nupkgs
-```
-
-Run a single test project:
-
-```bash
-dotnet test PinionCore.Integration.Tests/PinionCore.Integration.Tests.csproj
-```
-
----
-
-## Closing Notes
-
-PinionCore Remote aims to remove low‑level packet formats and serialization details from your daily work by using **interface‑driven communication** between server and client. You focus on your domain model and state management; the framework handles connections, serialization, object supply/unsupply, and version checks.
-
-Whether you are building games, real‑time services, tools backends, or aggregating multiple services through the gateway, as long as your requirement is “call remote objects as if they were local interfaces across processes or machines”, PinionCore Remote is designed to be a solid foundation.
-
-If you are new to the project, start with `PinionCore.Samples.HelloWorld.*`, follow the Quickstart steps to build `Protocol`, `Server`, and `Client`, then read `PinionCore.Integration.Tests` (especially `SampleTests`) and the gateway samples to see how everything fits together. When you need more advanced capabilities, such as custom transports or serialization, refer back to the Advanced Topics section and the corresponding source files.
-
-If you find anything unclear in the documentation, see gaps in the samples, or encounter real‑world scenarios that are not covered, please feel free to open an issue or send a PR. Improvements such as better explanations, typo fixes, additional small samples, or new integration tests all make the framework easier for the next user to adopt.
-
-We hope PinionCore Remote can save you time dealing with networking details so you can focus on designing the game and applications that actually matter.
+During use, if you find the documentation unclear, examples insufficient, or encounter scenarios that actual requirements cannot cover, you are very welcome to open Issues on GitHub for discussion, and welcome to submit PRs. Whether it's supplementary explanations, copy corrections, adding small examples or integration tests, as long as it can make the next user get started more easily, it's a very valuable contribution. Hope that PinionCore Remote can save you time dealing with network details in your projects, allowing you to focus your energy on truly important game and application design.
