@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using NUnit.Framework;
 using PinionCore.Remote;
+using System;
 
 namespace PinionCore.Network.Tests
 {
@@ -93,7 +94,7 @@ namespace PinionCore.Network.Tests
             lintener.Bind(port,10);
             var connector = new PinionCore.Network.Tcp.Connector();
 
-            Tcp.Peer peer = await connector.ConnectAsync(new System.Net.IPEndPoint(System.Net.IPAddress.Loopback, port));
+            Tcp.Peer peer = await ConnectOrThrowAsync(connector, new System.Net.IPEndPoint(System.Net.IPAddress.Loopback, port));
 
             NUnit.Framework.Assert.IsNotNull(peer);
 
@@ -103,7 +104,7 @@ namespace PinionCore.Network.Tests
                 await peer.Disconnect(true);
 
                 // reconnect test
-                peer = await connector.ConnectAsync(new System.Net.IPEndPoint(System.Net.IPAddress.Loopback, port));
+                peer = await ConnectOrThrowAsync(connector, new System.Net.IPEndPoint(System.Net.IPAddress.Loopback, port));
 
                 NUnit.Framework.Assert.IsNotNull(peer);
             }
@@ -159,7 +160,7 @@ namespace PinionCore.Network.Tests
             lintener.Bind(port,10);
             var connector = new PinionCore.Network.Tcp.Connector();
 
-            PinionCore.Network.Tcp.Peer peer = await connector.ConnectAsync(new System.Net.IPEndPoint(System.Net.IPAddress.Loopback, port));
+            PinionCore.Network.Tcp.Peer peer = await ConnectOrThrowAsync(connector, new System.Net.IPEndPoint(System.Net.IPAddress.Loopback, port));
 
             var serverPeer = await acceptTcs.Task.WaitAsync(System.TimeSpan.FromSeconds(1));
 
@@ -183,6 +184,17 @@ namespace PinionCore.Network.Tests
             lintener.Close();
 
             NUnit.Framework.Assert.AreEqual(true, breakEvent);
+        }
+
+        private static async System.Threading.Tasks.Task<PinionCore.Network.Tcp.Peer> ConnectOrThrowAsync(PinionCore.Network.Tcp.Connector connector, System.Net.IPEndPoint endPoint)
+        {
+            var result = await connector.ConnectAsync(endPoint).ConfigureAwait(false);
+            if (result.Exception != null)
+            {
+                throw result.Exception;
+            }
+
+            return result.Peer ?? throw new InvalidOperationException("Connector returned null peer.");
         }
     }
 }

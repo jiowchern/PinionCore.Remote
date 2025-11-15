@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using NUnit.Framework;
 using PinionCore.Remote;
 using PinionCore.Remote.Reactive;
+using System;
 
 namespace PinionCore.Integration.Tests
 {
@@ -31,7 +32,12 @@ namespace PinionCore.Integration.Tests
                 ex = exc;
             };
 
-            Network.Tcp.Peer peer = await client.Connector.ConnectAsync(new IPEndPoint(IPAddress.Loopback, port));
+            var connectResult = await client.Connector.ConnectAsync(new IPEndPoint(IPAddress.Loopback, port)).ConfigureAwait(false);
+            if (connectResult.Exception != null)
+            {
+                throw connectResult.Exception;
+            }
+            Network.Tcp.Peer peer = connectResult.Peer ?? throw new InvalidOperationException("Connector returned null peer.");
             var peerBreak = false;
             peer.BreakEvent += () =>
             {
@@ -95,7 +101,12 @@ namespace PinionCore.Integration.Tests
             // do connect
             System.Net.IPEndPoint endPoint;
             System.Net.IPEndPoint.TryParse($"127.0.0.1:{port}", out endPoint);
-            Network.Tcp.Peer peer = await client.Connector.ConnectAsync(endPoint);
+            var connectResult = await client.Connector.ConnectAsync(endPoint).ConfigureAwait(false);
+            if (connectResult.Exception != null)
+            {
+                throw connectResult.Exception;
+            }
+            Network.Tcp.Peer peer = connectResult.Peer ?? throw new InvalidOperationException("Connector returned null peer.");
 
             client.Agent.Enable(peer);
             // get values

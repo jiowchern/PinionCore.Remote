@@ -8,7 +8,18 @@ namespace PinionCore.Network.Tcp
 {
     public sealed class Connector
     {
-        public async Task<Peer> ConnectAsync(EndPoint remoteEP, TimeSpan timeout = default, CancellationToken ct = default)
+        public struct Result
+        {
+            public Peer Peer { get; }
+            public Exception? Exception { get; }
+            public Result(Peer peer, Exception? exception)
+            {
+                Peer = peer;
+                Exception = exception;
+            }
+        }
+
+        public async Task<Result> ConnectAsync(EndPoint remoteEP, TimeSpan timeout = default, CancellationToken ct = default)
         {
             if (timeout == default)
                 timeout = TimeSpan.FromMinutes(1);
@@ -36,18 +47,15 @@ namespace PinionCore.Network.Tcp
 
                 // 若完成的是 connectTask，此 await 幾乎是同步的
                 await connectTask.ConfigureAwait(false);
-                return new Peer(socket);
+                return new Result(new Peer(socket), null);
             }
-            catch (SocketException sex)
+            catch (Exception e)
             {
-                socket.Dispose();
-                throw new Exception($"Connect to {remoteEP} failed (SocketError: {sex.SocketErrorCode}).", sex);
+                return new Result(null, e);
             }
-            catch
-            {
-                socket.Dispose();
-                throw;
-            }
+           
+
+
         }
     }
 }

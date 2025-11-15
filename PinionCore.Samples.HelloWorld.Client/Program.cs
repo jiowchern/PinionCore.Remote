@@ -1,5 +1,6 @@
 ﻿using System.Net;
 using PinionCore.Samples.HelloWorld.Protocols;
+using System;
 
 namespace PinionCore.Samples.HelloWorld.Client
 {
@@ -20,12 +21,13 @@ namespace PinionCore.Samples.HelloWorld.Client
             var set = PinionCore.Remote.Client.Provider.CreateTcpAgent(protocol);
             var tcp = set.Connector;
             var agent = set.Agent;
-            var peer = await tcp.ConnectAsync(new IPEndPoint(ip, port));
-            if (peer == null)
+            var connectResult = await tcp.ConnectAsync(new IPEndPoint(ip, port)).ConfigureAwait(false);
+            if (connectResult.Exception != null)
             {
-                System.Console.WriteLine($"Failed to connect to {ip}:{port}");
-                return;
+                throw connectResult.Exception;
             }
+
+            var peer = connectResult.Peer ?? throw new InvalidOperationException($"Connector returned null peer for {ip}:{port}.");
             agent.Enable(peer);
             agent.QueryNotifier<Protocols.IGreeter>().Supply += (greeter) =>
             {

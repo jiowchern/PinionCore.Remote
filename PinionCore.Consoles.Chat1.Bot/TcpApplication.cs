@@ -43,12 +43,13 @@ namespace PinionCore.Consoles.Chat1.Bots
         private async Task AddBotAsync()
         {
             var set = PinionCore.Remote.Client.Provider.CreateTcpAgent(_protocol);
-            var peer = await set.Connector.ConnectAsync(_endPoint).ConfigureAwait(false);
-            if (peer == null)
+            var connectResult = await set.Connector.ConnectAsync(_endPoint).ConfigureAwait(false);
+            if (connectResult.Exception != null)
             {
-                System.Console.WriteLine($"Failed to connect to {_endPoint}.");
-                return;
+                throw connectResult.Exception;
             }
+
+            var peer = connectResult.Peer ?? throw new InvalidOperationException($"Connector returned null peer for {_endPoint}.");
 
             set.Agent.Enable(peer);
             var bot = new Bot(set.Agent);

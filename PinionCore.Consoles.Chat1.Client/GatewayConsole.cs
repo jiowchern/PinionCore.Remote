@@ -47,7 +47,13 @@ namespace PinionCore.Consoles.Chat1.Client
 
 
 
-                var peer = await tcpConnector.ConnectAsync(endpoint);
+                var connectResult = await tcpConnector.ConnectAsync(endpoint).ConfigureAwait(false);
+                if (connectResult.Exception != null)
+                {
+                    throw connectResult.Exception;
+                }
+
+                var peer = connectResult.Peer ?? throw new InvalidOperationException("Connector returned null peer.");
                 Agent.Enable(peer);
                 _Dispose = () => peer.Disconnect();
                 

@@ -58,7 +58,13 @@ namespace PinionCore.Consoles.Chat1.Server.Services.RegistryConnectionStates
                 var ipAddress = addresses[0];  // Use first resolved address
                 var endpoint = new IPEndPoint(ipAddress, _routerPort);
 
-                var peer = await connector.ConnectAsync(endpoint);
+                var connectResult = await connector.ConnectAsync(endpoint).ConfigureAwait(false);
+                if (connectResult.Exception != null)
+                {
+                    throw connectResult.Exception;
+                }
+
+                var peer = connectResult.Peer ?? throw new InvalidOperationException($"Connector returned null peer for endpoint {endpoint}.");
 
                 _registry.Agent.Enable(peer);
 

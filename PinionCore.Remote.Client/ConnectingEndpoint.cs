@@ -35,7 +35,13 @@ namespace PinionCore.Remote.Client.Tcp
 
         async Task<IStreamable> IConnectingEndpoint.ConnectAsync()
         {
-            var peer = await _Connector.ConnectAsync(EndPoint);
+            var result = await _Connector.ConnectAsync(EndPoint).ConfigureAwait(false);
+            if (result.Exception != null)
+            {
+                throw result.Exception;
+            }
+
+            var peer = result.Peer ?? throw new InvalidOperationException("Connector returned null peer without exception.");
             peer.SendEvent += SendEvent;
             peer.ReceiveEvent += ReceiveEvent;
             peer.SocketErrorEvent += SocketErrorEvent;
