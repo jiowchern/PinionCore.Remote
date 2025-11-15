@@ -26,7 +26,12 @@ namespace PinionCore.Integration.Tests
             var webPort = ports[1];
             var soul = new PinionCore.Remote.Server.Soul(entry, protocol);
 
-            var (disposeServer, errorInfos) = await soul.ListenAsync(new PinionCore.Remote.Server.Tcp.ListeningEndpoint(tcpPort, 10) , new PinionCore.Remote.Server.Web.ListeningEndpoint($"http://localhost:{webPort}/"));
+            var standaloneListener = new PinionCore.Remote.Standalone.ListeningEndpoint();
+            var (disposeServer, errorInfos) = await soul.ListenAsync(
+                new PinionCore.Remote.Server.Tcp.ListeningEndpoint(tcpPort, 10) ,
+                new PinionCore.Remote.Server.Web.ListeningEndpoint($"http://localhost:{webPort}/"),
+                standaloneListener
+               );
 
             foreach (var err in errorInfos)
             {
@@ -36,31 +41,39 @@ namespace PinionCore.Integration.Tests
             try
             {
                 var tcpConnector = new PinionCore.Remote.Client.Tcp.ConnectingEndpoint(new IPEndPoint(IPAddress.Loopback, tcpPort));
-                tcpConnector.BreakEvent += () =>
-                {
-                    Assert.Fail("Connection broken unexpectedly.");
-                };
+                var tcpGhost = new PinionCore.Remote.Client.Ghost(protocol);
+                var tcpDisposeClient = await tcpGhost.Connect(tcpConnector);
+                await RunGhostEchoTestAsync(tcpGhost);
+                tcpDisposeClient.Dispose();
 
-                // todo : 可以增加 web 連線的測試
+                var webConnector = new PinionCore.Remote.Client.Web.ConnectingEndpoint($"ws://localhost:{webPort}/");
+                var webGhost = new PinionCore.Remote.Client.Ghost(protocol);
+                var webDisposeClient = await webGhost.Connect(webConnector);
+                await RunGhostEchoTestAsync(webGhost);
+                webDisposeClient.Dispose();
 
-                await RunGhostEchoTestAsync(protocol, tcpConnector);
+
+                var standaloneGhost = new PinionCore.Remote.Client.Ghost(protocol);
+                var standaloneDisposeClient = await standaloneGhost.Connect(standaloneListener);
+                await RunGhostEchoTestAsync(standaloneGhost);
+                standaloneDisposeClient.Dispose();
+
             }
             catch
             {
                 throw;
             }
 
-
             disposeServer.Dispose();
         }
 
-        private static async Task RunGhostEchoTestAsync(Remote.IProtocol protocol, IConnectingEndpoint connectingEndpoint)
+        private static async Task RunGhostEchoTestAsync(Ghost ghost)
         {
             CancellationTokenSource? cts = null;
             Task? runTask = null;
-            var ghost = new PinionCore.Remote.Client.Ghost(protocol);
+            
 
-            var disposeClient = await ghost.Connect(connectingEndpoint);
+            
 
             cts = new CancellationTokenSource();
             runTask = Task.Run(CreateGhostProcessingLoop(ghost, cts), cts.Token);
@@ -75,7 +88,7 @@ namespace PinionCore.Integration.Tests
             cts.Cancel();
             await runTask;
 
-            disposeClient.Dispose();
+            
         }
 
         private static Remote.ISessionBinder CreateEchoBinder(Remote.Tools.Protocol.Sources.TestCommon.EchoTester echo)

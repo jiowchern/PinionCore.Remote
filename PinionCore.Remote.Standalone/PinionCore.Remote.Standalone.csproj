@@ -11,8 +11,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\PinionCore.Remote.Ghost\PinionCore.Remote.Ghost.csproj" />
-    <ProjectReference Include="..\PinionCore.Remote.Soul\PinionCore.Remote.Soul.csproj" />
+    <ProjectReference Include="..\PinionCore.Remote.Client\PinionCore.Remote.Client.csproj" />
+    <ProjectReference Include="..\PinionCore.Remote.Server\PinionCore.Remote.Server.csproj" />
   </ItemGroup>
 
 </Project>

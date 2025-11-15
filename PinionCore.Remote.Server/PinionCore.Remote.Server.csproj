@@ -15,4 +15,8 @@
 	  <ProjectReference Include="..\PinionCore.Remote.Soul\PinionCore.Remote.Soul.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Standalone\" />
+  </ItemGroup>
+
 </Project>
