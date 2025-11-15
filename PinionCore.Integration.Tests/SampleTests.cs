@@ -12,7 +12,7 @@ namespace PinionCore.Integration.Tests
     public class SampleTests
     {
         [Test,Timeout(5000)]
-        public async Task TcpSampleTest()
+        public async Task SampleTest()
         {
             var echo = new PinionCore.Remote.Tools.Protocol.Sources.TestCommon.EchoTester(1);
             var entry = NSubstitute.Substitute.For<PinionCore.Remote.IEntry>();
@@ -21,9 +21,9 @@ namespace PinionCore.Integration.Tests
             var protocol = PinionCore.Remote.Tools.Protocol.Sources.TestCommon.ProtocolProvider.CreateCase1();
 
             var port = PinionCore.Network.Tcp.Tools.GetAvailablePort();
-            var host = new PinionCore.Remote.Server.Soul(entry, protocol);
+            var soul = new PinionCore.Remote.Server.Soul(entry, protocol);
 
-            var disposeServer = await host.ListenAsync(new PinionCore.Remote.Server.Tcp.ListeningEndpoint(port, 10));
+            var disposeServer = await soul.ListenAsync(new PinionCore.Remote.Server.Tcp.ListeningEndpoint(port, 10));
 
             var ghost = new PinionCore.Remote.Client.Ghost(protocol);
 
