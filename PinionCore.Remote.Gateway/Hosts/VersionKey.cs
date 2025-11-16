@@ -16,7 +16,10 @@ namespace PinionCore.Remote.Gateway.Hosts
 
         public override int GetHashCode() =>
             _versionString.GetHashCode();
-        
+
+        public override string ToString() => $"VersionKey({_versionString})";
+
+
     }
 }
 

@@ -41,6 +41,7 @@ namespace PinionCore.Remote.Gateway.Hosts
                 var key = new VersionKey(version);
                 if (!_Coordinators.TryGetValue(key, out var coordinator))
                 {
+                    PinionCore.Utility.Log.Instance.WriteInfo($"Creating SessionCoordinator for version {key}");
                     coordinator = new SessionCoordinator(_SelectionStrategy);
                     _Coordinators[key] = coordinator;
                 }
