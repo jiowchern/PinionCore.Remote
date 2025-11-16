@@ -455,9 +455,9 @@ Sample/Protocol> dotnet new classlib
 
 ```xml
 <ItemGroup>
-  <PackageReference Include="PinionCore.Remote" Version="0.1.14.15" />
-  <PackageReference Include="PinionCore.Serialization" Version="0.1.14.12" />
-  <PackageReference Include="PinionCore.Remote.Tools.Protocol.Sources" Version="0.0.4.25">
+  <PackageReference Include="PinionCore.Remote" Version="0.2.0.0" />
+  <PackageReference Include="PinionCore.Serialization" Version="0.2.0.0" />
+  <PackageReference Include="PinionCore.Remote.Tools.Protocol.Sources" Version="0.2.0.0">
     <PrivateAssets>all</PrivateAssets>
     <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
   </PackageReference>
@@ -523,7 +523,7 @@ Sample/Server> dotnet new console
 
 ```xml
 <ItemGroup>
-  <PackageReference Include="PinionCore.Remote.Server" Version="0.1.14.13" />
+  <PackageReference Include="PinionCore.Remote.Server" Version="0.2.0.0" />
   <ProjectReference Include="..\Protocol\Protocol.csproj" />
 </ItemGroup>
 ```
@@ -641,8 +641,8 @@ Sample/Client> dotnet new console
 
 ```xml
 <ItemGroup>
-  <PackageReference Include="PinionCore.Remote.Client" Version="0.1.14.12" />
-  <PackageReference Include="PinionCore.Remote.Reactive" Version="0.1.14.13" />
+  <PackageReference Include="PinionCore.Remote.Client" Version="0.2.0.0" />
+  <PackageReference Include="PinionCore.Remote.Reactive" Version="0.2.0.0" />
   <ProjectReference Include="..\Protocol\Protocol.csproj" />
 </ItemGroup>
 ```

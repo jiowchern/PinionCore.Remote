@@ -3,10 +3,10 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>0.1.14.15</Version>
+    <Version>0.2.0.0</Version>
     <PackageProjectUrl>https://github.com/jiowchern/PinionCore.Remote</PackageProjectUrl>
     <Authors>jc</Authors>
-    <Description>remote core.</Description>
+    <Description>Core library for interface-oriented remote communication. Provides fundamental abstractions including IEntry, ISessionBinder, ISoul, and state types (Value, Property, Notifier) for building distributed applications.</Description>
 	  <LangVersion>8.0</LangVersion>
   </PropertyGroup>
   

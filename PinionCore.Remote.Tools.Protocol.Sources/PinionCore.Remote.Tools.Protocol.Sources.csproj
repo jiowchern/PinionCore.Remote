@@ -6,12 +6,12 @@
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>    
     <DevelopmentDependency>true</DevelopmentDependency>
     <NoPackageAnalysis>true</NoPackageAnalysis>
-    <Version>0.0.4.25</Version>
+    <Version>0.2.0.0</Version>
     <PackageProjectUrl>https://github.com/jiowchern/PinionCore.Remote</PackageProjectUrl>
     <Authors>jc</Authors>
 	  <IncludeBuildOutput>false</IncludeBuildOutput>
 
-	  <Description>regulus remote protocol source generate.</Description>
+	  <Description>Source Generator for automatic IProtocol implementation. Analyzes interface definitions marked with [PinionCore.Remote.Protocol.Creator] and generates protocol code at compile-time, eliminating manual protocol maintenance.</Description>
   </PropertyGroup>
 
   <ItemGroup>	  

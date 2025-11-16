@@ -3,10 +3,10 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>0.1.14.12</Version>
+    <Version>0.2.0.0</Version>
     <PackageProjectUrl>https://github.com/jiowchern/PinionCore.Remote</PackageProjectUrl>
     <Authors>jc</Authors>
-    <Description>network.</Description>
+    <Description>Network transport abstraction layer. Provides IStreamable interface and implementations for TCP/WebSocket peers, packet read/write utilities, and low-level network communication primitives.</Description>
   </PropertyGroup>
 
   <ItemGroup>

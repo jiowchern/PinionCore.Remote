@@ -3,10 +3,10 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>    
-    <Version>0.1.14.12</Version>
+    <Version>0.2.0.0</Version>
     <PackageProjectUrl>https://github.com/jiowchern/PinionCore.Remote</PackageProjectUrl>
     <Authors>jc</Authors>
-    <Description>client.</Description>
+    <Description>Client-side implementation library. Provides Proxy wrapper, IConnectingEndpoint interface, TCP/WebSocket connecting endpoints, and connection utilities (AgentExtensions.Connect) for building remote clients.</Description>
   </PropertyGroup>
 
   <ItemGroup>

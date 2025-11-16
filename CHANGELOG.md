@@ -9,6 +9,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### 2025-11-16
 
+#### Changed
+- Upgraded all package versions from `0.1.x.x` to `0.2.0.0` (minor version bump)
+  - **Lib Folder Projects**:
+    - PinionCore.Remote: `0.1.14.15` → `0.2.0.0`
+    - PinionCore.Network: `0.1.14.12` → `0.2.0.0`
+    - PinionCore.Serialization: `0.1.14.12` → `0.2.0.0`
+    - PinionCore.Remote.Soul: `0.1.14.14` → `0.2.0.0`
+    - PinionCore.Remote.Ghost: `0.1.14.13` → `0.2.0.0`
+    - PinionCore.Remote.Reactive: `0.1.14.13` → `0.2.0.0`
+    - PinionCore.Utility: `0.1.14.14` → `0.2.0.0`
+  - **Publish Folder Projects**:
+    - PinionCore.Remote.Standalone: `0.1.14.14` → `0.2.0.0`
+    - PinionCore.Remote.Server: `0.1.14.13` → `0.2.0.0`
+    - PinionCore.Remote.Client: `0.1.14.12` → `0.2.0.0`
+    - PinionCore.Remote.Tools.Protocol.Sources: `0.0.4.25` → `0.2.0.0`
+    - PinionCore.Remote.Protocol.Identify: `0.0.1.1` → `0.2.0.0`
+    - PinionCore.Remote.Gateway: Added version `0.2.0.0` with NuGet packaging support
+    - PinionCore.Remote.Gateway.Protocols: Added version `0.2.0.0` with NuGet packaging support
+
 #### Added
 - Added support for multiple transport modes (TCP/WebSocket/Standalone) with behavioral consistency verification.
 - Added `PinionCore.Remote.Standalone.ListeningEndpoint` class to support Standalone mode listening.

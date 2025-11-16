@@ -2,11 +2,11 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
-    <Version>0.1.14.14</Version>
+    <Version>0.2.0.0</Version>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageProjectUrl>https://github.com/jiowchern/PinionCore.Remote</PackageProjectUrl>
     <Authors>jc</Authors>
-    <Description>backend lib.</Description>
+    <Description>Server-side session management library. Implements SessionEngine for managing client sessions, handling bind/unbind operations, and coordinating remote object lifecycle on the server.</Description>
   </PropertyGroup>
 
   <ItemGroup>

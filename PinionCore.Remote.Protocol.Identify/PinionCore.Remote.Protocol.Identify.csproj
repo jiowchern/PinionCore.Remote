@@ -3,10 +3,10 @@
   <PropertyGroup>
 	  <TargetFramework>netstandard2.1</TargetFramework>
 	  <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-	  <Version>0.0.1.1</Version>
+	  <Version>0.2.0.0</Version>
 	  <PackageProjectUrl>https://github.com/jiowchern/PinionCore.Remote</PackageProjectUrl>
 	  <Authors>jc</Authors>
-	  <Description></Description>
+	  <Description>Protocol identification and versioning utilities. Provides interfaces and types for protocol version management, enabling version coexistence and smooth protocol upgrades in distributed systems.</Description>
   </PropertyGroup>
 
 </Project>
