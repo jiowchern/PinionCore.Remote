@@ -27,7 +27,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.BlockModifiers
                 return null;
             }
 
-            if (md.ParameterList.Parameters.Count != 3)
+            if (md.ParameterList.Parameters.Count != 4)
             {
                 return null;
             }
@@ -48,6 +48,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.BlockModifiers
             ParameterSyntax p0 = md.ParameterList.Parameters[0];
             ParameterSyntax p1 = md.ParameterList.Parameters[1];
             ParameterSyntax p2 = md.ParameterList.Parameters[2];
+            ParameterSyntax p3 = md.ParameterList.Parameters[3];
 
             if (!_IsByteArray(p0.Type))
             {
@@ -60,6 +61,11 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.BlockModifiers
             }
 
             if (!_IsIntType(p2.Type))
+            {
+                return null;
+            }
+
+            if (!_IsCancellationToken(p3.Type))
             {
                 return null;
             }
@@ -77,7 +83,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.BlockModifiers
                 Block = SyntaxFactory.Block(SyntaxFactory.ParseStatement($@"
 var returnValue = new PinionCore.Remote.Value<int>();
 
-this._CallStreamMethodEvent({id}, {pNames[0]}, {pNames[1]}, {pNames[2]}, returnValue);
+this._CallStreamMethodEvent({id}, {pNames[0]}, {pNames[1]}, {pNames[2]}, {pNames[3]}, returnValue);
 return returnValue;
 ")),
                 Types = md.ParameterList.Parameters.Select(p => p.Type)
@@ -97,6 +103,11 @@ return returnValue;
         private static bool _IsIntType(TypeSyntax type)
         {
             return _IsNamedType(type, "int", "System.Int32");
+        }
+
+        private static bool _IsCancellationToken(TypeSyntax type)
+        {
+            return _IsNamedType(type, "CancellationToken", "System.Threading.CancellationToken");
         }
 
         private static bool _IsAwaitableInt(TypeSyntax type)

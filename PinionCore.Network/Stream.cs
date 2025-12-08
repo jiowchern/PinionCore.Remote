@@ -1,4 +1,5 @@
-﻿using PinionCore.Remote;
+﻿using System.Threading;
+using PinionCore.Remote;
 namespace PinionCore.Network
 {
     public class Stream : Network.IStreamable
@@ -22,16 +23,19 @@ namespace PinionCore.Network
             return Send.Pop(buffer, offset, count);
         }
 
-        IAwaitableSource<int> IStreamable.Send(byte[] buffer, int offset, int count)
+        IAwaitableSource<int> IStreamable.Send(byte[] buffer, int offset, int count, CancellationToken token)
         {
+            if (token.IsCancellationRequested)
+                return 0.ToWaitableValue();
             return Send.Push(buffer, offset, count);
         }
 
 
 
-        IAwaitableSource<int> IStreamable.Receive(byte[] buffer, int offset, int count)
+        IAwaitableSource<int> IStreamable.Receive(byte[] buffer, int offset, int count, CancellationToken token)
         {
-
+            if (token.IsCancellationRequested)
+                return 0.ToWaitableValue();
             return Receive.Pop(buffer, offset, count);
         }
 

@@ -325,7 +325,7 @@ interface IA {
         {
             var source = @"
 interface IA {
-    PinionCore.Remote.IAwaitableSource<System.Int32> StreamableMethod(System.Byte[] buffer, System.Int32 offset, System.Int32 count);
+    PinionCore.Remote.IAwaitableSource<System.Int32> StreamableMethod(System.Byte[] buffer, System.Int32 offset, System.Int32 count, System.Threading.CancellationToken token);
 }
 ";
             SyntaxTree tree = Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(source);
@@ -340,7 +340,7 @@ interface IA {
             cia = modifier.Type;
 
             BlockSyntax exp = cia.DescendantNodes().OfType<BlockSyntax>().Single();
-            NUnit.Framework.Assert.AreEqual(2, modifier.TypesOfSerialization.Count());
+            NUnit.Framework.Assert.AreEqual(3, modifier.TypesOfSerialization.Count());
             NUnit.Framework.Assert.False(builder.Expression.IsEquivalentTo(exp));
             NUnit.Framework.Assert.IsTrue(exp.ToFullString().Contains("_CallStreamMethodEvent"));
         }

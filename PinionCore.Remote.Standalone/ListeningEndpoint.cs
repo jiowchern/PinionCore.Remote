@@ -1,5 +1,5 @@
 ﻿using System;
-
+using System.Threading;
 using System.Threading.Tasks;
 using PinionCore.Network;
 using PinionCore.Remote.Client;
@@ -87,14 +87,18 @@ namespace PinionCore.Remote.Standalone
                 _Endpoint = endpoint;
             }
 
-            public IAwaitableSource<int> Receive(byte[] buffer, int offset, int count)
+            public IAwaitableSource<int> Receive(byte[] buffer, int offset, int count, CancellationToken token)
             {
-                return _ClientStream.Receive(buffer, offset, count);
+                if (token.IsCancellationRequested)
+                    return 0.ToWaitableValue();
+                return _ClientStream.Receive(buffer, offset, count, token);
             }
 
-            public IAwaitableSource<int> Send(byte[] buffer, int offset, int count)
+            public IAwaitableSource<int> Send(byte[] buffer, int offset, int count, CancellationToken token)
             {
-                return _ClientStream.Send(buffer, offset, count);
+                if (token.IsCancellationRequested)
+                    return 0.ToWaitableValue();
+                return _ClientStream.Send(buffer, offset, count, token);
             }
 
             public void Dispose()

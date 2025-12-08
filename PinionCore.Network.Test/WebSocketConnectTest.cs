@@ -30,9 +30,9 @@ namespace PinionCore.Network.Tests
             }
             IStreamable server = peerServer;
             var serverReceiveBuffer = new byte[5];
-            Remote.IAwaitableSource<int> serverReceiveTask = server.Receive(serverReceiveBuffer, 0, 5);
+            Remote.IAwaitableSource<int> serverReceiveTask = server.Receive(serverReceiveBuffer, 0, 5, CancellationToken.None);
             IStreamable client = peerClient;
-            var clientSendCount = await client.Send(new byte[] { 1, 2, 3, 4, 5 }, 0, 5);
+            var clientSendCount = await client.Send(new byte[] { 1, 2, 3, 4, 5 }, 0, 5, CancellationToken.None);
 
             var serverReceiveCount = await serverReceiveTask;
 

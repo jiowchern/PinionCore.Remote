@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
 using PinionCore.Remote;
 namespace PinionCore.Network
 {
@@ -27,12 +28,20 @@ namespace PinionCore.Network
 
         class Waiter
         {
+            public CancellationToken Cancel;
             public NoWaitValue<int> SyncWait;
             public ArraySegment<byte> Buffer;
 
         }
         readonly System.Collections.Generic.Queue<Waiter> _Waiters;
-        private readonly System.Collections.Generic.Queue<BufferSegment> _Segments;
+
+        class SegmentedBuffer
+        {
+            public BufferSegment Buffer;
+            public CancellationToken Cancel;
+        }
+
+        private readonly System.Collections.Generic.Queue<SegmentedBuffer> _Segments;
 
 
         public BufferRelay()
@@ -40,27 +49,30 @@ namespace PinionCore.Network
 
 
             _Waiters = new Queue<Waiter>();
-            _Segments = new System.Collections.Generic.Queue<BufferSegment>();
+            _Segments = new System.Collections.Generic.Queue<SegmentedBuffer>();
 
 
         }
 
-        public IAwaitableSource<int> Push(byte[] buffer, int offset, int count)
+        public IAwaitableSource<int> Push(byte[] buffer, int offset, int count,CancellationToken cancellation)
         {
             lock (_Segments)
             {
-                _Segments.Enqueue(new BufferSegment(buffer, offset, count));
+                _Segments.Enqueue(new SegmentedBuffer()
+                {
+                    Buffer = new BufferSegment(buffer, offset, count),
+                    Cancel = cancellation
+                });
             }
             _Digestion();
             return new NoWaitValue<int>(count);
         }
 
-        public IAwaitableSource<int> Pop(byte[] buffer, int offset, int count)
+        public IAwaitableSource<int> Pop(byte[] buffer, int offset, int count,CancellationToken cancellation)
         {
-            var waiter = new Waiter() { SyncWait = new NoWaitValue<int>(), Buffer = new ArraySegment<byte>(buffer, offset, count) };
+            var waiter = new Waiter() { SyncWait = new NoWaitValue<int>(), Buffer = new ArraySegment<byte>(buffer, offset, count) ,Cancel = cancellation};
             lock (_Waiters)
             {
-
                 _Waiters.Enqueue(waiter);
             }
             _Digestion();
@@ -77,14 +89,13 @@ namespace PinionCore.Network
         void _Digestion()
         {
             Tuple<Waiter, int> waiter = _ProcessWaiters(_Waiters, _Segments);
-            if (waiter != null)
+            if (waiter == null)
             {
-
-
-                waiter.Item1.SyncWait.SetValue(waiter.Item2);
+                return;
             }
+            waiter.Item1.SyncWait.SetValue(waiter.Item2);
         }
-        private Tuple<Waiter, int> _ProcessWaiters(Queue<Waiter> waiters, Queue<BufferSegment> buffers)
+        private Tuple<Waiter, int> _ProcessWaiters(Queue<Waiter> waiters, Queue<SegmentedBuffer> buffers)
         {
             lock (waiters)
             {
@@ -94,9 +105,14 @@ namespace PinionCore.Network
                     {
                         return null;
                     }
-                    Waiter waiter = waiters.Dequeue();
-                    var count = _ProcessQueue(buffers, waiter.Buffer.Array, waiter.Buffer.Offset, waiter.Buffer.Count);
 
+                    Waiter waiter = waiters.Dequeue();
+                    if(waiter.Cancel.IsCancellationRequested)
+                    {
+                        return new Tuple<Waiter, int>(waiter, 0);
+                    }
+
+                    var count = _ProcessQueue(buffers, waiter.Buffer.Array, waiter.Buffer.Offset, waiter.Buffer.Count);
                     return new Tuple<Waiter, int>(waiter, count);
                 }
             }
@@ -105,12 +121,13 @@ namespace PinionCore.Network
         }
 
 
-        private int _ProcessQueue(System.Collections.Generic.Queue<BufferSegment> queue, byte[] buffer, int offset, int count)
+        private int _ProcessQueue(System.Collections.Generic.Queue<SegmentedBuffer> queue, byte[] buffer, int offset, int count)
         {
             var totalRead = 0;
             while (totalRead < count && queue.Count > 0)
             {
-                BufferSegment segment = queue.Peek();
+                var segBuf = queue.Peek();
+                BufferSegment segment = segBuf.Buffer;
                 var bytesToCopy = Math.Min(segment.Length, count - totalRead);
 
                 // 使用 Span 进行高效的内存复制
@@ -133,14 +150,18 @@ namespace PinionCore.Network
             return totalRead;
         }
 
-        IAwaitableSource<int> IStreamable.Receive(byte[] buffer, int offset, int count)
+        IAwaitableSource<int> IStreamable.Receive(byte[] buffer, int offset, int count, CancellationToken token)
         {
-            return Pop(buffer, offset, count);
+            if (token.IsCancellationRequested)
+                return 0.ToWaitableValue();
+            return Pop(buffer, offset, count, token);
         }
 
-        IAwaitableSource<int> IStreamable.Send(byte[] buffer, int offset, int count)
+        IAwaitableSource<int> IStreamable.Send(byte[] buffer, int offset, int count, CancellationToken token)
         {
-            return Push(buffer, offset, count);
+            if (token.IsCancellationRequested)
+                return 0.ToWaitableValue();
+            return Push(buffer, offset, count, token);
         }
 
         void IDisposable.Dispose()

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using PinionCore.Remote.ProviderHelper;
 
 namespace PinionCore.Remote
@@ -74,7 +75,7 @@ namespace PinionCore.Remote
             _ResponseEvent(ClientToServerOpCode.CallMethod, _InternalSerializable.Serialize(package));
         }
 
-        public void RunStream(int method_id, byte[] buffer, int offset, int count, Value<int> return_value)
+        public void RunStream(int method_id, byte[] buffer, int offset, int count, CancellationToken token, Value<int> return_value)
         {
             if (return_value == null)
             {

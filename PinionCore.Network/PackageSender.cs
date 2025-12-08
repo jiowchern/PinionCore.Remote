@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 using PinionCore.Memorys;
 
@@ -87,7 +88,7 @@ namespace PinionCore.Network
             var sendCount = 0;
             do
             {
-                var count = await _Stream.Send(buffer.Bytes.Array, buffer.Bytes.Offset + sendCount, buffer.Count - sendCount);
+                var count = await _Stream.Send(buffer.Bytes.Array, buffer.Bytes.Offset + sendCount, buffer.Count - sendCount, CancellationToken.None);
                 if (count == 0)
                     return 0;
                 sendCount += count;

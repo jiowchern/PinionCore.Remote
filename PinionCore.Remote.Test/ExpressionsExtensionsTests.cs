@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using System.Threading;
 using NSubstitute;
 using NUnit.Framework;
 using PinionCore.Memorys;
@@ -34,7 +35,7 @@ namespace RemotingTest
             await cd.Push(buf, 0, buf.Length);
 
             var recvBuf = new byte[buf.Length];
-            await peer.Receive(recvBuf, 0, recvBuf.Length);
+            await peer.Receive(recvBuf, 0, recvBuf.Length, CancellationToken.None);
             var responsePkg = (PinionCore.Remote.Packages.ResponsePackage)internalSerializable.Deserialize(recvBuf.AsBuffer());
             var lordsoulPkg = (PinionCore.Remote.Packages.PackageLoadSoul)internalSerializable.Deserialize(responsePkg.Data.AsBuffer());
             Assert.AreEqual(ServerToClientOpCode.LoadSoul, responsePkg.Code);
@@ -58,7 +59,7 @@ namespace RemotingTest
             await cd.Push(buf, 1, buf.Length - 1);
 
             var recvBuf = new byte[buf.Length];
-            await peer.Receive(recvBuf, 0, recvBuf.Length);
+            await peer.Receive(recvBuf, 0, recvBuf.Length, CancellationToken.None);
             //await peer.Receive(recvBuf, 1, recvBuf.Length - 1);
             var responsePkg = (PinionCore.Remote.Packages.ResponsePackage)internalSerializable.Deserialize(recvBuf.AsBuffer());
             var lordsoulPkg = (PinionCore.Remote.Packages.PackageLoadSoul)internalSerializable.Deserialize(responsePkg.Data.AsBuffer());

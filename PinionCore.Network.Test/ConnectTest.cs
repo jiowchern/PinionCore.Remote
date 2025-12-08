@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using System.Threading;
 using NUnit.Framework;
 using PinionCore.Remote;
 using System;
@@ -31,9 +32,9 @@ namespace PinionCore.Network.Tests
             await cd.Push(sendBuf, 0, sendBuf.Length);
 
 
-            var receiveCount1 = await peer.Receive(recvBuf, 0, 4);
-            var receiveCount2 = await peer.Receive(recvBuf, 4, 5);
-            var receiveCount3 = await peer.Receive(recvBuf, 9, 2);
+            var receiveCount1 = await peer.Receive(recvBuf, 0, 4, CancellationToken.None);
+            var receiveCount2 = await peer.Receive(recvBuf, 4, 5, CancellationToken.None);
+            var receiveCount3 = await peer.Receive(recvBuf, 9, 2, CancellationToken.None);
 
             Assert.AreEqual(4, receiveCount1);
             Assert.AreEqual(5, receiveCount2);
@@ -49,10 +50,10 @@ namespace PinionCore.Network.Tests
             var cd = new Stream();
             var peer = cd as IStreamable;
 
-            IAwaitableSource<int> result1 = peer.Send(sendBuf, 0, 4);
+            IAwaitableSource<int> result1 = peer.Send(sendBuf, 0, 4, CancellationToken.None);
             var sendResult1 = await result1;
 
-            IAwaitableSource<int> result2 = peer.Send(sendBuf, 4, 6);
+            IAwaitableSource<int> result2 = peer.Send(sendBuf, 4, 6, CancellationToken.None);
             var sendResult2 = await result2;
 
 
@@ -167,7 +168,7 @@ namespace PinionCore.Network.Tests
             {
                 IStreamable streamable = peer;
                 var buffer = new byte[1024];
-                var count = await streamable.Send(buffer, 0, buffer.Length);
+                var count = await streamable.Send(buffer, 0, buffer.Length, CancellationToken.None);
             }
 
             await peer.Disconnect(false);
@@ -175,8 +176,8 @@ namespace PinionCore.Network.Tests
             {
                 IStreamable streamable = serverPeer;
                 var buffer = new byte[1024];
-                var count = await streamable.Receive(buffer, 0, buffer.Length);
-                var count2 = await streamable.Receive(buffer, 0, buffer.Length);
+                var count = await streamable.Receive(buffer, 0, buffer.Length, CancellationToken.None);
+                var count2 = await streamable.Receive(buffer, 0, buffer.Length, CancellationToken.None);
             }
 
             await breakEventTcs.Task.WaitAsync(System.TimeSpan.FromSeconds(1));

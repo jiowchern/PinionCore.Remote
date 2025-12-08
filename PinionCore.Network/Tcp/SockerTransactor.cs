@@ -3,6 +3,7 @@ using System.Net.Sockets;
 
 namespace PinionCore.Network.Tcp
 {
+    using System.Threading;
     using PinionCore.Remote;
 
     public class SockerTransactor
@@ -12,7 +13,7 @@ namespace PinionCore.Network.Tcp
 
         readonly OnStart _StartHandler;
 
-        public delegate int OnEnd(IAsyncResult arg);
+        public delegate int OnEnd(IAsyncResult arg, CancellationToken token);
         readonly OnEnd _EndHandler;
 
         event Action<SocketError> _SocketErrorEvent;
@@ -38,7 +39,7 @@ namespace PinionCore.Network.Tcp
         }
 
 
-        public IAwaitableSource<int> Transact(byte[] buffer, int offset, int count)
+        public IAwaitableSource<int> Transact(byte[] buffer, int offset, int count,CancellationToken token)
         {
             SocketError error;
             IAsyncResult ar = _StartHandler(buffer, offset, count, SocketFlags.None, out error, _StartDone, null);
@@ -53,7 +54,7 @@ namespace PinionCore.Network.Tcp
 
             }
 
-            return System.Threading.Tasks.Task<int>.Factory.FromAsync(ar, (a) => { return _EndHandler(a); }).ToWaitableValue();
+            return System.Threading.Tasks.Task<int>.Factory.FromAsync(ar, (a) => { return _EndHandler(a, token); }).ToWaitableValue();
         }
         private void _StartDone(IAsyncResult arg)
         {

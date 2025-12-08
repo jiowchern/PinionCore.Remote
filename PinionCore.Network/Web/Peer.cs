@@ -25,20 +25,25 @@ namespace PinionCore.Network.Web
             _CancelSource.Cancel();
         }
 
-        IAwaitableSource<int> IStreamable.Receive(byte[] buffer, int offset, int count)
+        IAwaitableSource<int> IStreamable.Receive(byte[] buffer, int offset, int count, System.Threading.CancellationToken token)
         {
+            if (token.IsCancellationRequested)
+                return 0.ToWaitableValue();
+
             if (_Socket.State == WebSocketState.Aborted)
             {
                 ErrorEvent?.Invoke(_Socket.State);
                 return 0.ToWaitableValue();
             }
 
-
+            var linkedTokenSource = System.Threading.CancellationTokenSource.CreateLinkedTokenSource(_CancelSource.Token, token);
             var segment = new ArraySegment<byte>(buffer, offset, count);
-            return _Socket.ReceiveAsync(segment, _CancelSource.Token).ContinueWith<int>((t) =>
+            return _Socket.ReceiveAsync(segment, linkedTokenSource.Token).ContinueWith<int>((t) =>
             {
                 try
                 {
+                    if (t.IsCanceled)
+                        return 0;
 
                     WebSocketReceiveResult r = t.Result;
                     return r.Count;
@@ -55,16 +60,23 @@ namespace PinionCore.Network.Web
             }).ToWaitableValue();
         }
 
-        IAwaitableSource<int> IStreamable.Send(byte[] buffer, int offset, int count)
+        IAwaitableSource<int> IStreamable.Send(byte[] buffer, int offset, int count, System.Threading.CancellationToken token)
         {
+            if (token.IsCancellationRequested)
+                return 0.ToWaitableValue();
+
             if (_Socket.State == WebSocketState.Aborted)
             {
                 ErrorEvent?.Invoke(_Socket.State);
                 return 0.ToWaitableValue();
             }
+
+            var linkedTokenSource = System.Threading.CancellationTokenSource.CreateLinkedTokenSource(_CancelSource.Token, token);
             var arraySegment = new ArraySegment<byte>(buffer, offset, count);
-            return _Socket.SendAsync(arraySegment, WebSocketMessageType.Binary, true, _CancelSource.Token).ContinueWith((t) =>
+            return _Socket.SendAsync(arraySegment, WebSocketMessageType.Binary, true, linkedTokenSource.Token).ContinueWith((t) =>
             {
+                if (t.IsCanceled)
+                    return 0;
                 return count;
             }).ToWaitableValue();
 

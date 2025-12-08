@@ -160,7 +160,7 @@ namespace PinionCore.Remote
 
             try
             {
-                var args = new object[] { buffer, 0, count };
+                var args = new object[] { buffer, 0, count, System.Threading.CancellationToken.None };
                 var returnValue = info.Invoke(soul.ObjectInstance, args);
                 if (returnValue is IAwaitableSource<int> awaitable)
                 {

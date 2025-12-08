@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 using PinionCore.Network;
 using PinionCore.Remote;
 using PinionCore.Remote.Gateway.Protocols;
@@ -13,14 +14,18 @@ namespace PinionCore.Remote.Gateway.Hosts
             public IAgent Agent { get; set; }
             public IStreamable Stream { get; set; }
 
-            public IAwaitableSource<int> Send(byte[] buffer, int offset, int count)
+            public IAwaitableSource<int> Send(byte[] buffer, int offset, int count, CancellationToken token)
             {
-                return Stream.Send(buffer, offset, count);
+                if (token.IsCancellationRequested)
+                    return 0.ToWaitableValue();
+                return Stream.Send(buffer, offset, count, token);
             }
 
-            public IAwaitableSource<int> Receive(byte[] buffer, int offset, int count)
+            public IAwaitableSource<int> Receive(byte[] buffer, int offset, int count, CancellationToken token)
             {
-                return Stream.Receive(buffer, offset, count);
+                if (token.IsCancellationRequested)
+                    return 0.ToWaitableValue();
+                return Stream.Receive(buffer, offset, count, token);
             }
 
             void IDisposable.Dispose()

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Net.Sockets;
+using System.Threading;
 
 namespace PinionCore.Network.Tcp
 {
@@ -45,12 +46,14 @@ namespace PinionCore.Network.Tcp
             }
         }
 
-        IAwaitableSource<int> IStreamable.Receive(byte[] buffer, int offset, int count)
-        {
-            return _Receive.Transact(buffer, offset, count);
+        IAwaitableSource<int> IStreamable.Receive(byte[] buffer, int offset, int count, CancellationToken token)
+        {            
+            return _Receive.Transact(buffer, offset, count, token);
         }
-        private int _EndReceive(IAsyncResult arg)
+        private int _EndReceive(IAsyncResult arg, CancellationToken token)
         {
+            if(token.IsCancellationRequested)
+                return 0;
 
             SocketError error;
 
@@ -62,14 +65,15 @@ namespace PinionCore.Network.Tcp
             _SocketErrorEvent(error);
             return size;
         }
-        IAwaitableSource<int> IStreamable.Send(byte[] buffer, int offset, int buffer_length)
-        {
-            return _Send.Transact(buffer, offset, buffer_length);
-
+        IAwaitableSource<int> IStreamable.Send(byte[] buffer, int offset, int buffer_length, CancellationToken token)
+        {         
+            return _Send.Transact(buffer, offset, buffer_length, token);
         }
 
-        private int _EndSend(IAsyncResult arg)
+        private int _EndSend(IAsyncResult arg, CancellationToken token)
         {
+            if (token.IsCancellationRequested)
+                return 0;
             SocketError error;
 
             var size = Socket.EndSend(arg, out error);

@@ -39,8 +39,12 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon
             return new HelloReply() { Message = request.Name };
         }
 
-        IAwaitableSource<int> IMethodable.StreamableMethod(byte[] buffer, int offset, int count)
+        IAwaitableSource<int> IMethodable.StreamableMethod(byte[] buffer, int offset, int count, System.Threading.CancellationToken token)
         {
+            if (token.IsCancellationRequested)
+            {
+                return new PinionCore.Network.NoWaitValue<int>(0);
+            }
             for (int i = 0; i < count; i++)
             {
                 buffer[offset + i] = (byte)i;

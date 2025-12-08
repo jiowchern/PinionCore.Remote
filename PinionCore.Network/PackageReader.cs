@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using PinionCore.Remote;
 
@@ -107,7 +108,7 @@ namespace PinionCore.Network
 
         private async Task<int> _ReadFromStream(byte[] buffer, int offset, int count)
         {
-            var receiveAwaitable = _Stream.Receive(buffer, offset, count);
+            var receiveAwaitable = _Stream.Receive(buffer, offset, count, CancellationToken.None);
             var result = await receiveAwaitable;
             return result;
 

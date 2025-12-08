@@ -15,6 +15,6 @@
 
         PinionCore.Remote.Value MethodNoValue(TestStruct arg1);
 
-        IAwaitableSource<int> StreamableMethod(byte[] buffer, int offset, int count);
+        IAwaitableSource<int> StreamableMethod(byte[] buffer, int offset, int count, System.Threading.CancellationToken token);
     }
 }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
 using PinionCore.Network;
 
 namespace PinionCore.Remote.Tests
@@ -17,8 +18,11 @@ namespace PinionCore.Remote.Tests
 
 
 
-        IAwaitableSource<int> IStreamable.Receive(byte[] buffer, int offset, int count)
+        IAwaitableSource<int> IStreamable.Receive(byte[] buffer, int offset, int count, CancellationToken token)
         {
+            if (token.IsCancellationRequested)
+                return 0.ToWaitableValue();
+
             return System.Threading.Tasks.Task.Run(() =>
             {
                 if (_Buffer.Count > 0)
@@ -36,8 +40,10 @@ namespace PinionCore.Remote.Tests
 
         }
 
-        IAwaitableSource<int> IStreamable.Send(byte[] buffer, int offset, int count)
+        IAwaitableSource<int> IStreamable.Send(byte[] buffer, int offset, int count, CancellationToken token)
         {
+            if (token.IsCancellationRequested)
+                return 0.ToWaitableValue();
             throw new NotImplementedException();
         }
 
