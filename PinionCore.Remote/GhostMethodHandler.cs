@@ -82,6 +82,12 @@ namespace PinionCore.Remote
                 throw new ArgumentNullException(nameof(return_value));
             }
 
+            if (token.IsCancellationRequested)
+            {
+                return_value.SetValue(0);
+                return;
+            }
+
             if (buffer == null)
             {
                 throw new ArgumentNullException(nameof(buffer));

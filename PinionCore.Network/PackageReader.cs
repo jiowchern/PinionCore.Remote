@@ -28,16 +28,20 @@ namespace PinionCore.Network
             _Empty = _Pool.Alloc(0);
         }
 
-        public Task<List<PinionCore.Memorys.Buffer>> Read()
+        public Task<List<PinionCore.Memorys.Buffer>> Read(System.Threading.CancellationToken cancellation = default)
         {
-            return ReadBuffers(new Package { Buffer = _Empty, Segment = _Empty.Bytes });
+            return ReadBuffers(new Package { Buffer = _Empty, Segment = _Empty.Bytes }, cancellation);
         }
-        public async Task<List<PinionCore.Memorys.Buffer>> ReadBuffers(Package unfin)
+        public async Task<List<PinionCore.Memorys.Buffer>> ReadBuffers(Package unfin, System.Threading.CancellationToken cancellation = default)
         {
+            if (cancellation.IsCancellationRequested)
+            {
+                return new List<PinionCore.Memorys.Buffer>();
+            }
             var packages = new List<Package>();
             Memorys.Buffer headBuffer = _Pool.Alloc(8);
             _CopyBuffer(unfin.Segment, headBuffer.Bytes, unfin.Segment.Count);            
-            var headReadCount = await _ReadFromStream(headBuffer.Bytes.Array, offset: headBuffer.Bytes.Offset + unfin.Segment.Count, count: headBuffer.Bytes.Count - unfin.Segment.Count);            
+            var headReadCount = await _ReadFromStream(headBuffer.Bytes.Array, offset: headBuffer.Bytes.Offset + unfin.Segment.Count, count: headBuffer.Bytes.Count - unfin.Segment.Count, cancellation);            
             if (headReadCount == 0)
                 return new List<PinionCore.Memorys.Buffer>();
             headReadCount += unfin.Segment.Count;
@@ -65,7 +69,7 @@ namespace PinionCore.Network
                     var bodyReadCount = 0;
                     while (bodyReadCount < remainingBodySize)
                     {
-                        var bytesRead = await _ReadFromStream(body.Bytes.Array, body.Bytes.Offset + readOffset + bodyReadCount, remainingBodySize - bodyReadCount);
+                        var bytesRead = await _ReadFromStream(body.Bytes.Array, body.Bytes.Offset + readOffset + bodyReadCount, remainingBodySize - bodyReadCount, cancellation);
 
                         if (bytesRead == 0)
                             return new List<PinionCore.Memorys.Buffer>();
@@ -80,7 +84,7 @@ namespace PinionCore.Network
             var buffers = _Convert(packages).ToList();
             if (remaining.Count > 0)
             {
-                List<Memorys.Buffer> nestBuffers = await ReadBuffers(new Package { Buffer = headBuffer, Segment = remaining });
+                List<Memorys.Buffer> nestBuffers = await ReadBuffers(new Package { Buffer = headBuffer, Segment = remaining }, cancellation);
                 buffers.AddRange(nestBuffers);
             }
             return buffers;
@@ -106,9 +110,14 @@ namespace PinionCore.Network
             Array.Copy(source.Array, source.Offset + sourceOffset, destination.Array, destination.Offset + destOffset, count);
         }
 
-        private async Task<int> _ReadFromStream(byte[] buffer, int offset, int count)
+        private async Task<int> _ReadFromStream(byte[] buffer, int offset, int count, System.Threading.CancellationToken cancellation)
         {
-            var receiveAwaitable = _Stream.Receive(buffer, offset, count, CancellationToken.None);
+            if (cancellation.IsCancellationRequested)
+            {
+                return 0;
+            }
+
+            var receiveAwaitable = _Stream.Receive(buffer, offset, count, cancellation);
             var result = await receiveAwaitable;
             return result;
 

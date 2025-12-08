@@ -52,12 +52,26 @@ namespace PinionCore.Network.Tcp
         }
         private int _EndReceive(IAsyncResult arg, CancellationToken token)
         {
-            if(token.IsCancellationRequested)
-                return 0;
-
             SocketError error;
 
-            var size = Socket.EndReceive(arg, out error);
+            int size;
+            try
+            {
+                size = Socket.EndReceive(arg, out error);
+            }
+            catch (ObjectDisposedException)
+            {
+                return 0;
+            }
+            catch (SocketException se)
+            {
+                _SocketErrorEvent(se.SocketErrorCode);
+                return 0;
+            }
+
+            if (token.IsCancellationRequested)
+                return 0;
+
             ReceiveEvent(size);
             if (error == SocketError.Success)
                 return size;
@@ -72,11 +86,25 @@ namespace PinionCore.Network.Tcp
 
         private int _EndSend(IAsyncResult arg, CancellationToken token)
         {
-            if (token.IsCancellationRequested)
-                return 0;
             SocketError error;
 
-            var size = Socket.EndSend(arg, out error);
+            int size;
+            try
+            {
+                size = Socket.EndSend(arg, out error);
+            }
+            catch (ObjectDisposedException)
+            {
+                return 0;
+            }
+            catch (SocketException se)
+            {
+                _SocketErrorEvent(se.SocketErrorCode);
+                return 0;
+            }
+
+            if (token.IsCancellationRequested)
+                return 0;
             SendEvent(size);
             if (error == SocketError.Success)
                 return size;

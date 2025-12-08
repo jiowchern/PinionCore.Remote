@@ -12,22 +12,22 @@ namespace PinionCore.Network
             Receive = new BufferRelay();
         }
 
-        public IAwaitableSource<int> Push(byte[] buffer, int offset, int count)
+        public IAwaitableSource<int> Push(byte[] buffer, int offset, int count, CancellationToken cancellation = default)
         {
-            return Receive.Push(buffer, offset, count);
+            return Receive.Push(buffer, offset, count, cancellation);
         }
 
-        public IAwaitableSource<int> Pop(byte[] buffer, int offset, int count)
+        public IAwaitableSource<int> Pop(byte[] buffer, int offset, int count, CancellationToken cancellation = default)
         {
 
-            return Send.Pop(buffer, offset, count);
+            return Send.Pop(buffer, offset, count, cancellation);
         }
 
         IAwaitableSource<int> IStreamable.Send(byte[] buffer, int offset, int count, CancellationToken token)
         {
             if (token.IsCancellationRequested)
                 return 0.ToWaitableValue();
-            return Send.Push(buffer, offset, count);
+            return Send.Push(buffer, offset, count, token);
         }
 
 
@@ -36,7 +36,7 @@ namespace PinionCore.Network
         {
             if (token.IsCancellationRequested)
                 return 0.ToWaitableValue();
-            return Receive.Pop(buffer, offset, count);
+            return Receive.Pop(buffer, offset, count, token);
         }
 
         void System.IDisposable.Dispose()

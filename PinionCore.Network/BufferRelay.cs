@@ -31,6 +31,7 @@ namespace PinionCore.Network
             public CancellationToken Cancel;
             public NoWaitValue<int> SyncWait;
             public ArraySegment<byte> Buffer;
+            public CancellationTokenRegistration Registration;
 
         }
         readonly System.Collections.Generic.Queue<Waiter> _Waiters;
@@ -39,6 +40,7 @@ namespace PinionCore.Network
         {
             public BufferSegment Buffer;
             public CancellationToken Cancel;
+            public CancellationTokenRegistration Registration;
         }
 
         private readonly System.Collections.Generic.Queue<SegmentedBuffer> _Segments;
@@ -54,23 +56,45 @@ namespace PinionCore.Network
 
         }
 
-        public IAwaitableSource<int> Push(byte[] buffer, int offset, int count,CancellationToken cancellation)
+        public IAwaitableSource<int> Push(byte[] buffer, int offset, int count, CancellationToken cancellation)
         {
+            if (cancellation.IsCancellationRequested)
+            {
+                return 0.ToWaitableValue();
+            }
+
+            var segmentedBuffer = new SegmentedBuffer()
+            {
+                Buffer = new BufferSegment(buffer, offset, count),
+                Cancel = cancellation
+            };
+
+            if (cancellation.CanBeCanceled)
+            {
+                segmentedBuffer.Registration = cancellation.Register(_Digestion);
+            }
+
             lock (_Segments)
             {
-                _Segments.Enqueue(new SegmentedBuffer()
-                {
-                    Buffer = new BufferSegment(buffer, offset, count),
-                    Cancel = cancellation
-                });
+                _Segments.Enqueue(segmentedBuffer);
             }
             _Digestion();
             return new NoWaitValue<int>(count);
         }
 
-        public IAwaitableSource<int> Pop(byte[] buffer, int offset, int count,CancellationToken cancellation)
+        public IAwaitableSource<int> Pop(byte[] buffer, int offset, int count, CancellationToken cancellation)
         {
-            var waiter = new Waiter() { SyncWait = new NoWaitValue<int>(), Buffer = new ArraySegment<byte>(buffer, offset, count) ,Cancel = cancellation};
+            if (cancellation.IsCancellationRequested)
+            {
+                return 0.ToWaitableValue();
+            }
+
+            var waiter = new Waiter() { SyncWait = new NoWaitValue<int>(), Buffer = new ArraySegment<byte>(buffer, offset, count), Cancel = cancellation };
+            if (cancellation.CanBeCanceled)
+            {
+                waiter.Registration = cancellation.Register(_Digestion);
+            }
+
             lock (_Waiters)
             {
                 _Waiters.Enqueue(waiter);
@@ -88,12 +112,11 @@ namespace PinionCore.Network
 
         void _Digestion()
         {
-            Tuple<Waiter, int> waiter = _ProcessWaiters(_Waiters, _Segments);
-            if (waiter == null)
+            Tuple<Waiter, int> waiter;
+            while ((waiter = _ProcessWaiters(_Waiters, _Segments)) != null)
             {
-                return;
+                waiter.Item1.SyncWait.SetValue(waiter.Item2);
             }
-            waiter.Item1.SyncWait.SetValue(waiter.Item2);
         }
         private Tuple<Waiter, int> _ProcessWaiters(Queue<Waiter> waiters, Queue<SegmentedBuffer> buffers)
         {
@@ -101,19 +124,39 @@ namespace PinionCore.Network
             {
                 lock (buffers)
                 {
-                    if (waiters.Count == 0 || buffers.Count == 0)
+                    while (buffers.Count > 0 && buffers.Peek().Cancel.IsCancellationRequested)
                     {
-                        return null;
+                        var canceled = buffers.Dequeue();
+                        canceled.Registration.Dispose();
                     }
 
-                    Waiter waiter = waiters.Dequeue();
-                    if(waiter.Cancel.IsCancellationRequested)
+                    while (true)
                     {
-                        return new Tuple<Waiter, int>(waiter, 0);
-                    }
+                        if (waiters.Count == 0)
+                        {
+                            return null;
+                        }
 
-                    var count = _ProcessQueue(buffers, waiter.Buffer.Array, waiter.Buffer.Offset, waiter.Buffer.Count);
-                    return new Tuple<Waiter, int>(waiter, count);
+                        Waiter waiter = waiters.Peek();
+                        if (waiter.Cancel.IsCancellationRequested)
+                        {
+                            waiters.Dequeue();
+                            waiter.Registration.Dispose();
+                            waiter.SyncWait.SetValue(0);
+                            continue;
+                        }
+
+                        if (buffers.Count == 0)
+                        {
+                            return null;
+                        }
+
+                        waiter = waiters.Dequeue();
+                        waiter.Registration.Dispose();
+
+                        var count = _ProcessQueue(buffers, waiter.Buffer.Array, waiter.Buffer.Offset, waiter.Buffer.Count, waiter.Cancel);
+                        return new Tuple<Waiter, int>(waiter, count);
+                    }
                 }
             }
 
@@ -121,12 +164,22 @@ namespace PinionCore.Network
         }
 
 
-        private int _ProcessQueue(System.Collections.Generic.Queue<SegmentedBuffer> queue, byte[] buffer, int offset, int count)
+        private int _ProcessQueue(System.Collections.Generic.Queue<SegmentedBuffer> queue, byte[] buffer, int offset, int count, CancellationToken token)
         {
             var totalRead = 0;
             while (totalRead < count && queue.Count > 0)
             {
                 var segBuf = queue.Peek();
+                if (segBuf.Cancel.IsCancellationRequested)
+                {
+                    segBuf.Registration.Dispose();
+                    queue.Dequeue();
+                    continue;
+                }
+                if (token.IsCancellationRequested)
+                {
+                    break;
+                }
                 BufferSegment segment = segBuf.Buffer;
                 var bytesToCopy = Math.Min(segment.Length, count - totalRead);
 

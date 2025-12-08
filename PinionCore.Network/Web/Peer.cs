@@ -38,7 +38,7 @@ namespace PinionCore.Network.Web
 
             var linkedTokenSource = System.Threading.CancellationTokenSource.CreateLinkedTokenSource(_CancelSource.Token, token);
             var segment = new ArraySegment<byte>(buffer, offset, count);
-            return _Socket.ReceiveAsync(segment, linkedTokenSource.Token).ContinueWith<int>((t) =>
+            var task = _Socket.ReceiveAsync(segment, linkedTokenSource.Token).ContinueWith<int>((t) =>
             {
                 try
                 {
@@ -53,11 +53,14 @@ namespace PinionCore.Network.Web
                     PinionCore.Utility.Log.Instance.WriteInfo($"websocket receive error state:{_Socket.State} ,{e.ToString()}.");
 
                     ErrorEvent?.Invoke(_Socket.State);
-
-
+                }
+                finally
+                {
+                    linkedTokenSource.Dispose();
                 }
                 return 0;
-            }).ToWaitableValue();
+            }, TaskScheduler.Default);
+            return task.ToWaitableValue();
         }
 
         IAwaitableSource<int> IStreamable.Send(byte[] buffer, int offset, int count, System.Threading.CancellationToken token)
@@ -73,12 +76,20 @@ namespace PinionCore.Network.Web
 
             var linkedTokenSource = System.Threading.CancellationTokenSource.CreateLinkedTokenSource(_CancelSource.Token, token);
             var arraySegment = new ArraySegment<byte>(buffer, offset, count);
-            return _Socket.SendAsync(arraySegment, WebSocketMessageType.Binary, true, linkedTokenSource.Token).ContinueWith((t) =>
+            var task = _Socket.SendAsync(arraySegment, WebSocketMessageType.Binary, true, linkedTokenSource.Token).ContinueWith((t) =>
             {
-                if (t.IsCanceled)
-                    return 0;
-                return count;
-            }).ToWaitableValue();
+                try
+                {
+                    if (t.IsCanceled)
+                        return 0;
+                    return count;
+                }
+                finally
+                {
+                    linkedTokenSource.Dispose();
+                }
+            }, TaskScheduler.Default);
+            return task.ToWaitableValue();
 
 
         }

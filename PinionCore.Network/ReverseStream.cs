@@ -16,7 +16,7 @@ namespace PinionCore.Network
         {
             if (token.IsCancellationRequested)
                 return 0.ToWaitableValue();
-            return _Peer.Pop(buffer, offset, count);
+            return _Peer.Pop(buffer, offset, count, token);
 
         }
 
@@ -24,7 +24,7 @@ namespace PinionCore.Network
         {
             if (token.IsCancellationRequested)
                 return 0.ToWaitableValue();
-            return _Peer.Push(buffer, offset, count);
+            return _Peer.Push(buffer, offset, count, token);
         }
 
         void System.IDisposable.Dispose()

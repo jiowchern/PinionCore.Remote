@@ -12,7 +12,19 @@ namespace PinionCore.Network
         private readonly IPool _Pool;
 
         private bool _isSending = false;
-        private readonly System.Collections.Generic.Queue<Memorys.Buffer> _sendQueue = new System.Collections.Generic.Queue<Memorys.Buffer>();
+        private readonly struct PendingSend
+        {
+            public PendingSend(Memorys.Buffer buffer, CancellationToken token)
+            {
+                Buffer = buffer;
+                Token = token;
+            }
+
+            public Memorys.Buffer Buffer { get; }
+            public CancellationToken Token { get; }
+        }
+
+        private readonly System.Collections.Generic.Queue<PendingSend> _sendQueue = new System.Collections.Generic.Queue<PendingSend>();
 
         public PackageSender(IStreamable stream, PinionCore.Memorys.IPool pool)
         {
@@ -20,9 +32,9 @@ namespace PinionCore.Network
             _Pool = pool;
         }
 
-        public void Push(PinionCore.Memorys.Buffer buffer)
+        public void Push(PinionCore.Memorys.Buffer buffer, CancellationToken cancellation = default)
         {
-            if (buffer.Count == 0)
+            if (buffer.Count == 0 || cancellation.IsCancellationRequested)
                 return;
 
             var packageVarintCount = PinionCore.Serialization.Varint.GetByteCount(buffer.Bytes.Count);
@@ -34,7 +46,7 @@ namespace PinionCore.Network
                 sendBuffer.Bytes.Array[sendBuffer.Bytes.Offset + offset + i] = buffer.Bytes.Array[buffer.Bytes.Offset + i];
             }
 
-            _sendQueue.Enqueue(sendBuffer);
+            _sendQueue.Enqueue(new PendingSend(sendBuffer, cancellation));
 
             if (!_isSending)
             {
@@ -48,7 +60,8 @@ namespace PinionCore.Network
             // 清理佇列中的 buffer
             while (_sendQueue.Count > 0)
             {
-                var buffer = _sendQueue.Dequeue();
+                var pending = _sendQueue.Dequeue();
+                var buffer = pending.Buffer;
              //   buffer.Dispose();
             }
         }
@@ -65,10 +78,14 @@ namespace PinionCore.Network
             {
                 while (_sendQueue.Count > 0)
                 {
-                    var buffer = _sendQueue.Dequeue();
+                    var pending = _sendQueue.Dequeue();
+                    if (pending.Token.IsCancellationRequested)
+                    {
+                        continue;
+                    }
                     try
                     {
-                        await _SendBufferAsync(buffer);
+                        await _SendBufferAsync(pending.Buffer, pending.Token);
                     }
                     finally
                     {
@@ -83,13 +100,13 @@ namespace PinionCore.Network
             }
         }
 
-        private async Task<int> _SendBufferAsync(PinionCore.Memorys.Buffer buffer)
+        private async Task<int> _SendBufferAsync(PinionCore.Memorys.Buffer buffer, CancellationToken token)
         {
             var sendCount = 0;
             do
             {
-                var count = await _Stream.Send(buffer.Bytes.Array, buffer.Bytes.Offset + sendCount, buffer.Count - sendCount, CancellationToken.None);
-                if (count == 0)
+                var count = await _Stream.Send(buffer.Bytes.Array, buffer.Bytes.Offset + sendCount, buffer.Count - sendCount, token);
+                if (count == 0 || token.IsCancellationRequested)
                     return 0;
                 sendCount += count;
 
