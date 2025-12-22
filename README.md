@@ -1,4 +1,4 @@
-# PinionCore Remote
+﻿# PinionCore Remote
 [![Maintainability](https://api.codeclimate.com/v1/badges/89c3a646f9daff42a38e/maintainability)](https://codeclimate.com/github/jiowchern/PinionCore.Remote/maintainability)
 [![Build](https://github.com/jiowchern/PinionCore.Remote/actions/workflows/dotnet-desktop.yml/badge.svg?branch=master)](https://github.com/jiowchern/PinionCore.Remote/actions/workflows/dotnet-desktop.yml)
 [![Coverage Status](https://coveralls.io/repos/github/jiowchern/PinionCore.Remote/badge.svg?branch=master)](https://coveralls.io/github/jiowchern/PinionCore.Remote?branch=master)
@@ -6,7 +6,6 @@
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/jiowchern/PinionCore.Remote)
 [Ask OpenDeepWiki](https://opendeep.wiki/jiowchern/PinionCore.Remote/introduction?branch=master)
 
-PinionCore Remote 是一個以介面為中心的 C# 遠端通訊框架，支援 TCP、WebSocket 與 Standalone 模式，並透過 Source Generator 自動產生協議實作。原本的 README 已拆分成較小的主題文件，方便瀏覽。
 
 ## English Documentation
 - [Introduction & Online Docs](docs/readme/en/introduction.md)
