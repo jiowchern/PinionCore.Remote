@@ -149,7 +149,33 @@ agent.QueryNotifier<IRoom>().Supply += room =>
 - Notifier = dynamic object collection + remote object tree synchronization
 - Client does not manage IDs; everything follows the interface hierarchy
 
-## 4. Reactive Support
+## 4. Cross-Server Interface Relay
+
+Because PinionCore.Remote transmits **interfaces** rather than concrete types, any interface that belongs to the same `IProtocol` can be relayed across multiple servers. An interface instance can be created on one server, handed to another, and forwarded again all the way to the client — the implementation stays in its origin process while the interface travels.
+
+For example, an `IFoo` instance lives on **Server B**. Server B hands it to **Server A**, and Server A forwards it straight to the **Client**. The client never connects to Server B, yet it can obtain and call `IFoo` through Server A — A simply acts as a relay for the interface.
+
+```mermaid
+graph LR
+    B["Server B<br/>creates IFoo instance"]
+    A["Server A<br/>receives IFoo, relays it"]
+    C["Client<br/>obtains &amp; calls IFoo"]
+    B -- "IFoo (same IProtocol)" --> A
+    A -- "IFoo forwarded" --> C
+    C -. "no direct connection" .-x B
+```
+
+**Key points:**
+
+- The transport unit is the interface contract, so the concrete implementation never has to leave its origin server.
+- As long as the interface comes from the same `IProtocol`, it can hop across servers with zero adaptation code.
+- The client only needs to connect to one server (A) yet can transparently use interfaces sourced from another (B).
+- No wrapper, adapter, or DTO layer is needed — every hop programs against the identical interface type.
+- The full interface surface relays transparently: **methods** (`Value<T>`), **properties** (`Property<T>`, including live updates from B propagating all the way to the client), and **notifiers** (`Notifier<T>` object trees) all work across the relay hop.
+
+> Runnable example: `PinionCore.Integration.Tests/RelayTests.cs` sets up the exact `B → A → Client` chain and verifies method, property, and notifier relaying end to end.
+
+## 5. Reactive Support
 
 `PinionCore.Remote.Reactive` provides Rx (Reactive Extensions) support, allowing you to compose remote workflows using `IObservable<T>`.
 
@@ -190,7 +216,7 @@ Notes:
 - Even when using Rx, **background loops are still required** (`HandlePackets()` / `HandleMessages()` must be called continuously).
 - Rx simply makes workflow composition easier; it does not replace low-level message handling.
 
-## 5. Public & Private Interface Support
+## 6. Public & Private Interface Support
 
 Since PinionCore Remote is interface-driven, the server can bind different interfaces based on client authentication or permissions, achieving clean “public vs. private” API separation.
 
@@ -231,7 +257,7 @@ void ISessionObserver.OnSessionOpened(ISessionBinder binder)
 - Unauthenticated clients → **IPublicService only**
 - Authenticated clients → **IPublicService + IPrivateService**
 
-## 6. Multiple Transport Modes & Standalone
+## 7. Multiple Transport Modes & Standalone
 
 PinionCore Remote includes three built-in transport modes:
 
@@ -249,7 +275,7 @@ PinionCore Remote includes three built-in transport modes:
 
 Integration tests (`SampleTests`) launch all three transports and ensure identical behavior across modes.
 
-## 7. Gateway Service
+## 8. Gateway Service
 
 **Purpose**:
 

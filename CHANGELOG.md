@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### 2026-06-29
+
+> Package versions are not bumped yet. When publishing, advance only the modified project(s) per this entry — the affected library is **PinionCore.Remote** (`0.2.0.0` → next patch).
+
+#### Changed
+- `Property<T>.IAccessable.Set` now routes through `_SetValue`, so applying a property update (e.g. a ghost receiving a network update) raises `DirtyEvent` like a normal assignment. This lets a relay node observe property changes on a received ghost and forward them onward — enabling live property synchronization across cross-server relay hops. (Project: PinionCore.Remote)
+
+#### Added
+- **Cross-Server Interface Relay**: documented and tested the ability to relay an interface across multiple servers. An interface instance created on server B can be handed to server A (acting as B's client) and re-bound to A's own clients, so a client connected only to A can transparently use interfaces sourced from B — with methods (`Value<T>`), properties (`Property<T>`, including live updates), and notifiers (`Notifier<T>` object trees) all working across the hop.
+  - Added `PinionCore.Integration.Tests/RelayTests.cs` verifying the `B → A → Client` chain end to end for method, property, and notifier relaying (each guarded with a 5s timeout).
+  - Added a "Cross-Server Interface Relay" section with a Mermaid diagram to `docs/readme/en/core-features.md` and `docs/readme/tc/core-features.md`.
+
 ### 2025-11-16
 
 #### Changed

@@ -140,7 +140,33 @@ agent.QueryNotifier<IRoom>().Supply += room =>
 - Notifier = 動態集合 + 遠端物件樹同步
 - 客戶端不需管理 ID，依介面階層即可
 
-## 4. 響應式方法支援（Reactive）
+## 4. 跨服務器的介面轉傳
+
+由於 PinionCore.Remote 傳輸的是**介面**而非具體型別，只要介面來自同一份 `IProtocol`，就能在多個服務器之間轉傳。介面實體可以在某個服務器上產生，交給另一個服務器，再一路轉發到客戶端——實作始終留在原始行程，傳遞的只有介面。
+
+舉例來說，`IFoo` 實體產生於 **B 服務器**，B 服務器把它交給 **A 服務器**，A 服務器再直接轉發給 **Client**。Client 完全不需要連接 B 服務器，卻能透過 A 服務器取得並呼叫 `IFoo`——A 只是擔任介面的中繼。
+
+```mermaid
+graph LR
+    B["B 服務器<br/>產生 IFoo 實體"]
+    A["A 服務器<br/>接收 IFoo 並轉傳"]
+    C["Client<br/>取得並呼叫 IFoo"]
+    B -- "IFoo（同一份 IProtocol）" --> A
+    A -- "IFoo 轉發" --> C
+    C -. "無直接連線" .-x B
+```
+
+重點：
+
+- 傳輸單位是介面合約，具體實作永遠不需離開原始服務器。
+- 只要介面來自同一份 `IProtocol`，就能跨服務器轉傳，完全不需要轉接程式碼。
+- 客戶端只需連接一個服務器（A），即可透通地使用來自另一個服務器（B）的介面。
+- 不需要包裝、轉接或 DTO 層——每一段轉傳都面對完全相同的介面型別。
+- 介面的完整成員都能透通轉傳：**方法**（`Value<T>`）、**屬性**（`Property<T>`，包含 B 端的即時更新一路同步到 Client）、**Notifier**（`Notifier<T>` 物件樹）在中繼節點之間都能正常運作。
+
+> 可執行範例：`PinionCore.Integration.Tests/RelayTests.cs` 建立了完整的 `B → A → Client` 轉傳鏈，並端到端驗證 method、property、notifier 的轉傳。
+
+## 5. 響應式方法支援（Reactive）
 
 `PinionCore.Remote.Reactive` 提供 Rx 擴充，讓你用 `IObservable<T>` 組合遠端流程。
 
@@ -181,7 +207,7 @@ await runTask;
 - 即使用 Rx，仍需要背景迴圈呼叫 `HandlePackets()` / `HandleMessages()`。
 - Rx 讓流程更容易組合，但不會取代底層訊息處理。
 
-## 5. 簡易的公開與私有介面支援
+## 6. 簡易的公開與私有介面支援
 
 因為是介面導向，伺服器可以根據權限綁定不同介面，達成 Public/Private API。
 
@@ -222,7 +248,7 @@ void ISessionObserver.OnSessionOpened(ISessionBinder binder)
 - 未驗證 → **只有 IPublicService**
 - 已驗證 → **IPublicService + IPrivateService**
 
-## 6. 多傳輸模式與 Standalone
+## 7. 多傳輸模式與 Standalone
 
 - `PinionCore.Remote.Server.Tcp.ListeningEndpoint`
 - `PinionCore.Remote.Client.Tcp.ConnectingEndpoint`
@@ -232,7 +258,7 @@ void ISessionObserver.OnSessionOpened(ISessionBinder binder)
 
 整合測試 (`SampleTests`) 會同時跑三種傳輸並驗證行為一致。
 
-## 7. Gateway 閘道服務
+## 8. Gateway 閘道服務
 
 `PinionCore.Remote.Gateway` 作為多服務統一入口，提供：
 

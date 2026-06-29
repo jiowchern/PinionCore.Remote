@@ -55,7 +55,7 @@ namespace PinionCore.Remote
 
         void IAccessable.Set(object value)
         {
-            _Value = (T)value;
+            _SetValue((T)value);
         }
 
         /* bool IEquatable<Property<T>>.Equals(Property<T> other)
