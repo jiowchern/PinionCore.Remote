@@ -1,9 +1,10 @@
-# PinionCore Remote
+﻿# PinionCore Remote
 [![Maintainability](https://api.codeclimate.com/v1/badges/89c3a646f9daff42a38e/maintainability)](https://codeclimate.com/github/jiowchern/PinionCore.Remote/maintainability)
 [![Build](https://github.com/jiowchern/PinionCore.Remote/actions/workflows/dotnet-desktop.yml/badge.svg?branch=master)](https://github.com/jiowchern/PinionCore.Remote/actions/workflows/dotnet-desktop.yml)
 [![Coverage Status](https://coveralls.io/repos/github/jiowchern/PinionCore.Remote/badge.svg?branch=master)](https://coveralls.io/github/jiowchern/PinionCore.Remote?branch=master)
 ![commit last date](https://img.shields.io/github/last-commit/jiowchern/PinionCore.Remote)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/jiowchern/PinionCore.Remote)
+[![Discord](https://img.shields.io/badge/Discord-Join%20Community-5865F2?logo=discord&logoColor=white)](https://discord.gg/XqHghZ4MEc)
 > **像使用本地物件一樣使用遠端 C# 物件。**
 
 PinionCore.Remote 是一個專為 C# 與 Unity 打造的**分散式物件框架（Distributed Object Framework）**。

@@ -4,6 +4,8 @@
 [![Coverage Status](https://coveralls.io/repos/github/jiowchern/PinionCore.Remote/badge.svg?branch=master)](https://coveralls.io/github/jiowchern/PinionCore.Remote?branch=master)
 ![commit last date](https://img.shields.io/github/last-commit/jiowchern/PinionCore.Remote)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/jiowchern/PinionCore.Remote)
+[![Discord](https://img.shields.io/badge/Discord-Join%20Community-5865F2?logo=discord&logoColor=white)](https://discord.gg/XqHghZ4MEc)
+
 > **Use remote C# objects as if they were local.**
 
 PinionCore.Remote is a **Distributed Object Framework** for C# and Unity.
