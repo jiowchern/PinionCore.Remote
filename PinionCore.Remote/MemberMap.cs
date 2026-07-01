@@ -16,6 +16,9 @@ namespace PinionCore.Remote
         private readonly Dictionary<Type, Func<IProvider>> _Providers;
 
         public readonly IReadOnlyBilateralMap<int, PropertyInfo> Properties;
+        public readonly IReadOnlyBilateralMap<int, Type> Interfaces;
+        public readonly IReadOnlyDictionary<int, MethodInfo> Methods;
+        public readonly IReadOnlyDictionary<int, EventInfo> Events;
 
 
         public MemberMap(
@@ -47,6 +50,9 @@ namespace PinionCore.Remote
 
 
             Properties = _Properties;
+            Interfaces = _Interfaces;
+            Methods = _Methods;
+            Events = _Events;
         }
 
         public IProvider CreateProvider(Type type)

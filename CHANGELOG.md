@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### 2026-07-01
+
+> Package versions are not bumped yet. When publishing, advance only the modified project(s) per this entry — the affected library is **PinionCore.Remote** (`0.2.0.0` → next patch).
+
+#### Added
+- `MemberMap` now exposes public read-only accessors for `Interfaces` (`IReadOnlyBilateralMap<int, Type>`), `Methods` (`IReadOnlyDictionary<int, MethodInfo>`), and `Events` (`IReadOnlyDictionary<int, EventInfo>`), mirroring the existing `Properties` accessor. Consumers can now enumerate the full member map — interface/method/event id mappings — instead of going through the individual `GetInterface`/`GetMethod`/`GetEvent` lookups. (Project: PinionCore.Remote)
+
 ### 2026-06-29
 
 > Package versions are not bumped yet. When publishing, advance only the modified project(s) per this entry — the affected library is **PinionCore.Remote** (`0.2.0.0` → next patch).
