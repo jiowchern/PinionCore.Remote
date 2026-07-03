@@ -50,6 +50,16 @@
 - `Items.Add(item)` → 觸發 `Supply`
 - `Items.Remove(item)` → 觸發 `Unsupply`
 
+`INotifier<out T>` 是 covariant：`Depot<World>` 可隱含轉型為 `INotifier<IWorld>`
+（`World : IWorld`，繼承約束在編譯期檢查）。搭配 `ToNotifier<T>()` 擴充方法，
+一個 Depot 可依實作的介面產生多個 `Notifier<T>`（建立一次並存欄位，不要在 property getter 內呼叫）：
+
+```csharp
+var depot = new PinionCore.Remote.Depot<World>();
+var worldNotifier = depot.ToNotifier<IWorld>();   // Notifier<IWorld>
+var viewNotifier = depot.ToNotifier<IView>();     // Notifier<IView>
+```
+
 `Notifier<T>` 包裝 `Depot<TypeObject>`，支援跨型別查詢與事件訂閱。
 
 `INotifierQueryable` 介面（`PinionCore.Remote/INotifierQueryable.cs`）可呼叫：

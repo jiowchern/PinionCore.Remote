@@ -116,12 +116,28 @@ public interface IPlayer
 }
 ```
 
-伺服器端：
+伺服器端以 `Depot<T>`（集合＋通知）維護集合。`INotifier<out T>` 是 covariant，
+`Depot<Room>` 可直接當作 `INotifier<IRoom>` 曝光（`Room : IRoom`，繼承約束在編譯期檢查）：
 
-- 新增 → `Rooms.Supply(roomImpl)`
-- 移除 → `Rooms.Unsupply(roomImpl)`
-- 玩家加入 → `room.Players.Supply(playerImpl)`
-- 玩家離開 → `room.Players.Unsupply(playerImpl)`
+```csharp
+class ChatEntry : IChatEntry
+{
+    readonly PinionCore.Remote.Depot<Room> _Rooms = new PinionCore.Remote.Depot<Room>();
+
+    INotifier<IRoom> IChatEntry.Rooms => _Rooms;
+
+    public void AddRoom(Room room) => _Rooms.Items.Add(room);      // 客戶端收到 Supply
+    public void RemoveRoom(Room room) => _Rooms.Items.Remove(room); // 客戶端收到 Unsupply
+}
+```
+
+若協議屬性型別是 `Notifier<T>`（類別）而非 `INotifier<T>`，用 `ToNotifier<T>()` 一行轉出；
+同一個 Depot 可依實作的介面產生多個 Notifier（在建構子建立一次並存欄位，不要在 property getter 內呼叫）：
+
+```csharp
+_RoomNotifier = _Rooms.ToNotifier<IRoom>();
+_RoomViewNotifier = _Rooms.ToNotifier<IRoomView>();
+```
 
 客戶端：
 

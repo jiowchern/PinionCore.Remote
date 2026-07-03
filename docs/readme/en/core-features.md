@@ -125,12 +125,31 @@ public interface IPlayer
 }
 ```
 
-Server-side actions:
+On the server, maintain the collection with `Depot<T>` (collection + notification).
+`INotifier<out T>` is covariant, so a `Depot<Room>` can be exposed directly as an
+`INotifier<IRoom>` (`Room : IRoom`, checked at compile time):
 
-- Create → `Rooms.Supply(roomImpl)`
-- Remove → `Rooms.Unsupply(roomImpl)`
-- Player joins → `room.Players.Supply(playerImpl)`
-- Player leaves → `room.Players.Unsupply(playerImpl)`
+```csharp
+class ChatEntry : IChatEntry
+{
+    readonly PinionCore.Remote.Depot<Room> _Rooms = new PinionCore.Remote.Depot<Room>();
+
+    INotifier<IRoom> IChatEntry.Rooms => _Rooms;
+
+    public void AddRoom(Room room) => _Rooms.Items.Add(room);      // clients receive Supply
+    public void RemoveRoom(Room room) => _Rooms.Items.Remove(room); // clients receive Unsupply
+}
+```
+
+If the protocol property type is the `Notifier<T>` class instead of `INotifier<T>`,
+convert with `ToNotifier<T>()`. One depot can feed a notifier per implemented
+interface (create each once in the constructor and keep it in a field — do not
+call `ToNotifier` inside a property getter):
+
+```csharp
+_RoomNotifier = _Rooms.ToNotifier<IRoom>();
+_RoomViewNotifier = _Rooms.ToNotifier<IRoomView>();
+```
 
 Client:
 

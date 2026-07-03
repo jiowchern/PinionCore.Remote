@@ -24,6 +24,12 @@ namespace PinionCore.Remote
 
         }
 
+        // 供伺服器端把既有資料來源（如以父介面曝光的 Depot）包裝成 Notifier。
+        // collection 只在 Ghost 端經由 IObjectAccessible 使用，此情境不會被呼叫。
+        public Notifier(INotifier<T> notifier) : this(notifier, new System.Collections.Generic.List<T>())
+        {
+        }
+
         public Notifier() : this(new Depot<T>())
         {
         }

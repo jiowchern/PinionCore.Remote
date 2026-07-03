@@ -344,6 +344,7 @@ public class ConnectedState : IStatus
 1. 實作 IEntry 介面作為進入點
 2. 在 RegisterClientBinder 中使用 binder.Bind<T> 綁定物件
 3. 透過 Provider.CreateTcpService 建立服務
+4. 動態集合以 `Depot<TConcrete>` 維護；`INotifier<out T>` 為 covariant，用 `depot.ToNotifier<TInterface>()` 依實作的介面產生多個 `Notifier<T>`（繼承約束在編譯期檢查）。在建構子建立一次並存欄位，勿在 property getter 內呼叫（每次呼叫都會新建 Notifier 並訂閱 Depot，造成訂閱洩漏）
 
 ### 客戶端實作
 1. 透過 Provider.CreateTcpAgent 建立代理

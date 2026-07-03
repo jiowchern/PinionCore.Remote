@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### 2026-07-03
+
+> Package versions are not bumped yet. When publishing, advance only the modified project(s) per this entry — the affected libraries are **PinionCore.Utility** (`0.2.0.0` → next patch) and **PinionCore.Remote** (`0.2.0.0` → next patch).
+
+#### Added
+- `INotifier<T>` is now covariant (`INotifier<out T>`). A notifier of a concrete type implicitly converts to a notifier of any interface that type implements — e.g. `INotifier<World>` → `INotifier<IWorld>` — with the inheritance constraint checked at compile time. (Project: PinionCore.Utility)
+- `Notifier<T>` gained a `Notifier(INotifier<T> notifier)` constructor for wrapping an existing supply/unsupply source on the server side. The collection parameter of the existing constructor is only exercised by the client-side ghost pipeline (`IObjectAccessible`), so this overload backs it with an inert list. (Project: PinionCore.Remote)
+- `NotifierExtensions.ToNotifier<T>()` — exposes a `Depot<TConcrete>` (or any `INotifier` source) as a `Notifier<T>` of a parent interface in one call: `depot.ToNotifier<IWorld>()`. One depot can feed any number of interface notifiers, one line each. Calling it with an interface the item type does not implement is a compile error. (Project: PinionCore.Remote)
+- Tests: `DepotTests` (covariant subscription, existing-item replay, mixed exact/variant handlers, handler removal) and `NotifierCastTests` (`ToNotifier` supply/unsupply `TypeObject` identity, multiple notifiers from one depot, dispose). (Projects: PinionCore.Utility.Test, PinionCore.Remote.Test)
+
+#### Changed
+- `Depot<T>` and `TProvider<T>` store event handlers in lists instead of multicast delegate fields. Subscribing through a covariant reference passes a delegate whose runtime type differs from the backing field's (`Action<IWorld>` into `Action<World>`), which makes `Delegate.Combine` throw `ArgumentException: Delegates must be of the same type`; list storage accepts both. Any other `INotifier<T>` implementation that keeps field-like events has the same trap if subscribed through a variant reference. (Projects: PinionCore.Utility)
+
 ### 2026-07-01
 
 > Package versions are not bumped yet. When publishing, advance only the modified project(s) per this entry — the affected library is **PinionCore.Remote** (`0.2.0.0` → next patch).

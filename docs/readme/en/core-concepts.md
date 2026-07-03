@@ -60,6 +60,18 @@ Behavior:
 - `Items.Add(item)` → triggers **Supply**
 - `Items.Remove(item)` → triggers **Unsupply**
 
+`INotifier<out T>` is covariant: a `Depot<World>` implicitly converts to an
+`INotifier<IWorld>` (`World : IWorld`, checked at compile time). Combined with
+the `ToNotifier<T>()` extension, one depot can feed a `Notifier<T>` per
+implemented interface (create each once and keep it in a field — do not call
+`ToNotifier` inside a property getter):
+
+```csharp
+var depot = new PinionCore.Remote.Depot<World>();
+var worldNotifier = depot.ToNotifier<IWorld>();   // Notifier<IWorld>
+var viewNotifier = depot.ToNotifier<IView>();     // Notifier<IView>
+```
+
 `Notifier<T>` wraps `Depot<TypeObject>` and supports:
 
 - Cross-type querying
