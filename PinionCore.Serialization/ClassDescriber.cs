@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 
 using System.Reflection;
@@ -13,6 +13,8 @@ namespace PinionCore.Serialization
 
         private readonly FieldInfo[] _Fields;
 
+        private readonly int _MaskLength;
+
         private readonly object _Default;
 
         private readonly IDescribersFinder _TypeSet;
@@ -26,6 +28,7 @@ namespace PinionCore.Serialization
                        where field.IsStatic == false && field.IsPublic && field.FieldType.IsAbstract == false
                        orderby field.Name
                        select field).ToArray();
+            _MaskLength = (_Fields.Length + 7) / 8;
         }
 
         Type ITypeDescriber.Type
@@ -39,44 +42,32 @@ namespace PinionCore.Serialization
         {
             try
             {
-                var validFields = _Fields.Select(
-                       (field, index) => new
-                       {
-                           field,
-                           index
-                       }).Where(validField => object.Equals(_GetDescriber(validField.field).Default, validField.field.GetValue(instance)) == false).ToArray();
-
-
-                var validCount = Varint.GetByteCount(validFields.Length);
-                var count = 0;
-                for (var i = 0; i < validFields.Length; i++)
+                var count = _MaskLength;
+                for (var i = 0; i < _Fields.Length; i++)
                 {
+                    FieldInfo field = _Fields[i];
+                    var value = field.GetValue(instance);
+                    if (object.Equals(_GetDescriber(field).Default, value))
+                        continue;
 
-                    var validField = validFields[i];
-                    var index = validField.index;
-                    FieldInfo field = validField.field;
-
-                    count = _GetCount(instance, count, index, field);
+                    if (TypeIdentifier.IsFinal(field.FieldType))
+                    {
+                        count += _GetDescriber(field).GetByteCount(value);
+                    }
+                    else
+                    {
+                        Type valueType = value.GetType();
+                        count += _TypeSet.Get().GetByteCount(valueType);
+                        count += _TypeSet.Get(valueType).GetByteCount(value);
+                    }
                 }
-                return count + validCount;
+                return count;
             }
             catch (Exception ex)
             {
                 throw new DescriberException(typeof(ClassDescriber), _Type, "GetByteCount", ex);
             }
 
-        }
-
-        private int _GetCount(object instance, int count, int index, FieldInfo field)
-        {
-            var value = field.GetValue(instance);
-            Type valueType = value.GetType();
-            var valueTypeCount = _TypeSet.Get().GetByteCount(valueType);
-            ITypeDescriber describer = _TypeSet.Get(valueType);
-            var byteCount = describer.GetByteCount(value);
-            var indexCount = Varint.GetByteCount(index);
-            count += byteCount + indexCount + valueTypeCount;
-            return count;
         }
 
         private ITypeDescriber _GetDescriber(FieldInfo field)
@@ -91,25 +82,36 @@ namespace PinionCore.Serialization
             {
                 ArraySegment<byte> bytes = buffer.Bytes;
                 var offset = begin;
-                var validFields = _Fields.Select(
-                           (field, index) => new
-                           {
-                               field,
-                               index
-                           }).Where(validField => object.Equals(_GetDescriber(validField.field).Default, validField.field.GetValue(instance)) == false)
-                       .ToArray();
 
-                offset += Varint.NumberToBuffer(bytes.Array, bytes.Offset + offset, validFields.Length);
-
-
-                foreach (var validField in validFields)
+                var maskOffset = bytes.Offset + offset;
+                for (var m = 0; m < _MaskLength; m++)
                 {
-                    var index = validField.index;
-                    FieldInfo field = validField.field;
-
-                    offset = _ToBuffer(instance, buffer, offset, index, field);
+                    bytes.Array[maskOffset + m] = 0;
                 }
+                offset += _MaskLength;
 
+                for (var i = 0; i < _Fields.Length; i++)
+                {
+                    FieldInfo field = _Fields[i];
+                    var value = field.GetValue(instance);
+                    if (object.Equals(_GetDescriber(field).Default, value))
+                        continue;
+
+                    bytes.Array[maskOffset + i / 8] |= (byte)(1 << (i % 8));
+
+                    ITypeDescriber describer;
+                    if (TypeIdentifier.IsFinal(field.FieldType))
+                    {
+                        describer = _GetDescriber(field);
+                    }
+                    else
+                    {
+                        Type valueType = value.GetType();
+                        offset += _TypeSet.Get().ToBuffer(valueType, buffer, offset);
+                        describer = _TypeSet.Get(valueType);
+                    }
+                    offset += describer.ToBuffer(value, buffer, offset);
+                }
 
                 return offset - begin;
             }
@@ -121,32 +123,38 @@ namespace PinionCore.Serialization
 
         }
 
-        private int _ToBuffer(object instance, Memorys.Buffer buffer, int offset, int index, FieldInfo field)
-        {
-            ArraySegment<byte> bytes = buffer.Bytes;
-            offset += Varint.NumberToBuffer(bytes.Array, bytes.Offset + offset, index);
-            var value = field.GetValue(instance);
-            Type valueType = value.GetType();
-            offset += _TypeSet.Get().ToBuffer(valueType, buffer, offset);
-            ITypeDescriber describer = _TypeSet.Get(valueType);
-            offset += describer.ToBuffer(value, buffer, offset);
-            return offset;
-        }
-
         int ITypeDescriber.ToObject(PinionCore.Memorys.Buffer buffer, int begin, out object instance)
         {
             try
             {
                 instance = _CreateInstance();
 
+                ArraySegment<byte> bytes = buffer.Bytes;
                 var offset = begin;
+                var maskOffset = bytes.Offset + offset;
+                offset += _MaskLength;
 
-                ulong validLength;
-                offset += Varint.BufferToNumber(buffer, offset, out validLength);
-
-                for (var i = 0ul; i < validLength; i++)
+                for (var i = 0; i < _Fields.Length; i++)
                 {
-                    offset = _ToObject(buffer, instance, offset);
+                    if ((bytes.Array[maskOffset + i / 8] & (1 << (i % 8))) == 0)
+                        continue;
+
+                    FieldInfo field = _Fields[i];
+                    ITypeDescriber describer;
+                    if (TypeIdentifier.IsFinal(field.FieldType))
+                    {
+                        describer = _GetDescriber(field);
+                    }
+                    else
+                    {
+                        Type valueType;
+                        offset += _TypeSet.Get().ToObject(buffer, offset, out valueType);
+                        describer = _TypeSet.Get(valueType);
+                    }
+
+                    object valueInstance;
+                    offset += describer.ToObject(buffer, offset, out valueInstance);
+                    field.SetValue(instance, valueInstance);
                 }
 
                 return offset - begin;
@@ -159,20 +167,6 @@ namespace PinionCore.Serialization
             }
 
 
-        }
-
-        private int _ToObject(PinionCore.Memorys.Buffer buffer, object instance, int offset)
-        {
-            ulong index;
-            offset += Varint.BufferToNumber(buffer, offset, out index);
-            Type valueType;
-            offset += _TypeSet.Get().ToObject(buffer, offset, out valueType);
-            FieldInfo filed = _Fields[index];
-            ITypeDescriber describer = _TypeSet.Get(valueType);
-            object valueInstance;
-            offset += describer.ToObject(buffer, offset, out valueInstance);
-            filed.SetValue(instance, valueInstance);
-            return offset;
         }
 
         private object _CreateInstance()

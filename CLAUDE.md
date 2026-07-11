@@ -67,6 +67,8 @@ static partial void _Create(ref PinionCore.Remote.IProtocol protocol);
 #### 4. 序列化可擴展性
 - ISerializable 介面允許自訂序列化
 - 預設支援基礎型別與陣列
+- 協議/序列化型別不需繼承時一律標 `sealed`：預設序列化對宣告為 sealed 或 value type 的欄位/元素會省略 runtime type-id，封包更小（詳見 PinionCore.Serialization/README.md 的 Wire Format 章節）
+- 序列化 wire format 無版本協商，屬 breaking change 範疇：改動 describer 編碼或協議型別的 public 欄位（改名/增減）後，server 與 client 的 DLL 必須同版部署
 - IProtocol.SerializeTypes 提供需序列化的型別清單
 
 #### 5. StatusMachine 狀態管理模式

@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### 2026-07-11
+
+> Package versions are not bumped yet. When publishing, advance only the modified project(s) per this entry — the affected library is **PinionCore.Serialization** (`0.2.0.0` → next minor; the wire format is not backward compatible).
+
+#### Changed
+- **Breaking (wire format)**: shrank per-field/per-element metadata in the serialized byte stream. Both endpoints must run the same PinionCore.Serialization version — mixed old/new versions cannot exchange data. Small framework messages such as `PackageCallMethod` shrink roughly 40% (28 → 16 bytes in the benchmark). (Project: PinionCore.Serialization)
+  - `ClassDescriber`: a class/struct payload now starts with a `ceil(N/8)`-byte field bitmask replacing the previous `[validCount] + per-field [index]` encoding.
+  - `ClassDescriber`/`ArrayDescriber`: fields and array elements whose *declared* type is a value type or a sealed class (`string` and array types included) no longer carry a runtime type-id; the decoder derives the describer from the declared type (`TypeIdentifier.IsFinal`, which excludes `Nullable<T>`). Non-sealed class fields still carry a type-id for polymorphism.
+  - `ArrayDescriber`: dense arrays (no default-valued elements, e.g. `MethodParams`) omit per-element indices entirely; sparse arrays keep the varint index per written element.
+  - `BufferDescriber` (`char[]`): removed the redundant byte-length prefix; only the element count is written and the byte length is derived from the fixed element size.
+
+#### Added
+- `TypeIdentifier.IsFinal(Type)` — the shared encode/decode rule for type-id elision. (Project: PinionCore.Serialization)
+- Tests: `MetadataCompressionTests` pinning the new sizes (call-method-like package ≤ 16 bytes, dense `int[5]` ≤ 8 bytes, sealed vs non-sealed field size difference) plus round-trip regressions for sparse arrays with default elements, >8-field bitmask spans, all-default instances, and polymorphic fields. (Project: PinionCore.Serialization.Test)
+
 ### 2026-07-03
 
 > Package versions are not bumped yet. When publishing, advance only the modified project(s) per this entry — the affected libraries are **PinionCore.Utility** (`0.2.0.0` → next patch) and **PinionCore.Remote** (`0.2.0.0` → next patch).

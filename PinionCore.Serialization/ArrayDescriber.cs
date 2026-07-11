@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 
@@ -12,6 +12,8 @@ namespace PinionCore.Serialization
 
         private readonly object _Default;
         private readonly object _DefaultElement;
+        private readonly Type _ElementType;
+        private readonly bool _ElementFinal;
         private readonly IDescribersFinder _TypeSet;
 
         public ArrayDescriber(Type type, IDescribersFinder finder)
@@ -21,6 +23,8 @@ namespace PinionCore.Serialization
             _Default = null;
             _Type = type;
             Type elementType = type.GetElementType();
+            _ElementType = elementType;
+            _ElementFinal = TypeIdentifier.IsFinal(elementType);
             try
             {
                 if (!elementType.IsClass)
@@ -107,6 +111,7 @@ namespace PinionCore.Serialization
             var lenCount = Varint.GetByteCount(set.TotalLength);
             var validCount = Varint.GetByteCount(set.ValidLength);
 
+            var dense = set.ValidLength == set.TotalLength;
 
             var instanceCount = 0;
             for (var i = 0; i < set.ValidObjects.Length; i++)
@@ -114,10 +119,20 @@ namespace PinionCore.Serialization
                 var index = set.ValidObjects[i].Index;
                 var obj = set.ValidObjects[i].Object;
 
-                ITypeDescriber describer = _TypeSet.Get(obj.GetType());
+                if (!dense)
+                    instanceCount += Varint.GetByteCount(index);
 
-                instanceCount += Varint.GetByteCount(index);
-                instanceCount += _TypeSet.Get().GetByteCount(obj.GetType());
+                ITypeDescriber describer;
+                if (_ElementFinal)
+                {
+                    describer = _TypeSet.Get(_ElementType);
+                }
+                else
+                {
+                    Type objType = obj.GetType();
+                    instanceCount += _TypeSet.Get().GetByteCount(objType);
+                    describer = _TypeSet.Get(objType);
+                }
                 instanceCount += describer.GetByteCount(obj);
             }
 
@@ -135,15 +150,27 @@ namespace PinionCore.Serialization
                 offset += Varint.NumberToBuffer(bytes.Array, bytes.Offset + offset, set.TotalLength);
                 offset += Varint.NumberToBuffer(bytes.Array, bytes.Offset + offset, set.ValidLength);
 
+                var dense = set.ValidLength == set.TotalLength;
 
                 for (var i = 0; i < set.ValidObjects.Length; i++)
                 {
                     var index = set.ValidObjects[i].Index;
                     var obj = set.ValidObjects[i].Object;
-                    offset += Varint.NumberToBuffer(bytes.Array, bytes.Offset + offset, index);
-                    Type objType = obj.GetType();
-                    ITypeDescriber describer = _TypeSet.Get(objType);
-                    offset += _TypeSet.Get().ToBuffer(objType, buffer, offset);
+
+                    if (!dense)
+                        offset += Varint.NumberToBuffer(bytes.Array, bytes.Offset + offset, index);
+
+                    ITypeDescriber describer;
+                    if (_ElementFinal)
+                    {
+                        describer = _TypeSet.Get(_ElementType);
+                    }
+                    else
+                    {
+                        Type objType = obj.GetType();
+                        offset += _TypeSet.Get().ToBuffer(objType, buffer, offset);
+                        describer = _TypeSet.Get(objType);
+                    }
                     offset += describer.ToBuffer(obj, buffer, offset);
                 }
 
@@ -170,16 +197,27 @@ namespace PinionCore.Serialization
                 ulong validCount;
                 offset += Varint.BufferToNumber(buffer, offset, out validCount);
 
+                var dense = validCount == count;
 
                 for (var i = 0UL; i < validCount; i++)
                 {
-                    var index = 0LU;
+                    var index = i;
+                    if (!dense)
+                    {
+                        offset += Varint.BufferToNumber(buffer, offset, out index);
+                    }
 
-                    offset += Varint.BufferToNumber(buffer, offset, out index);
-
-                    Type objType;
-                    offset += _TypeSet.Get().ToObject(buffer, offset, out objType);
-                    ITypeDescriber describer = _TypeSet.Get(objType);
+                    ITypeDescriber describer;
+                    if (_ElementFinal)
+                    {
+                        describer = _TypeSet.Get(_ElementType);
+                    }
+                    else
+                    {
+                        Type objType;
+                        offset += _TypeSet.Get().ToObject(buffer, offset, out objType);
+                        describer = _TypeSet.Get(objType);
+                    }
                     object value;
                     offset += describer.ToObject(buffer, offset, out value);
 

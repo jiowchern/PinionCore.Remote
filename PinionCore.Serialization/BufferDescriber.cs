@@ -12,6 +12,7 @@ namespace PinionCore.Serialization
     public class BufferDescriber : ITypeDescriber
     {
         private readonly Type _Type;
+        private readonly int _ElementSize;
 
 
         public BufferDescriber(Type type)
@@ -19,6 +20,7 @@ namespace PinionCore.Serialization
             if (type.IsArray == false)
                 throw new ArgumentException("type is not array " + type.FullName);
             _Type = type;
+            _ElementSize = Buffer.ByteLength(_Create(1));
 
         }
 
@@ -38,9 +40,8 @@ namespace PinionCore.Serialization
         {
             var src = instance as Array;
             var bufferLength = Buffer.ByteLength(src);
-            var bufferLen = Varint.GetByteCount(bufferLength);
             var elementLen = Varint.GetByteCount(src.Length);
-            return bufferLen + bufferLength + elementLen;
+            return bufferLength + elementLen;
         }
 
         int ITypeDescriber.ToBuffer(object instance, PinionCore.Memorys.Buffer buffer, int begin)
@@ -49,7 +50,6 @@ namespace PinionCore.Serialization
             var src = instance as Array;
             var bufferLength = Buffer.ByteLength(src);
             var offset = begin;
-            offset += Varint.NumberToBuffer(bytes.Array, bytes.Offset + offset, bufferLength);
             offset += Varint.NumberToBuffer(bytes.Array, bytes.Offset + offset, src.Length);
 
 
@@ -61,10 +61,9 @@ namespace PinionCore.Serialization
         int ITypeDescriber.ToObject(PinionCore.Memorys.Buffer buffer, int begin, out object instance)
         {
             var offset = begin;
-            var bufferLen = 0;
-            offset += Varint.BufferToNumber(buffer, offset, out bufferLen);
             var elementLen = 0;
             offset += Varint.BufferToNumber(buffer, offset, out elementLen);
+            var bufferLen = elementLen * _ElementSize;
             Array dst = _Create(elementLen);
 
             ArraySegment<byte> bytes = buffer.Bytes;

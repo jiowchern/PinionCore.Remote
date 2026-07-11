@@ -71,4 +71,6 @@ var agent = new PinionCore.Remote.Ghost.Agent(
 - `Server.Host`：封裝預設序列化的 `Soul.Service`
 - `Client.Proxy`：封裝預設序列化的 `Ghost.Agent`
 
-需要序列化的型別可由 `IProtocol.SerializeTypes` 取得，或參考 `PinionCore.Serialization/README.md`。
+需要序列化的型別可由 `IProtocol.SerializeTypes` 取得；線上格式、壓縮與限制的細節請參考 `PinionCore.Serialization/README.md`。
+
+小技巧：不需要被繼承的協議型別建議標 `sealed`——預設序列化對宣告為 sealed 或 value type 的欄位/元素會省略 runtime type-id，封包更小。

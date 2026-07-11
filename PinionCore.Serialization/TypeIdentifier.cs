@@ -155,6 +155,12 @@ namespace PinionCore.Serialization
             return _IsNumber(type) || _IsBittable(type) || _IsBuffer(type) || _IsByteArray(type) || _IsEnum(type);
         }
 
+        public static bool IsFinal(Type type)
+        {
+            // Nullable<T> 欄位取值後的 runtime type 是 T 而非 Nullable<T>,不能以宣告型別查 describer
+            return (type.IsSealed || type.IsValueType) && Nullable.GetUnderlyingType(type) == null;
+        }
+
         public static bool IsString(Type type)
         {
             return _IsString(type);

@@ -77,4 +77,5 @@ var agent = new PinionCore.Remote.Ghost.Agent(
 Notes:
 
 - Required serialization types can be obtained from `IProtocol.SerializeTypes`.
-- Additional details can be found in `PinionCore.Serialization/README.md`.
+- Additional details (wire format, compression, limitations) can be found in `PinionCore.Serialization/README.md`.
+- Tip: mark protocol classes `sealed` when inheritance is not needed — the default serializer omits the runtime type-id for fields/elements declared as sealed or value types, producing smaller packets.
