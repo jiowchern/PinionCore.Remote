@@ -101,7 +101,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
 
         private static void _SetHasSub(IMethodable methodable)
         {
-            methodable.GetValueSelf().OnValue += (gpi) => _HasSub = true;
+            methodable.GetValueSelf().OnValue += (gpi, error) => _HasSub = true;
 
         }
 

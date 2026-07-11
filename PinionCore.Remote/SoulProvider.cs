@@ -83,8 +83,13 @@ namespace PinionCore.Remote
 
         public void Unbind(long entityId)
         {
-            SoulProxy soul;
-            _Souls.TryGetValue(entityId, out soul);
+            // 對已不存在的 soul 送 Release(server 已先解綁)屬正常競態:
+            // 傳 null 進 _bindHandler 會 NRE 且發生在 _ReadDone 內聯路徑,會卡死整條 session 的讀取
+            if (!_Souls.TryGetValue(entityId, out SoulProxy soul))
+            {
+                PinionCore.Utility.Log.Instance.WriteInfo($"Unbind soul not found entity_id:{entityId}");
+                return;
+            }
             _bindHandler.Unbind(soul);
 
         }

@@ -53,7 +53,11 @@ namespace PinionCore.Remote
             SoulProxy soul;
             if (!_Souls.TryGetValue(entity_id, out soul))
             {
-                throw new Exception($"Soul not found entity_id:{entity_id}");
+                // soul 已解綁而請求仍在途中屬正常競態:回錯誤讓 client 的 Value 得到結果,不能丟例外
+                var message = $"Soul not found entity_id:{entity_id}";
+                Log.Instance.WriteInfo(message);
+                _ErrorDeserialize(method_id.ToString(), returnId, message);
+                return;
             }
 
 
@@ -69,8 +73,10 @@ namespace PinionCore.Remote
                     .FirstOrDefault();
             if (methodInfo == null)
             {
-                throw new Exception($"Method not found method_id:{method_id} protocol:{_Protocol.VersionCode.ToMd5String()}" );
-
+                var message = $"Method not found method_id:{method_id} protocol:{_Protocol.VersionCode.ToMd5String()}";
+                Log.Instance.WriteInfo(message);
+                _ErrorDeserialize(method_id.ToString(), returnId, message);
+                return;
             }
 
             try
@@ -149,13 +155,19 @@ namespace PinionCore.Remote
         {
             if (!_Souls.TryGetValue(entity_id, out SoulProxy soul))
             {
-                throw new Exception($"Soul not found entity_id:{entity_id}");
+                var message = $"Soul not found entity_id:{entity_id}";
+                Log.Instance.WriteInfo(message);
+                _ErrorDeserialize(method_id.ToString(), returnId, message);
+                return;
             }
 
             MethodInfo info = _Protocol.GetMemberMap().GetMethod(method_id);
             if (info == null)
             {
-                throw new Exception($"Stream method not found method_id:{method_id}");
+                var message = $"Stream method not found method_id:{method_id}";
+                Log.Instance.WriteInfo(message);
+                _ErrorDeserialize(method_id.ToString(), returnId, message);
+                return;
             }
 
             try

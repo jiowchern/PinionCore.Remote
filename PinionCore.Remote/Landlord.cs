@@ -14,7 +14,9 @@
 
         long ILandlordProviable<long>.Spawn()
         {
-            return ++_Current;
+            // Rent 會從多執行緒進入(client 端 stream RPC 走 IO 執行緒);
+            // 停用回收後 Spawn 成為熱路徑,必須原子遞增避免撞號
+            return System.Threading.Interlocked.Increment(ref _Current);
         }
     }
     public class Landlord<T>
@@ -42,7 +44,7 @@
         }
         public void Return(T obj)
         {
-            _Enrollments.Add(obj);
+            //_Enrollments.Add(obj);
         }
 
     }
