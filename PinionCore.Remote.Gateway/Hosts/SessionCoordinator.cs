@@ -55,6 +55,7 @@ namespace PinionCore.Remote.Gateway.Hosts
             lock (_gate)
             {
                 ThrowIfDisposed();
+                PinionCore.Utility.Log.Instance.WriteInfo($"Coordinator register group:{group} allocator:{allocatable.GetHashCode()}");
                 var list = GetOrCreateAllocators(group);
                 if (!list.Contains(allocatable))
                 {
@@ -78,6 +79,7 @@ namespace PinionCore.Remote.Gateway.Hosts
             lock (_gate)
             {
                 ThrowIfDisposed();
+                PinionCore.Utility.Log.Instance.WriteInfo($"Coordinator unregister group:{group} allocator:{allocatable.GetHashCode()}");
                 if (!_allocatorsByGroup.TryGetValue(group, out var list))
                 {
                     return;
@@ -205,6 +207,7 @@ namespace PinionCore.Remote.Gateway.Hosts
                         continue;
                     }
 
+                    PinionCore.Utility.Log.Instance.WriteInfo($"Coordinator assign group:{group} stream:{stream.GetHashCode()} session:{state.Session.GetHashCode()}");
                     state.Allocations[group] = new Allocation(allocator, stream);
                     return;
                 }
@@ -227,6 +230,7 @@ namespace PinionCore.Remote.Gateway.Hosts
 
         private void ReleaseAllocation(SessionState state, uint group, Allocation allocation)
         {
+            PinionCore.Utility.Log.Instance.WriteInfo($"Coordinator release group:{group} stream:{allocation.Stream.GetHashCode()} session:{state.Session.GetHashCode()}");
             if (state.Session.Unset(group))
             {
                 allocation.Allocator.Free(allocation.Stream);

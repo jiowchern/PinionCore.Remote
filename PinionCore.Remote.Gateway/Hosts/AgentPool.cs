@@ -14,6 +14,9 @@ namespace PinionCore.Remote.Gateway.Hosts
             public IAgent Agent { get; set; }
             public IStreamable Stream { get; set; }
 
+            // 通道已死(對端 stream soul 解綁)時通知 pool 拆除此 session
+            public Action DeadEvent { get; set; }
+
             public IAwaitableSource<int> Send(byte[] buffer, int offset, int count, CancellationToken token)
             {
                 if (token.IsCancellationRequested)
@@ -25,7 +28,28 @@ namespace PinionCore.Remote.Gateway.Hosts
             {
                 if (token.IsCancellationRequested)
                     return 0.ToWaitableValue();
-                return Stream.Receive(buffer, offset, count, token);
+
+                IAwaitableSource<int> inner = Stream.Receive(buffer, offset, count, token);
+                IAwaitable<int> awaiter = inner.GetAwaiter();
+                var result = new Value<int>();
+                void Complete()
+                {
+                    var readCount = awaiter.GetResult();
+                    result.SetValue(readCount);
+                    // 對端 stream soul 已解綁時,tunnel RPC 以錯誤完成並回 0:
+                    // 視為連線已死,立即拆除 session,而不是在死通道上無聲空轉
+                    if (readCount <= 0)
+                        DeadEvent?.Invoke();
+                }
+                if (awaiter.IsCompleted)
+                {
+                    Complete();
+                }
+                else
+                {
+                    awaiter.OnCompleted(Complete);
+                }
+                return result;
             }
 
             void IDisposable.Dispose()
@@ -87,10 +111,24 @@ namespace PinionCore.Remote.Gateway.Hosts
                 Agent = agent,
                 Stream = stream,
             };
+            wrapper.DeadEvent = () => _OnSessionDead(wrapper);
 
+            PinionCore.Utility.Log.Instance.WriteInfo($"AgentPool connection supply stream:{stream.GetHashCode()}");
             agent.Enable(wrapper);
             _sessions.Add(wrapper);
             _agentsCollection.Items.Add(agent);
+        }
+
+        private void _OnSessionDead(AgentSession session)
+        {
+            if (!_sessions.Remove(session))
+            {
+                return;
+            }
+
+            PinionCore.Utility.Log.Instance.WriteInfo($"AgentPool connection dead stream:{session.Stream.GetHashCode()}");
+            session.Agent.Disable();
+            _agentsCollection.Items.Remove(session.Agent);
         }
 
         private void OnConnectionUnsupply(IStreamable stream)
@@ -103,6 +141,7 @@ namespace PinionCore.Remote.Gateway.Hosts
                     continue;
                 }
 
+                PinionCore.Utility.Log.Instance.WriteInfo($"AgentPool connection unsupply stream:{stream.GetHashCode()}");
                 session.Agent.Disable();
                 _agentsCollection.Items.Remove(session.Agent);
                 _sessions.RemoveAt(i);

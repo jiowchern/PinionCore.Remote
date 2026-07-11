@@ -220,6 +220,14 @@ namespace PinionCore.Remote.Soul
                 // 先取結果並換新讀取任務再處理:處理途中拋例外時
                 // 讀取幫浦才不會停在同一個已完成任務上重複執行同批封包
                 List<Memorys.Buffer> buffers = _ReadTask.GetResult();
+                if (buffers.Count == 0)
+                {
+                    // PackageReader 只在流結束(讀到 0)時回空批次:
+                    // 通知宿主移除此 session,否則會在死流上空轉且 session 永不離開
+                    Utility.Singleton<Utility.Log>.Instance.WriteInfo("User stream closed, session leaving.");
+                    ErrorEvent?.Invoke();
+                    return;
+                }
                 _ReadTask = _Reader.Read().GetAwaiter();
                 _ReadDone(buffers);
             }
