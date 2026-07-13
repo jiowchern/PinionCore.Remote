@@ -16,4 +16,3 @@
 ## 線上文件
 
 - [DeepWiki](https://deepwiki.com/jiowchern/PinionCore.Remote)
-- [OpenDeepWiki](https://opendeep.wiki/jiowchern/PinionCore.Remote/introduction?branch=master)

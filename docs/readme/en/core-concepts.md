@@ -98,16 +98,19 @@ If an interface method is defined like this:
 PinionCore.Remote.IAwaitableSource<int> StreamEcho(
     byte[] buffer,
     int offset,
-    int count);
+    int count,
+    System.Threading.CancellationToken token);
 ```
 
-The Source Generator automatically treats it as a **streamable method**.
+The Source Generator automatically treats it as a **streamable method**. The signature must match exactly —
+four parameters ending with a `CancellationToken` — otherwise the method is treated as a regular RMI.
 
 Behavior:
 
 - Sending data: only the slice `buffer[offset .. offset + count)` is transmitted.
 - Server processing: the server writes the processed data **back into the same buffer region**.
 - Return value `IAwaitableSource<int>` indicates **the actual number of bytes processed**.
+- Cancelling the `token` aborts the pending stream operation.
 
 The detection logic for streamable methods is located in:
 

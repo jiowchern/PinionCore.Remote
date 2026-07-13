@@ -80,13 +80,16 @@ INotifier<T> QueryNotifier<T>();
 PinionCore.Remote.IAwaitableSource<int> StreamEcho(
     byte[] buffer,
     int offset,
-    int count);
+    int count,
+    System.Threading.CancellationToken token);
 ```
 
-Source Generator 會將其視為「串流方法」：
+Source Generator 會將其視為「串流方法」。簽名必須完全符合——四個參數且最後一個是
+`CancellationToken`——否則會被當成一般 RMI 處理：
 
 - 傳送資料只包含 `buffer[offset..offset+count)`。
 - 伺服器處理後的資料會原地寫回同一段區間。
 - 回傳的 `IAwaitableSource<int>` 表示實際處理的位元組數。
+- 取消 `token` 會中止進行中的串流作業。
 
 檢查邏輯見：`PinionCore.Remote.Tools.Protocol.Sources/MethodPinionCoreRemoteStreamable.cs`
