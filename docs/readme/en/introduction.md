@@ -16,4 +16,3 @@ You define **interfaces** as remote protocols. Servers implement these interface
 ## Online Documentation
 
 - [DeepWiki](https://deepwiki.com/jiowchern/PinionCore.Remote)
-- [OpenDeepWiki](https://opendeep.wiki/jiowchern/PinionCore.Remote/introduction?branch=master)

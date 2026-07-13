@@ -71,6 +71,13 @@ public class Entry : PinionCore.Remote.IEntry
 }
 ```
 
+啟動伺服器：
+
+```csharp
+var host = new PinionCore.Remote.Server.Host(entry, protocol);
+// Host 內部使用 SessionEngine 管理連線
+```
+
 ## 3. Value / Property / Notifier 支援
 
 ### Value<T>：一次性非同步呼叫

@@ -54,6 +54,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added `PinionCore.Integration.Tests/RelayTests.cs` verifying the `B → A → Client` chain end to end for method, property, and notifier relaying (each guarded with a 5s timeout).
   - Added a "Cross-Server Interface Relay" section with a Mermaid diagram to `docs/readme/en/core-features.md` and `docs/readme/tc/core-features.md`.
 
+### 2025-12-08
+
+#### Changed
+- **Breaking (API)**: `IStreamable.Receive` and `IStreamable.Send` now take a `System.Threading.CancellationToken` parameter, so pending stream operations can be aborted on disconnect or shutdown instead of hanging. All transport implementations were updated accordingly. (Project: PinionCore.Network)
+- **Breaking (protocol source generation)**: a streamable interface method must now declare a fourth `System.Threading.CancellationToken` parameter — `IAwaitableSource<int> Method(byte[] buffer, int offset, int count, CancellationToken token)` — to be recognized by the Source Generator; the previous three-parameter form is treated as a regular RMI. (Project: PinionCore.Remote.Tools.Protocol.Sources)
+- Improved cancellation propagation and error handling across the connection pipeline. (Projects: PinionCore.Network, PinionCore.Remote)
+
 ### 2025-11-16
 
 #### Changed
