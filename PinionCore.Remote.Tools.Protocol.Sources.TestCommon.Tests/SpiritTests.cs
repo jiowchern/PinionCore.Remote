@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Reactive.Linq;
 using System.Reactive.Threading.Tasks;
 using System.Threading.Tasks;
@@ -21,12 +21,18 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
                        from m0Value in m0.GetValue1().RemoteValue()
                        from m1 in spirit1.Get2(1).SupplyEvent()
                        from m1Value in m1.GetValue1().RemoteValue()
-                       select new { m0Value, m1Value };
+                       from m3_1 in spirit1.Get3(2).SupplyEvent()
+                       from m3_1Value in m3_1.GetValue1().RemoteValue()
+                       from m3_2 in spirit1.Get3(3).SupplyEvent()
+                       from m3_2Value in m3_2.GetValue1().RemoteValue()
+                       select new { m0Value, m1Value, m3_1Value, m3_2Value };
 
             var getValues = await obs1.FirstAsync();
 
             Assert.AreEqual(0, getValues.m0Value);
             Assert.AreEqual(1, getValues.m1Value);
+            Assert.AreEqual(2, getValues.m3_1Value);
+            Assert.AreEqual(3, getValues.m3_2Value);
 
             // 階段二：Soul 端 Dispose 觸發 Ghost 端 Unsupply
             var ghost = await env.Queryable.QueryNotifier<ISpirit1>().SupplyEvent().FirstAsync();

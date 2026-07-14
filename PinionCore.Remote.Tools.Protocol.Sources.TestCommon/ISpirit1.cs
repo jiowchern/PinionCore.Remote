@@ -4,6 +4,8 @@
     {
         PinionCore.Remote.Spirit<IMethodable1> Get1();
         PinionCore.Remote.Spirit<IMethodable1> Get2(int testvalue);
+
+        PinionCore.Remote.Spirit<IMethodable1> Get3(int testvalue);
     }
 
     

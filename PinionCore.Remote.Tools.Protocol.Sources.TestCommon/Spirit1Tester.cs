@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon
 {
@@ -6,8 +7,9 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon
     public class Spirit1TesterMethodable0 : IMethodable1
     {
 
-        public Spirit1TesterMethodable0() {
-            _Value= 0;
+        public Spirit1TesterMethodable0()
+        {
+            _Value = 0;
         }
         int _Value;
         public PinionCore.Remote.Value<int> GetValue1()
@@ -29,8 +31,10 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon
         readonly Spirit1TesterMethodable0 methodable1 = new Spirit1TesterMethodable0();
 
 
-        readonly Spirit<IMethodable1> spirit1 ;
+        readonly Spirit<IMethodable1> spirit1;
         readonly Spirit<IMethodable1> spirit2;
+
+        readonly List<Spirit<IMethodable1>> spirits = new List<Spirit<IMethodable1>>();
 
         public Spirit1Tester()
         {
@@ -42,6 +46,8 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon
         {
             spirit1.Dispose();
             spirit2.Dispose();
+
+            foreach (var spirit in spirits) { spirit.Dispose(); }
         }
 
         Spirit<IMethodable1> ISpirit1.Get1()
@@ -53,6 +59,15 @@ namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon
         {
             methodable1.SetValue(testvalue);
             return spirit2;
+        }
+
+        Spirit<IMethodable1> ISpirit1.Get3(int testvalue)
+        {
+            var methodable = new Spirit1TesterMethodable0();
+            methodable.SetValue(testvalue);
+            var spirit = new Spirit<IMethodable1>(methodable);
+            spirits.Add(spirit);
+            return spirit;
         }
     }
 }
