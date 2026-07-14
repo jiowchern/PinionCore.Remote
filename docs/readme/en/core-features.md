@@ -2,9 +2,9 @@
 
 [Back: Introduction](introduction.md) | [Next: Architecture & Modules](architecture.md)
 
-## 1. Interface-Oriented Communication
+## 1. Spirits: Interface-Oriented Communication
 
-You only need to define interfaces — no manual serialization or protocol parsing is required:
+You only need to define a **Spirit** — the plain C# interface shared by server and client — no manual serialization or protocol parsing is required:
 
 ```csharp
 public interface IGreeter
@@ -170,7 +170,7 @@ agent.QueryNotifier<IRoom>().Supply += room =>
 
 ## 4. Cross-Server Interface Relay
 
-Because PinionCore.Remote transmits **interfaces** rather than concrete types, any interface that belongs to the same `IProtocol` can be relayed across multiple servers. An interface instance can be created on one server, handed to another, and forwarded again all the way to the client — the implementation stays in its origin process while the interface travels.
+Because PinionCore.Remote transmits **Spirits (interfaces)** rather than concrete types, any Spirit that belongs to the same `IProtocol` can be relayed across multiple servers. An interface instance can be created on one server, handed to another, and forwarded again all the way to the client — the implementation stays in its origin process while the interface travels.
 
 For example, an `IFoo` instance lives on **Server B**. Server B hands it to **Server A**, and Server A forwards it straight to the **Client**. The client never connects to Server B, yet it can obtain and call `IFoo` through Server A — A simply acts as a relay for the interface.
 
@@ -186,7 +186,7 @@ graph LR
 
 **Key points:**
 
-- The transport unit is the interface contract, so the concrete implementation never has to leave its origin server.
+- The transport unit is the Spirit (the interface contract), so the concrete implementation never has to leave its origin server.
 - As long as the interface comes from the same `IProtocol`, it can hop across servers with zero adaptation code.
 - The client only needs to connect to one server (A) yet can transparently use interfaces sourced from another (B).
 - No wrapper, adapter, or DTO layer is needed — every hop programs against the identical interface type.

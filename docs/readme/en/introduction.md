@@ -4,7 +4,7 @@
 
 **PinionCore Remote** is an interface-oriented remote communication framework built in C#.
 
-You define **interfaces** as remote protocols. Servers implement these interfaces, and clients invoke them as if they were local methods; actual data is transmitted through **TCP / WebSocket / Standalone (in-process simulation)**.
+You define plain C# interfaces — called **Spirits** — as remote protocols. Servers implement these Spirits (binding them as **Souls**), and clients invoke them through live proxies (**Ghosts**) as if they were local methods; actual data is transmitted through **TCP / WebSocket / Standalone (in-process simulation)**.
 
 - Supports **.NET Standard 2.1** (.NET 6/7/8, Unity 2021+)
 - Supports **IL2CPP & AOT** (requires pre-registered serialization types)

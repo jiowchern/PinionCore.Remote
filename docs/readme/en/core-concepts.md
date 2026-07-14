@@ -2,6 +2,18 @@
 
 [Back: Quick Start](quick-start.md) | [Next: Transport Modes](transports.md)
 
+## Spirit / Soul / Ghost
+
+The framework's terminology forms a trinity:
+
+- **Spirit** — the communication interface: a plain C# interface shared by server and client, defining methods (`Value<T>`), properties (`Property<T>`), events, and notifiers.
+- **Soul** — the server-side incarnation of a Spirit: the implementation bound to a session via `Bind<T>` (see `PinionCore.Remote.Soul`).
+- **Ghost** — the client-side incarnation of a Spirit: the live proxy obtained via `QueryNotifier<T>` (see `PinionCore.Remote.Ghost`).
+
+The server binds a Soul; the client receives its Ghost. Both program against the same Spirit.
+
+---
+
 ## IEntry / ISessionBinder / ISoul
 
 - **`IEntry`**

@@ -2,6 +2,18 @@
 
 [上一節：快速開始](quick-start.md) | [下一節：傳輸模式](transports.md)
 
+## Spirit / Soul / Ghost
+
+框架的術語構成三位一體：
+
+- **Spirit**——通訊介面：伺服器與客戶端共用的純 C# 介面，定義方法（`Value<T>`）、屬性（`Property<T>`）、事件與 Notifier。
+- **Soul**——Spirit 在伺服器端的化身：透過 `Bind<T>` 綁定到 Session 的實作（見 `PinionCore.Remote.Soul`）。
+- **Ghost**——Spirit 在客戶端的化身：透過 `QueryNotifier<T>` 取得的即時代理（見 `PinionCore.Remote.Ghost`）。
+
+伺服器綁定 Soul，客戶端取得 Ghost，兩端面對的都是同一個 Spirit。
+
+---
+
 ## IEntry / ISessionBinder / ISoul
 
 - **`IEntry`**：伺服器入口，負責 Session 開/關與更新。

@@ -6,6 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 PinionCore Remote 是一個 C# 伺服器-客戶端通訊框架，支援 Unity 與 .NET Standard 2.1+ 環境。透過介面進行物件導向的遠端通訊，降低協議維護成本。
 
+**術語**：伺服器與客戶端共用的通訊介面稱為 **Spirit**；伺服器端綁定的實作稱為 **Soul**，客戶端取得的遠端代理稱為 **Ghost**（兩端面對同一個 Spirit）。文件與註解中提及通訊介面時一律使用 Spirit。
+
 ## 常用指令
 
 ### 建置專案
@@ -45,8 +47,8 @@ dotnet test [項目路徑].csproj
 
 ### 關鍵設計模式
 
-#### 1. 介面導向通訊
-- 伺服器實作介面，客戶端透過相同介面呼叫
+#### 1. 介面導向通訊（Spirit）
+- 通訊介面稱為 Spirit：伺服器實作 Spirit（Soul），客戶端透過相同 Spirit 呼叫（Ghost）
 - 支援方法（Value<T>）、事件、屬性、Notifier
 - 透過 IBinder 綁定伺服器物件，IAgent 查詢客戶端物件
 
@@ -337,8 +339,8 @@ public class ConnectedState : IStatus
 - `PinionCore.Consoles.Chat1.Server/Services/RegistryConnectionStates/ConnectingState.cs`: Peer 對象傳遞
 ## 開發流程
 
-### 新增通訊介面
-1. 在 Protocol 專案定義介面
+### 新增 Spirit（通訊介面）
+1. 在 Protocol 專案定義 Spirit（介面）
 2. 使用 PinionCore.Remote.Value<T> 作為非同步方法回傳型別
 3. 重新建置以觸發程式碼產生
 

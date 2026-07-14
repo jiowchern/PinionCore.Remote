@@ -35,7 +35,7 @@ Sample/Protocol> dotnet new classlib
 </ItemGroup>
 ```
 
-定義資料與介面：
+定義資料與 Spirit（通訊介面）：
 
 ```csharp
 namespace Protocol
@@ -269,5 +269,5 @@ namespace Client
 ```
 
 - 客戶端使用與伺服器相同的 Protocol 定義。
-- 透過 TCP 端點連線，`QueryNotifier<IGreeter>()` 取得遠端介面代理。
+- 透過 TCP 端點連線，`QueryNotifier<IGreeter>()` 取得 `IGreeter` 這個 Spirit 的 Ghost（遠端代理）。
 - `HandleMessages()` / `HandlePackets()` 必須持續呼叫以處理返回結果與 Notifier 事件。

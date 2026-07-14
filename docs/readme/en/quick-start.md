@@ -35,7 +35,7 @@ Add NuGet references (version numbers may vary):
 </ItemGroup>
 ```
 
-Define data structures & interfaces (HelloWorld example):
+Define data structures & Spirits — the shared communication interfaces (HelloWorld example):
 
 ```csharp
 namespace Protocol
@@ -202,6 +202,6 @@ Explanation:
 
 - The client creates a `Proxy` based on the same protocol definition as the server.
 - It connects to the server using a TCP endpoint.
-- After connection, `QueryNotifier<IGreeter>()` returns the remote interface proxy.
+- After connection, `QueryNotifier<IGreeter>()` returns the Ghost — the remote proxy of the `IGreeter` Spirit.
 - The remote `SayHello()` behaves just like a local async call.
 - `HandleMessages()` and `HandlePackets()` **must** be called repeatedly so the client can process incoming remote values and notifier events.

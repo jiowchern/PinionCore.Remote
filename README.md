@@ -28,6 +28,8 @@ No message IDs.
 
 Just C# interfaces.
 
+In PinionCore.Remote, such a shared interface is called a **Spirit** — the server incarnates it as a **Soul** (the real object), and the client receives it as a **Ghost** (a live proxy).
+
 ```csharp
 public interface IPlayer
 {
@@ -74,7 +76,7 @@ PinionCore.Remote exposes objects.
 |                       | gRPC / MagicOnion             | PinionCore.Remote   |
 | --------------------- | ----------------------------- | ------------------- |
 | Programming model     | Remote Procedures             | Distributed Objects |
-| Contract              | `.proto` or Service Interface | Plain C# Interface  |
+| Contract              | `.proto` or Service Interface | Spirit (plain C# interface) |
 | Primary abstraction   | Service                       | Object              |
 | State synchronization | Manual                        | `Property<T>`       |
 | Server events         | Streaming                     | `event`             |
@@ -111,9 +113,11 @@ flowchart LR
     SValue -->|remote call| CResult
 ```
 
-The server owns the real object.
+The server owns the real object — the **Soul**.
 
-The client owns a live proxy.
+The client owns a live proxy — the **Ghost**.
+
+Both are two incarnations of the same **Spirit**.
 
 Properties stay synchronized.
 
