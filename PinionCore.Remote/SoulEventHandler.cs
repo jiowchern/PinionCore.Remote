@@ -34,16 +34,19 @@ namespace PinionCore.Remote
 
         public void AddEvent(long entityId, int eventId, long handlerId)
         {
+            // soul 已解綁而註冊仍在途中屬正常競態:忽略即可,client 端 ghost 隨 UnloadSoul 一併失效
             if (!_Souls.TryGetValue(entityId, out SoulProxy soul))
             {
-                throw new Exception($"AddEvent Soul not found entity_id:{entityId}");
+                PinionCore.Utility.Log.Instance.WriteInfo($"AddEvent Soul not found entity_id:{entityId}");
+                return;
             }
 
 
             EventInfo eventInfo = _Protocol.GetMemberMap().GetEvent(eventId);
             if (eventInfo == null || !soul.Is(eventInfo.DeclaringType))
             {
-                throw new Exception($"AddEvent Event not found event_id:{eventId}");
+                PinionCore.Utility.Log.Instance.WriteInfo($"AddEvent Event not found event_id:{eventId}");
+                return;
             }
 
 
@@ -55,11 +58,17 @@ namespace PinionCore.Remote
         public void RemoveEvent(long entityId, int eventId, long handlerId)
         {
             if (!_Souls.TryGetValue(entityId, out SoulProxy soul))
-                throw new Exception($"RemoveEventSoul not found entity_id:{entityId}");
+            {
+                PinionCore.Utility.Log.Instance.WriteInfo($"RemoveEvent Soul not found entity_id:{entityId}");
+                return;
+            }
 
             EventInfo eventInfo = _Protocol.GetMemberMap().GetEvent(eventId);
             if (eventInfo == null || !soul.Is(eventInfo.DeclaringType))
-                throw new Exception($"RemoveEvent Event not found event_id:{eventId}");
+            {
+                PinionCore.Utility.Log.Instance.WriteInfo($"RemoveEvent Event not found event_id:{eventId}");
+                return;
+            }
 
             soul.RemoveEvent(eventInfo, handlerId);
         }

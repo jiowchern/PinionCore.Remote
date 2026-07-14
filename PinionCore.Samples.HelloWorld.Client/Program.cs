@@ -42,8 +42,14 @@ namespace PinionCore.Samples.HelloWorld.Client
             System.Console.ReadKey();
         }
 
-        private static void _GetReply(HelloReply reply)
+        private static void _GetReply(HelloReply reply, string error)
         {
+            if (error != null)
+            {
+                System.Console.WriteLine($"SayHello error : {error}");
+                Enable = false;
+                return;
+            }
             System.Console.WriteLine($"Receive message : {reply.Message}");
             Enable = false;
         }

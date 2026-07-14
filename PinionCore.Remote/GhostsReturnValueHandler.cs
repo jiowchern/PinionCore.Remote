@@ -25,7 +25,9 @@ namespace PinionCore.Remote
                 IValue value = _ReturnValueQueue.PopReturnValue(returnTarget);
                 if (value == null)
                 {
-                    throw new Exception("SetReturnValue return value not found");
+                    // 遲到或重複的回應(對應的等待者已被錯誤回應清掉):忽略,不能毒死訊息迴圈
+                    PinionCore.Utility.Log.Instance.WriteInfo($"SetReturnValue return value not found. return_target:{returnTarget}");
+                    return;
                 }
                 var returnInstance = _Serializer.Deserialize(value.GetObjectType(), returnValue.AsBuffer());
                 value.SetValue(returnInstance);
@@ -33,8 +35,10 @@ namespace PinionCore.Remote
 
             public void ErrorReturnValue(long returnTarget, string method, string message)
             {
-                _ReturnValueQueue.PopReturnValue(returnTarget);
+                IValue value = _ReturnValueQueue.PopReturnValue(returnTarget);
                 _StreamContexts.Remove(returnTarget);
+                // 讓等待中的 Value 以錯誤完成,呼叫端不再永久等待
+                value?.SetError(string.IsNullOrEmpty(method) ? message : $"{method}: {message}");
                 ErrorMethodEvent?.Invoke(method, message);
             }
             public void PopReturnValue(long return_id, IGhost ghost)
@@ -75,7 +79,9 @@ namespace PinionCore.Remote
             {
                 if (!_StreamContexts.TryGetValue(returnTarget, out StreamContext context))
                 {
-                    throw new System.Exception("Stream return context not found.");
+                    // 遲到或重複的回應:忽略,不能毒死訊息迴圈
+                    PinionCore.Utility.Log.Instance.WriteInfo($"Stream return context not found. return_target:{returnTarget}");
+                    return;
                 }
                 _StreamContexts.Remove(returnTarget);
 
@@ -100,7 +106,8 @@ namespace PinionCore.Remote
                 IValue value = _ReturnValueQueue.PopReturnValue(returnTarget);
                 if (value == null)
                 {
-                    throw new System.Exception("Stream return value not found.");
+                    PinionCore.Utility.Log.Instance.WriteInfo($"Stream return value not found. return_target:{returnTarget}");
+                    return;
                 }
                 value.SetValue(processCount);
             }

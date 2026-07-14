@@ -49,8 +49,12 @@ namespace PinionCore.Remote
             _TimingTimer.Update(Delta);
         }
 
-        private void _Timing(long current)
+        private void _Timing(long current, string error)
         {
+            if (error != null)
+            {
+                return;
+            }
             _Real = current + _Request.Ticks;
         }
     }

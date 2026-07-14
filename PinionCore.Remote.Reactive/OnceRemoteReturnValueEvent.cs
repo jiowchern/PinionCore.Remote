@@ -14,8 +14,13 @@ namespace PinionCore.Remote.Reactive
             this._Return = ret;
         }
 
-        private void _OnValue(T obj)
+        private void _OnValue(T obj, string error)
         {
+            if (error != null)
+            {
+                _Observer.OnError(new RemoteMethodException(error));
+                return;
+            }
             _Observer.OnNext(obj);
             _Observer.OnCompleted();
         }
@@ -44,8 +49,13 @@ namespace PinionCore.Remote.Reactive
             this._Return = ret;
         }
 
-        private void _OnValue()
+        private void _OnValue(string error)
         {
+            if (error != null)
+            {
+                _Observer.OnError(new RemoteMethodException(error));
+                return;
+            }
             _Observer.OnNext(_Return);
             _Observer.OnCompleted();
         }

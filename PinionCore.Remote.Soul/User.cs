@@ -86,9 +86,16 @@ namespace PinionCore.Remote.Soul
 
             foreach (Memorys.Buffer buffer in buffers)
             {
-
-                var pkg = (Packages.RequestPackage)_InternalSerializer.Deserialize(buffer);
-                _InternalRequest(pkg);
+                // 單一封包失敗不能中斷整批,否則後續封包遺失
+                try
+                {
+                    var pkg = (Packages.RequestPackage)_InternalSerializer.Deserialize(buffer);
+                    _InternalRequest(pkg);
+                }
+                catch (Exception e)
+                {
+                    Utility.Singleton<Utility.Log>.Instance.WriteInfo($"User _ReadDone error {e}");
+                }
             }
 
         }
@@ -210,19 +217,31 @@ namespace PinionCore.Remote.Soul
         {
             if (_ReadTask.IsCompleted)
             {
-                _ReadDone(_ReadTask.GetResult());
+                // 先取結果並換新讀取任務再處理:處理途中拋例外時
+                // 讀取幫浦才不會停在同一個已完成任務上重複執行同批封包
+                List<Memorys.Buffer> buffers = _ReadTask.GetResult();
+                if (buffers.Count == 0)
+                {
+                    // PackageReader 只在流結束(讀到 0)時回空批次:
+                    // 通知宿主移除此 session,否則會在死流上空轉且 session 永不離開
+                    Utility.Singleton<Utility.Log>.Instance.WriteInfo("User stream closed, session leaving.");
+                    ErrorEvent?.Invoke();
+                    return;
+                }
                 _ReadTask = _Reader.Read().GetAwaiter();
+                _ReadDone(buffers);
             }
             PinionCore.Remote.Packages.RequestPackage pkg;
             while (_ExternalRequests.TryDequeue(out pkg))
             {
+                // 單筆請求失敗不中斷佇列,其餘請求照常處理
                 try
                 {
                     _ExternalRequest(pkg);
                 }
                 catch (Exception e)
                 {
-                    throw new Exception($"User _ExternalRequest error {e.ToString()}. pkgCode:{pkg.Code}");
+                    Utility.Singleton<Utility.Log>.Instance.WriteInfo($"User _ExternalRequest error {e}. pkgCode:{pkg.Code}");
                 }
 
             }
