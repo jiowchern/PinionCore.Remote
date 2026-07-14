@@ -69,6 +69,8 @@ namespace PinionCore.Remote
             {
                 MemberMap map = _Protocol.GetMemberMap();
                 Type type = map.GetInterface(typeId);
+                if (type == null)
+                    throw new Exceptions.UnknownProtocolTypeIdException(typeId);
                 IGhost ghost = BuildGhost(type, id, returnType);
 
                 var gm = new GhostMethodHandler(ghost.GetID(), _ReturnValueHandler, _Protocol, _Serializer, _InternalSerializer);

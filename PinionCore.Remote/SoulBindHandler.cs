@@ -76,6 +76,8 @@ namespace PinionCore.Remote
         private SoulProxy _NewSoul(object soul, Type soulType)
         {
             var interfaceId = _Protocol.GetMemberMap().GetInterface(soulType);
+            if (interfaceId == 0)
+                throw new Exceptions.UnregisteredProtocolInterfaceException(soulType);
             var newSoul = new SoulProxy(_IdLandlord.Rent(), interfaceId, soulType, soul);
             newSoul.SupplySoulEvent += _PropertyBind;
             newSoul.UnsupplySoulEvent += _PropertyUnbind;

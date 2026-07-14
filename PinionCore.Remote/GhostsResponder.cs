@@ -105,6 +105,8 @@ namespace PinionCore.Remote
             {
                 MemberMap map = _Protocol.GetMemberMap();
                 System.Type type = map.GetInterface(typeId);
+                if (type == null)
+                    throw new Exceptions.UnknownProtocolTypeIdException(typeId);
                 IProvider provider = _ProviderManager.QueryProvider(type);
 
                 GhostResponseHandler handler = _GhostHandler.FindHandler(entityId);
