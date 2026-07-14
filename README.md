@@ -127,6 +127,38 @@ Method calls become remote invocations.
 
 ---
 
+# One entry. The whole contract follows.
+
+Because Notifiers bind recursively, a whole service can hang off a single entry interface.
+
+```csharp
+public interface IChatEntry
+{
+    INotifier<IVerifiable> Verifiables { get; }  // login stage
+    INotifier<ILobby> Lobbies { get; }           // after verification
+}
+```
+
+The server binds one object.
+
+The client makes one query and follows the contract:
+
+```csharp
+agent.QueryNotifier<IChatEntry>().Supply += entry =>
+{
+    entry.Lobbies.Supply += lobby =>
+    {
+        lobby.Rooms.Supply += room => { /* ... */ };
+    };
+};
+```
+
+The entry interface *is* the client's roadmap — it declares what the service offers at each stage.
+
+And when the contract changes, every consumption site breaks at **compile time**, not silently at runtime.
+
+---
+
 # Ideal for
 
 PinionCore.Remote is well suited for systems where objects naturally have identity, lifetime, and behavior.

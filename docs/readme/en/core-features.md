@@ -226,7 +226,74 @@ Behavior:
   events that already happened, so event ordering does not affect correctness.
 - As with Notifier, `T` must be an interface.
 
-## 4. Cross-Server Interface Relay
+## 4. Single Entry Interface — the Contract as the Client's Roadmap
+
+Because Notifier properties bind recursively (section 3), a service can expose its **entire surface through one root Spirit**. The server binds exactly one entry interface per session; every other object is reached by following the contract's properties.
+
+Evolving the chat example from section 3 into a full entry:
+
+```csharp
+public interface IChatEntry
+{
+    // Login stage: supplied while the session is unauthenticated
+    INotifier<IVerifiable> Verifiables { get; }
+
+    // Lobby stage: supplied after verification succeeds
+    INotifier<ILobby> Lobbies { get; }
+}
+
+public interface IVerifiable
+{
+    Value<bool> Verify(string name);
+}
+
+public interface ILobby
+{
+    INotifier<IRoom> Rooms { get; }   // IRoom from section 3
+}
+```
+
+Server — one `Bind`, stages driven by Depot add/remove:
+
+```csharp
+void ISessionObserver.OnSessionOpened(ISessionBinder binder)
+{
+    var entry = new ChatEntry();        // implements IChatEntry
+    binder.Bind<IChatEntry>(entry);     // the ONLY bind for this session
+
+    // Verification stage: entry adds a Verifier into the Verifiables depot.
+    // When Verify succeeds: remove it and add a Lobby into Lobbies —
+    // the client sees the stage change as Unsupply / Supply.
+}
+```
+
+Client — one root query, then follow the contract:
+
+```csharp
+agent.QueryNotifier<IChatEntry>().Supply += entry =>
+{
+    entry.Verifiables.Supply += verifiable =>
+    {
+        verifiable.Verify(name);
+    };
+
+    entry.Lobbies.Supply += lobby =>
+    {
+        lobby.Rooms.Supply += room => { /* ... */ };
+    };
+};
+```
+
+**Why this matters:**
+
+- **The contract is the roadmap.** The entry interface declares what the service offers at each stage. Frontend developers follow the property chain instead of guessing which types to query at the root.
+- **Contract changes become compile errors.** Every consumer reaches an object through typed properties, so renaming or moving a member breaks each consumption site at compile time — instead of a per-type root query silently receiving nothing at runtime.
+- **Staged capability exposure.** The server controls what is available *right now* by supplying/unsupplying objects (pairs well with a state machine). This complements section 7 (public/private interfaces): that pattern binds different interfaces per client; this one switches capabilities inside a single entry over time.
+- **Late subscription is safe.** Supply has replay semantics, so chained subscriptions still receive objects supplied before the subscription happened — ordering does not affect correctness.
+
+> Runnable reference: the `PinionCore.Consoles.Chat1.*` samples drive a Login → Chatroom flow through a single entry with a status machine.
+
+## 5. Cross-Server Interface Relay
 
 Because PinionCore.Remote transmits **Spirits (interfaces)** rather than concrete types, any Spirit that belongs to the same `IProtocol` can be relayed across multiple servers. An interface instance can be created on one server, handed to another, and forwarded again all the way to the client — the implementation stays in its origin process while the interface travels.
 
@@ -252,7 +319,7 @@ graph LR
 
 > Runnable example: `PinionCore.Integration.Tests/RelayTests.cs` sets up the exact `B → A → Client` chain and verifies method, property, and notifier relaying end to end.
 
-## 5. Reactive Support
+## 6. Reactive Support
 
 `PinionCore.Remote.Reactive` provides Rx (Reactive Extensions) support, allowing you to compose remote workflows using `IObservable<T>`.
 
@@ -293,7 +360,7 @@ Notes:
 - Even when using Rx, **background loops are still required** (`HandlePackets()` / `HandleMessages()` must be called continuously).
 - Rx simply makes workflow composition easier; it does not replace low-level message handling.
 
-## 6. Public & Private Interface Support
+## 7. Public & Private Interface Support
 
 Since PinionCore Remote is interface-driven, the server can bind different interfaces based on client authentication or permissions, achieving clean “public vs. private” API separation.
 
@@ -334,7 +401,7 @@ void ISessionObserver.OnSessionOpened(ISessionBinder binder)
 - Unauthenticated clients → **IPublicService only**
 - Authenticated clients → **IPublicService + IPrivateService**
 
-## 7. Multiple Transport Modes & Standalone
+## 8. Multiple Transport Modes & Standalone
 
 PinionCore Remote includes three built-in transport modes:
 
@@ -352,7 +419,7 @@ PinionCore Remote includes three built-in transport modes:
 
 Integration tests (`SampleTests`) launch all three transports and ensure identical behavior across modes.
 
-## 8. Gateway Service
+## 9. Gateway Service
 
 **Purpose**:
 

@@ -217,7 +217,74 @@ lobby.EnterRoom(1).Supply += room =>
 - **補發語意**：晚訂閱 `Supply` / `Unsupply` 也能收到已發生的事件，事件順序不影響正確性。
 - 與 Notifier 相同，`T` 必須是介面。
 
-## 4. 跨服務器的介面轉傳
+## 4. 統一入口介面——合約即客戶端的開發路線圖
+
+由於 Notifier 屬性會遞迴綁定(見第 3 節),整個服務可以**只透過一個根 Spirit 曝光全部功能**:伺服器每個 session 只綁定一個入口介面,其餘物件全部沿合約的屬性鏈取得。
+
+把第 3 節的聊天範例擴展成完整入口:
+
+```csharp
+public interface IChatEntry
+{
+    // 驗證階段:session 尚未通過驗證時供給
+    INotifier<IVerifiable> Verifiables { get; }
+
+    // 大廳階段:驗證通過後供給
+    INotifier<ILobby> Lobbies { get; }
+}
+
+public interface IVerifiable
+{
+    Value<bool> Verify(string name);
+}
+
+public interface ILobby
+{
+    INotifier<IRoom> Rooms { get; }   // IRoom 見第 3 節
+}
+```
+
+伺服器端——只有一個 `Bind`,以 Depot 增減驅動階段:
+
+```csharp
+void ISessionObserver.OnSessionOpened(ISessionBinder binder)
+{
+    var entry = new ChatEntry();        // 實作 IChatEntry
+    binder.Bind<IChatEntry>(entry);     // 這個 session 唯一的 Bind
+
+    // 驗證階段:entry 把 Verifier 加進 Verifiables 的 Depot;
+    // Verify 通過後:移除它、把 Lobby 加進 Lobbies——
+    // 客戶端以 Unsupply / Supply 看到階段切換。
+}
+```
+
+客戶端——一次根查詢,之後照合約走:
+
+```csharp
+agent.QueryNotifier<IChatEntry>().Supply += entry =>
+{
+    entry.Verifiables.Supply += verifiable =>
+    {
+        verifiable.Verify(name);
+    };
+
+    entry.Lobbies.Supply += lobby =>
+    {
+        lobby.Rooms.Supply += room => { /* ... */ };
+    };
+};
+```
+
+**這個模式的價值:**
+
+- **合約即路線圖。**入口介面宣告了服務在各階段提供什麼功能,前端照屬性鏈開發,不必猜測該對根查詢哪些型別。
+- **合約變更以編譯錯誤浮現。**所有消費端都是經由型別化屬性取得物件,改名或搬移成員時每個消費點都在編譯期斷掉——而不是逐型別根查詢在執行期靜默收不到東西。
+- **階段化能力曝光。**伺服器以 Supply/Unsupply 控制「當下」開放的功能(適合搭配狀態機)。這與第 7 節的公私介面互補:那是「依客戶端綁不同介面」,這是「同一入口內隨時間切換能力」。
+- **晚訂閱安全。**Supply 具補發語意,鏈式訂閱也能收到訂閱前已供給的物件,事件順序不影響正確性。
+
+> 可執行參考:`PinionCore.Consoles.Chat1.*` 範例以單一入口搭配狀態機驅動 Login → Chatroom 流程。
+
+## 5. 跨服務器的介面轉傳
 
 由於 PinionCore.Remote 傳輸的是 **Spirit（介面）**而非具體型別，只要 Spirit 來自同一份 `IProtocol`，就能在多個服務器之間轉傳。介面實體可以在某個服務器上產生，交給另一個服務器，再一路轉發到客戶端——實作始終留在原始行程，傳遞的只有介面。
 
@@ -243,7 +310,7 @@ graph LR
 
 > 可執行範例：`PinionCore.Integration.Tests/RelayTests.cs` 建立了完整的 `B → A → Client` 轉傳鏈，並端到端驗證 method、property、notifier 的轉傳。
 
-## 5. 響應式方法支援（Reactive）
+## 6. 響應式方法支援（Reactive）
 
 `PinionCore.Remote.Reactive` 提供 Rx 擴充，讓你用 `IObservable<T>` 組合遠端流程。
 
@@ -284,7 +351,7 @@ await runTask;
 - 即使用 Rx，仍需要背景迴圈呼叫 `HandlePackets()` / `HandleMessages()`。
 - Rx 讓流程更容易組合，但不會取代底層訊息處理。
 
-## 6. 簡易的公開與私有介面支援
+## 7. 簡易的公開與私有介面支援
 
 因為是介面導向，伺服器可以根據權限綁定不同介面，達成 Public/Private API。
 
@@ -325,7 +392,7 @@ void ISessionObserver.OnSessionOpened(ISessionBinder binder)
 - 未驗證 → **只有 IPublicService**
 - 已驗證 → **IPublicService + IPrivateService**
 
-## 7. 多傳輸模式與 Standalone
+## 8. 多傳輸模式與 Standalone
 
 - `PinionCore.Remote.Server.Tcp.ListeningEndpoint`
 - `PinionCore.Remote.Client.Tcp.ConnectingEndpoint`
@@ -335,7 +402,7 @@ void ISessionObserver.OnSessionOpened(ISessionBinder binder)
 
 整合測試 (`SampleTests`) 會同時跑三種傳輸並驗證行為一致。
 
-## 8. Gateway 閘道服務
+## 9. Gateway 閘道服務
 
 `PinionCore.Remote.Gateway` 作為多服務統一入口，提供：
 

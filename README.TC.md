@@ -126,6 +126,38 @@ flowchart LR
 
 ---
 
+# 一個入口,整份合約跟著走。
+
+由於 Notifier 會遞迴綁定,整個服務可以掛在單一入口介面之下。
+
+```csharp
+public interface IChatEntry
+{
+    INotifier<IVerifiable> Verifiables { get; }  // 驗證階段
+    INotifier<ILobby> Lobbies { get; }           // 驗證通過後
+}
+```
+
+伺服器只綁定一個物件。
+
+客戶端只查詢一次,之後照合約走:
+
+```csharp
+agent.QueryNotifier<IChatEntry>().Supply += entry =>
+{
+    entry.Lobbies.Supply += lobby =>
+    {
+        lobby.Rooms.Supply += room => { /* ... */ };
+    };
+};
+```
+
+入口介面**就是**客戶端的開發路線圖——它宣告了服務在每個階段提供什麼功能。
+
+而當合約變更時,每個消費點都在**編譯期**斷掉,而不是在執行期靜默失效。
+
+---
+
 # 適用場景
 
 PinionCore.Remote 非常適合那些物件天生具有身分、生命週期與行為的系統。
