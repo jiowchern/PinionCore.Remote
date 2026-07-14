@@ -6,7 +6,7 @@ Main projects and their roles:
 
 - **PinionCore.Remote**
   - Core interfaces and abstractions: `IEntry`, `ISessionBinder`, `ISoul`
-  - State types: `Value<T>`, `Property<T>`, `Notifier<T>`
+  - State types: `Value<T>`, `Property<T>`, `Notifier<T>`, `Spirit<T>`
 
 - **PinionCore.Remote.Client**
   - `Proxy`, `IConnectingEndpoint`

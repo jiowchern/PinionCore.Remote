@@ -111,7 +111,13 @@ namespace PinionCore.Remote
                 if (returnId != 0)
                 {
                     IGhost ghost = handler.FindGhost();
-                    _ReturnValueHandler.PopReturnValue(returnId, ghost);
+                    IValue value = _ReturnValueHandler.PopReturnValue(returnId, ghost);
+                    var spirit = value as ISpiritGhost;
+                    if (spirit != null)
+                    {
+                        // Spirit 回傳值：註冊 entityId 對應，UnloadSoul 時觸發 Unsupply
+                        _GhostHandler.RegisterSpirit(entityId, spirit);
+                    }
                 }
                 else
                 {

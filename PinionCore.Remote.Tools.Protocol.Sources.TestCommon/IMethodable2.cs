@@ -17,9 +17,5 @@
         PinionCore.Remote.Value<HelloReply> SayHello(HelloRequest request);
     }
 
-
-    public interface IMethodable3
-    {
-        //PinionCore.Remote.Value<HelloReply> SayHello(HelloRequest request);
-    }
+    
 }

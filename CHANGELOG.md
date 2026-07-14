@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### 2026-07-14
+
+> Package versions are not bumped yet. When publishing, advance only the modified project(s) per this entry — the affected libraries are **PinionCore.Utility** (`0.2.0.0` → next minor), **PinionCore.Remote** (`0.2.0.0` → next minor), **PinionCore.Remote.Tools.Protocol.Sources**, and **PinionCore.Remote.Reactive**.
+
+#### Added
+- `Spirit<T>` — a new remote member type: a single-shot, disposable object supply returned from a Spirit (interface) method. The server (Soul) returns `new Spirit<T>(instance)`; the client (Ghost) receives the remote proxy through the `Supply` event, and the server's `Dispose()` raises `Unsupply` on the client, after which the Spirit never supplies again (an already-disposed Spirit returned from a method supplies nothing). `Supply`/`Unsupply` have replay-on-subscribe semantics. `T` must be an interface. No new opcodes: supply reuses the return-value soul binding (`LoadSoul`/`LoadSoulCompile`), unsupply reuses `UnloadSoul`. (Projects: PinionCore.Utility — `Remote/Spirit.cs`, `ISpiritSoul`, `ISpiritGhost`; PinionCore.Remote — soul/ghost runtime wiring; PinionCore.Remote.Tools.Protocol.Sources — `MethodPinionCoreRemoteSpirit` block modifier)
+- Reactive extensions `SupplyEvent()` / `UnsupplyEvent()` over `Spirit<T>` converting the events to `IObservable<T>`. (Project: PinionCore.Remote.Reactive)
+- Tests: `SpiritTests` verifying supply, remote method calls on the supplied proxy, unsupply on server dispose, and no supply after dispose. (Project: PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests)
+
+#### Fixed
+- `SoulMethodHandler._ReturnSoulValue` — the `Value<interface>` method-return path previously threw `NotImplementedException`; it now binds the returned object as a return-type soul so interface-returning `Value<T>` methods work again. (Project: PinionCore.Remote)
+
 ### 2026-07-11
 
 > Package versions are not bumped yet. When publishing, advance only the modified project(s) per this entry — the affected library is **PinionCore.Serialization** (`0.2.0.0` → next minor; the wire format is not backward compatible).

@@ -78,9 +78,9 @@ var host = new PinionCore.Remote.Server.Host(entry, protocol);
 // Host internally uses SessionEngine to manage sessions
 ```
 
-## 3. Value / Property / Notifier Support
+## 3. Value / Property / Notifier / Spirit Support
 
-PinionCore Remote focuses on interfaces and provides three major member types.
+PinionCore Remote focuses on interfaces and provides four major member types.
 
 ### Value<T>: One-Time Async Call
 
@@ -168,6 +168,64 @@ agent.QueryNotifier<IRoom>().Supply += room =>
 - Notifier = dynamic object collection + remote object tree synchronization
 - Client does not manage IDs; everything follows the interface hierarchy
 
+### Spirit<T>: Single-Shot Remote Object Returned from a Method
+
+`Spirit<T>` lets a method return a remote object (interface) with a revocable
+lifetime — think of it as a "single-shot notifier":
+
+```csharp
+public interface ILobby
+{
+    PinionCore.Remote.Spirit<IRoom> EnterRoom(int roomId);
+}
+```
+
+The server wraps the implementation with `new Spirit<T>(instance)` and revokes it
+later by calling `Dispose()`:
+
+```csharp
+class Lobby : ILobby
+{
+    readonly Room _Room = new Room();
+    readonly PinionCore.Remote.Spirit<IRoom> _RoomSpirit;
+
+    public Lobby()
+    {
+        _RoomSpirit = new PinionCore.Remote.Spirit<IRoom>(_Room);
+    }
+
+    PinionCore.Remote.Spirit<IRoom> ILobby.EnterRoom(int roomId)
+    {
+        return _RoomSpirit;
+    }
+
+    public void CloseRoom()
+    {
+        _RoomSpirit.Dispose();   // clients receive Unsupply
+    }
+}
+```
+
+The client obtains and releases the remote proxy (Ghost) via the `Supply` /
+`Unsupply` events:
+
+```csharp
+lobby.EnterRoom(1).Supply += room =>
+{
+    // room proxy received; keep calling its members
+};
+```
+
+Behavior:
+
+- **Single-shot**: a `Spirit<T>` supplies at most once.
+- **Dispose revokes**: after the server calls `Dispose()`, the client receives
+  `Unsupply` and the Spirit never supplies again — returning an already-disposed
+  Spirit from a method supplies nothing to the client.
+- **Replay semantics**: subscribing to `Supply` / `Unsupply` late still delivers
+  events that already happened, so event ordering does not affect correctness.
+- As with Notifier, `T` must be an interface.
+
 ## 4. Cross-Server Interface Relay
 
 Because PinionCore.Remote transmits **Spirits (interfaces)** rather than concrete types, any Spirit that belongs to the same `IProtocol` can be relayed across multiple servers. An interface instance can be created on one server, handed to another, and forwarded again all the way to the client — the implementation stays in its origin process while the interface travels.
@@ -201,7 +259,7 @@ graph LR
 Key extension methods (located in `PinionCore.Remote.Reactive.Extensions`):
 
 - `RemoteValue()` — converts `Value<T>` to `IObservable<T>`
-- `SupplyEvent()` / `UnsupplyEvent()` — converts `INotifier<T>` events to observables
+- `SupplyEvent()` / `UnsupplyEvent()` — converts `INotifier<T>` or `Spirit<T>` events to observables
 
 Example extracted from `PinionCore.Integration.Tests/SampleTests.cs`:
 

@@ -23,6 +23,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
                     new BlockModifiers.MethodPinionCoreRemoteStreamable(com, memberIdProvider),
                     new BlockModifiers.MethodPinionCoreRemoteValue1(com, memberIdProvider),
                     new BlockModifiers.MethodPinionCoreRemoteValue0(com, memberIdProvider),
+                    new BlockModifiers.MethodPinionCoreRemoteSpirit(com, memberIdProvider),
                     new BlockModifiers.EventSystemAction(com, memberIdProvider),
                     new BlockModifiers.PropertyPinionCoreRemoteBlock(com),
                     new Modifiers.EventFieldDeclarationSyntax(),
@@ -33,6 +34,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
         private readonly BlockModifiers.MethodPinionCoreRemoteStreamable _MethodPinionCoreRemoteStreamable;
         private readonly BlockModifiers.MethodPinionCoreRemoteValue1 _MethodPinionCoreRemoteValue1;
         private readonly BlockModifiers.MethodPinionCoreRemoteValue0 _MethodPinionCoreRemoteValue0;
+        private readonly BlockModifiers.MethodPinionCoreRemoteSpirit _MethodPinionCoreRemoteSpirit;
         private readonly BlockModifiers.EventSystemAction _EventSystemAction;
         private readonly BlockModifiers.PropertyPinionCoreRemoteBlock _PropertyPinionCoreRemoteBlock;
         private readonly Modifiers.EventFieldDeclarationSyntax _EventFieldDeclarationSyntax;
@@ -43,6 +45,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
             BlockModifiers.MethodPinionCoreRemoteStreamable method_pinioncore_remote_streamable,
             BlockModifiers.MethodPinionCoreRemoteValue1 method_regulus_remote_value1,
             BlockModifiers.MethodPinionCoreRemoteValue0 method_regulus_remote_value0,
+            BlockModifiers.MethodPinionCoreRemoteSpirit method_pinioncore_remote_spirit,
             BlockModifiers.EventSystemAction event_system_action,
             BlockModifiers.PropertyPinionCoreRemoteBlock property_regulus_remote_block,
             Modifiers.EventFieldDeclarationSyntax event_field_declaration_syntax,
@@ -53,6 +56,7 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
             _MethodPinionCoreRemoteStreamable = method_pinioncore_remote_streamable;
             _MethodPinionCoreRemoteValue1 = method_regulus_remote_value1;
             _MethodPinionCoreRemoteValue0 = method_regulus_remote_value0;
+            _MethodPinionCoreRemoteSpirit = method_pinioncore_remote_spirit;
             _EventSystemAction = event_system_action;
             _PropertyPinionCoreRemoteBlock = property_regulus_remote_block;
             _EventFieldDeclarationSyntax = event_field_declaration_syntax;
@@ -114,6 +118,13 @@ namespace PinionCore.Remote.Tools.Protocol.Sources
                 {
                     typesOfSerialization.AddRange(mrrv0.Types);
                     replaceBlocks.Add(block, mrrv0.Block);
+                    continue;
+                }
+                BlockModifiers.BlockAndTypes spirit = _MethodPinionCoreRemoteSpirit.Mod(nodes);
+                if (spirit != null)
+                {
+                    typesOfSerialization.AddRange(spirit.Types);
+                    replaceBlocks.Add(block, spirit.Block);
                     continue;
                 }
                 BlockModifiers.PropertyAndBlock prrb = _PropertyPinionCoreRemoteBlock.Mod(nodes);

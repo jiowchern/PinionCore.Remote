@@ -10,6 +10,7 @@ using PinionCore.Remote.Tools.Protocol.Sources.TestCommon.MultipleNotices;
 
 namespace PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests
 {
+    
     public class Tests
     {
         [SetUp]

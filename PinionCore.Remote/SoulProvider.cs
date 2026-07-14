@@ -41,7 +41,7 @@ namespace PinionCore.Remote
         
 
             _bindHandler = new SoulBindHandler(_IdLandlord, _Queue, _Protocol, _Souls, _Serializer, _InternalSerializable, _EventProvider);
-            _methodHandler = new SoulMethodHandler(_Peer, _Queue, _Protocol, _Souls,  _Serializer, _InternalSerializable);
+            _methodHandler = new SoulMethodHandler(_Peer, _Queue, _Protocol, _Souls,  _Serializer, _InternalSerializable, _bindHandler);
             _eventHandler = new SoulEventHandler(_Queue, _Protocol, _Souls, _EventProvider, _Serializer, _InternalSerializable);
             _propertyHandler = new SoulPropertyHandler(_Queue, _Protocol, _Souls, _Serializer, _InternalSerializable);
         }

@@ -48,6 +48,15 @@ namespace PinionCore.Remote.Reactive
             return Observable.FromEvent<Action<T>, T>(h => notifier.Unsupply += h, h => notifier.Unsupply -= h);
         }
 
+        public static IObservable<T> SupplyEvent<T>(this PinionCore.Remote.Spirit<T> spirit)
+        {
+            return Observable.FromEvent<Action<T>, T>(h => spirit.Supply += h, h => spirit.Supply -= h);
+        }
+        public static IObservable<T> UnsupplyEvent<T>(this PinionCore.Remote.Spirit<T> spirit)
+        {
+            return Observable.FromEvent<Action<T>, T>(h => spirit.Unsupply += h, h => spirit.Unsupply -= h);
+        }
+
         public static IObservable<T> EventObservable<T>(System.Action<System.Action<T>> add_handler, System.Action<System.Action<T>> remove_handler)
         {
             return Observable.FromEvent<Action<T>, T>(add_handler, remove_handler);

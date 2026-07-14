@@ -37,6 +37,16 @@ namespace PinionCore.Remote
                 _InterfaceProvider = _Protocol.GetInterfaceProvider();
                 _GhostResponseHandlers = new Dictionary<long, GhostResponseHandler>();
                 _AutoRelease = new AutoRelease<long, IGhost>();
+                _Spirits = new Dictionary<long, ISpiritGhost>();
+            }
+
+            // 強引用：Spirit 持有 ghost，避免 AutoRelease 弱引用機制提前回收
+            private readonly Dictionary<long, ISpiritGhost> _Spirits;
+
+            public void RegisterSpirit(long id, ISpiritGhost spirit)
+            {
+                lock (_Spirits)
+                    _Spirits[id] = spirit;
             }
 
 
@@ -91,6 +101,15 @@ namespace PinionCore.Remote
 
             public void UnloadSoul(long id)
             {
+                ISpiritGhost spirit = null;
+                lock (_Spirits)
+                {
+                    if (_Spirits.TryGetValue(id, out spirit))
+                        _Spirits.Remove(id);
+                }
+                if (spirit != null)
+                    spirit.Unsupply();
+
                 _GhostsOwner.RemoveGhost(id);
                 lock (_GhostResponseHandlers)
                     _GhostResponseHandlers.Remove(id);
@@ -181,6 +200,19 @@ namespace PinionCore.Remote
 
             public void ClearGhosts()
             {
+                // agent 關閉視同 unload：觸發所有 Spirit 的 Unsupply，避免永久等待與洩漏
+                ISpiritGhost[] spirits;
+                lock (_Spirits)
+                {
+                    spirits = new ISpiritGhost[_Spirits.Count];
+                    _Spirits.Values.CopyTo(spirits, 0);
+                    _Spirits.Clear();
+                }
+                foreach (ISpiritGhost spirit in spirits)
+                {
+                    spirit.Unsupply();
+                }
+
                 lock (_GhostResponseHandlers)
                     _GhostResponseHandlers.Clear();
             }

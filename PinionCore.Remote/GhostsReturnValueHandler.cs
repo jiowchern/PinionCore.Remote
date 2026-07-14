@@ -41,13 +41,14 @@ namespace PinionCore.Remote
                 value?.SetError(string.IsNullOrEmpty(method) ? message : $"{method}: {message}");
                 ErrorMethodEvent?.Invoke(method, message);
             }
-            public void PopReturnValue(long return_id, IGhost ghost)
+            public IValue PopReturnValue(long return_id, IGhost ghost)
             {
                 IValue value = _ReturnValueQueue.PopReturnValue(return_id);
                 if (value != null)
                 {
                     value.SetValue(ghost);
                 }
+                return value;
             }
 
 

@@ -6,7 +6,7 @@
 
 - **PinionCore.Remote**
   - 核心介面與抽象：`IEntry`、`ISessionBinder`、`ISoul`
-  - 狀態型別：`Value<T>`、`Property<T>`、`Notifier<T>`
+  - 狀態型別：`Value<T>`、`Property<T>`、`Notifier<T>`、`Spirit<T>`
 - **PinionCore.Remote.Client**
   - `Proxy`、`IConnectingEndpoint`
   - 連線擴充：`AgentExtensions.Connect`

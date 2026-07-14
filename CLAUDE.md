@@ -49,7 +49,8 @@ dotnet test [項目路徑].csproj
 
 #### 1. 介面導向通訊（Spirit）
 - 通訊介面稱為 Spirit：伺服器實作 Spirit（Soul），客戶端透過相同 Spirit 呼叫（Ghost）
-- 支援方法（Value<T>）、事件、屬性、Notifier
+- 支援方法（Value<T>）、事件、屬性、Notifier、Spirit<T>
+- `Spirit<T>` 類別：由方法回傳、單次供給的遠端物件容器（T 必須是介面）——Soul 端 `new Spirit<T>(instance)` 回傳，Ghost 端經 `Supply` 事件取得代理；Soul 端 `Dispose()` 後 Ghost 端觸發 `Unsupply` 且永不再供給（事件具補發語意，晚訂閱也能收到）
 - 透過 IBinder 綁定伺服器物件，IAgent 查詢客戶端物件
 
 #### 2. Protocol 生成機制

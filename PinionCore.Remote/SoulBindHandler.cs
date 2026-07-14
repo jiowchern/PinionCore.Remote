@@ -52,6 +52,12 @@ namespace PinionCore.Remote
             _Unbind(soul);
         }
 
+        // 方法回傳值綁定：以 returnType=true 綁定並送出帶 returnId 的 LoadSoulCompile
+        public SoulProxy BindReturn(object soul, Type soulType, long returnId)
+        {
+            return _Bind(soul, soulType, true, returnId);
+        }
+
         private ISoul _Bind<TSoul>(TSoul soul, bool returnType, long returnId)
         {
             return _Bind(soul, typeof(TSoul), returnType, returnId);

@@ -6,7 +6,7 @@
 
 框架的術語構成三位一體：
 
-- **Spirit**——通訊介面：伺服器與客戶端共用的純 C# 介面，定義方法（`Value<T>`）、屬性（`Property<T>`）、事件與 Notifier。
+- **Spirit**——通訊介面：伺服器與客戶端共用的純 C# 介面，定義方法（`Value<T>`）、屬性（`Property<T>`）、事件、Notifier 與 `Spirit<T>`。
 - **Soul**——Spirit 在伺服器端的化身：透過 `Bind<T>` 綁定到 Session 的實作（見 `PinionCore.Remote.Soul`）。
 - **Ghost**——Spirit 在客戶端的化身：透過 `QueryNotifier<T>` 取得的即時代理（見 `PinionCore.Remote.Ghost`）。
 
@@ -81,6 +81,30 @@ INotifier<T> QueryNotifier<T>();
 ```
 
 `Ghost.User` 實作了 `INotifierQueryable`，所以客戶端可以透過 `QueryNotifier<T>` 取得任何介面的 Notifier。
+
+---
+
+## Spirit<T>
+
+> 命名說明：**Spirit** 一詞在術語上指「通訊介面」本身；`Spirit<T>` 類別則是承載單一介面實體的容器——方法回傳 `Spirit<T>` 時，傳遞的正是一個 Spirit（介面）的化身。
+
+由方法回傳、單次供給的遠端物件容器：
+
+- 伺服器端以 `new Spirit<T>(instance)` 包裝實作回傳（`T` 必須是介面）。
+- 客戶端收到的 `Spirit<T>` 透過 `Supply` 事件供給遠端代理（Ghost）。
+- 伺服器端 `Dispose()` 後客戶端觸發 `Unsupply`，且此 Spirit 永不再供給。
+- `Supply` / `Unsupply` 具補發語意：晚訂閱也能收到已發生的事件。
+- 搭配 `PinionCore.Remote.Reactive` 的 `SupplyEvent()` / `UnsupplyEvent()` 可轉成 `IObservable<T>`。
+
+```csharp
+public interface ILobby
+{
+    PinionCore.Remote.Spirit<IRoom> EnterRoom(int roomId);
+}
+```
+
+實作位置：`PinionCore.Utility/Remote/Spirit.cs`
+測試範例：`PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests/SpiritTests.cs`
 
 ---
 

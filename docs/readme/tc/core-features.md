@@ -78,7 +78,7 @@ var host = new PinionCore.Remote.Server.Host(entry, protocol);
 // Host 內部使用 SessionEngine 管理連線
 ```
 
-## 3. Value / Property / Notifier 支援
+## 3. Value / Property / Notifier / Spirit 支援
 
 ### Value<T>：一次性非同步呼叫
 
@@ -163,6 +163,60 @@ agent.QueryNotifier<IRoom>().Supply += room =>
 - Notifier = 動態集合 + 遠端物件樹同步
 - 客戶端不需管理 ID，依介面階層即可
 
+### Spirit<T>：由方法回傳、單次供給的遠端物件
+
+`Spirit<T>` 讓方法直接回傳一個遠端物件（介面），並帶有可撤銷的生命週期——
+可以想成「單次供給的 Notifier」：
+
+```csharp
+public interface ILobby
+{
+    PinionCore.Remote.Spirit<IRoom> EnterRoom(int roomId);
+}
+```
+
+伺服器端以 `new Spirit<T>(instance)` 包裝實作回傳，之後呼叫 `Dispose()` 撤銷：
+
+```csharp
+class Lobby : ILobby
+{
+    readonly Room _Room = new Room();
+    readonly PinionCore.Remote.Spirit<IRoom> _RoomSpirit;
+
+    public Lobby()
+    {
+        _RoomSpirit = new PinionCore.Remote.Spirit<IRoom>(_Room);
+    }
+
+    PinionCore.Remote.Spirit<IRoom> ILobby.EnterRoom(int roomId)
+    {
+        return _RoomSpirit;
+    }
+
+    public void CloseRoom()
+    {
+        _RoomSpirit.Dispose();   // 客戶端收到 Unsupply
+    }
+}
+```
+
+客戶端透過 `Supply` / `Unsupply` 事件取得與釋放遠端代理（Ghost）：
+
+```csharp
+lobby.EnterRoom(1).Supply += room =>
+{
+    // 取得 room 代理，可繼續呼叫其方法
+};
+```
+
+行為重點：
+
+- **單次供給**：一個 `Spirit<T>` 只會供給一次。
+- **Dispose 即撤銷**：伺服器端 `Dispose()` 後，客戶端觸發 `Unsupply`，且此 Spirit 永不再供給——
+  已 Dispose 的 Spirit 再被方法回傳時，客戶端不會收到任何供給。
+- **補發語意**：晚訂閱 `Supply` / `Unsupply` 也能收到已發生的事件，事件順序不影響正確性。
+- 與 Notifier 相同，`T` 必須是介面。
+
 ## 4. 跨服務器的介面轉傳
 
 由於 PinionCore.Remote 傳輸的是 **Spirit（介面）**而非具體型別，只要 Spirit 來自同一份 `IProtocol`，就能在多個服務器之間轉傳。介面實體可以在某個服務器上產生，交給另一個服務器，再一路轉發到客戶端——實作始終留在原始行程，傳遞的只有介面。
@@ -196,7 +250,7 @@ graph LR
 常用擴充（位於 `PinionCore.Remote.Reactive.Extensions`）：
 
 - `RemoteValue()` — 把 `Value<T>` 轉成 `IObservable<T>`
-- `SupplyEvent()` / `UnsupplyEvent()` — 把 `INotifier<T>` 事件轉成 Observable
+- `SupplyEvent()` / `UnsupplyEvent()` — 把 `INotifier<T>` 或 `Spirit<T>` 事件轉成 Observable
 
 範例（節錄自 `PinionCore.Integration.Tests/SampleTests.cs`）：
 

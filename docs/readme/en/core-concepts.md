@@ -6,7 +6,7 @@
 
 The framework's terminology forms a trinity:
 
-- **Spirit** — the communication interface: a plain C# interface shared by server and client, defining methods (`Value<T>`), properties (`Property<T>`), events, and notifiers.
+- **Spirit** — the communication interface: a plain C# interface shared by server and client, defining methods (`Value<T>`), properties (`Property<T>`), events, notifiers, and `Spirit<T>`.
 - **Soul** — the server-side incarnation of a Spirit: the implementation bound to a session via `Bind<T>` (see `PinionCore.Remote.Soul`).
 - **Ghost** — the client-side incarnation of a Spirit: the live proxy obtained via `QueryNotifier<T>` (see `PinionCore.Remote.Ghost`).
 
@@ -99,6 +99,30 @@ The client-side `Ghost.User` implements `INotifierQueryable`, meaning:
 
 - Any remote interface collection can be discovered dynamically
 - The client does **not** need to manage IDs or registries (the Notifier system handles remote object lifecycle synchronization automatically)
+
+---
+
+## Spirit<T>
+
+> Naming note: the term **Spirit** refers to the communication interface itself; the `Spirit<T>` class is a container that carries a single interface instance — a method returning `Spirit<T>` delivers exactly one incarnation of a Spirit (interface).
+
+A single-shot remote object container returned from a method:
+
+- The server wraps an implementation with `new Spirit<T>(instance)` and returns it (`T` must be an interface).
+- The client-side `Spirit<T>` delivers the remote proxy (Ghost) through its `Supply` event.
+- After the server calls `Dispose()`, the client receives `Unsupply` and the Spirit never supplies again.
+- `Supply` / `Unsupply` have replay semantics: late subscribers still receive events that already happened.
+- `SupplyEvent()` / `UnsupplyEvent()` in `PinionCore.Remote.Reactive` convert them to `IObservable<T>`.
+
+```csharp
+public interface ILobby
+{
+    PinionCore.Remote.Spirit<IRoom> EnterRoom(int roomId);
+}
+```
+
+Implementation file: `PinionCore.Utility/Remote/Spirit.cs`
+Test example: `PinionCore.Remote.Tools.Protocol.Sources.TestCommon.Tests/SpiritTests.cs`
 
 ---
 
