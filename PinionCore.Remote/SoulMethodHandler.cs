@@ -71,9 +71,10 @@ namespace PinionCore.Remote
             if (!_Souls.TryGetValue(entity_id, out soul))
             {
                 // soul 已解綁而請求仍在途中屬正常競態:回錯誤讓 client 的 Value 得到結果,不能丟例外
-                var message = $"Soul not found entity_id:{entity_id}";
-                Log.Instance.WriteInfo(message);
-                _ErrorDeserialize(method_id.ToString(), returnId, message);
+                var methodName = _GetMethodDisplayName(method_id);
+                var message = $"Soul not found entity_id:{entity_id} return_id:{returnId}";
+                Log.Instance.WriteInfo($"{message} method:{methodName}");
+                _ErrorDeserialize(methodName, returnId, message);
                 return;
             }
 
@@ -110,12 +111,12 @@ namespace PinionCore.Remote
             catch (DeserializeException deserialize_exception)
             {
                 var message = deserialize_exception.Base.ToString();
-                _ErrorDeserialize(method_id.ToString(), returnId, message);
+                _ErrorDeserialize(_GetMethodDisplayName(method_id), returnId, message);
             }
             catch (Exception e)
             {
                 Log.Instance.WriteDebug(e.ToString());
-                _ErrorDeserialize(method_id.ToString(), returnId, e.Message);
+                _ErrorDeserialize(_GetMethodDisplayName(method_id), returnId, e.Message);
             }
         }
 
@@ -189,6 +190,14 @@ namespace PinionCore.Remote
             spirit.DisposeEvent += onDispose;
         }
 
+        private string _GetMethodDisplayName(int method_id)
+        {
+            MethodInfo info = _Protocol.GetMemberMap().GetMethod(method_id);
+            if (info == null)
+                return $"method_id:{method_id}";
+            return $"{info.DeclaringType.Name}.{info.Name}";
+        }
+
         private void _ErrorDeserialize(string methodName, long returnId, string message)
         {
             var package = new PackageErrorMethod
@@ -204,9 +213,10 @@ namespace PinionCore.Remote
         {
             if (!_Souls.TryGetValue(entity_id, out SoulProxy soul))
             {
-                var message = $"Soul not found entity_id:{entity_id}";
-                Log.Instance.WriteInfo(message);
-                _ErrorDeserialize(method_id.ToString(), returnId, message);
+                var methodName = _GetMethodDisplayName(method_id);
+                var message = $"Soul not found entity_id:{entity_id} return_id:{returnId}";
+                Log.Instance.WriteInfo($"{message} method:{methodName}");
+                _ErrorDeserialize(methodName, returnId, message);
                 return;
             }
 
@@ -247,7 +257,7 @@ namespace PinionCore.Remote
         {
             if (awaitable == null)
             {
-                _ErrorDeserialize(methodId.ToString(), returnId, "Stream method returned null awaitable.");
+                _ErrorDeserialize(_GetMethodDisplayName(methodId), returnId, "Stream method returned null awaitable.");
                 return;
             }
 
@@ -258,7 +268,7 @@ namespace PinionCore.Remote
             }
             catch (Exception e)
             {
-                _ErrorDeserialize(methodId.ToString(), returnId, e.Message);
+                _ErrorDeserialize(_GetMethodDisplayName(methodId), returnId, e.Message);
                 return;
             }
 
@@ -271,7 +281,7 @@ namespace PinionCore.Remote
                 }
                 catch (Exception e)
                 {
-                    _ErrorDeserialize(methodId.ToString(), returnId, e.Message);
+                    _ErrorDeserialize(_GetMethodDisplayName(methodId), returnId, e.Message);
                 }
             }
 

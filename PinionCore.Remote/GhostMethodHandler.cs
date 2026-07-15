@@ -56,7 +56,7 @@ namespace PinionCore.Remote
             var info = map.GetMethod(method_id);
             if (info == null)
             {
-                PinionCore.Utility.Log.Instance.WriteInfoImmediate($"method {info.Name} not found");
+                PinionCore.Utility.Log.Instance.WriteInfoImmediate($"method {method_id} not found");
                 return;
             }
             var package = new PinionCore.Remote.Packages.PackageCallMethod();

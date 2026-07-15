@@ -83,6 +83,8 @@ namespace PinionCore.Remote
             newSoul.UnsupplySoulEvent += _PropertyUnbind;
             newSoul.PropertyChangedEvent += _LoadProperty;
             _Souls.TryAdd(newSoul.Id, newSoul);
+            // 與 "Soul not found" 同級的生命週期 log,供事後重建 bound → unbound → not found 時間線
+            PinionCore.Utility.Log.Instance.WriteInfo($"Soul bound entity_id:{newSoul.Id} type:{soulType.Name} interface_id:{interfaceId}");
             return newSoul;
         }
 
@@ -91,6 +93,7 @@ namespace PinionCore.Remote
             if (!_Souls.TryRemove(soul.Id, out SoulProxy soulInfo))
                 throw new Exception($"Can't find the soul {soul.Id} to delete.");
 
+            PinionCore.Utility.Log.Instance.WriteInfo($"Soul unbound entity_id:{soulInfo.Id} type:{soulInfo.ObjectType.Name}");
             soulInfo.Release();
             soulInfo.SupplySoulEvent -= _PropertyBind;
             soulInfo.UnsupplySoulEvent -= _PropertyUnbind;

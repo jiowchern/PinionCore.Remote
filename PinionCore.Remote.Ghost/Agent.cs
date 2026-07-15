@@ -23,6 +23,16 @@ namespace PinionCore.Remote.Ghost
             get { return _GhostProvider.Ping; }
         }
 
+        // 開啟後 RPC 錯誤(如 Soul not found)訊息會附上呼叫端堆疊。
+        // 每次帶回傳 RPC 付一次 Environment.StackTrace 成本,僅建議除錯環境開啟;
+        // IL2CPP release 下堆疊只有方法名無行號,定位為輔助功能。
+        // 刻意不放進 IAgent 介面:避免破壞其他 IAgent 實作,要用的人握有具體 Agent。
+        public bool RpcCallerStackTraceEnabled
+        {
+            get { return _GhostProvider.CaptureRpcCallerStack; }
+            set { _GhostProvider.CaptureRpcCallerStack = value; }
+        }
+
         public Agent(IProtocol protocol)
             : this(protocol, new PinionCore.Remote.Serializer(protocol.SerializeTypes), new PinionCore.Remote.InternalSerializer(), PinionCore.Memorys.PoolProvider.Shared)
         {

@@ -15,6 +15,13 @@ namespace PinionCore.Remote
 
         public float Ping => _PingHandler.PingTime;
 
+        // 開啟後 RPC 錯誤回應會附上呼叫端堆疊,僅建議除錯環境開啟
+        public bool CaptureRpcCallerStack
+        {
+            get { return _ReturnValueHandler.CaptureCallerStack; }
+            set { _ReturnValueHandler.CaptureCallerStack = value; }
+        }
+
         public event Action<string, string> ErrorMethodEvent
         {
             add { _ReturnValueHandler.ErrorMethodEvent += value; }

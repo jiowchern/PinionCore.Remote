@@ -13,6 +13,12 @@ namespace PinionCore.Remote
 
             public event Action<string, string> ErrorMethodEvent;
 
+            public bool CaptureCallerStack
+            {
+                get { return _ReturnValueQueue.CaptureCallerStack; }
+                set { _ReturnValueQueue.CaptureCallerStack = value; }
+            }
+
             public GhostsReturnValueHandler(ISerializable serializer)
             {
                 _ReturnValueQueue = new ReturnValueQueue();
@@ -35,10 +41,13 @@ namespace PinionCore.Remote
 
             public void ErrorReturnValue(long returnTarget, string method, string message)
             {
-                IValue value = _ReturnValueQueue.PopReturnValue(returnTarget);
+                IValue value = _ReturnValueQueue.PopReturnValue(returnTarget, out var callerStack);
                 _StreamContexts.Remove(returnTarget);
                 // 讓等待中的 Value 以錯誤完成,呼叫端不再永久等待
-                value?.SetError(string.IsNullOrEmpty(method) ? message : $"{method}: {message}");
+                var text = string.IsNullOrEmpty(method) ? message : $"{method}: {message}";
+                if (!string.IsNullOrEmpty(callerStack))
+                    text = $"{text}\n--- RPC call site (captured at invocation) ---\n{callerStack}";
+                value?.SetError(text);
                 ErrorMethodEvent?.Invoke(method, message);
             }
             public IValue PopReturnValue(long return_id, IGhost ghost)
