@@ -34,17 +34,14 @@ namespace PinionCore.Remote.Soul
         private readonly PinionCore.Network.PackageReader _Reader;
         private readonly PinionCore.Network.PackageSender _Sender;
 
-        private readonly System.Collections.Concurrent.ConcurrentQueue<PinionCore.Remote.Packages.RequestPackage> _ExternalRequests;
-
         private readonly IResponseQueue _ResponseQueue;
 
         private readonly IInternalSerializable _InternalSerializer;
         private TaskAwaiter<List<Memorys.Buffer>> _ReadTask;
 
-        // 非 Ping 請求的執行緒指派:null = 在封包迴圈內就地執行(console 模式);
-        // 非 null = 整包交給宿主(Unity:排進主執行緒佇列),保證同一 client 依到達序執行
-        private readonly Action<Action> _Dispatcher;
-        // 封包迴圈執行緒 Dispose 後,已派發但尚未執行的 action 必須棄行
+        // 非 Ping 請求的消化政策,由 host 於建構時注入;封包依到達序派發,單一消化點保證順序
+        private readonly PinionCore.Network.IThreading _Threading;
+        // 封包迴圈執行緒 Dispose 後,已派發但尚未執行的工作必須棄行
         private volatile bool _Disposed;
 
         public event System.Action ErrorEvent;
@@ -59,17 +56,15 @@ namespace PinionCore.Remote.Soul
 
 
 
-        public User(PinionCore.Network.PackageReader reader, PinionCore.Network.PackageSender sender, IProtocol protocol, ISerializable serializable, IInternalSerializable internal_serializable, PinionCore.Memorys.IPool pool, Action<Action> dispatcher = null)
+        public User(PinionCore.Network.PackageReader reader, PinionCore.Network.PackageSender sender, IProtocol protocol, ISerializable serializable, IInternalSerializable internal_serializable, PinionCore.Memorys.IPool pool, PinionCore.Network.IThreading threading)
         {
-            _Dispatcher = dispatcher;
+            _Threading = threading;
             _InternalSerializer = internal_serializable;
 
             _Protocol = protocol;
 
             _Reader = reader;
             _Sender = sender;
-
-            _ExternalRequests = new System.Collections.Concurrent.ConcurrentQueue<PinionCore.Remote.Packages.RequestPackage>();
 
             _SoulProvider = new SoulProvider(this, this, protocol, serializable, _InternalSerializer);
             _ResponseQueue = this;
@@ -120,11 +115,6 @@ namespace PinionCore.Remote.Soul
 
         void _Shutdown()
         {
-            PinionCore.Remote.Packages.RequestPackage req;
-            while (_ExternalRequests.TryDequeue(out req))
-            {
-
-            }
             Utility.Singleton<Utility.Log>.Instance.WriteInfo("User offline leave.");
         }
 
@@ -191,67 +181,43 @@ namespace PinionCore.Remote.Soul
 
             if (package.Code == ClientToServerOpCode.Ping)
             {
-                // fast path:在封包迴圈執行緒立即回應,不進 dispatcher 也不等 tick
+                // fast path:回應不含狀態,在封包迴圈立即回彈,不經消化政策
                 _ResponseQueue.Push(ServerToClientOpCode.Ping, PinionCore.Memorys.Pool.Empty);
-            }
-            else if (_Dispatcher != null)
-            {
-                _Dispatcher(() =>
-                {
-                    if (_Disposed)
-                        return;
-                    // 單筆請求失敗不影響佇列中其他請求,對應 Advance drain 的既有語意
-                    try
-                    {
-                        _HandleRequest(package);
-                    }
-                    catch (Exception e)
-                    {
-                        Utility.Singleton<Utility.Log>.Instance.WriteInfo($"User dispatched request error {e}. pkgCode:{package.Code}");
-                    }
-                });
-            }
-            else if (package.Code == ClientToServerOpCode.Release)
-            {
-                _HandleRelease(package);
-            }
-            else if (package.Code == ClientToServerOpCode.UpdateProperty)
-            {
-                _HandleUpdateProperty(package);
-            }
-            else
-            {
-                _ExternalRequests.Enqueue(package);
+                return;
             }
 
+            _Threading.Dispatch(() =>
+            {
+                if (_Disposed)
+                    return;
+                // 單筆請求失敗不影響其他請求
+                try
+                {
+                    _HandleRequest(package);
+                }
+                catch (Exception e)
+                {
+                    Utility.Singleton<Utility.Log>.Instance.WriteInfo($"User request error {e}. pkgCode:{package.Code}");
+                }
+            });
         }
 
         private void _HandleRequest(PinionCore.Remote.Packages.RequestPackage package)
         {
             if (package.Code == ClientToServerOpCode.Release)
             {
-                _HandleRelease(package);
+                var data = (PinionCore.Remote.Packages.PackageRelease)_InternalSerializer.Deserialize(package.Data.AsBuffer());
+                _SoulProvider.Unbind(data.EntityId);
             }
             else if (package.Code == ClientToServerOpCode.UpdateProperty)
             {
-                _HandleUpdateProperty(package);
+                var data = (PinionCore.Remote.Packages.PackageSetPropertyDone)_InternalSerializer.Deserialize(package.Data.AsBuffer());
+                _SoulProvider.SetPropertyDone(data.EntityId, data.Property);
             }
             else
             {
                 _ExternalRequest(package);
             }
-        }
-
-        private void _HandleRelease(PinionCore.Remote.Packages.RequestPackage package)
-        {
-            var data = (PinionCore.Remote.Packages.PackageRelease)_InternalSerializer.Deserialize(package.Data.AsBuffer());
-            _SoulProvider.Unbind(data.EntityId);
-        }
-
-        private void _HandleUpdateProperty(PinionCore.Remote.Packages.RequestPackage package)
-        {
-            var data = (PinionCore.Remote.Packages.PackageSetPropertyDone)_InternalSerializer.Deserialize(package.Data.AsBuffer());
-            _SoulProvider.SetPropertyDone(data.EntityId, data.Property);
         }
 
         private MethodRequest _ToRequest(long entity_id, int method_id, long return_id, byte[][] method_params)
@@ -293,20 +259,6 @@ namespace PinionCore.Remote.Soul
                 _ReadTask = _Reader.Read().GetAwaiter();
                 _ReadTask.OnCompleted(_NotifyDataArrived);
                 _ReadDone(buffers);
-            }
-            PinionCore.Remote.Packages.RequestPackage pkg;
-            while (_ExternalRequests.TryDequeue(out pkg))
-            {
-                // 單筆請求失敗不中斷佇列,其餘請求照常處理
-                try
-                {
-                    _ExternalRequest(pkg);
-                }
-                catch (Exception e)
-                {
-                    Utility.Singleton<Utility.Log>.Instance.WriteInfo($"User _ExternalRequest error {e}. pkgCode:{pkg.Code}");
-                }
-
             }
         }
 

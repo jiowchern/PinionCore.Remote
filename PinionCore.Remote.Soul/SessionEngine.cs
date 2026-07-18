@@ -24,15 +24,20 @@ namespace PinionCore.Remote.Soul
 
         private readonly ConcurrentQueue<Pending> _Pending;
 
-        // 非 Ping 請求的執行緒指派,交給每個 User;null = 在 Update 執行緒就地執行
-        private readonly Action<Action> _RequestDispatcher;
+        // host 的執行緒政策,交給每個 User 與 PackageSender
+        private readonly Network.IThreading _Threading;
 
         // 任一 session 有封包抵達時觸發(來自封包 I/O 執行緒),供更新迴圈立即喚醒
         public event Action PacketArrivedEvent;
 
-        public SessionEngine(IEntry entry, IProtocol protocol, ISerializable serializable, IInternalSerializable internal_serializable, PinionCore.Memorys.IPool pool, Action<Action> requestDispatcher = null)
+        public SessionEngine(IEntry entry, IProtocol protocol, ISerializable serializable, IInternalSerializable internal_serializable, PinionCore.Memorys.IPool pool)
+            : this(entry, protocol, serializable, internal_serializable, pool, new Network.InlineThreading())
         {
-            _RequestDispatcher = requestDispatcher;
+        }
+
+        public SessionEngine(IEntry entry, IProtocol protocol, ISerializable serializable, IInternalSerializable internal_serializable, PinionCore.Memorys.IPool pool, Network.IThreading threading)
+        {
+            _Threading = threading;
             _Entry = entry;
             _Protocol = protocol;
             PinionCore.Utility.Log.Instance.WriteInfo("SyncService Protocol: " + protocol.VersionCode.ToMd5String());
@@ -67,10 +72,8 @@ namespace PinionCore.Remote.Soul
                 if (ev.IsJoin)
                 {
                     var reader = new PinionCore.Network.PackageReader(ev.Stream, _Pool);
-                    // dispatcher 模式 = 宿主有帶 SynchronizationContext 的主執行緒(Unity),
-                    // property/event push 會從那裡啟動 pump,必須脫鉤避免送出鏈被 frame 錨定
-                    var sender = new PinionCore.Network.PackageSender(ev.Stream, _Pool, detachPumpContext: _RequestDispatcher != null);
-                    var user = new User(reader, sender, _Protocol, _Serializable, _InternalSerializable, _Pool, _RequestDispatcher);
+                    var sender = new PinionCore.Network.PackageSender(ev.Stream, _Pool, _Threading);
+                    var user = new User(reader, sender, _Protocol, _Serializable, _InternalSerializable, _Pool, _Threading);
                     user.DataArrivedEvent += _NotifyPacketArrived;
                     var capturedStream = ev.Stream;
                     user.ErrorEvent += () =>

@@ -11,8 +11,7 @@ namespace PinionCore.Network
         private readonly IStreamable _Stream;
         private readonly IPool _Pool;
 
-        // 保護 _sendQueue 與 _isSending:Soul 端 response push 可能同時來自
-        // 遊戲邏輯執行緒(property/event 同步)與封包迴圈執行緒(ping/method 回傳)
+        // 保護 _sendQueue 與 _isSending:Push 可能來自多條執行緒
         private readonly object _Sync = new object();
         private bool _isSending = false;
         private readonly struct PendingSend
@@ -29,16 +28,20 @@ namespace PinionCore.Network
 
         private readonly System.Collections.Generic.Queue<PendingSend> _sendQueue = new System.Collections.Generic.Queue<PendingSend>();
 
-        // detachPumpContext:啟動 pump 時暫時清掉 SynchronizationContext,讓整條送出鏈
-        // 落在 thread pool 而不被啟動端執行緒(如 Unity 主執行緒)的 context 錨定;
-        // 單執行緒環境(WebGL client)必須維持 false
-        private readonly bool _DetachPumpContext;
+        private readonly IThreading _Threading;
+        private readonly Action _PumpEntry;
 
-        public PackageSender(IStreamable stream, PinionCore.Memorys.IPool pool, bool detachPumpContext = false)
+        public PackageSender(IStreamable stream, PinionCore.Memorys.IPool pool)
+            : this(stream, pool, new InlineThreading())
+        {
+        }
+
+        public PackageSender(IStreamable stream, PinionCore.Memorys.IPool pool, IThreading threading)
         {
             _Stream = stream;
             _Pool = pool;
-            _DetachPumpContext = detachPumpContext;
+            _Threading = threading;
+            _PumpEntry = () => { _ = _ProcessSendQueueAsync(); };
         }
 
         public void Push(PinionCore.Memorys.Buffer buffer, CancellationToken cancellation = default)
@@ -65,28 +68,12 @@ namespace PinionCore.Network
                 _isSending = true;
             }
 
-            if (_DetachPumpContext && SynchronizationContext.Current != null)
-            {
-                SynchronizationContext previous = SynchronizationContext.Current;
-                SynchronizationContext.SetSynchronizationContext(null);
-                try
-                {
-                    _ = _ProcessSendQueueAsync();
-                }
-                finally
-                {
-                    SynchronizationContext.SetSynchronizationContext(previous);
-                }
-            }
-            else
-            {
-                _ = _ProcessSendQueueAsync();
-            }
+            _Threading.Launch(_PumpEntry);
         }
 
         void IDisposable.Dispose()
         {
-            // Unity WebGL 不能同步等待 Task，避免死鎖
+            // 單執行緒環境不能同步等待 Task，避免死鎖
             // 清理佇列中的 buffer
             lock (_Sync)
             {
