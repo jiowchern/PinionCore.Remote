@@ -23,10 +23,16 @@ namespace PinionCore.Remote.Soul
         }
 
         private readonly ConcurrentQueue<Pending> _Pending;
-        
 
-        public SessionEngine(IEntry entry, IProtocol protocol, ISerializable serializable, IInternalSerializable internal_serializable, PinionCore.Memorys.IPool pool)
+        // 非 Ping 請求的執行緒指派,交給每個 User;null = 在 Update 執行緒就地執行
+        private readonly Action<Action> _RequestDispatcher;
+
+        // 任一 session 有封包抵達時觸發(來自封包 I/O 執行緒),供更新迴圈立即喚醒
+        public event Action PacketArrivedEvent;
+
+        public SessionEngine(IEntry entry, IProtocol protocol, ISerializable serializable, IInternalSerializable internal_serializable, PinionCore.Memorys.IPool pool, Action<Action> requestDispatcher = null)
         {
+            _RequestDispatcher = requestDispatcher;
             _Entry = entry;
             _Protocol = protocol;
             PinionCore.Utility.Log.Instance.WriteInfo("SyncService Protocol: " + protocol.VersionCode.ToMd5String());
@@ -61,8 +67,11 @@ namespace PinionCore.Remote.Soul
                 if (ev.IsJoin)
                 {
                     var reader = new PinionCore.Network.PackageReader(ev.Stream, _Pool);
-                    var sender = new PinionCore.Network.PackageSender(ev.Stream, _Pool);
-                    var user = new User(reader, sender, _Protocol, _Serializable, _InternalSerializable, _Pool);
+                    // dispatcher 模式 = 宿主有帶 SynchronizationContext 的主執行緒(Unity),
+                    // property/event push 會從那裡啟動 pump,必須脫鉤避免送出鏈被 frame 錨定
+                    var sender = new PinionCore.Network.PackageSender(ev.Stream, _Pool, detachPumpContext: _RequestDispatcher != null);
+                    var user = new User(reader, sender, _Protocol, _Serializable, _InternalSerializable, _Pool, _RequestDispatcher);
+                    user.DataArrivedEvent += _NotifyPacketArrived;
                     var capturedStream = ev.Stream;
                     user.ErrorEvent += () =>
                     {
@@ -82,6 +91,7 @@ namespace PinionCore.Remote.Soul
                     else
                     {
                         // already exists; clean up the extra instance
+                        user.DataArrivedEvent -= _NotifyPacketArrived;
                         IDisposable userDispose = user;
                         userDispose.Dispose();
 
@@ -93,6 +103,7 @@ namespace PinionCore.Remote.Soul
                 {
                     if (_Users.TryRemove(ev.Stream, out User user))
                     {
+                        user.DataArrivedEvent -= _NotifyPacketArrived;
                         _Entry.OnSessionClosed(user.Binder);
 
                         IDisposable userDispose = user;
@@ -119,9 +130,14 @@ namespace PinionCore.Remote.Soul
 
         }
 
+        private void _NotifyPacketArrived()
+        {
+            PacketArrivedEvent?.Invoke();
+        }
+
         void IDisposable.Dispose()
-        {            
-            
+        {
+
         }
 
         void IService.Join(IStreamable user)

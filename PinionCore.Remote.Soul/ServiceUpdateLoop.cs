@@ -29,7 +29,10 @@ namespace PinionCore.Remote.Soul
 
             Cancellation_ = new CancellationTokenSource();
             _UpdateSignal = new SemaphoreSlim(0);
-            
+
+            // 封包抵達立即喚醒,不必等 _MaxWaitInterval 輪詢
+            _SyncService.PacketArrivedEvent += _RequestUpdate;
+
             _RequestUpdate();
 
             _ThreadUpdater = Task.Factory.StartNew(() => _Update(), Cancellation_.Token, TaskCreationOptions.LongRunning, TaskScheduler.Default);
@@ -84,6 +87,7 @@ namespace PinionCore.Remote.Soul
 
         void IDisposable.Dispose()
         {
+            _SyncService.PacketArrivedEvent -= _RequestUpdate;
             Cancellation_.Cancel();
             _RequestUpdate();
 

@@ -11,6 +11,9 @@ namespace PinionCore.Network
         private readonly IStreamable _Stream;
         private readonly IPool _Pool;
 
+        // 保護 _sendQueue 與 _isSending:Soul 端 response push 可能同時來自
+        // 遊戲邏輯執行緒(property/event 同步)與封包迴圈執行緒(ping/method 回傳)
+        private readonly object _Sync = new object();
         private bool _isSending = false;
         private readonly struct PendingSend
         {
@@ -26,10 +29,16 @@ namespace PinionCore.Network
 
         private readonly System.Collections.Generic.Queue<PendingSend> _sendQueue = new System.Collections.Generic.Queue<PendingSend>();
 
-        public PackageSender(IStreamable stream, PinionCore.Memorys.IPool pool)
+        // detachPumpContext:啟動 pump 時暫時清掉 SynchronizationContext,讓整條送出鏈
+        // 落在 thread pool 而不被啟動端執行緒(如 Unity 主執行緒)的 context 錨定;
+        // 單執行緒環境(WebGL client)必須維持 false
+        private readonly bool _DetachPumpContext;
+
+        public PackageSender(IStreamable stream, PinionCore.Memorys.IPool pool, bool detachPumpContext = false)
         {
             _Stream = stream;
             _Pool = pool;
+            _DetachPumpContext = detachPumpContext;
         }
 
         public void Push(PinionCore.Memorys.Buffer buffer, CancellationToken cancellation = default)
@@ -46,9 +55,30 @@ namespace PinionCore.Network
                 sendBuffer.Bytes.Array[sendBuffer.Bytes.Offset + offset + i] = buffer.Bytes.Array[buffer.Bytes.Offset + i];
             }
 
-            _sendQueue.Enqueue(new PendingSend(sendBuffer, cancellation));
+            lock (_Sync)
+            {
+                _sendQueue.Enqueue(new PendingSend(sendBuffer, cancellation));
 
-            if (!_isSending)
+                // 「標記 sending」與 enqueue 同鎖:兩條執行緒同時 Push 時只有一條啟動 pump
+                if (_isSending)
+                    return;
+                _isSending = true;
+            }
+
+            if (_DetachPumpContext && SynchronizationContext.Current != null)
+            {
+                SynchronizationContext previous = SynchronizationContext.Current;
+                SynchronizationContext.SetSynchronizationContext(null);
+                try
+                {
+                    _ = _ProcessSendQueueAsync();
+                }
+                finally
+                {
+                    SynchronizationContext.SetSynchronizationContext(previous);
+                }
+            }
+            else
             {
                 _ = _ProcessSendQueueAsync();
             }
@@ -58,45 +88,50 @@ namespace PinionCore.Network
         {
             // Unity WebGL 不能同步等待 Task，避免死鎖
             // 清理佇列中的 buffer
-            while (_sendQueue.Count > 0)
+            lock (_Sync)
             {
-                var pending = _sendQueue.Dequeue();
-                var buffer = pending.Buffer;
-             //   buffer.Dispose();
+                while (_sendQueue.Count > 0)
+                {
+                    var pending = _sendQueue.Dequeue();
+                    var buffer = pending.Buffer;
+                 //   buffer.Dispose();
+                }
             }
         }
 
         private async Task _ProcessSendQueueAsync()
         {
-            // 防止重複進入（WebGL 單執行緒環境下已足夠）
-            if (_isSending)
-                return;
-
-            _isSending = true;
-
-            try
+            while (true)
             {
-                while (_sendQueue.Count > 0)
+                PendingSend pending;
+                lock (_Sync)
                 {
-                    var pending = _sendQueue.Dequeue();
-                    if (pending.Token.IsCancellationRequested)
+                    // 「清旗標」與「判空」同鎖:Push 端不會在 pump 收尾瞬間漏掉新項目
+                    if (_sendQueue.Count == 0)
                     {
-                        continue;
+                        _isSending = false;
+                        return;
                     }
-                    try
-                    {
-                        await _SendBufferAsync(pending.Buffer, pending.Token);
-                    }
-                    finally
-                    {
-                        // 發送完成後釋放 buffer 回 pool
-                        //buffer.Dispose();
-                    }
+                    pending = _sendQueue.Dequeue();
                 }
-            }
-            finally
-            {
-                _isSending = false;
+
+                if (pending.Token.IsCancellationRequested)
+                    continue;
+
+                try
+                {
+                    await _SendBufferAsync(pending.Buffer, pending.Token);
+                }
+                catch (Exception e)
+                {
+                    // socket 中途 dispose 等例外不能讓 fire-and-forget 的 pump 變成 unobserved exception
+                    PinionCore.Utility.Log.Instance.WriteInfo($"PackageSender pump error: {e}");
+                    lock (_Sync)
+                    {
+                        _isSending = false;
+                    }
+                    return;
+                }
             }
         }
 

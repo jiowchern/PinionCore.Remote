@@ -41,7 +41,17 @@ namespace PinionCore.Remote.Soul
         private readonly IInternalSerializable _InternalSerializer;
         private TaskAwaiter<List<Memorys.Buffer>> _ReadTask;
 
+        // 非 Ping 請求的執行緒指派:null = 在封包迴圈內就地執行(console 模式);
+        // 非 null = 整包交給宿主(Unity:排進主執行緒佇列),保證同一 client 依到達序執行
+        private readonly Action<Action> _Dispatcher;
+        // 封包迴圈執行緒 Dispose 後,已派發但尚未執行的 action 必須棄行
+        private volatile bool _Disposed;
+
         public event System.Action ErrorEvent;
+
+        // 讀取任務完成(有封包可處理)時觸發,讓宿主的更新迴圈立即醒來而不是等輪詢間隔
+        public event System.Action DataArrivedEvent;
+
         public ISessionBinder Binder
         {
             get { return _SoulProvider; }
@@ -49,9 +59,9 @@ namespace PinionCore.Remote.Soul
 
 
 
-        public User(PinionCore.Network.PackageReader reader, PinionCore.Network.PackageSender sender, IProtocol protocol, ISerializable serializable, IInternalSerializable internal_serializable, PinionCore.Memorys.IPool pool)
+        public User(PinionCore.Network.PackageReader reader, PinionCore.Network.PackageSender sender, IProtocol protocol, ISerializable serializable, IInternalSerializable internal_serializable, PinionCore.Memorys.IPool pool, Action<Action> dispatcher = null)
         {
-
+            _Dispatcher = dispatcher;
             _InternalSerializer = internal_serializable;
 
             _Protocol = protocol;
@@ -71,6 +81,7 @@ namespace PinionCore.Remote.Soul
         void _Launch()
         {
             _ReadTask = _Reader.Read().GetAwaiter();
+            _ReadTask.OnCompleted(_NotifyDataArrived);
             var pkg = new PinionCore.Remote.Packages.PackageProtocolSubmit();
             pkg.VersionCode = _Protocol.VersionCode;
 
@@ -80,6 +91,13 @@ namespace PinionCore.Remote.Soul
 
 
 
+
+        private void _NotifyDataArrived()
+        {
+            if (_Disposed)
+                return;
+            DataArrivedEvent?.Invoke();
+        }
 
         private void _ReadDone(List<PinionCore.Memorys.Buffer> buffers)
         {
@@ -173,23 +191,67 @@ namespace PinionCore.Remote.Soul
 
             if (package.Code == ClientToServerOpCode.Ping)
             {
+                // fast path:在封包迴圈執行緒立即回應,不進 dispatcher 也不等 tick
                 _ResponseQueue.Push(ServerToClientOpCode.Ping, PinionCore.Memorys.Pool.Empty);
+            }
+            else if (_Dispatcher != null)
+            {
+                _Dispatcher(() =>
+                {
+                    if (_Disposed)
+                        return;
+                    // 單筆請求失敗不影響佇列中其他請求,對應 Advance drain 的既有語意
+                    try
+                    {
+                        _HandleRequest(package);
+                    }
+                    catch (Exception e)
+                    {
+                        Utility.Singleton<Utility.Log>.Instance.WriteInfo($"User dispatched request error {e}. pkgCode:{package.Code}");
+                    }
+                });
             }
             else if (package.Code == ClientToServerOpCode.Release)
             {
-                var data = (PinionCore.Remote.Packages.PackageRelease)_InternalSerializer.Deserialize(package.Data.AsBuffer());
-                _SoulProvider.Unbind(data.EntityId);
+                _HandleRelease(package);
             }
             else if (package.Code == ClientToServerOpCode.UpdateProperty)
             {
-                var data = (PinionCore.Remote.Packages.PackageSetPropertyDone)_InternalSerializer.Deserialize(package.Data.AsBuffer());
-                _SoulProvider.SetPropertyDone(data.EntityId, data.Property);
+                _HandleUpdateProperty(package);
             }
             else
             {
                 _ExternalRequests.Enqueue(package);
             }
 
+        }
+
+        private void _HandleRequest(PinionCore.Remote.Packages.RequestPackage package)
+        {
+            if (package.Code == ClientToServerOpCode.Release)
+            {
+                _HandleRelease(package);
+            }
+            else if (package.Code == ClientToServerOpCode.UpdateProperty)
+            {
+                _HandleUpdateProperty(package);
+            }
+            else
+            {
+                _ExternalRequest(package);
+            }
+        }
+
+        private void _HandleRelease(PinionCore.Remote.Packages.RequestPackage package)
+        {
+            var data = (PinionCore.Remote.Packages.PackageRelease)_InternalSerializer.Deserialize(package.Data.AsBuffer());
+            _SoulProvider.Unbind(data.EntityId);
+        }
+
+        private void _HandleUpdateProperty(PinionCore.Remote.Packages.RequestPackage package)
+        {
+            var data = (PinionCore.Remote.Packages.PackageSetPropertyDone)_InternalSerializer.Deserialize(package.Data.AsBuffer());
+            _SoulProvider.SetPropertyDone(data.EntityId, data.Property);
         }
 
         private MethodRequest _ToRequest(long entity_id, int method_id, long return_id, byte[][] method_params)
@@ -229,6 +291,7 @@ namespace PinionCore.Remote.Soul
                     return;
                 }
                 _ReadTask = _Reader.Read().GetAwaiter();
+                _ReadTask.OnCompleted(_NotifyDataArrived);
                 _ReadDone(buffers);
             }
             PinionCore.Remote.Packages.RequestPackage pkg;
@@ -249,6 +312,7 @@ namespace PinionCore.Remote.Soul
 
         void IDisposable.Dispose()
         {
+            _Disposed = true;
             _Shutdown();
 
             IDisposable readerDispose = _Reader;
