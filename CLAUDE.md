@@ -39,7 +39,7 @@ dotnet test [項目路徑].csproj
 - **PinionCore.Remote.Client**: 客戶端實作，包含代理與連線器
 - **PinionCore.Remote.Soul**: 伺服器端物件綁定管理
 - **PinionCore.Remote.Ghost**: 客戶端遠端物件代理
-- **PinionCore.Remote.Standalone**: 單機模式，無需網路的模擬環境
+- **PinionCore.Remote.Standalone**: 單機模式，無需網路的模擬環境。`ListeningEndpoint` 保留完整序列化管線；`DirectStandalone` 為零序列化直通模式（不需 IProtocol，Soul 實例直接供給到 QueryNotifier，共用參考），詳見該專案 README.md
 - **PinionCore.Network**: 底層網路抽象，定義 IStreamable 等介面
 - **PinionCore.Serialization**: 序列化框架，處理資料轉換
 - **PinionCore.Remote.Tools.Protocol.Sources**: 程式碼產生器，自動生成 IProtocol
@@ -358,6 +358,7 @@ public class ConnectedState : IStatus
 
 ### 測試方式
 - 使用 Standalone 模式進行無網路測試
+- 需要零開銷快速迭代（不需 Protocol 生成）時可用 `DirectStandalone` 直通模式，但它不驗證可序列化性，上線前仍需以 Standalone/TCP 跑整合測試
 - 整合測試位於 PinionCore.Integration.Tests
 - 單元測試依功能模組分布在各 *.Test 專案
 

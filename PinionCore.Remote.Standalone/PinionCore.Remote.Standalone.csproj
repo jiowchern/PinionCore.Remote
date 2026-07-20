@@ -7,7 +7,7 @@
     <Version>0.2.0.0</Version>
     <PackageProjectUrl>https://github.com/jiowchern/PinionCore.Remote</PackageProjectUrl>
     <Authors>jc</Authors>
-    <Description>In-process simulation endpoint for testing. Implements both IListeningEndpoint and IConnectingEndpoint, enabling server and client communication within the same process without network overhead.</Description>
+    <Description>In-process simulation for testing. ListeningEndpoint implements both IListeningEndpoint and IConnectingEndpoint, enabling server and client communication within the same process through the full serialization pipeline. DirectStandalone additionally offers a zero-serialization mode that supplies bound Soul instances directly to QueryNotifier without IProtocol.</Description>
   </PropertyGroup>
 
   <ItemGroup>
