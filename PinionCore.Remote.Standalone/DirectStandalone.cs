@@ -84,6 +84,7 @@ namespace PinionCore.Remote.Standalone
             }
             foreach (SoulHandle soul in remains)
             {
+                soul.Detached = true;
                 soul.Remove();
             }
         }
@@ -127,7 +128,12 @@ namespace PinionCore.Remote.Standalone
             }
 
             if (!removed)
+            {
+                // Shutdown 已同步撤銷該 Soul：容忍事後補來的 Unbind（對齊網路模式「斷線後 Unbind 無害」語意）。
+                if (handle != null && handle.Detached)
+                    return;
                 throw new Exception($"Can't find the soul {soul.Id} to delete.");
+            }
 
             _Operations.Enqueue(handle.Remove);
         }
@@ -238,6 +244,9 @@ namespace PinionCore.Remote.Standalone
             public object Instance { get; }
 
             public long Id { get; }
+
+            // Shutdown 強制移除時標記，之後補來的 Unbind 視為無害
+            public bool Detached { get; set; }
 
             bool ISoul.IsTypeObject(TypeObject obj)
             {

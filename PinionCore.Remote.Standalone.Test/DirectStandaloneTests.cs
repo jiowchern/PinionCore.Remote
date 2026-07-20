@@ -208,6 +208,72 @@ namespace PinionCore.Remote.Standalone.Test
         }
 
         [Test, Timeout(10000)]
+        public void UnbindAfterShutdownToleratedTest()
+        {
+            var chat = new DirectChat();
+            var entry = new DirectEntry();
+            ISoul soul = null;
+            ISessionBinder sessionBinder = null;
+            entry.OpenedHandler = binder =>
+            {
+                sessionBinder = binder;
+                soul = binder.Bind<IDirectChat>(chat);
+            };
+
+            var direct = new DirectStandalone(entry);
+            PinionCore.Remote.Ghost.IAgent agent = direct;
+
+            direct.Launch();
+            agent.HandleMessages();
+
+            // 模擬遊戲端斷線清理：Server 的 Remove 事件在 Shutdown 後一幀才 drain 到 Unbind
+            direct.Shutdown();
+            Assert.DoesNotThrow(() => sessionBinder.Unbind(soul));
+
+            IDisposable disposable = direct;
+            disposable.Dispose();
+        }
+
+        [Test, Timeout(10000)]
+        public void UnbindOldSoulAfterReconnectToleratedTest()
+        {
+            var chat = new DirectChat();
+            var entry = new DirectEntry();
+            ISoul soul = null;
+            ISessionBinder sessionBinder = null;
+            entry.OpenedHandler = binder =>
+            {
+                sessionBinder = binder;
+                soul = binder.Bind<IDirectChat>(chat);
+            };
+
+            var direct = new DirectStandalone(entry);
+            PinionCore.Remote.Ghost.IAgent agent = direct;
+
+            direct.Launch();
+            agent.HandleMessages();
+            ISessionBinder oldBinder = sessionBinder;
+            ISoul oldSoul = soul;
+
+            // 快速重連：Shutdown 後立刻 Launch，舊 session 的 Unbind 之後才補來
+            direct.Shutdown();
+            direct.Launch();
+            agent.HandleMessages();
+
+            Assert.DoesNotThrow(() => oldBinder.Unbind(oldSoul));
+
+            // 新 session 的 soul 不受影響，仍可正常 Unbind 觸發 Unsupply
+            IDirectChat unsupplied = null;
+            agent.QueryNotifier<IDirectChat>().Unsupply += c => unsupplied = c;
+            sessionBinder.Unbind(soul);
+            agent.HandleMessages();
+            Assert.AreSame(chat, unsupplied);
+
+            IDisposable disposable = direct;
+            disposable.Dispose();
+        }
+
+        [Test, Timeout(10000)]
         public void DirectInvocationSharesInstanceTest()
         {
             var chat = new DirectChat();
