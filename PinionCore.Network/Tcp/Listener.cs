@@ -47,6 +47,8 @@ namespace PinionCore.Network.Tcp
             try
             {
                 System.Net.Sockets.Socket socket = _Socket.EndAccept(Ar);
+                // 監聽 socket 的 NoDelay 是否繼承到 accepted socket 依平台而異(Linux 無保證),必須逐條連線明確設定
+                socket.NoDelay = true;
                 _AcceptEvent(new Peer(socket));
             }
             catch (ObjectDisposedException)

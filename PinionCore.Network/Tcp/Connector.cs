@@ -25,6 +25,7 @@ namespace PinionCore.Network.Tcp
                 timeout = TimeSpan.FromMinutes(1);
 
             var socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            socket.NoDelay = true;
             try
             {
                 // 以 Begin/End 包成 Task，避免不同平台/版本的 ConnectAsync 回傳 ValueTask 造成型別不相容
